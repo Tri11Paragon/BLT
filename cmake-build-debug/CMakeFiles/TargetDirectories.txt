@@ -1,3 +1,0 @@
-/home/brett/Documents/code/c++/BLT/cmake-build-debug/CMakeFiles/BLT.dir
-/home/brett/Documents/code/c++/BLT/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/brett/Documents/code/c++/BLT/cmake-build-debug/CMakeFiles/rebuild_cache.dir

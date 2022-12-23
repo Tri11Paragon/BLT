@@ -1,7 +1,0 @@
-/opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/opt/netbrains/clion/clion-2022.1.3/bin/ninja/linux/ninja -G Ninja -S /home/brett/Documents/code/c++/BLT -B /home/brett/Documents/code/c++/BLT/cmake-build-debug
--- Configuring done
-CMake Error at CMakeLists.txt:23 (add_library):
-  No SOURCES given to target: BLT
-
-
-CMake Generate step failed.  Build files cannot be regenerated correctly.
