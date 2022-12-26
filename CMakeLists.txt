@@ -23,5 +23,6 @@ include_directories(include/)
 message("Standard Files ${STD_FILES}")
 message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
+message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(BLT ${STD_FILES} ${PROFILING_FILES})
