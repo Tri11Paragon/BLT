@@ -21,7 +21,48 @@ namespace BLT {
     
     template<typename T>
     class flat_queue {
-    
+        private:
+            int size = 16;
+            int insertIndex = 0;
+            int headIndex = 0;
+            T* data = new T[size];
+            
+            void expand(int newSize){
+                auto tempData = new T[newSize];
+                for (int i = 0; i < size - headIndex; i++)
+                    tempData[i] = data[i + headIndex];
+                delete[] data;
+                insertIndex = size - headIndex;
+                headIndex = 0;
+                data = tempData;
+                size = newSize;
+            }
+            
+        public:
+        
+            void push(const T& t) {
+                if (insertIndex >= size){
+                    expand(size * 2);
+                }
+                data[insertIndex++] = t;
+            }
+        
+            [[nodiscard]] const T& front() const {
+                return data[headIndex];
+            }
+        
+            void pop() {
+                headIndex++;
+                // queue is empty. Clear old data.
+                if (headIndex >= size){
+                    delete[] data;
+                    data = new T[size];
+                }
+            }
+        
+            ~flat_queue() {
+                delete[](data);
+            }
     };
     
     template<typename T>
@@ -30,7 +71,7 @@ namespace BLT {
             node<T>* head;
         public:
         
-            void insert(const T& t) {
+            void push(const T& t) {
                 if (head == nullptr)
                     head = new node<T>(t, nullptr);
                 else
