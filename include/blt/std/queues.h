@@ -31,13 +31,10 @@ namespace BLT {
         public:
         
             void insert(const T& t) {
-                auto newNode = new node<T>(t, nullptr);
                 if (head == nullptr)
-                    head = newNode;
-                else {
-                    newNode->next = head;
-                    head = newNode;
-                }
+                    head = new node<T>(t, nullptr);
+                else
+                    head = new node<T>(t, head);
             }
         
             [[nodiscard]] const T& front() const {
