@@ -7,6 +7,23 @@
 #ifndef BLT_PROFILER_H
 #define BLT_PROFILER_H
 
+#include <string>
+#include <string_view>
 
+struct CapturePoint {
+    long point;
+};
+
+struct CaptureInterval {
+    CapturePoint start;
+    CapturePoint end;
+};
+
+template<class MAP_TYPE>
+class Profiler {
+    private:
+        MAP_TYPE* intervals;
+        MAP_TYPE* points = new MAP_TYPE<std::string_view, CaptureInterval>();
+};
 
 #endif //BLT_PROFILER_H
