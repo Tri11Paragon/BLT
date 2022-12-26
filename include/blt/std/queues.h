@@ -13,6 +13,10 @@ namespace BLT {
     struct node {
         T t;
         node* next;
+        node(const T& t, node* next){
+            this->t = t;
+            this->next = next;
+        }
     };
     
     template<typename T>
