@@ -26,7 +26,7 @@ namespace BLT {
             node<T>* head;
         public:
         
-            void insert(T t) {
+            void insert(const T& t) {
                 auto newNode = new node<T>(t, nullptr);
                 if (head == nullptr)
                     head = newNode;
@@ -36,7 +36,7 @@ namespace BLT {
                 }
             }
         
-            [[nodiscard]] T front() const {
+            [[nodiscard]] const T& front() const {
                 return head->t;
             }
         
