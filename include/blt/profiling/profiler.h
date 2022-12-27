@@ -9,7 +9,13 @@
 
 #include <string>
 #include <string_view>
-#include <unordered_map>
+#include <blt/config.h>
+
+#ifdef PHMAP_ENABLED
+    #include <parallel_hashmap/phmap.h>
+#else
+    #include <unordered_map>
+#endif
 
 
 namespace BLT {
@@ -21,15 +27,20 @@ namespace BLT {
         CapturePoint start;
         CapturePoint end;
     };
+#ifdef PHMAP_ENABLED
+    typedef phmap::parallel_flat_hash_map<std::string_view, CaptureInterval> INTERVAL_MAP;
+    typedef phmap::parallel_flat_hash_map<std::string_view, CapturePoint> POINT_MAP;
+#else
+    typedef std::unordered_map<std::string_view, CaptureInterval> INTERVAL_MAP;
+    typedef std::unordered_map<std::string_view, CapturePoint> POINT_MAP;
+#endif
     
     class Profiler {
         private:
-            std::map<std::string_view, CaptureInterval>* intervals;
-            std::map<std::string_view, CapturePoint>* points;
+            INTERVAL_MAP intervals;
+            POINT_MAP points;
         public:
-            Profiler(std::map<std::string_view, CaptureInterval>* test) {
-                intervals = test;
-            }
+            Profiler();
     };
 }
 

@@ -1,0 +1,12 @@
+/*
+ * Created by Brett on 27/12/22.
+ * Licensed under GNU General Public License V3.0
+ * See LICENSE file for license detail
+ */
+
+#ifndef CMAKE_CONFIG
+
+#cmakedefine PHMAP_ENABLED
+
+#define CMAKE_CONFIG
+#endif
