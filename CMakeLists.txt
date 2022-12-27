@@ -26,6 +26,7 @@ endif()
 configure_file(include/blt/config.h.in blt/config.h @ONLY)
 # include the config file
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR})
 
 include_directories(include/)
 
