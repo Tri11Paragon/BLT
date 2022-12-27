@@ -7,6 +7,9 @@
 #ifndef BLT_QUEUES_H
 #define BLT_QUEUES_H
 
+/**
+ * Do no use any queue in this file. They are slower than std::queue.
+ */
 namespace BLT {
     
     template<typename T>

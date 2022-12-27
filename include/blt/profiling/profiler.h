@@ -9,6 +9,7 @@
 
 #include <string>
 #include <string_view>
+#include <map>
 
 namespace BLT {
     struct CapturePoint {
@@ -20,11 +21,14 @@ namespace BLT {
         CapturePoint end;
     };
     
-    template<class MAP_TYPE>
     class Profiler {
         private:
-            MAP_TYPE intervals;
-            MAP_TYPE points;
+            std::map<std::string_view, CaptureInterval>* intervals;
+            std::map<std::string_view, CapturePoint>* points;
+        public:
+            Profiler(std::map<std::string_view, CaptureInterval>* test) {
+                intervals = test;
+            }
     };
 }
 
