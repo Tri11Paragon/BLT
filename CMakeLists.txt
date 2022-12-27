@@ -24,13 +24,6 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/CMakeLists.txt
 endif()
 
 configure_file(include/blt/config.h.in blt/config.h @ONLY)
-# include the config file
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_BINARY_DIR})
-message(${CMAKE_CURRENT_BINARY_DIR})
-
-
-include_directories(include/)
 
 message("Standard Files ${STD_FILES}")
 message("Profiler Files ${PROFILING_FILES}")
@@ -39,4 +32,5 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(BLT ${STD_FILES} ${PROFILING_FILES})
 target_include_directories(BLT PUBLIC include/)
+target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(BLT phmap)
