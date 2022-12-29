@@ -31,10 +31,12 @@ namespace BLT {
 #ifdef PHMAP_ENABLED
     typedef phmap::parallel_flat_hash_map<std::string_view, CaptureInterval> INTERVAL_MAP;
     typedef phmap::parallel_flat_hash_map<std::string_view, CapturePoint> POINT_MAP;
+    typedef phmap::parallel_flat_hash_map<std::string_view, POINT_MAP> POINT_HISTORY_MAP;
     typedef phmap::parallel_flat_hash_map<int, std::string_view> ORDER_MAP;
 #else
     typedef std::unordered_map<std::string_view, CaptureInterval> INTERVAL_MAP;
     typedef std::unordered_map<std::string_view, CapturePoint> POINT_MAP;
+    typedef std::unordered_map<std::string_view, CapturePoint> POINT_HISTORY_MAP;
     typedef std::unordered_map<int, std::string_view> ORDER_MAP;
 #endif
     
@@ -42,6 +44,8 @@ namespace BLT {
         private:
             INTERVAL_MAP intervals{};
             POINT_MAP points{};
+            POINT_MAP cyclicPoints{};
+            POINT_HISTORY_MAP cyclicPointsHistory{};
             ORDER_MAP order{};
             
             std::mutex timerLock{};
