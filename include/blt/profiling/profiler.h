@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include <blt/config.h>
+#include <mutex>
 
 #ifdef PHMAP_ENABLED
     #include <parallel_hashmap/phmap.h>
@@ -30,17 +31,26 @@ namespace BLT {
 #ifdef PHMAP_ENABLED
     typedef phmap::parallel_flat_hash_map<std::string_view, CaptureInterval> INTERVAL_MAP;
     typedef phmap::parallel_flat_hash_map<std::string_view, CapturePoint> POINT_MAP;
+    typedef phmap::parallel_flat_hash_map<int, std::string_view> ORDER_MAP;
 #else
     typedef std::unordered_map<std::string_view, CaptureInterval> INTERVAL_MAP;
     typedef std::unordered_map<std::string_view, CapturePoint> POINT_MAP;
+    typedef std::unordered_map<int, std::string_view> ORDER_MAP;
 #endif
     
     class Profiler {
         private:
-            INTERVAL_MAP intervals;
-            POINT_MAP points;
+            INTERVAL_MAP intervals{};
+            POINT_MAP points{};
+            ORDER_MAP order{};
+            
+            std::mutex timerLock{};
+            int lastOrder = 0;
         public:
-            Profiler();
+            Profiler() = default;
+            void finishCycle();
+            void startInterval(const std::string_view& name);
+            void endInterval(const std::string_view& name);
     };
 }
 
