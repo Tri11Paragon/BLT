@@ -26,7 +26,10 @@ namespace BLT {
                 distribution = new dist(min, max);
             }
             T get(){
-                return *distribution(gen);
+                return (*distribution)(gen);
+            }
+            ~Random(){
+                delete distribution;
             }
     };
 }
