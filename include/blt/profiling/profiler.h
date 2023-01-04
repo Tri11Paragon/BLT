@@ -11,6 +11,7 @@
 #include <string_view>
 #include <blt/config.h>
 #include <mutex>
+#include <queue>
 
 #ifdef PHMAP_ENABLED
     #include <parallel_hashmap/phmap.h>
@@ -30,7 +31,7 @@ namespace BLT {
     };
 #ifdef PHMAP_ENABLED
     typedef phmap::parallel_flat_hash_map<std::string_view, CaptureInterval> INTERVAL_MAP;
-    typedef phmap::parallel_flat_hash_map<std::string_view, CapturePoint> POINT_MAP;
+    typedef phmap::parallel_flat_hash_map<std::string_view, std::queue<CapturePoint>> POINT_MAP;
     typedef phmap::parallel_flat_hash_map<std::string_view, POINT_MAP> POINT_HISTORY_MAP;
     typedef phmap::parallel_flat_hash_map<int, std::string_view> ORDER_MAP;
 #else
@@ -43,8 +44,8 @@ namespace BLT {
     class Profiler {
         private:
             INTERVAL_MAP intervals{};
-            POINT_MAP points{};
-            POINT_MAP cyclicPoints{};
+            std::queue<CapturePoint> points{};
+            std::queue<CapturePoint> cyclicPoints{};
             POINT_HISTORY_MAP cyclicPointsHistory{};
             ORDER_MAP order{};
             
@@ -55,6 +56,11 @@ namespace BLT {
             void finishCycle();
             void startInterval(const std::string_view& name);
             void endInterval(const std::string_view& name);
+            void profilerPoint();
+            /**
+             * Uses a separate tracking device that will be reset when finishCycle(); is called.
+             */
+            void profilerPointCyclic();
     };
 }
 

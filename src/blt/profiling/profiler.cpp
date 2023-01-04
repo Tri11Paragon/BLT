@@ -29,4 +29,13 @@ namespace BLT {
         intervals[name].end = {getCurrentTimeNanoseconds()};
         order[lastOrder++] = name;
     }
+    
+    void Profiler::profilerPoint() {
+    
+    }
+    
+    void Profiler::profilerPointCyclic() {
+    
+    }
+    
 }

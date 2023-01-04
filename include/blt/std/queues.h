@@ -30,6 +30,11 @@ namespace BLT {
             int headIndex = 0;
             T* data = new T[size];
             
+            /**
+             * Expands the internal array to the new size, copying over the data and shifting its minimal position to index 0
+             * and deletes the old array from memory.
+             * @param newSize new size of the internal array
+             */
             void expand(int newSize){
                 auto tempData = new T[newSize];
                 for (int i = 0; i < size - headIndex; i++)
