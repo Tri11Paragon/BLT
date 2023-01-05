@@ -27,7 +27,6 @@ namespace BLT {
         private:
             int size = 16;
             int insertIndex = 0;
-            int headIndex = 0;
             T* data = new T[size];
             
             /**
@@ -37,11 +36,9 @@ namespace BLT {
              */
             void expand(int newSize){
                 auto tempData = new T[newSize];
-                for (int i = 0; i < size - headIndex; i++)
-                    tempData[i] = data[i + headIndex];
+                for (int i = 0; i < insertIndex; i++)
+                    tempData[i] = data[i];
                 delete[] data;
-                insertIndex = size - headIndex;
-                headIndex = 0;
                 data = tempData;
                 size = newSize;
             }
@@ -60,19 +57,19 @@ namespace BLT {
              * @return the element at the "front" of the queue.
              */
             [[nodiscard]] const T& front() const {
-                return data[headIndex];
+                return data[insertIndex-1];
             }
         
             void pop() {
                 // TODO: throw exception when popping would result in a overflow?
                 // I didn't make it an exception here due to not wanting to import the class.
-                if (headIndex >= size)
+                if (isEmpty())
                     return;
-                headIndex++;
+                insertIndex--;
             }
             
             bool isEmpty(){
-                return headIndex >= size;
+                return insertIndex <= 0;
             }
         
             ~flat_queue() {
