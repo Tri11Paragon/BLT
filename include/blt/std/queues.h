@@ -55,17 +55,24 @@ namespace BLT {
                 data[insertIndex++] = t;
             }
         
+            /**
+             * Warning does not contain runtime error checking!
+             * @return the element at the "front" of the queue.
+             */
             [[nodiscard]] const T& front() const {
                 return data[headIndex];
             }
         
             void pop() {
+                // TODO: throw exception when popping would result in a overflow?
+                // I didn't make it an exception here due to not wanting to import the class.
+                if (headIndex >= size)
+                    return;
                 headIndex++;
-                // queue is empty. Clear old data.
-                if (headIndex >= size){
-                    delete[] data;
-                    data = new T[size];
-                }
+            }
+            
+            bool isEmpty(){
+                return headIndex >= size;
             }
         
             ~flat_queue() {
@@ -73,6 +80,7 @@ namespace BLT {
             }
     };
     
+    // avoid this. it is very slow.
     template<typename T>
     class node_queue {
         private:

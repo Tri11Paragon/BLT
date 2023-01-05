@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(BLT)
 
+set(CMAKE_PROJECT_VERSION 0.1a)
 set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
@@ -18,14 +19,11 @@ else()
     set(PROFILING_FILES "")
 endif()
 
+#include parallel hashmaps if the user decided to download the submodule.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/CMakeLists.txt)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/)
-    set(PHMAP_ENABLED ON)
 endif()
 
-configure_file(include/blt/config.h.in blt/config.h @ONLY)
-# include the config file
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(include/)
 
 message("Standard Files ${STD_FILES}")
@@ -35,5 +33,6 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(BLT ${STD_FILES} ${PROFILING_FILES})
 target_include_directories(BLT PUBLIC include/)
-target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(BLT phmap)
+
+message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")

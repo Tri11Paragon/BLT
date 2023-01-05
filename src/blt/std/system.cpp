@@ -1,10 +1,6 @@
 /*
- * Created by Brett on 23/12/22.
+ * Created by Brett on 04/01/23.
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/profiling/profiler.h>
-
-namespace BLT {
-    
-}
+#include <blt/std/system.h>

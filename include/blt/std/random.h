@@ -16,19 +16,29 @@ namespace BLT {
      * @tparam dist std::uniform_real_distribution or std::uniform_int_distribution
      */
     template<typename T, template<typename = T> typename dist = std::uniform_real_distribution>
-    class Random {
+    class random {
         private:
             std::random_device rd; // obtain a random number from hardware
             std::mt19937 gen;
             dist<T>* distribution = nullptr;
         public:
-            explicit Random(T min = (T)0, T max = (T)1, long seed = 0): gen(std::mt19937(seed)){
+            /**
+             * Construct the random number generator.
+             * @param min min value possible to generate. (default: 0)
+             * @param max max value possible to generate. (default: 1)
+             * @param seed seed to use in generating random values. (default: 0)
+             */
+            explicit random(T min = (T)0, T max = (T)1, long seed = 0): gen(std::mt19937(seed)){
                 distribution = new dist(min, max);
             }
+            /**
+             * Note the min/max are inclusive and defaults to a **uniform** distribution.
+             * @return random number between the defined min/max or the default of [0,1].
+             */
             T get(){
                 return (*distribution)(gen);
             }
-            ~Random(){
+            ~random(){
                 delete distribution;
             }
     };

@@ -9,58 +9,68 @@
 
 #include <string>
 #include <string_view>
-#include <blt/config.h>
 #include <mutex>
 #include <queue>
-
-#ifdef PHMAP_ENABLED
-    #include <parallel_hashmap/phmap.h>
-#else
-    #include <unordered_map>
-#endif
-
+#include <blt/std/time.h>
 
 namespace BLT {
     struct CapturePoint {
+        std::string_view name;
         long point;
     };
     
     struct CaptureInterval {
-        CapturePoint start;
-        CapturePoint end;
+        long start;
+        long end;
     };
-#ifdef PHMAP_ENABLED
-    typedef phmap::parallel_flat_hash_map<std::string_view, CaptureInterval> INTERVAL_MAP;
-    typedef phmap::parallel_flat_hash_map<std::string_view, std::queue<CapturePoint>> POINT_MAP;
-    typedef phmap::parallel_flat_hash_map<std::string_view, POINT_MAP> POINT_HISTORY_MAP;
-    typedef phmap::parallel_flat_hash_map<int, std::string_view> ORDER_MAP;
-#else
-    typedef std::unordered_map<std::string_view, CaptureInterval> INTERVAL_MAP;
-    typedef std::unordered_map<std::string_view, CapturePoint> POINT_MAP;
-    typedef std::unordered_map<std::string_view, CapturePoint> POINT_HISTORY_MAP;
-    typedef std::unordered_map<int, std::string_view> ORDER_MAP;
-#endif
     
-    class Profiler {
+    /**
+     * @tparam HASHMAP_TYPE
+     */
+    template <template<typename, typename> class HASHMAP_TYPE>
+    class profile {
         private:
-            INTERVAL_MAP intervals{};
+            // profiling intervals.
+            HASHMAP_TYPE<std::string_view, CaptureInterval> intervals{};
+            
+            // profiling points
+            std::vector<std::queue<CapturePoint>> cyclicPointsHistory{};
             std::queue<CapturePoint> points{};
             std::queue<CapturePoint> cyclicPoints{};
-            POINT_HISTORY_MAP cyclicPointsHistory{};
-            ORDER_MAP order{};
             
             std::mutex timerLock{};
-            int lastOrder = 0;
         public:
-            Profiler() = default;
-            void finishCycle();
-            void startInterval(const std::string_view& name);
-            void endInterval(const std::string_view& name);
-            void profilerPoint();
+            profile() = default;
+            void finishCycle() {
+                cyclicPointsHistory.push_back(cyclicPoints);
+                // im not sure if this is the correct way to clear a queue, there is no function to do so.
+                cyclicPoints = {};
+            }
+            void startInterval(const std::string_view& name) {
+                std::scoped_lock lock(timerLock);
+                CaptureInterval interval{};
+                interval.start = System::getCurrentTimeNanoseconds();
+                intervals[name] = interval;
+            }
+            void endInterval(const std::string_view& name) {
+                std::scoped_lock lock(timerLock);
+                intervals[name].end = System::getCurrentTimeNanoseconds();
+            }
             /**
-             * Uses a separate tracking device that will be reset when finishCycle(); is called.
+             * Records the current time for the purpose of reconstructing the execution time between points, in order to find the most common cause for performance issues.
+             * @param name a common name for the point which you are trying to profile. This name should be meaningful as it will be displayed in the output.
              */
-            void profilerPointCyclic();
+            void profilerPoint(const std::string_view& name) {
+                points.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
+            }
+            /**
+            * Records the current time for the purpose of reconstructing the execution time between points, in order to find the most common cause for performance issues.
+            * Uses a separate tracking device that will be reset when finishCycle(); is called.
+            * @param name a common name for the point which you are trying to profile. This name should be meaningful as it will be displayed in the output.
+            */
+            void profilerPointCyclic(const std::string_view& name) {
+                cyclicPoints.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
+            }
     };
 }
 
