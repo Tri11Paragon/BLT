@@ -71,6 +71,10 @@ namespace BLT {
             bool isEmpty(){
                 return insertIndex <= 0;
             }
+            
+            int getInsertIndex(){
+                return insertIndex;
+            }
         
             ~flat_queue() {
                 delete[](data);
