@@ -28,7 +28,7 @@ namespace BLT {
      * @tparam T type stored in the queue
      */
     template<typename T>
-    class flat_queue {
+    class flat_stack {
         private:
             int m_size = 16;
             int m_insertIndex = 0;
@@ -81,7 +81,7 @@ namespace BLT {
                 return m_insertIndex;
             }
             
-            ~flat_queue() {
+            ~flat_stack() {
                 delete[](m_data);
             }
     };
@@ -91,7 +91,7 @@ namespace BLT {
      * @tparam T type stored in the queue
      */
     template<typename T>
-    class flat_stack {
+    class flat_queue {
         private:
             int m_size = 16;
             int m_headIndex = 0;
@@ -147,7 +147,7 @@ namespace BLT {
                 return m_insertIndex - m_headIndex;
             }
             
-            ~flat_stack() {
+            ~flat_queue() {
                 delete[](m_data);
             }
     };
