@@ -16,7 +16,8 @@ namespace BLT {
     struct node {
         T t;
         node* next;
-        node(const T& t, node* next){
+        
+        node(const T& t, node* next) {
             this->t = t;
             this->next = next;
         }
@@ -25,59 +26,59 @@ namespace BLT {
     template<typename T>
     class flat_queue {
         private:
-            int size = 16;
-            int insertIndex = 0;
-            T* data = new T[size];
+            int m_size = 16;
+            int m_insertIndex = 0;
+            T* m_data = new T[m_size];
             
             /**
              * Expands the internal array to the new size, copying over the data and shifting its minimal position to index 0
              * and deletes the old array from memory.
              * @param newSize new size of the internal array
              */
-            void expand(int newSize){
+            void expand(int newSize) {
                 auto tempData = new T[newSize];
-                for (int i = 0; i < insertIndex; i++)
-                    tempData[i] = data[i];
-                delete[] data;
-                data = tempData;
-                size = newSize;
+                for (int i = 0; i < m_insertIndex; i++)
+                    tempData[i] = m_data[i];
+                delete[] m_data;
+                m_data = tempData;
+                m_size = newSize;
+            }
+        
+        public:
+            
+            void push(const T& t) {
+                if (m_insertIndex >= m_size) {
+                    expand(m_size * 2);
+                }
+                m_data[m_insertIndex++] = t;
             }
             
-        public:
-        
-            void push(const T& t) {
-                if (insertIndex >= size){
-                    expand(size * 2);
-                }
-                data[insertIndex++] = t;
-            }
-        
             /**
              * Warning does not contain runtime error checking!
              * @return the element at the "front" of the queue.
              */
             [[nodiscard]] const T& front() const {
-                return data[insertIndex-1];
+                return m_data[m_insertIndex - 1];
             }
-        
+            
             void pop() {
                 // TODO: throw exception when popping would result in a overflow?
                 // I didn't make it an exception here due to not wanting to import the class.
                 if (isEmpty())
                     return;
-                insertIndex--;
+                m_insertIndex--;
             }
             
-            bool isEmpty(){
-                return insertIndex <= 0;
+            bool isEmpty() {
+                return m_insertIndex <= 0;
             }
             
-            int getInsertIndex(){
-                return insertIndex;
+            int size() {
+                return m_insertIndex;
             }
-        
+            
             ~flat_queue() {
-                delete[](data);
+                delete[](m_data);
             }
     };
     
@@ -85,31 +86,31 @@ namespace BLT {
     template<typename T>
     class node_queue {
         private:
-            node<T>* head;
+            node<T>* m_head;
         public:
-        
+            
             void push(const T& t) {
-                if (head == nullptr)
-                    head = new node<T>(t, nullptr);
+                if (m_head == nullptr)
+                    m_head = new node<T>(t, nullptr);
                 else
-                    head = new node<T>(t, head);
+                    m_head = new node<T>(t, m_head);
             }
-        
+            
             [[nodiscard]] const T& front() const {
-                return head->t;
+                return m_head->t;
             }
-        
+            
             void pop() {
-                auto nextNode = head->next;
-                delete(head);
-                head = nextNode;
+                auto nextNode = m_head->next;
+                delete (m_head);
+                m_head = nextNode;
             }
-        
+            
             ~node_queue() {
-                auto next = head;
-                while (next != nullptr){
+                auto next = m_head;
+                while (next != nullptr) {
                     auto nextNode = next->next;
-                    delete(next);
+                    delete (next);
                     next = nextNode;
                 }
             }
