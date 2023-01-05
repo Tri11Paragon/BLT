@@ -136,7 +136,7 @@ namespace BLT {
                 // I didn't make it an exception here due to not wanting to import the class.
                 if (isEmpty())
                     return;
-                m_insertIndex--;
+                m_headIndex++;
             }
             
             bool isEmpty() {
