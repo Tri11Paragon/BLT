@@ -3,7 +3,7 @@
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/std/queues.h>
+#include <blt/std/queue.h>
 
 namespace BLT {
 

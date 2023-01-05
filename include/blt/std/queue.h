@@ -4,8 +4,8 @@
  * See LICENSE file for license detail
  */
 
-#ifndef BLT_QUEUES_H
-#define BLT_QUEUES_H
+#ifndef BLT_QUEUE_H
+#define BLT_QUEUE_H
 
 /**
  * Do no use any queue in this file. They are slower than std::queue.
@@ -23,6 +23,10 @@ namespace BLT {
         }
     };
     
+    /**
+     * Standard array backed first in first out queue
+     * @tparam T type stored in the queue
+     */
     template<typename T>
     class flat_queue {
         private:
@@ -82,6 +86,72 @@ namespace BLT {
             }
     };
     
+    /**
+     * Standard array backed first in last out queue (stack)
+     * @tparam T type stored in the queue
+     */
+    template<typename T>
+    class flat_stack {
+        private:
+            int m_size = 16;
+            int m_headIndex = 0;
+            int m_insertIndex = 0;
+            T* m_data = new T[m_size];
+            
+            /**
+             * Expands the internal array to the new size, copying over the data and shifting its minimal position to index 0
+             * and deletes the old array from memory.
+             * @param newSize new size of the internal array
+             */
+            void expand(int newSize) {
+                auto tempData = new T[newSize];
+                for (int i = 0; i < m_size - m_headIndex; i++)
+                    tempData[i] = m_data[i + m_headIndex];
+                delete[] m_data;
+                m_insertIndex = m_size - m_headIndex;
+                m_headIndex = 0;
+                m_data = tempData;
+                m_size = newSize;
+            }
+        
+        public:
+            
+            void push(const T& t) {
+                if (m_insertIndex >= m_size) {
+                    expand(m_size * 2);
+                }
+                m_data[m_insertIndex++] = t;
+            }
+            
+            /**
+             * Warning does not contain runtime error checking!
+             * @return the element at the "front" of the queue.
+             */
+            [[nodiscard]] const T& front() const {
+                return m_data[m_headIndex];
+            }
+            
+            void pop() {
+                // TODO: throw exception when popping would result in a overflow?
+                // I didn't make it an exception here due to not wanting to import the class.
+                if (isEmpty())
+                    return;
+                m_insertIndex--;
+            }
+            
+            bool isEmpty() {
+                return m_headIndex >= m_size;
+            }
+            
+            int size() {
+                return m_insertIndex - m_headIndex;
+            }
+            
+            ~flat_stack() {
+                delete[](m_data);
+            }
+    };
+    
     // avoid this. it is very slow.
     template<typename T>
     class node_queue {
@@ -118,4 +188,4 @@ namespace BLT {
     
 }
 
-#endif //BLT_QUEUES_H
+#endif //BLT_QUEUE_H
