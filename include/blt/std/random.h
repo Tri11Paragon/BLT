@@ -9,7 +9,7 @@
 
 #include <random>
 
-namespace BLT {
+namespace blt {
     /**
      * Creates a container class for generating random number distributions
      * @tparam T numeric type

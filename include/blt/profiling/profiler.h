@@ -10,10 +10,11 @@
 #include <string>
 #include <string_view>
 #include <mutex>
-#include <queue>
+#include <vector>
 #include <blt/std/time.h>
+#include <blt/std/queue.h>
 
-namespace BLT {
+namespace blt {
     struct CapturePoint {
         std::string_view name;
         long point;
@@ -34,9 +35,9 @@ namespace BLT {
             HASHMAP_TYPE<std::string_view, CaptureInterval> intervals{};
             
             // profiling points
-            std::vector<std::queue<CapturePoint>> cyclicPointsHistory{};
-            std::queue<CapturePoint> points{};
-            std::queue<CapturePoint> cyclicPoints{};
+            std::vector<blt::flat_queue<CapturePoint>> cyclicPointsHistory{};
+            blt::flat_queue<CapturePoint> points{};
+            blt::flat_queue<CapturePoint> cyclicPoints{};
             
             std::mutex timerLock{};
         public:

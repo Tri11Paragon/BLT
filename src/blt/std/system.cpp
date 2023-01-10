@@ -4,3 +4,4 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/system.h>
+#include <blt/std/binary_tree.h>

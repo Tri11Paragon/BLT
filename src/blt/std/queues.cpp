@@ -5,6 +5,6 @@
  */
 #include <blt/std/queue.h>
 
-namespace BLT {
+namespace blt {
 
 }

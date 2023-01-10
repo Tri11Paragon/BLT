@@ -7,7 +7,7 @@
 #ifndef BLT_SYSTEM_H
 #define BLT_SYSTEM_H
 
-namespace BLT::System {
+namespace blt::System {
     // TODO: system memory and current CPU usage. (Linux Only currently)
 }
 

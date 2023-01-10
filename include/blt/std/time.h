@@ -11,7 +11,7 @@
 #include <ctime>
 #include <sstream>
 
-namespace BLT::System {
+namespace blt::System {
     static inline auto getCurrentTimeNanoseconds() {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }

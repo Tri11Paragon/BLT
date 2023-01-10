@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace BLT::String {
+namespace blt::String {
     /**
      * Converts the string into lower case
      * @param s string to lower case

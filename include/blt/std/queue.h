@@ -10,7 +10,7 @@
 /**
  * Do no use any queue in this file. They are slower than std::queue.
  */
-namespace BLT {
+namespace blt {
     
     template<typename T>
     struct node {
@@ -185,7 +185,6 @@ namespace BLT {
                 }
             }
     };
-    
 }
 
 #endif //BLT_QUEUE_H
