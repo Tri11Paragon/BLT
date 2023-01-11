@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 #include <blt/std/queue.h>
+#include <iostream>
 
 #ifndef BLT_BINARY_TREE_H
 #define BLT_BINARY_TREE_H
@@ -45,7 +46,7 @@ namespace blt {
                 // basically we are iterating through the tree looking for a valid node to insert into.
                 while (true) {
                     if (element == searchNode->payload)
-                        throw binary_search_tree_error{"Unable to insert. Nodes cannot have equal values!\n"};
+                        throw binary_search_tree_error{"Unable to insert. Nodes cannot have equal values! (" + std::to_string(element) + ")\n"};
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->payload) {
                         searchNode = searchNode->left;
@@ -66,26 +67,27 @@ namespace blt {
             
             BST_node* search(BST_node** parent, const T& element) const {
                 BST_node* searchNode = m_root;
+                BST_node* parentNode = m_root;
+
+                if (searchNode->left == nullptr && searchNode->right == nullptr)
+                    return nullptr;
+
                 // basically we are iterating through the tree looking for a valid node to insert into.
-                while (true) {
-                    if (searchNode->payload == element)
-                        return searchNode;
-                    if (searchNode->left == nullptr && searchNode->right == nullptr)
+                while (searchNode->payload != element) {
+                    if (searchNode == nullptr)
                         return nullptr;
                     // check for left and right tree traversal if it exists
-                    if (searchNode->left != nullptr && element < searchNode->left->payload) {
-                        if (parent != nullptr)
-                            *parent = searchNode;
+                    if (element < searchNode->payload) {
+                        parentNode = searchNode;
                         searchNode = searchNode->left;
-                        continue;
-                    }
-                    if (searchNode->right != nullptr && element > searchNode->right->payload) {
-                        if (parent != nullptr)
-                            *parent = searchNode;
+                    } else {
+                        parentNode = searchNode;
                         searchNode = searchNode->right;
-                        continue;
                     }
                 }
+                if (parent != nullptr)
+                    *parent = parentNode;
+                return searchNode;
             }
             
             std::vector<BST_node*> inOrderTraverse(BST_node* root) {
@@ -109,6 +111,31 @@ namespace blt {
                 
                 return nodes;
             }
+
+            BST_node* findMin(BST_node* root) {
+                while (root->left != nullptr)
+                    root = root->left;
+                return root;
+            }
+
+            BST_node* findMax(BST_node* root) {
+                while (root->right != nullptr)
+                    root = root->right;
+                return root;
+            }
+
+            BST_node* remove(BST_node*& root, const T& element) {
+                if (root->payload < element) // search left
+                    root->left = delete(root->left, element);
+                else if (root->payload > element) // search right
+                    root->right = delete(root->right, element);
+                else {
+                    if (root->left != nullptr && root->right != nullptr) {
+                        BST_node* rootCopy = root;
+                        root = 
+                    }
+                }
+            }  
         
         public:
             node_binary_search_tree() = default;
@@ -125,8 +152,8 @@ namespace blt {
                 return search(nullptr, element);
             }
             
-            void remove(const T& element) {
-                BST_node* parent{};
+            /*void remove(const T& element) {
+                BST_node* parent = nullptr;
                 BST_node* elementNode = search(&parent, element);
                 
                 BST_node*& parentChildSide = parent->left;
@@ -134,20 +161,38 @@ namespace blt {
                     parentChildSide = parent->right;
                 
                 if (elementNode->left != nullptr && elementNode->right != nullptr) {
-                    parentChildSide = nullptr;
-                    // reconstruct subtree. More efficient way of doing this... TODO
-                    std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
-                    for (auto* node : subNodes) {
-                        // insert will create a new node, we must delete old one to prevent memory leaks
-                        if (node != elementNode) {
-                            insert(parent, node->payload);
-                            delete (node);
+                    // root node special case: TODO: better way of doing this.
+                    if (parent == elementNode) {
+                        delete(m_root);
+                        m_root = nullptr;
+                        // reconstruct subtree. More efficient way of doing this... TODO
+                        std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
+                        for (auto* node : subNodes) {
+                            // insert will create a new node, we must delete old one to prevent memory leaks
+                            if (node != elementNode) {
+                                insert(node->payload);
+                                delete (node);
+                            }
+                        }
+                    } else {
+                        parentChildSide = nullptr;
+                        // reconstruct subtree. More efficient way of doing this... TODO
+                        std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
+                        for (auto* node : subNodes) {
+                            // insert will create a new node, we must delete old one to prevent memory leaks
+                            if (node != elementNode) {
+                                insert(parent, node->payload);
+                                delete (node);
+                            }
                         }
                     }
                 } else {
                     parentChildSide = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                 }
                 delete (elementNode);
+            }*/
+            void remove(const T& element) {
+                remove(m_root, element);
             }
             
             inline std::vector<BST_node*> inOrderTraverse() {

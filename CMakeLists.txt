@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
+option(BUILD_TESTS "Build the BLT test set" OFF)
 
 if(${BUILD_STD})
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")
@@ -34,5 +35,15 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 add_library(BLT ${STD_FILES} ${PROFILING_FILES})
 target_include_directories(BLT PUBLIC include/)
 target_link_libraries(BLT phmap)
-
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
+
+if(${BUILD_TESTS})
+    project(BLT_TESTS)
+
+    file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
+
+    add_executable(BLT_TESTS ${TESTS_FILES})
+
+    target_link_libraries(BLT_TESTS BLT)
+    message("BLT tests included!")
+endif()
