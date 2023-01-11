@@ -67,6 +67,8 @@ namespace blt {
                 while (true) {
                     if (searchNode->payload == element)
                         return searchNode;
+                    if (searchNode->left == nullptr && searchNode->right == nullptr)
+                        return nullptr;
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->left->payload) {
                         *parent = searchNode;
