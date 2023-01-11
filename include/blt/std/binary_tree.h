@@ -61,7 +61,7 @@ namespace blt {
                 }
             }
             
-            BST_node* search(BST_node*& parent, const T& element) {
+            BST_node* search(BST_node*& parent, const T& element) const {
                 BST_node* searchNode = m_root;
                 // basically we are iterating through the tree looking for a valid node to insert into.
                 while (true) {
@@ -144,6 +144,10 @@ namespace blt {
         
             std::vector<BST_node*> inOrderTraverse(){
                 return inOrderTraverse(m_root);
+            }
+            
+            BST_node* debug(){
+                return m_root;
             }
             
             ~node_binary_search_tree() {
