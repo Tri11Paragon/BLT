@@ -107,17 +107,18 @@ namespace blt {
             node_binary_search_tree() {
                 m_root = new BST_node();
             }
-            
-            void insert(const T& element) {
+        
+            inline void insert(const T& element) {
                 insert(m_root, element);
             }
             
-            [[nodiscard]] BST_node* search(const T& element) const {
-                return search(nullptr, element);
+            [[nodiscard]] inline BST_node* search(const T& element) const {
+                BST_node parent;
+                return search(&parent, element);
             }
             
             void remove(const T& element) {
-                BST_node* parent = nullptr;
+                BST_node* parent {};
                 BST_node* elementNode = search(parent, element);
                 
                 BST_node*& parentChildSide = parent->left;
@@ -142,11 +143,11 @@ namespace blt {
                 delete(elementNode);
             }
         
-            std::vector<BST_node*> inOrderTraverse(){
+            inline std::vector<BST_node*> inOrderTraverse(){
                 return inOrderTraverse(m_root);
             }
-            
-            BST_node* debug(){
+        
+            inline BST_node* debug(){
                 return m_root;
             }
             
