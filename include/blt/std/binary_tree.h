@@ -71,12 +71,14 @@ namespace blt {
                         return nullptr;
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->left->payload) {
-                        *parent = searchNode;
+                        if (parent != nullptr)
+                            *parent = searchNode;
                         searchNode = searchNode->left;
                         continue;
                     }
                     if (searchNode->right != nullptr && element > searchNode->right->payload) {
-                        *parent = searchNode;
+                        if (parent != nullptr)
+                            *parent = searchNode;
                         searchNode = searchNode->right;
                         continue;
                     }
