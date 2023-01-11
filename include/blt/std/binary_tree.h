@@ -47,11 +47,11 @@ namespace blt {
                     if (element == searchNode->payload)
                         throw binary_search_tree_error{"Unable to insert. Nodes cannot have equal values!\n"};
                     // check for left and right tree traversal if it exists
-                    if (searchNode->left != nullptr && element < searchNode->left->payload) {
+                    if (searchNode->left != nullptr && element < searchNode->payload) {
                         searchNode = searchNode->left;
                         continue;
                     }
-                    if (searchNode->right != nullptr && element > searchNode->right->payload) {
+                    if (searchNode->right != nullptr && element > searchNode->payload) {
                         searchNode = searchNode->right;
                         continue;
                     }
