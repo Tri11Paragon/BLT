@@ -61,7 +61,7 @@ namespace blt {
              * Warning does not contain runtime error checking!
              * @return the element at the "front" of the queue.
              */
-            [[nodiscard]] const T& front() const {
+            [[nodiscard]] const T& top() const {
                 return m_data[m_insertIndex - 1];
             }
             
