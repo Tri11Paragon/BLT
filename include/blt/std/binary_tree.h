@@ -35,9 +35,13 @@ namespace blt {
             BST_node* m_root = nullptr;
         private:
             void insert(BST_node* root, const T& element) {
+                if (root == nullptr)
+                    throw binary_search_tree_error{"Unable to insert. Provided root is null!\n"};
                 BST_node* searchNode = root;
                 // basically we are iterating through the tree looking for a valid node to insert into.
                 while (true) {
+                    if (element == searchNode->payload)
+                        throw binary_search_tree_error{"Unable to insert. Nodes cannot have equal values!\n"};
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->left->payload) {
                         searchNode = searchNode->left;
@@ -47,8 +51,6 @@ namespace blt {
                         searchNode = searchNode->right;
                         continue;
                     }
-                    if (element == searchNode->payload)
-                        throw binary_search_tree_error{"Unable to insert. Nodes cannot have equal values!\n"};
                     // insert into the lowest node consistent with a BST
                     if (element < searchNode->payload) {
                         searchNode->left = new BST_node();
@@ -108,11 +110,14 @@ namespace blt {
             }
         
         public:
-            node_binary_search_tree() {
-                m_root = new BST_node();
-            }
+            node_binary_search_tree() = default;
         
             inline void insert(const T& element) {
+                if (m_root == nullptr) {
+                    m_root = new BST_node();
+                    m_root->payload = element;
+                    return;
+                }
                 insert(m_root, element);
             }
             
