@@ -26,6 +26,10 @@ namespace blt {
                 BST_node* right = nullptr;
                 T payload;
                 
+                explicit BST_node(const T& _payload) {
+                    payload = _payload;
+                }
+                
                 ~BST_node() {
                     delete (left);
                     delete (right);
@@ -52,13 +56,10 @@ namespace blt {
                         continue;
                     }
                     // insert into the lowest node consistent with a BST
-                    if (element < searchNode->payload) {
-                        searchNode->left = new BST_node();
-                        searchNode->left->payload = element;
-                    } else {
-                        searchNode->right = new BST_node();
-                        searchNode->right->payload = element;
-                    }
+                    if (element < searchNode->payload)
+                        searchNode->left = new BST_node(element);
+                    else
+                        searchNode->right = new BST_node(element);
                     return;
                 }
             }
@@ -94,7 +95,7 @@ namespace blt {
                 BST_node* current = root;
                 while (current != nullptr || !nodeStack.isEmpty()) {
                     // go all the way to the left subtree
-                    while (current != nullptr){
+                    while (current != nullptr) {
                         nodeStack.push(current);
                         current = current->left;
                     }
@@ -111,11 +112,10 @@ namespace blt {
         
         public:
             node_binary_search_tree() = default;
-        
+            
             inline void insert(const T& element) {
                 if (m_root == nullptr) {
-                    m_root = new BST_node();
-                    m_root->payload = element;
+                    m_root = new BST_node(element);
                     return;
                 }
                 insert(m_root, element);
@@ -126,35 +126,35 @@ namespace blt {
             }
             
             void remove(const T& element) {
-                BST_node* parent {};
+                BST_node* parent{};
                 BST_node* elementNode = search(&parent, element);
                 
                 BST_node*& parentChildSide = parent->left;
                 if (parent->right == elementNode)
                     parentChildSide = parent->right;
-    
-                if (elementNode->left != nullptr && elementNode->right != nullptr){
+                
+                if (elementNode->left != nullptr && elementNode->right != nullptr) {
                     parentChildSide = nullptr;
                     // reconstruct subtree. More efficient way of doing this... TODO
                     std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
-                    for (auto* node : subNodes){
+                    for (auto* node : subNodes) {
                         // insert will create a new node, we must delete old one to prevent memory leaks
                         if (node != elementNode) {
                             insert(parent, node->payload);
-                            delete(node);
+                            delete (node);
                         }
                     }
                 } else {
                     parentChildSide = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                 }
-                delete(elementNode);
+                delete (elementNode);
             }
-        
-            inline std::vector<BST_node*> inOrderTraverse(){
+            
+            inline std::vector<BST_node*> inOrderTraverse() {
                 return inOrderTraverse(m_root);
             }
-        
-            inline BST_node* debug(){
+            
+            inline BST_node* debug() {
                 return m_root;
             }
             
