@@ -61,7 +61,7 @@ namespace blt {
                 }
             }
             
-            BST_node* search(BST_node*& parent, const T& element) const {
+            BST_node* search(BST_node** parent, const T& element) const {
                 BST_node* searchNode = m_root;
                 // basically we are iterating through the tree looking for a valid node to insert into.
                 while (true) {
@@ -69,12 +69,12 @@ namespace blt {
                         return searchNode->payload;
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->left->payload) {
-                        parent = searchNode;
+                        *parent = searchNode;
                         searchNode = searchNode->left;
                         continue;
                     }
                     if (searchNode->right != nullptr && element > searchNode->right->payload) {
-                        parent = searchNode;
+                        *parent = searchNode;
                         searchNode = searchNode->right;
                         continue;
                     }
@@ -113,13 +113,12 @@ namespace blt {
             }
             
             [[nodiscard]] inline BST_node* search(const T& element) const {
-                BST_node parent;
-                return search(&parent, element);
+                return search(nullptr, element);
             }
             
             void remove(const T& element) {
                 BST_node* parent {};
-                BST_node* elementNode = search(parent, element);
+                BST_node* elementNode = search(&parent, element);
                 
                 BST_node*& parentChildSide = parent->left;
                 if (parent->right == elementNode)
@@ -136,7 +135,6 @@ namespace blt {
                             delete(node);
                         }
                     }
-    
                 } else {
                     parentChildSide = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                 }
