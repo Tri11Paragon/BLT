@@ -66,7 +66,7 @@ namespace blt {
                 // basically we are iterating through the tree looking for a valid node to insert into.
                 while (true) {
                     if (searchNode->payload == element)
-                        return searchNode->payload;
+                        return searchNode;
                     // check for left and right tree traversal if it exists
                     if (searchNode->left != nullptr && element < searchNode->left->payload) {
                         *parent = searchNode;
