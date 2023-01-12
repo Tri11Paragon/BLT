@@ -134,7 +134,6 @@ namespace blt {
                 }
                 return root;
             }  
-        
         public:
             node_binary_search_tree() = default;
             
@@ -153,58 +152,56 @@ namespace blt {
             void remove(const T& element) {
                 BST_node* parent = nullptr;
                 BST_node* elementNode = search(&parent, element);
-                
-                BST_node*& parentChildSide = parent->left;
-                if (parent->right == elementNode)
-                    parentChildSide = parent->right;
+                if (parent == elementNode)
+                    parent = nullptr;
                 
                 if (elementNode->left != nullptr && elementNode->right != nullptr) {
-                    // root node special case: TODO: better way of doing this.
-                    /*auto& leastNodeGreater = findMin(elementNode->right);
-                    if (parent != elementNode) {
-                        // move up the node and delete the old one.
-                        parentChildSide->payload = leastNodeGreater->payload;
-                        if (leastNodeGreater->parent->left == leastNodeGreater)
-                            leastNodeGreater->parent->left = nullptr;
-                        else
-                            leastNodeGreater->parent->right = nullptr;
-                        delete(leastNodeGreater);
-                    } else {
-                        leastNodeGreater->left =
-                    }*/
-                    /*    delete(m_root);
-                        m_root = nullptr;
-                        // reconstruct subtree. More efficient way of doing this... TODO
-                        std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
-                        for (auto* node : subNodes) {
-                            // insert will create a new node, we must delete old one to prevent memory leaks
-                            if (node != elementNode) {
-                                insert(node->payload);
-                                delete (node);
-                            }
-                        }
-                    } else {
-                        
-                        // reconstruct subtree. More efficient way of doing this... TODO
-                        std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
-                        for (auto* node : subNodes) {
-                            // insert will create a new node, we must delete old one to prevent memory leaks
-                            if (node != elementNode) {
-                                insert(parent, node->payload);
-                                delete (node);
-                            }
-                        }
-                    }*/
-                } else {
-                    parentChildSide = elementNode->left != nullptr ? elementNode->left : elementNode->right;
-                }
-                std::cout << elementNode << "\n";
-                //delete (elementNode);
+                    BST_node* inOrderSuccessor = elementNode->left != nullptr ? elementNode->left : elementNode->right;
+                    BST_node* inOrderSuccessorParent = nullptr;
+                    // go all the way to the left subtree
+                    while (inOrderSuccessor->left != nullptr) {
+                        inOrderSuccessorParent = inOrderSuccessor;
+                        inOrderSuccessor = inOrderSuccessor->left;
+                    }
+                    // make sure we maintain the tree structure if our moving node has a subtree
+                    BST_node* inOrderSuccessorReplacement = inOrderSuccessor->right != nullptr ? inOrderSuccessor->right : nullptr;
 
+                    if (parent != nullptr) {
+                        if (parent->right == elementNode)
+                            parent->right = inOrderSuccessor;
+                        else if (parent->left == elementNode)
+                            parent->left = inOrderSuccessor;
+                        else
+                            throw binary_search_tree_error("Parent node doesn't own child!\n");
+                    } else 
+                        m_root = inOrderSuccessor;
+                    // reconstruct the node's children
+                    inOrderSuccessor->left = elementNode->left;
+                    inOrderSuccessor->right = elementNode->right;
+                    // delete the parent's reference to the moved node
+                    if (inOrderSuccessorParent != nullptr){
+                        if (inOrderSuccessorParent->left == inOrderSuccessor)
+                            inOrderSuccessorParent->left = inOrderSuccessorReplacement;
+                        else if (inOrderSuccessorParent->right == inOrderSuccessor)
+                            inOrderSuccessorParent->right = inOrderSuccessorReplacement;
+                        else
+                            throw binary_search_tree_error("Parent does not contain child!\n");
+                    }
+                } else {
+                    auto replacementNode = elementNode->left != nullptr ? elementNode->left : elementNode->right;
+                    if (parent == nullptr)
+                        m_root = replacementNode;
+                    else {
+                        if (parent->right == elementNode)
+                            parent->right = replacementNode;
+                        else if (parent->left == elementNode)
+                            parent->left = replacementNode;
+                        else
+                            throw binary_search_tree_error("Parent node doesn't contain element of search!\n");
+                    }
+                }
+                delete (elementNode);
             }
-            /*void remove(const T& element) {
-                remove(m_root, element);
-            }*/
             
             inline std::vector<BST_node*> inOrderTraverse() {
                 return inOrderTraverse(m_root);

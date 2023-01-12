@@ -32,9 +32,12 @@ void binaryTreeTest(){
     auto searchedNode = dataTree.search(10);
     std::cout << "10's children: "<< searchedNode->left->payload << ", " << searchedNode->right->payload << "\n";
 
-    dataTree.remove(4);
+    dataTree.remove(10);
 
     printBinaryTree(dataTree);
+
+    //searchedNode = dataTree.search(8);
+    //std::cout << "8's children: "<< searchedNode->left->payload << ", " << searchedNode->right->payload << "\n";
     
 
 }
