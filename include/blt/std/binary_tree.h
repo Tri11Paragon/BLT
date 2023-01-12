@@ -8,6 +8,7 @@
 #include <vector>
 #include <blt/std/queue.h>
 #include <iostream>
+#include <memory>
 
 #ifndef BLT_BINARY_TREE_H
 #define BLT_BINARY_TREE_H
@@ -30,13 +31,7 @@ namespace blt {
                 explicit BST_node(const T& _payload) {
                     payload = _payload;
                 }
-                
-                ~BST_node() {
-                    delete (left);
-                    delete (right);
-                }
             };
-            
             BST_node* m_root = nullptr;
         private:
             void insert(BST_node* root, const T& element) {
@@ -64,7 +59,7 @@ namespace blt {
                     return;
                 }
             }
-            
+
             BST_node* search(BST_node** parent, const T& element) const {
                 BST_node* searchNode = m_root;
                 BST_node* parentNode = m_root;
@@ -112,29 +107,32 @@ namespace blt {
                 return nodes;
             }
 
-            BST_node* findMin(BST_node* root) {
-                while (root->left != nullptr)
-                    root = root->left;
-                return root;
+            BST_node*& findMin(BST_node* root) {
+                BST_node*& searchNode = root;
+                while (searchNode->left != nullptr)
+                    searchNode = searchNode->left;
+                return searchNode;
             }
 
-            BST_node* findMax(BST_node* root) {
-                while (root->right != nullptr)
-                    root = root->right;
-                return root;
+            BST_node*& findMax(BST_node* root) {
+                BST_node*& searchNode = root;
+                while (searchNode->right != nullptr)
+                    searchNode = searchNode->right;
+                return searchNode;
             }
 
-            BST_node* remove(BST_node*& root, const T& element) {
+            BST_node* remove(BST_node* root, const T& element) {
                 if (root->payload < element) // search left
-                    root->left = delete(root->left, element);
+                    root->left = remove(root->left, element);
                 else if (root->payload > element) // search right
-                    root->right = delete(root->right, element);
+                    root->right = remove(root->right, element);
                 else {
                     if (root->left != nullptr && root->right != nullptr) {
-                        BST_node* rootCopy = root;
-                        root = 
+                        root->payload = findMin(root->right)->payload;
+                        root->right = remove(root->right, root->payload);
                     }
                 }
+                return root;
             }  
         
         public:
@@ -152,7 +150,7 @@ namespace blt {
                 return search(nullptr, element);
             }
             
-            /*void remove(const T& element) {
+            void remove(const T& element) {
                 BST_node* parent = nullptr;
                 BST_node* elementNode = search(&parent, element);
                 
@@ -162,8 +160,19 @@ namespace blt {
                 
                 if (elementNode->left != nullptr && elementNode->right != nullptr) {
                     // root node special case: TODO: better way of doing this.
-                    if (parent == elementNode) {
-                        delete(m_root);
+                    /*auto& leastNodeGreater = findMin(elementNode->right);
+                    if (parent != elementNode) {
+                        // move up the node and delete the old one.
+                        parentChildSide->payload = leastNodeGreater->payload;
+                        if (leastNodeGreater->parent->left == leastNodeGreater)
+                            leastNodeGreater->parent->left = nullptr;
+                        else
+                            leastNodeGreater->parent->right = nullptr;
+                        delete(leastNodeGreater);
+                    } else {
+                        leastNodeGreater->left =
+                    }*/
+                    /*    delete(m_root);
                         m_root = nullptr;
                         // reconstruct subtree. More efficient way of doing this... TODO
                         std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
@@ -175,7 +184,7 @@ namespace blt {
                             }
                         }
                     } else {
-                        parentChildSide = nullptr;
+                        
                         // reconstruct subtree. More efficient way of doing this... TODO
                         std::vector<BST_node*> subNodes = inOrderTraverse(elementNode);
                         for (auto* node : subNodes) {
@@ -185,15 +194,17 @@ namespace blt {
                                 delete (node);
                             }
                         }
-                    }
+                    }*/
                 } else {
                     parentChildSide = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                 }
-                delete (elementNode);
-            }*/
-            void remove(const T& element) {
-                remove(m_root, element);
+                std::cout << elementNode << "\n";
+                //delete (elementNode);
+
             }
+            /*void remove(const T& element) {
+                remove(m_root, element);
+            }*/
             
             inline std::vector<BST_node*> inOrderTraverse() {
                 return inOrderTraverse(m_root);
@@ -204,7 +215,9 @@ namespace blt {
             }
             
             ~node_binary_search_tree() {
-                delete (m_root);
+                auto inOrder = inOrderTraverse();
+                for (auto* n : inOrder)
+                    delete(n);
             }
     };
     

@@ -40,6 +40,9 @@ message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 if(${BUILD_TESTS})
     project(BLT_TESTS)
 
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+
     file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
 
     add_executable(BLT_TESTS ${TESTS_FILES})
