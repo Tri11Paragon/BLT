@@ -6,5 +6,7 @@
 #include <blt/profiling/profiler.h>
 
 namespace blt {
-    
+    void createProfiler(Profiler* profiler) {
+        
+    }
 }

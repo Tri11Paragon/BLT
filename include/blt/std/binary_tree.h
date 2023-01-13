@@ -133,7 +133,7 @@ namespace blt {
                     }
                 }
                 return root;
-            }  
+            }
         public:
             node_binary_search_tree() = default;
             
@@ -156,15 +156,40 @@ namespace blt {
                     parent = nullptr;
                 
                 if (elementNode->left != nullptr && elementNode->right != nullptr) {
-                    BST_node* inOrderSuccessor = elementNode->left != nullptr ? elementNode->left : elementNode->right;
-                    BST_node* inOrderSuccessorParent = nullptr;
-                    // go all the way to the left subtree
-                    while (inOrderSuccessor->left != nullptr) {
-                        inOrderSuccessorParent = inOrderSuccessor;
-                        inOrderSuccessor = inOrderSuccessor->left;
+                    auto traverseNodes = inOrderTraverse(elementNode);
+                    if (parent == nullptr) {
+                        m_root = nullptr;
+                    } else {
+                        if (parent->right == elementNode)
+                            parent->right = nullptr;
+                        else if (parent->left == elementNode)
+                            parent->left = nullptr;
+                        else
+                            throw binary_search_tree_error("Parent node doesn't own child!\n");
                     }
-                    // make sure we maintain the tree structure if our moving node has a subtree
-                    BST_node* inOrderSuccessorReplacement = inOrderSuccessor->right != nullptr ? inOrderSuccessor->right : nullptr;
+                    for (auto* node : traverseNodes) {
+                        if (node != elementNode) {
+                            if (parent == nullptr) {
+                                insert(node->payload);
+                            } else
+                                insert(parent, node->payload);
+                            delete(node);
+                        }
+                    }
+                    /*BST_node* inOrderSuccessor = elementNode->right;
+                    BST_node* inOrderSuccessorParent = nullptr;
+                    while (true){
+                        // go all the way to the left subtree
+                        while (inOrderSuccessor->left != nullptr) {
+                            inOrderSuccessorParent = inOrderSuccessor;
+                            inOrderSuccessor = inOrderSuccessor->left;
+                        }
+                        if (inOrderSuccessor->right != nullptr) {
+                            inOrderSuccessorParent = inOrderSuccessor;
+                            inOrderSuccessor = inOrderSuccessor->right;
+                        } else
+                            break;
+                    }
 
                     if (parent != nullptr) {
                         if (parent->right == elementNode)
@@ -173,20 +198,21 @@ namespace blt {
                             parent->left = inOrderSuccessor;
                         else
                             throw binary_search_tree_error("Parent node doesn't own child!\n");
-                    } else 
+                    } else
                         m_root = inOrderSuccessor;
                     // reconstruct the node's children
                     inOrderSuccessor->left = elementNode->left;
                     inOrderSuccessor->right = elementNode->right;
                     // delete the parent's reference to the moved node
-                    if (inOrderSuccessorParent != nullptr){
+                    if (inOrderSuccessorParent != nullptr) {
                         if (inOrderSuccessorParent->left == inOrderSuccessor)
-                            inOrderSuccessorParent->left = inOrderSuccessorReplacement;
+                            inOrderSuccessorParent->left = nullptr;
                         else if (inOrderSuccessorParent->right == inOrderSuccessor)
-                            inOrderSuccessorParent->right = inOrderSuccessorReplacement;
+                            inOrderSuccessorParent->right = nullptr;
                         else
                             throw binary_search_tree_error("Parent does not contain child!\n");
                     }
+                    rebalance(parent);*/
                 } else {
                     auto replacementNode = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                     if (parent == nullptr)

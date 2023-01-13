@@ -73,6 +73,15 @@ namespace blt {
                 cyclicPoints.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
             }
     };
+
+    class Profiler {
+        private:
+            
+        public:
+            
+    };
+    
+    void createProfiler(Profiler* profiler);
 }
 
 #endif //BLT_PROFILER_H
