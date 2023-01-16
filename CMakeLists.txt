@@ -22,6 +22,7 @@ endif()
 
 #include parallel hashmaps if the user decided to download the submodule.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/CMakeLists.txt)
+    set(USE_PHMAPS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/)
 endif()
 
@@ -34,7 +35,9 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(BLT ${STD_FILES} ${PROFILING_FILES})
 target_include_directories(BLT PUBLIC include/)
-target_link_libraries(BLT phmap)
+if(${USE_PHMAPS})
+     target_link_libraries(BLT phmap)
+endif()
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
 if(${BUILD_TESTS})
