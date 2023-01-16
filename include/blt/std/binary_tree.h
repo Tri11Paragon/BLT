@@ -160,6 +160,7 @@ namespace blt {
                     if (parent == nullptr) {
                         m_root = nullptr;
                     } else {
+                        // remove references to the nodes, we will add them later. We have a copy of the pointers which will be deleted.
                         if (parent->right == elementNode)
                             parent->right = nullptr;
                         else if (parent->left == elementNode)
@@ -167,6 +168,7 @@ namespace blt {
                         else
                             throw binary_search_tree_error("Parent node doesn't own child!\n");
                     }
+                    // re-add all nodes to the tree, this is a terrible way of doing this, TODO.
                     for (auto* node : traverseNodes) {
                         if (node != elementNode) {
                             if (parent == nullptr) {
@@ -176,43 +178,6 @@ namespace blt {
                             delete(node);
                         }
                     }
-                    /*BST_node* inOrderSuccessor = elementNode->right;
-                    BST_node* inOrderSuccessorParent = nullptr;
-                    while (true){
-                        // go all the way to the left subtree
-                        while (inOrderSuccessor->left != nullptr) {
-                            inOrderSuccessorParent = inOrderSuccessor;
-                            inOrderSuccessor = inOrderSuccessor->left;
-                        }
-                        if (inOrderSuccessor->right != nullptr) {
-                            inOrderSuccessorParent = inOrderSuccessor;
-                            inOrderSuccessor = inOrderSuccessor->right;
-                        } else
-                            break;
-                    }
-
-                    if (parent != nullptr) {
-                        if (parent->right == elementNode)
-                            parent->right = inOrderSuccessor;
-                        else if (parent->left == elementNode)
-                            parent->left = inOrderSuccessor;
-                        else
-                            throw binary_search_tree_error("Parent node doesn't own child!\n");
-                    } else
-                        m_root = inOrderSuccessor;
-                    // reconstruct the node's children
-                    inOrderSuccessor->left = elementNode->left;
-                    inOrderSuccessor->right = elementNode->right;
-                    // delete the parent's reference to the moved node
-                    if (inOrderSuccessorParent != nullptr) {
-                        if (inOrderSuccessorParent->left == inOrderSuccessor)
-                            inOrderSuccessorParent->left = nullptr;
-                        else if (inOrderSuccessorParent->right == inOrderSuccessor)
-                            inOrderSuccessorParent->right = nullptr;
-                        else
-                            throw binary_search_tree_error("Parent does not contain child!\n");
-                    }
-                    rebalance(parent);*/
                 } else {
                     auto replacementNode = elementNode->left != nullptr ? elementNode->left : elementNode->right;
                     if (parent == nullptr)
@@ -233,9 +198,8 @@ namespace blt {
                 return inOrderTraverse(m_root);
             }
             
-            inline BST_node* debug() {
-                return m_root;
-            }
+            inline BST_node* findMin(){return findMin(m_root);}
+            inline BST_node* findMax(){return findMax(m_root);}
             
             ~node_binary_search_tree() {
                 auto inOrder = inOrderTraverse();
@@ -245,13 +209,15 @@ namespace blt {
     };
     
     template<typename T>
-    class flat_binary_search_tree {
+    class heap {
         private:
-        
+            //TODO
     };
     
     template<typename T>
     using node_BST = node_binary_search_tree<T>;
+    template<typename T>
+    using flat_binary_search_tree = heap<T>;
     template<typename T>
     using flat_BST = flat_binary_search_tree<T>;
     
