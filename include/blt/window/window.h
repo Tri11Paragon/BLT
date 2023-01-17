@@ -19,16 +19,10 @@
 
 namespace blt {
 
-class window;
-
-#define WINDOW_MAP BLT_MAP_FUNC<window*, window*>
-
-extern WINDOW_MAP activeWindows;
-
 class window {
     protected:
         bool m_windowOpen = true;
-        int m_width, m_height;
+        int m_width = 800, m_height = 600;
 
         std::vector<std::function<void(window*)>> renderFunctions{};
         std::vector<std::function<void(window*, int, bool)>> keyListeners{};
@@ -37,20 +31,15 @@ class window {
         KEY_MAP keysDown{};
         KEY_MAP mouseDown{};
     public:
-        window() {
-            activeWindows.insert({this, this});
-        }
+        window() = default;
         window(int width, int height) {
-            activeWindows.insert({this, this});
             m_width = width;
             m_height = height;
         }
         virtual void createWindow() = 0;
         virtual void startMainLoop() = 0;
         virtual void destroyWindow() = 0;
-        virtual ~window() {
-            activeWindows.insert({this, nullptr});
-        };
+        virtual ~window() = 0;
 
         virtual inline bool setResizeable(bool resizeEnabled) = 0;
         virtual inline bool setWindowSize(int width, int height) = 0;

@@ -6,5 +6,5 @@
 #include <blt/window/window.h>
 
 namespace blt {
-    WINDOW_MAP activeWindows;
+    
 }
