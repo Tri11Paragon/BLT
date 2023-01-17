@@ -8,13 +8,25 @@
 #define BLT_WINDOW_H
 
 #include <functional>
+#include <vector>
+
+#ifndef BLT_MAP_FUNC
+#include <unordered_map>
+#define BLT_MAP_FUNC std::unordered_map
+#endif
+
+#define KEY_MAP BLT_MAP_FUNC<integer, bool>
 
 namespace blt {
 
 class window {
+    protected:
+        bool windowOpen = true;
+        std::vector<std::function<void()>> renderFunctions;
     public:
         window() = default;
         virtual void createWindow() = 0;
+        virtual void startMainLoop() = 0;
         virtual void destroyWindow() = 0;
         virtual ~window() = 0;
 
@@ -22,6 +34,11 @@ class window {
         virtual bool setWindowSize(int width, int height) = 0;
         virtual int getWidth() = 0;
         virtual int getHeight() = 0;
+
+        virtual bool isWindowOpen() {return windowOpen;};
+        virtual void registerLoopFunction(std::function<void()> func) {
+            renderFunctions.push_back(func);
+        }
 
         virtual bool isKeyDown(int key) = 0;
         virtual bool isMouseDown(int button) = 0;
