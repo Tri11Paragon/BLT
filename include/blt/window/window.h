@@ -50,7 +50,7 @@ class window {
         virtual inline void closeWindow(){
             m_windowOpen = false;
         }
-        virtual inline void registerLoopFunction(std::function<void(window*)> func) {
+        virtual inline void registerLoopFunction(const std::function<void(window*)>& func) {
             renderFunctions.push_back(func);
         }
 
