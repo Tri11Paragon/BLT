@@ -57,11 +57,11 @@ class window {
         virtual inline bool isKeyDown(int key) const { return keysDown.at(key); }
         virtual inline bool isMouseDown(int button) const {return mouseDown.at(button);};
         // Function signature is window pointer to this, key press, pressed/released (true/false)
-        virtual inline void registerKeyListener(std::function<void(window*, int, bool)> listener) {
+        virtual inline void registerKeyListener(const std::function<void(window*, int, bool)>& listener) {
             keyListeners.push_back(listener);
         }
         // Function signature is window pointer to this, mouse button press, pressed/released (true/false)
-        virtual inline void registerMouseListener(std::function<void(window*, int, bool)> listener) {
+        virtual inline void registerMouseListener(const std::function<void(window*, int, bool)>& listener) {
             mouseListeners.push_back(listener);
         }
 };
