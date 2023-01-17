@@ -19,27 +19,38 @@
 
 namespace blt {
 
+class window;
+
+#define WINDOW_MAP BLT_MAP_FUNC<window*, window*>
+
+extern WINDOW_MAP activeWindows;
+
 class window {
     protected:
         bool m_windowOpen = true;
         int m_width, m_height;
 
-        std::vector<std::function<void()>> renderFunctions{};
+        std::vector<std::function<void(window*)>> renderFunctions{};
         std::vector<std::function<void(window*, int, bool)>> keyListeners{};
         std::vector<std::function<void(window*, int, bool)>> mouseListeners{};
 
         KEY_MAP keysDown{};
         KEY_MAP mouseDown{};
     public:
-        window() = default;
+        window() {
+            activeWindows.insert({this, this});
+        }
         window(int width, int height) {
+            activeWindows.insert({this, this});
             m_width = width;
             m_height = height;
         }
         virtual void createWindow() = 0;
         virtual void startMainLoop() = 0;
         virtual void destroyWindow() = 0;
-        virtual ~window() = 0;
+        virtual ~window() {
+            activeWindows.insert({this, nullptr});
+        };
 
         virtual inline bool setResizeable(bool resizeEnabled) = 0;
         virtual inline bool setWindowSize(int width, int height) = 0;
@@ -50,7 +61,7 @@ class window {
         virtual inline void closeWindow(){
             m_windowOpen = false;
         }
-        virtual inline void registerLoopFunction(std::function<void()> func) {
+        virtual inline void registerLoopFunction(std::function<void(window*)> func) {
             renderFunctions.push_back(func);
         }
 
