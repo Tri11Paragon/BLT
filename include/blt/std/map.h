@@ -9,7 +9,7 @@
 
 template<typename K, typename V, typename HASH = std::hash<K>>
 class hashmap {
-    
+
 };
 
 #endif //BLT_TESTS_MAP_H

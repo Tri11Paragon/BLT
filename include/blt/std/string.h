@@ -13,6 +13,31 @@
 #include <vector>
 
 namespace blt::String {
+    
+    static inline bool starts_with(const std::string& string, const std::string& search){
+        if (search.length() > string.length())
+            return false;
+        auto chars = string.c_str();
+        auto search_chars = search.c_str();
+        for (int i = 0; i < search.length(); i++){
+            if (chars[i] != search_chars[i])
+                return false;
+        }
+        return true;
+    }
+    
+    static inline bool ends_with(const std::string& string, const std::string& search){
+        if (search.length() > string.length())
+            return false;
+        auto chars = string.c_str();
+        auto search_chars = search.c_str();
+        auto startPosition = string.length() - search.length();
+        for (int i = 0; i < search.length(); i++){
+            if (chars[startPosition + i] != search_chars[i])
+                return false;
+        }
+        return true;
+    }
     /**
      * Converts the string into lower case
      * @param s string to lower case
