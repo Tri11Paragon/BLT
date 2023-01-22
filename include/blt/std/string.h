@@ -7,6 +7,7 @@
 #ifndef BLT_STRING_H
 #define BLT_STRING_H
 
+#include <iostream>
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -37,6 +38,27 @@ namespace blt::String {
                 return false;
         }
         return true;
+    }
+    
+    static inline bool contains(const std::string& string, const std::string& search){
+        if (search.length() > string.length())
+            return false;
+        auto chars = string.c_str();
+        auto search_chars = search.c_str();
+        for (int i = 0; i < string.length(); i++){
+            if (chars[i] == search_chars[0]) {
+                bool correct = true;
+                for (int j = 0; j < search.length(); j++) {
+                    if (chars[i + j] != search_chars[j]) {
+                        correct = false;
+                        break;
+                    }
+                }
+                if (correct)
+                    return true;
+            }
+        }
+        return false;
     }
     /**
      * Converts the string into lower case

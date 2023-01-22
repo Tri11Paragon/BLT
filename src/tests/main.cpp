@@ -6,5 +6,5 @@ int main() {
     binaryTreeTest();
     
     std::string hello = "superSexyMax";
-    std::cout << "String starts with: " << blt::String::ends_with(hello, "Max") << "\n";
+    std::cout << "String starts with: " << blt::String::contains(hello, "superSexyMaxE") << "\n";
 }
