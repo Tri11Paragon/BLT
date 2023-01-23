@@ -1,6 +1,6 @@
 /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/opt/netbrains/clion/clion-2022.1.3/bin/ninja/linux/ninja -DBUILD_TESTS:BOOL=ON -G Ninja -S /home/brett/Documents/code/c++/BLT -B /home/brett/Documents/code/c++/BLT/cmake-build-release
 -- Detected PHMAP Version - 1.3.8
-Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/queues.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/random.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/string.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp
+Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/queues.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/random.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/string.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp
 Profiler Files /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp
 Source: /home/brett/Documents/code/c++/BLT
 Current Source: /home/brett/Documents/code/c++/BLT
