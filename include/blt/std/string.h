@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace blt::String {
+namespace blt::string {
     
     static inline bool starts_with(const std::string& string, const std::string& search){
         if (search.length() > string.length())

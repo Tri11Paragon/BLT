@@ -1,3 +1,4 @@
-Utility classes start with captials (IE classes which are purely static)
+//Utility classes start with captials (IE classes which are purely static)
+Utility classes are namespaces all lower case.
 everything else is camel cased underscore to conform to what most of the C libs seem to use
 Template types should be capital camel case
