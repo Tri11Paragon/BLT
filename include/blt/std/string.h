@@ -111,7 +111,7 @@ namespace blt::string {
         s.erase(
                 s.begin(), std::find_if(
                         s.begin(), s.end(), [](unsigned char ch) {
-                            return !std::isspace(ch);
+                            return !std::isblank(ch);
                         }
                 ));
         return s;
@@ -122,7 +122,7 @@ namespace blt::string {
         s.erase(
                 std::find_if(
                         s.rbegin(), s.rend(), [](unsigned char ch) {
-                            return !std::isspace(ch);
+                            return !std::isblank(ch);
                         }
                 ).base(), s.end());
         return s;

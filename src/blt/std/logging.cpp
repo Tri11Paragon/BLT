@@ -7,9 +7,11 @@
 #include <blt/std/time.h>
 #include <cstdarg>
 #include <string>
-#include <sstream>
 #include <iostream>
 #include "blt/std/string.h"
+#include <fstream>
+#include <utility>
+#include <ios>
 
 // https://en.cppreference.com/w/cpp/utility/variadic
 // https://medium.com/swlh/variadic-functions-3419c287a0d2
@@ -18,6 +20,43 @@
 
 
 namespace blt::logging {
+    
+    class LogFileWriter {
+        private:
+            std::string m_path;
+            std::fstream* output;
+            int currentLines = 0;
+            static constexpr int MAX_LINES = 100000;
+        public:
+            explicit LogFileWriter(const std::string& path): m_path(path){
+                auto currentTime = System::getTimeStringFS();
+                output = new std::fstream(path + currentTime + ".log", std::ios::out | std::ios::app);
+                if (!output->good()){
+                    throw std::runtime_error("Unable to open console filestream!\n");
+                }
+            }
+            
+            void writeLine(const std::string& line){
+                if (!output->good()){
+                    std::cerr << "There has been an error in the logging file stream!\n";
+                    output->clear();
+                }
+                *output << line;
+                currentLines++;
+                if (currentLines > MAX_LINES){
+                    output->flush();
+                    output->close();
+                    delete(output);
+                    currentLines = 0;
+                    auto currentTime = System::getTimeStringFS();
+                    output = new std::fstream(m_path + currentTime + ".log");
+                }
+            }
+            
+            ~LogFileWriter() {
+                delete(output);
+            }
+    };
     
     void applyFormatting(const std::string& format, std::string& output, va_list& args){
         char formattedChars[format.length()];
@@ -45,8 +84,11 @@ namespace blt::logging {
     
     // by default everything is enabled
     LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true, "./"};
+    LogFileWriter writer{"./"};
     
     void init(LOG_PROPERTIES properties) {
+        if (BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory)
+            writer = LogFileWriter{properties.m_directory};
         BLT_LOGGING_PROPERTIES = properties;
     }
     
@@ -54,20 +96,28 @@ namespace blt::logging {
         std::string outputString = System::getTimeStringLog();
         outputString += levelNames[level];
         outputString += str;
+        
+        std::string fileString = outputString;
     
         if (BLT_LOGGING_PROPERTIES.m_useColor) {
             outputString = levelColors[level] + outputString;
             outputString += "\033[0m";
         }
     
-        if (hasEndingLinefeed || auto_line)
+        if (hasEndingLinefeed || auto_line) {
             outputString += "\n";
+            fileString += "\n";
+        }
     
         if (BLT_LOGGING_PROPERTIES.m_logToConsole) {
             if (level > WARN)
                 std::cerr << outputString;
             else
                 std::cout << outputString;
+        }
+        
+        if (BLT_LOGGING_PROPERTIES.m_logToFile) {
+            writer.writeLine(fileString);
         }
     }
     
