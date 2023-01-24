@@ -1,10 +1,8 @@
-# **BLT**
+# **BLT v0.2a**
 
 ![Icon](icon_large.png)
 
 ### A common utilties library of missing stl features. (and more!)
-
----
 
 # **Features**
 - ## Data Structures
