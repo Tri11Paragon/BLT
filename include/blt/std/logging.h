@@ -7,6 +7,8 @@
 #ifndef BLT_TESTS_LOGGING_H
 #define BLT_TESTS_LOGGING_H
 
+#include <string>
+
 namespace blt::logging {
     
     enum LOG_LEVEL {
@@ -26,51 +28,47 @@ namespace blt::logging {
     };
     
     void init(LOG_PROPERTIES properties);
-    void log(LOG_LEVEL level, bool auto_line, const char* format, ...);
+    void log(const std::string& format, LOG_LEVEL level, int auto_line, ...);
+    void log(int i, LOG_LEVEL level, int auto_line);
+    void log(long i, LOG_LEVEL level, int auto_line);
+    void log(unsigned int i, LOG_LEVEL level, int auto_line);
+    void log(unsigned long i, LOG_LEVEL level, int auto_line);
+    void log(char i, LOG_LEVEL level, int auto_line);
+    void log(unsigned char i, LOG_LEVEL level, int auto_line);
+    void log(short i, LOG_LEVEL level, int auto_line);
+    void log(unsigned short i, LOG_LEVEL level, int auto_line);
+    void log(float f, LOG_LEVEL level, int auto_line);
+    void log(double f, LOG_LEVEL level, int auto_line);
 }
 
 #ifdef BLT_DISABLE_LOGGING
-    #define BLT_TRACE(format)
-    #define BLT_DEBUG(format)
-    #define BLT_INFO(format)
-    #define BLT_WARN(format)
-    #define BLT_ERROR(format)
-    #define BLT_FATAL(format)
+    #define BLT_TRACE(format, args...)
+    #define BLT_DEBUG(format, args...)
+    #define BLT_INFO(format, args...)
+    #define BLT_WARN(format, args...)
+    #define BLT_ERROR(format, args...)
+    #define BLT_FATAL(format, args...)
     
-    #define BLT_TRACE_FMT(format, args...)
-    #define BLT_DEBUG_FMT(format, args...)
-    #define BLT_INFO_FMT(format, args...)
-    #define BLT_WARN_FMT(format, args...)
-    #define BLT_ERROR_FMT(format, args...)
-    #define BLT_FATAL_FMT(format, args...)
+    #define BLT_TRACE_LN(format, args...)
+    #define BLT_DEBUG_LN(format, args...)
+    #define BLT_INFO_LN(format, args...)
+    #define BLT_WARN_LN(format, args...)
+    #define BLT_ERROR_LN(format, args...)
+    #define BLT_FATAL_LN(format, args...)
 #else
-    #define BLT_TRACE(format) log(blt::logging::TRACE, false, format);
-    #define BLT_DEBUG(format) log(blt::logging::DEBUG, false, format);
-    #define BLT_INFO(format) log(blt::logging::INFO, false, format);
-    #define BLT_WARN(format) log(blt::logging::WARN, false, format);
-    #define BLT_ERROR(format) log(blt::logging::ERROR, false, format);
-    #define BLT_FATAL(format) log(blt::logging::FATAL, false, format);
+    #define BLT_TRACE(format, ...) log(format, blt::logging::TRACE, false, ##__VA_ARGS__);
+    #define BLT_DEBUG(format, ...) log(format, blt::logging::DEBUG, false, ##__VA_ARGS__);
+    #define BLT_INFO(format, ...) log(format, blt::logging::INFO, false, ##__VA_ARGS__);
+    #define BLT_WARN(format, ...) log(format, blt::logging::WARN, false, ##__VA_ARGS__);
+    #define BLT_ERROR(format, ...) log(format, blt::logging::ERROR, false, ##__VA_ARGS__);
+    #define BLT_FATAL(format, ...) log(format, blt::logging::FATAL, false, ##__VA_ARGS__);
     
-    #define BLT_TRACE_FMT(format, args...) log(blt::logging::TRACE, false, format, args);
-    #define BLT_DEBUG_FMT(format, args...) log(blt::logging::DEBUG, false, format, args);
-    #define BLT_INFO_FMT(format, args...) log(blt::logging::INFO, false, format, args);
-    #define BLT_WARN_FMT(format, args...) log(blt::logging::WARN, false, format, args);
-    #define BLT_ERROR_FMT(format, args...) log(blt::logging::ERROR, false, format, args);
-    #define BLT_FATAL_FMT(format, args...) log(blt::logging::FATAL, false, format, args);
-    
-    #define BLT_TRACE_LN(format) log(blt::logging::TRACE, true, format);
-    #define BLT_DEBUG_LN(format) log(blt::logging::DEBUG, true, format);
-    #define BLT_INFO_LN(format) log(blt::logging::INFO, true, format);
-    #define BLT_WARN_LN(format) log(blt::logging::WARN, true, format);
-    #define BLT_ERROR_LN(format) log(blt::logging::ERROR, true, format);
-    #define BLT_FATAL_LN(format) log(blt::logging::FATAL, true, format);
-    
-    #define BLT_TRACE_FMT_LN(format, args...) log(blt::logging::TRACE, true, format, args);
-    #define BLT_DEBUG_FMT_LN(format, args...) log(blt::logging::DEBUG, true, format, args);
-    #define BLT_INFO_FMT_LN(format, args...) log(blt::logging::INFO, true, format, args);
-    #define BLT_WARN_FMT_LN(format, args...) log(blt::logging::WARN, true, format, args);
-    #define BLT_ERROR_FMT_LN(format, args...) log(blt::logging::ERROR, true, format, args);
-    #define BLT_FATAL_FMT_LN(format, args...) log(blt::logging::FATAL, true, format, args);
+    #define BLT_TRACE_LN(format, ...) log(format, blt::logging::TRACE, true, ##__VA_ARGS__);
+    #define BLT_DEBUG_LN(format, ...) log(format, blt::logging::DEBUG, true, ##__VA_ARGS__);
+    #define BLT_INFO_LN(format, ...) log(format, blt::logging::INFO, true, ##__VA_ARGS__);
+    #define BLT_WARN_LN(format, ...) log(format, blt::logging::WARN, true, ##__VA_ARGS__);
+    #define BLT_ERROR_LN(format, ...) log(format, blt::logging::ERROR, true, ##__VA_ARGS__);
+    #define BLT_FATAL_LN(format, ...) log(format, blt::logging::FATAL, true, ##__VA_ARGS__);
 #endif
 
 #endif //BLT_TESTS_LOGGING_H
