@@ -56,7 +56,7 @@ namespace blt::logging {
     #define BLT_ERROR_LN(format, args...)
     #define BLT_FATAL_LN(format, args...)
 #else
-    #define BLT_TRACE(format, ...) log(format, blt::logging::TRACE, false, ##__VA_ARGS__);
+    /*#define BLT_TRACE(format, ...) log(format, blt::logging::TRACE, false, ##__VA_ARGS__);
     #define BLT_DEBUG(format, ...) log(format, blt::logging::DEBUG, false, ##__VA_ARGS__);
     #define BLT_INFO(format, ...) log(format, blt::logging::INFO, false, ##__VA_ARGS__);
     #define BLT_WARN(format, ...) log(format, blt::logging::WARN, false, ##__VA_ARGS__);
@@ -68,7 +68,14 @@ namespace blt::logging {
     #define BLT_INFO_LN(format, ...) log(format, blt::logging::INFO, true, ##__VA_ARGS__);
     #define BLT_WARN_LN(format, ...) log(format, blt::logging::WARN, true, ##__VA_ARGS__);
     #define BLT_ERROR_LN(format, ...) log(format, blt::logging::ERROR, true, ##__VA_ARGS__);
-    #define BLT_FATAL_LN(format, ...) log(format, blt::logging::FATAL, true, ##__VA_ARGS__);
+    #define BLT_FATAL_LN(format, ...) log(format, blt::logging::FATAL, true, ##__VA_ARGS__);*/
+    
+    #define BLT_TRACE(format, ...) log(format, blt::logging::TRACE, true, ##__VA_ARGS__);
+    #define BLT_DEBUG(format, ...) log(format, blt::logging::DEBUG, true, ##__VA_ARGS__);
+    #define BLT_INFO(format, ...) log(format, blt::logging::INFO, true, ##__VA_ARGS__);
+    #define BLT_WARN(format, ...) log(format, blt::logging::WARN, true, ##__VA_ARGS__);
+    #define BLT_ERROR(format, ...) log(format, blt::logging::ERROR, true, ##__VA_ARGS__);
+    #define BLT_FATAL(format, ...) log(format, blt::logging::FATAL, true, ##__VA_ARGS__);
 #endif
 
 #endif //BLT_TESTS_LOGGING_H

@@ -19,13 +19,6 @@ int main() {
     BLT_ERROR("Hello World!\n");
     BLT_FATAL("Hello World!\n");
     
-    BLT_TRACE_LN("Goodbye World!\n");
-    BLT_DEBUG_LN("Goodbye World!\n");
-    BLT_INFO_LN("Goodbye World!\n");
-    BLT_WARN_LN("Goodbye World!");
-    BLT_ERROR_LN("Goodbye World!");
-    BLT_FATAL_LN("Goodbye World!");
-    
     std::string hello = "superSexyMax";
     std::cout << "String starts with: " << blt::string::contains(hello, "superSexyMaxE") << "\n";
     
