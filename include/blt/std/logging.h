@@ -17,9 +17,10 @@ namespace blt::logging {
         bool m_useColor = true;
         bool m_logToConsole = true;
         bool m_logToFile = true;
+        const char* m_directory = "./";
         
-        explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile):
-                m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile) {}
+        explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile, const char* directory):
+                m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile), m_directory(directory) {}
         
         explicit constexpr LOG_PROPERTIES() = default;
     };

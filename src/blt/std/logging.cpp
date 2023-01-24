@@ -4,6 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/logging.h>
+#include <blt/std/time.h>
 #include <cstdarg>
 #include <string>
 #include <sstream>
@@ -92,16 +93,16 @@ namespace blt::logging {
     };
     
     const char* levelNames[6] = {
-            "[Trace]: ",
-            "[Debug]: ",
-            "[Info]:  ",
-            "[Warn]:  ",
-            "[Error]: ",
-            "[Fatal]: ",
+            "[TRACE]: ",
+            "[DEBUG]: ",
+            "[INFO]:  ",
+            "[WARN]:  ",
+            "[ERROR]: ",
+            "[FATAL]: ",
     };
     
     // by default everything is enabled
-    LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true};
+    LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true, "./"};
     
     void init(LOG_PROPERTIES properties) {
         BLT_LOGGING_PROPERTIES = properties;
@@ -111,17 +112,24 @@ namespace blt::logging {
         va_list args;
         va_start(args, format);
         
-        std::stringstream finalOutput;
         auto formattedString = applyFormat(format, args);
+        bool hasEndingLinefeed = formattedString[formattedString.length()-1] == '\n';
+        
+        if (hasEndingLinefeed)
+            formattedString = formattedString.substr(0, formattedString.length()-1);
+    
+        std::string outputString = System::getTimeStringLog();
+        outputString += levelNames[level];
         
         if (BLT_LOGGING_PROPERTIES.m_useColor)
-            finalOutput << levelColors[level];
-        finalOutput << levelNames[level];
-        finalOutput << formattedString;
-        if (BLT_LOGGING_PROPERTIES.m_useColor)
-            finalOutput << "\033[0m";
+            outputString = levelColors[level] + outputString;
         
-        std::string outputString = finalOutput.str();
+        outputString += formattedString;
+        
+        if (BLT_LOGGING_PROPERTIES.m_useColor)
+            outputString += "\033[0m";
+        if (hasEndingLinefeed || auto_line)
+            outputString += "\n";
         
         if (BLT_LOGGING_PROPERTIES.m_logToConsole) {
             if (level > WARN)

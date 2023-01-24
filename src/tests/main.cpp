@@ -1,7 +1,10 @@
 
+#include <unordered_map>
 #include "binary_trees.h"
 #include "blt/std/string.h"
+#include "blt/profiling/profiler.h"
 #include "blt/std/logging.h"
+#include "blt/std/time.h"
 
 int main() {
     binaryTreeTest();
@@ -23,4 +26,5 @@ int main() {
     std::string hello = "superSexyMax";
     std::cout << "String starts with: " << blt::string::contains(hello, "superSexyMaxE") << "\n";
     
+    return 0;
 }

@@ -4,14 +4,27 @@
  * See LICENSE file for license detail
  */
 
-#ifndef BLT_TIME_H
-#define BLT_TIME_H
-
 #include <chrono>
 #include <ctime>
 #include <sstream>
 
+#ifndef BLT_TIME_H
+#define BLT_TIME_H
+
 namespace blt::System {
+    static inline std::string ensureHasDigits(int current, int digits) {
+        std::string asString = std::to_string(current);
+        auto length = digits - asString.length();
+        if (length <= 0)
+            return asString;
+        std::string zeros;
+        zeros.reserve(length);
+        for (int i = 0; i < length; i++){
+            zeros += '0';
+        }
+        return zeros + asString;
+    }
+    
     static inline auto getCurrentTimeNanoseconds() {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
@@ -39,6 +52,25 @@ namespace blt::System {
         timeString << now->tm_sec;
         return timeString.str();
     }
+    
+    /**
+     * Standard logging time string is formatted as follows:
+     * Hour:Min:Second
+     * @return the BLT standard logging string of time.now
+     */
+    static inline std::string getTimeStringLog() {
+        auto t = std::time(nullptr);
+        auto now = std::localtime(&t);
+        std::string timeString = "[";
+        timeString += ensureHasDigits(now->tm_hour, 2);
+        timeString += ":";
+        timeString += ensureHasDigits(now->tm_min, 2);
+        timeString += ":";
+        timeString += ensureHasDigits(now->tm_sec, 2);
+        timeString += "] ";
+        return timeString;
+    }
+    
     /**
      * @return the BLT standard string of time.now (See getTimeString()) that is filesystem friendly (FAT compatible).
      */

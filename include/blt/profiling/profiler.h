@@ -13,6 +13,7 @@
 #include <vector>
 #include <blt/std/time.h>
 #include <blt/std/queue.h>
+#include <iostream>
 
 namespace blt {
     struct CapturePoint {
@@ -71,6 +72,13 @@ namespace blt {
             */
             void profilerPointCyclic(const std::string_view& name) {
                 cyclicPoints.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
+            }
+            
+            void print(){
+                // TODO:
+                for (auto c : intervals){
+                    std::cout << c.first << " " << c.second.start << " " << c.second.end << ": " << std::to_string((c.second.end - c.second.start)/1000000) << "\n";
+                }
             }
     };
 
