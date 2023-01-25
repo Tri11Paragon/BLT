@@ -19,6 +19,11 @@ int main() {
     BLT_ERROR("Hello World!\n");
     BLT_FATAL("Hello World!\n");
     
+    blt::logging::tlog << "Hello! " << "Double stream insertion! " << 51 << 65 << " ";
+    blt::logging::tlog << "Same Line! ";
+    blt::logging::tlog << "Write the end!\n";
+    blt::logging::tlog << "Seeee\n Super\n";
+    
     std::string hello = "superSexyMax";
     std::cout << "String starts with: " << blt::string::contains(hello, "superSexyMaxE") << "\n";
     

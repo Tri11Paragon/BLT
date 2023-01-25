@@ -27,6 +27,90 @@ namespace blt::logging {
         explicit constexpr LOG_PROPERTIES() = default;
     };
     
+    struct logger {
+        LOG_LEVEL level;
+        void logi(const std::string& str) const;
+        // evil hack, todo: better way
+        #ifdef BLT_DISABLE_LOGGING
+            void log(const std::string& str) {
+            
+            }
+        #else
+            void log(const std::string& str) {
+                logi(str);
+            }
+        #endif
+    };
+    
+    static logger tlog{TRACE};
+    static logger dlog{DEBUG};
+    static logger ilog{INFO};
+    static logger wlog{WARN};
+    static logger elog{ERROR};
+    static logger flog{FATAL};
+
+    static logger trace{TRACE};
+    static logger debug{DEBUG};
+    static logger info{INFO};
+    static logger warn{WARN};
+    static logger error{ERROR};
+    static logger fatal{FATAL};
+    
+    static inline logger& operator<<(logger& out, const std::string& str) {
+        out.log(str);
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const char chr) {
+        out.log(std::to_string(chr));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const unsigned char i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const short i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const unsigned short i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const int i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const unsigned int i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const long i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const unsigned long i) {
+        out.log(std::to_string(i));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const float f) {
+        out.log(std::to_string(f));
+        return out;
+    }
+    
+    static inline logger& operator<<(logger& out, const double f) {
+        out.log(std::to_string(f));
+        return out;
+    }
+    
     void init(LOG_PROPERTIES properties);
     void log(const std::string& format, LOG_LEVEL level, int auto_line, ...);
     void log(int i, LOG_LEVEL level, int auto_line);

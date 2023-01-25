@@ -10,8 +10,9 @@
 #include <iostream>
 #include "blt/std/string.h"
 #include <fstream>
-#include <utility>
+#include <unordered_map>
 #include <ios>
+#include <thread>
 
 // https://en.cppreference.com/w/cpp/utility/variadic
 // https://medium.com/swlh/variadic-functions-3419c287a0d2
@@ -178,6 +179,22 @@ namespace blt::logging {
         log(std::to_string(f), false, level, true);
     }
     
+    std::unordered_map<std::thread::id, std::string> thread_local_strings;
+    
+    void logger::logi(const std::string& str) const {
+        auto id = std::this_thread::get_id();
+        auto th_str = thread_local_strings[id];
+        th_str += str;
+        
+        if (blt::string::contains(str, "\n")){
+            // make sure new lines are properly formatted to prevent danging lines. Ie "[trace]: .... [debug]: ...."
+            bool hasEndingLinefeed = str[str.length()-1] == '\n';
+            logging::log(th_str, false, level, !hasEndingLinefeed);
+            thread_local_strings[id] = "";
+        } else {
+            thread_local_strings[id] = th_str;
+        }
+    }
 }
 
 
