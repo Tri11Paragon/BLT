@@ -20,6 +20,7 @@ namespace blt::logging {
         bool m_logToConsole = true;
         bool m_logToFile = true;
         const char* m_directory = "./";
+        LOG_LEVEL minLevel = TRACE;
         
         explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile, const char* directory):
                 m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile), m_directory(directory) {}
@@ -32,11 +33,11 @@ namespace blt::logging {
         void logi(const std::string& str) const;
         // evil hack, todo: better way
         #ifdef BLT_DISABLE_LOGGING
-            void log(const std::string& str) {
+            void log(const std::string& str) const {
             
             }
         #else
-            void log(const std::string& str) {
+            void log(const std::string& str) const {
                 logi(str);
             }
         #endif
@@ -48,6 +49,11 @@ namespace blt::logging {
     static logger wlog{WARN};
     static logger elog{ERROR};
     static logger flog{FATAL};
+    
+    /**
+     * Always in order of the enum!
+     */
+    static logger loggerLevelDecode[6]{tlog, dlog, ilog, wlog, elog, flog};
 
     static logger trace{TRACE};
     static logger debug{DEBUG};
@@ -126,19 +132,12 @@ namespace blt::logging {
 }
 
 #ifdef BLT_DISABLE_LOGGING
-    #define BLT_TRACE(format, args...)
-    #define BLT_DEBUG(format, args...)
-    #define BLT_INFO(format, args...)
-    #define BLT_WARN(format, args...)
-    #define BLT_ERROR(format, args...)
-    #define BLT_FATAL(format, args...)
-    
-    #define BLT_TRACE_LN(format, args...)
-    #define BLT_DEBUG_LN(format, args...)
-    #define BLT_INFO_LN(format, args...)
-    #define BLT_WARN_LN(format, args...)
-    #define BLT_ERROR_LN(format, args...)
-    #define BLT_FATAL_LN(format, args...)
+    #define BLT_TRACE(format, ...)
+    #define BLT_DEBUG(format, ...)
+    #define BLT_INFO(format, ...)
+    #define BLT_WARN(format, ...)
+    #define BLT_ERROR(format, ...)
+    #define BLT_FATAL(format, ...)
 #else
     /*#define BLT_TRACE(format, ...) log(format, blt::logging::TRACE, false, ##__VA_ARGS__);
     #define BLT_DEBUG(format, ...) log(format, blt::logging::DEBUG, false, ##__VA_ARGS__);

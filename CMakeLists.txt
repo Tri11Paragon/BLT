@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
+option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
 if(${BUILD_STD})
@@ -18,6 +19,12 @@ if(${BUILD_PROFILING})
     file(GLOB_RECURSE PROFILING_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/profiling/*.cpp")
 else()
     set(PROFILING_FILES "")
+endif()
+
+if(${BUILD_NBT})
+    file(GLOB_RECURSE NBT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/nbt/*.cpp")
+else()
+    set(NBT_FILES "")
 endif()
 
 #include parallel hashmaps if the user decided to download the submodule.
@@ -33,8 +40,9 @@ message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(BLT ${STD_FILES} ${PROFILING_FILES})
+add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES})
 target_include_directories(BLT PUBLIC include/)
+
 if(${USE_PHMAPS})
      target_link_libraries(BLT phmap)
 endif()

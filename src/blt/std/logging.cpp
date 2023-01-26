@@ -94,6 +94,8 @@ namespace blt::logging {
     }
     
     inline void log(const std::string& str, bool hasEndingLinefeed, LOG_LEVEL level, int auto_line){
+        if (level < BLT_LOGGING_PROPERTIES.minLevel)
+            return;
         std::string outputString = System::getTimeStringLog();
         outputString += levelNames[level];
         outputString += str;

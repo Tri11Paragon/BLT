@@ -8,17 +8,17 @@
 #define BLT_PROFILER_H
 
 #include <string>
-#include <string_view>
-#include <mutex>
-#include <vector>
-#include <blt/std/time.h>
 #include <blt/std/queue.h>
-#include <iostream>
+#include <unordered_map>
 
-namespace blt {
+/**
+ * Defines several disableable macros (#define BLT_DISABLE_PROFILING). If you do not use these macros profiling will not be disableable
+ */
+
+namespace blt::profiling {
     struct CapturePoint {
-        std::string_view name;
-        long point;
+        std::string name;
+        long point {};
     };
     
     struct CaptureInterval {
@@ -26,70 +26,63 @@ namespace blt {
         long end;
     };
     
-    /**
-     * @tparam HASHMAP_TYPE
-     */
-    template <template<typename, typename> class HASHMAP_TYPE>
-    class profile {
-        private:
-            // profiling intervals.
-            HASHMAP_TYPE<std::string_view, CaptureInterval> intervals{};
-            
-            // profiling points
-            std::vector<blt::flat_queue<CapturePoint>> cyclicPointsHistory{};
-            blt::flat_queue<CapturePoint> points{};
-            blt::flat_queue<CapturePoint> cyclicPoints{};
-            
-            std::mutex timerLock{};
-        public:
-            profile() = default;
-            void finishCycle() {
-                cyclicPointsHistory.push_back(cyclicPoints);
-                // im not sure if this is the correct way to clear a queue, there is no function to do so.
-                cyclicPoints = {};
-            }
-            void startInterval(const std::string_view& name) {
-                std::scoped_lock lock(timerLock);
-                CaptureInterval interval{};
-                interval.start = System::getCurrentTimeNanoseconds();
-                intervals[name] = interval;
-            }
-            void endInterval(const std::string_view& name) {
-                std::scoped_lock lock(timerLock);
-                intervals[name].end = System::getCurrentTimeNanoseconds();
-            }
-            /**
-             * Records the current time for the purpose of reconstructing the execution time between points, in order to find the most common cause for performance issues.
-             * @param name a common name for the point which you are trying to profile. This name should be meaningful as it will be displayed in the output.
-             */
-            void profilerPoint(const std::string_view& name) {
-                points.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
-            }
-            /**
-            * Records the current time for the purpose of reconstructing the execution time between points, in order to find the most common cause for performance issues.
-            * Uses a separate tracking device that will be reset when finishCycle(); is called.
-            * @param name a common name for the point which you are trying to profile. This name should be meaningful as it will be displayed in the output.
-            */
-            void profilerPointCyclic(const std::string_view& name) {
-                cyclicPoints.push(CapturePoint{name, System::getCurrentTimeNanoseconds()});
-            }
-            
-            void print(){
-                // TODO:
-                for (auto c : intervals){
-                    std::cout << c.first << " " << c.second.start << " " << c.second.end << ": " << std::to_string((c.second.end - c.second.start)/1000000) << "\n";
-                }
-            }
-    };
-
-    class Profiler {
-        private:
-            
-        public:
-            
+    struct Profile {
+        std::unordered_map<std::string, CaptureInterval> intervals;
+        blt::flat_queue<CapturePoint> points;
     };
     
-    void createProfiler(Profiler* profiler);
+    void startInterval(const std::string& profileName, const std::string& intervalName);
+    void endInterval(const std::string& profileName, const std::string& intervalName);
+    
+    void point(const std::string& profileName, const std::string& pointName);
+    
+    CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName);
+    Profile getProfile(const std::string& profileName);
+    
+    void printProfile(const std::string& profileName, int loggingLevel);
+    void printOrderedProfile(const std::string& profileName, int loggingLevel);
+    
+    void discardProfiles();
+    void discardIntervals(const std::string& profileName);
+    void discardPoints(const std::string& profileName);
 }
 
 #endif //BLT_PROFILER_H
+
+#ifdef BLT_DISABLE_PROFILING
+    #define BLT_START_INTERVAL(profileName, intervalName)
+    #define BLT_END_INTERVAL(profileName, intervalName)
+    #define BLT_POINT(profileName, pointName)
+    #define BLT_PRINT_PROFILE(profileName)
+    #define BLT_PRINT_ORDERED(profileName)
+    
+    #define BLT_PRINT_PROFILE_TRACE(profileName)
+    #define BLT_PRINT_ORDERED_TRACE(profileName)
+    
+    #define BLT_PRINT_PROFILE_DEBUG(profileName)
+    #define BLT_PRINT_ORDERED_DEBUG(profileName)
+    
+    #define BLT_PRINT_PROFILE_INFO(profileName)
+    #define BLT_PRINT_ORDERED_INFO(profileName)
+    
+    #define BLT_PRINT_PROFILE_WARN(profileName)
+    #define BLT_PRINT_ORDERED_WARN(profileName)
+#else
+    #define BLT_START_INTERVAL(profileName, intervalName) blt::profiling::startInterval(profileName, intervalName);
+    #define BLT_END_INTERVAL(profileName, intervalName) blt::profiling::endInterval(profileName, intervalName);
+    #define BLT_POINT(profileName, pointName) blt::profiling::point(profileName, pointName);
+    #define BLT_PRINT_PROFILE(profileName) blt::profiling::printProfile(profileName, -1);
+    #define BLT_PRINT_ORDERED(profileName) blt::profiling::printOrderedProfile(profileName, -1);
+    
+    #define BLT_PRINT_PROFILE_TRACE(profileName) blt::profiling::printProfile(profileName, 0);
+    #define BLT_PRINT_ORDERED_TRACE(profileName) blt::profiling::printOrderedProfile(profileName, 0);
+    
+    #define BLT_PRINT_PROFILE_DEBUG(profileName) blt::profiling::printProfile(profileName, 1);
+    #define BLT_PRINT_ORDERED_DEBUG(profileName) blt::profiling::printOrderedProfile(profileName, 1);
+    
+    #define BLT_PRINT_PROFILE_INFO(profileName) blt::profiling::printProfile(profileName, 2);
+    #define BLT_PRINT_ORDERED_INFO(profileName) blt::profiling::printOrderedProfile(profileName, 2);
+    
+    #define BLT_PRINT_PROFILE_WARN(profileName) blt::profiling::printProfile(profileName, 3);
+    #define BLT_PRINT_ORDERED_WARN(profileName) blt::profiling::printOrderedProfile(profileName, 3);
+#endif

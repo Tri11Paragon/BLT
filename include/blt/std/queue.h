@@ -117,7 +117,7 @@ namespace blt {
         public:
             
             void push(const T& t) {
-                if (m_insertIndex >= m_size) {
+                if (m_insertIndex+1 >= m_size) {
                     expand(m_size * 2);
                 }
                 m_data[m_insertIndex++] = t;
@@ -145,6 +145,14 @@ namespace blt {
             
             int size() {
                 return m_insertIndex - m_headIndex;
+            }
+            
+            T* begin(){
+                return m_data[m_headIndex];
+            }
+            
+            T* end(){
+                return m_data[m_insertIndex];
             }
             
             ~flat_queue() {

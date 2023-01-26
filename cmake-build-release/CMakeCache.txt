@@ -32,6 +32,9 @@ BLT_TESTS_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 BLT_TESTS_SOURCE_DIR:STATIC=/home/brett/Documents/code/c++/BLT
 
+//Build the BLT NBT + eNBT extension
+BUILD_NBT:BOOL=ON
+
 //Build the BLT profiler extension
 BUILD_PROFILING:BOOL=ON
 
