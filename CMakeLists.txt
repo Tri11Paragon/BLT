@@ -9,7 +9,7 @@ option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
-if(${BUILD_STD})
+if(${BUILD_STD} OR ${BUILD_PROFILING})
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")
 else()
     set(STD_FILES "")

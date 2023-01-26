@@ -12,8 +12,40 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
+#include <blt/std/logging.h>
 
 namespace blt::string {
+    
+    /**
+     * Ensure that string str has expected length, pad after the string otherwise.
+     * @param str string to pad
+     * @param expectedLength expected length of the string.
+     * @return a space padded string
+     */
+    static inline std::string postPadWithSpaces(const std::string& str, size_t expectedLength) {
+        auto currentSize = (int)(str.length() - 1);
+        if ((int)expectedLength - currentSize <= 0)
+            return str;
+        auto paddedString = str;
+        for (int i = 0; i < expectedLength - currentSize; i++)
+            paddedString += " ";
+        return paddedString;
+    }
+    
+    /**
+     * Ensure that string str has expected length, pad before the string otherwise.
+     * @param str string to pad
+     * @param expectedLength expected length of the string.
+     * @return a space padded string
+     */
+    static inline std::string prePadWithSpaces(const std::string& str, size_t expectedLength) {
+        auto currentSize = str.length() - 1;
+        auto paddedString = std::string();
+        for (int i = 0; i < expectedLength - currentSize; i++)
+            paddedString += " ";
+        paddedString += str;
+        return paddedString;
+    }
     
     static inline bool starts_with(const std::string& string, const std::string& search){
         if (search.length() > string.length())

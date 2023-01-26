@@ -39,8 +39,8 @@ namespace blt::profiling {
     CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName);
     Profile getProfile(const std::string& profileName);
     
-    void printProfile(const std::string& profileName, int loggingLevel);
-    void printOrderedProfile(const std::string& profileName, int loggingLevel);
+    void printProfile(const std::string& profileName, int loggingLevel = -1);
+    void printOrderedProfile(const std::string& profileName, int loggingLevel = -1);
     
     void discardProfiles();
     void discardIntervals(const std::string& profileName);
@@ -53,36 +53,12 @@ namespace blt::profiling {
     #define BLT_START_INTERVAL(profileName, intervalName)
     #define BLT_END_INTERVAL(profileName, intervalName)
     #define BLT_POINT(profileName, pointName)
-    #define BLT_PRINT_PROFILE(profileName)
-    #define BLT_PRINT_ORDERED(profileName)
-    
-    #define BLT_PRINT_PROFILE_TRACE(profileName)
-    #define BLT_PRINT_ORDERED_TRACE(profileName)
-    
-    #define BLT_PRINT_PROFILE_DEBUG(profileName)
-    #define BLT_PRINT_ORDERED_DEBUG(profileName)
-    
-    #define BLT_PRINT_PROFILE_INFO(profileName)
-    #define BLT_PRINT_ORDERED_INFO(profileName)
-    
-    #define BLT_PRINT_PROFILE_WARN(profileName)
-    #define BLT_PRINT_ORDERED_WARN(profileName)
+    #define BLT_PRINT_PROFILE(profileName, ...)
+    #define BLT_PRINT_ORDERED(profileName, ...)
 #else
     #define BLT_START_INTERVAL(profileName, intervalName) blt::profiling::startInterval(profileName, intervalName);
     #define BLT_END_INTERVAL(profileName, intervalName) blt::profiling::endInterval(profileName, intervalName);
     #define BLT_POINT(profileName, pointName) blt::profiling::point(profileName, pointName);
-    #define BLT_PRINT_PROFILE(profileName) blt::profiling::printProfile(profileName, -1);
-    #define BLT_PRINT_ORDERED(profileName) blt::profiling::printOrderedProfile(profileName, -1);
-    
-    #define BLT_PRINT_PROFILE_TRACE(profileName) blt::profiling::printProfile(profileName, 0);
-    #define BLT_PRINT_ORDERED_TRACE(profileName) blt::profiling::printOrderedProfile(profileName, 0);
-    
-    #define BLT_PRINT_PROFILE_DEBUG(profileName) blt::profiling::printProfile(profileName, 1);
-    #define BLT_PRINT_ORDERED_DEBUG(profileName) blt::profiling::printOrderedProfile(profileName, 1);
-    
-    #define BLT_PRINT_PROFILE_INFO(profileName) blt::profiling::printProfile(profileName, 2);
-    #define BLT_PRINT_ORDERED_INFO(profileName) blt::profiling::printOrderedProfile(profileName, 2);
-    
-    #define BLT_PRINT_PROFILE_WARN(profileName) blt::profiling::printProfile(profileName, 3);
-    #define BLT_PRINT_ORDERED_WARN(profileName) blt::profiling::printOrderedProfile(profileName, 3);
+    #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__);
+    #define BLT_PRINT_ORDERED(profileName, ...) blt::profiling::printOrderedProfile(profileName, ##__VA_ARGS__);
 #endif
