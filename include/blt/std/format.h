@@ -47,6 +47,7 @@ namespace blt::string {
     struct TableColumn {
         std::string columnName;
         size_t maxColumnLength = 0;
+        
         TableColumn(std::string columnName): columnName(std::move(columnName)) {}
     };
     
@@ -60,14 +61,19 @@ namespace blt::string {
             int m_maxColumnWidth;
             std::vector<TableColumn> columns;
             std::vector<TableRow> rows;
-        
+            
             static std::string generateTopSeparator(size_t size);
+            
             std::string generateColumnHeader();
+            
             std::string generateSeparator(size_t size);
+            
             void updateMaxColumnLengths();
+            
             [[nodiscard]] inline size_t columnSize(const TableColumn& column) const {
                 return column.columnName.size() + m_columnPadding * 2;
             }
+        
         public:
             explicit TableFormatter(int columnPadding = 2, int maxColumnWidth = 500):
                     m_columnPadding(columnPadding), m_maxColumnWidth(maxColumnWidth) {}
@@ -75,7 +81,8 @@ namespace blt::string {
             inline void addColumn(const TableColumn& column) {
                 columns.push_back(column);
             }
-            inline void addRow(TableRow row){
+            
+            inline void addRow(TableRow row) {
                 if (row.rowValues.size() > columns.size())
                     throw "Cannot insert more rows than columns!\n";
                 // ensure every row populates every column. This is important as the table generator assumes that all rows are complete!
@@ -84,13 +91,22 @@ namespace blt::string {
                         row.rowValues.emplace_back(" ");
                 rows.push_back(std::move(row));
             }
-            inline void addRow(const std::initializer_list<std::string>& values){
+            
+            inline void addRow(const std::initializer_list<std::string>& values) {
                 TableRow row;
                 for (const auto& value : values)
                     row.rowValues.push_back(value);
                 addRow(row);
             }
+            
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
+    };
+    
+    class LineGraphFormatter {
+        private:
+        
+        public:
+        
     };
     
 }

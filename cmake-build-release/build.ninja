@@ -77,6 +77,13 @@ build CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o: CXX_COMPILER__BLT_Rel
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/profiling
 
+build CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/nbt/nbt_block.cpp || cmake_object_order_depends_target_BLT
+  DEP_FILE = CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
+  OBJECT_DIR = CMakeFiles/BLT.dir
+  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/nbt
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target BLT
@@ -85,7 +92,7 @@ build CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o: CXX_COMPILER__BLT_Rel
 #############################################
 # Link the static library libBLT.a
 
-build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o
+build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = CMakeFiles/BLT.dir
   POST_BUILD = :
@@ -151,34 +158,6 @@ build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
 build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 
 # =============================================================================
-# Write statements declared in CMakeLists.txt:
-# /home/brett/Documents/code/c++/BLT/CMakeLists.txt
-# =============================================================================
-
-
-#############################################
-# Utility command for edit_cache
-
-build libraries/parallel-hashmap/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/brett/Documents/code/c++/BLT/cmake-build-release/libraries/parallel-hashmap && /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-  DESC = No interactive CMake dialog available...
-  restat = 1
-
-build libraries/parallel-hashmap/edit_cache: phony libraries/parallel-hashmap/CMakeFiles/edit_cache.util
-
-
-#############################################
-# Utility command for rebuild_cache
-
-build libraries/parallel-hashmap/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/brett/Documents/code/c++/BLT/cmake-build-release/libraries/parallel-hashmap && /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/bin/cmake --regenerate-during-build -S/home/brett/Documents/code/c++/BLT -B/home/brett/Documents/code/c++/BLT/cmake-build-release
-  DESC = Running CMake to regenerate build system...
-  pool = console
-  restat = 1
-
-build libraries/parallel-hashmap/rebuild_cache: phony libraries/parallel-hashmap/CMakeFiles/rebuild_cache.util
-
-# =============================================================================
 # Target aliases.
 
 build BLT: phony libBLT.a
@@ -191,14 +170,7 @@ build BLT: phony libBLT.a
 #############################################
 # Folder: /home/brett/Documents/code/c++/BLT/cmake-build-release
 
-build all: phony libBLT.a BLT_TESTS libraries/parallel-hashmap/all
-
-# =============================================================================
-
-#############################################
-# Folder: /home/brett/Documents/code/c++/BLT/cmake-build-release/libraries/parallel-hashmap
-
-build libraries/parallel-hashmap/all: phony
+build all: phony libBLT.a BLT_TESTS
 
 # =============================================================================
 # Built-in targets
@@ -207,14 +179,14 @@ build libraries/parallel-hashmap/all: phony
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/brett/Documents/code/c++/BLT/CMakeLists.txt /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/CMakeLists.txt /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/cmake/DetectVersion.cmake /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/cmake/helpers.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/brett/Documents/code/c++/BLT/CMakeLists.txt /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/brett/Documents/code/c++/BLT/CMakeLists.txt /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/CMakeLists.txt /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/cmake/DetectVersion.cmake /home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap/cmake/helpers.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake: phony
+build /home/brett/Documents/code/c++/BLT/CMakeLists.txt /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Compiler/GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/Linux.cmake /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/share/cmake-3.24/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake: phony
 
 
 #############################################
