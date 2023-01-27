@@ -95,7 +95,7 @@ namespace blt::profiling {
         
         for (const auto& interval : intervals) {
             const auto difference = interval.second.end - interval.second.start;
-            formatter.addRow({interval.first, std::to_string(difference), std::to_string(difference/1000000)});
+            formatter.addRow({interval.first, std::to_string(difference), std::to_string(difference/1000000.0)});
         }
         
         std::vector<std::string> updatedLines;
@@ -127,7 +127,7 @@ namespace blt::profiling {
         return {longestName, longestIntervalTime};
     }
     
-    void printOrderedProfile(const std::string& profileName, int loggingLevel) {
+    void printOrderedProfileOld(const std::string& profileName, int loggingLevel) {
         std::vector<std::string> lines;
         const auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
@@ -172,6 +172,39 @@ namespace blt::profiling {
         }
         
         print(lines, loggingLevel);
+    }
+    
+    void printOrderedProfile(const std::string& profileName, int loggingLevel) {
+        const auto& profile = profiles[profileName];
+        const auto& intervals = profile.intervals;
+        const auto& points = profile.points;
+    
+        std::vector<timeOrderContainer> unorderedIntervalVector;
+    
+        for (const auto& interval : intervals) {
+            const auto difference = interval.second.end - interval.second.start;
+            unorderedIntervalVector.emplace_back(difference, interval.first);
+        }
+    
+        std::sort(unorderedIntervalVector.begin(), unorderedIntervalVector.end(), timeCompare);
+    
+        string::TableFormatter formatter;
+        formatter.addColumn({"Order"});
+        formatter.addColumn({"Interval"});
+        formatter.addColumn({"Time (ns)"});
+        formatter.addColumn({"Time (ms)"});
+    
+        int index = 1;
+        for (const auto& interval : unorderedIntervalVector) {
+            formatter.addRow({std::to_string(index++), interval.name, std::to_string(interval.difference), std::to_string(interval.difference / 1000000.0)});
+        }
+    
+        std::vector<std::string> updatedLines;
+        const auto& lines = formatter.createTable(true, true);
+        for (const auto& line : lines)
+            updatedLines.emplace_back(line + "\n");
+    
+        print(updatedLines, loggingLevel);
     }
     
     void discardProfiles() {

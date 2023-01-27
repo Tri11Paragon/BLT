@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
-project(BLT)
+project(BLT VERSION 0.3.1)
 
-set(CMAKE_PROJECT_VERSION 0.3a)
 set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
