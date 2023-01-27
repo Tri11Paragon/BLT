@@ -49,29 +49,15 @@ cmake_ninja_workdir = /home/brett/Documents/code/c++/BLT/cmake-build-release/
 
 build cmake_object_order_depends_target_BLT: phony || CMakeFiles/BLT.dir
 
+build CMakeFiles/BLT.dir/src/blt/std/format.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/format.cpp || cmake_object_order_depends_target_BLT
+  DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/format.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
+  OBJECT_DIR = CMakeFiles/BLT.dir
+  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
+
 build CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
-  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
-  OBJECT_DIR = CMakeFiles/BLT.dir
-  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
-
-build CMakeFiles/BLT.dir/src/blt/std/queues.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/queues.cpp || cmake_object_order_depends_target_BLT
-  DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/queues.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
-  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
-  OBJECT_DIR = CMakeFiles/BLT.dir
-  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
-
-build CMakeFiles/BLT.dir/src/blt/std/random.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/random.cpp || cmake_object_order_depends_target_BLT
-  DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/random.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
-  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
-  OBJECT_DIR = CMakeFiles/BLT.dir
-  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
-
-build CMakeFiles/BLT.dir/src/blt/std/string.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/string.cpp || cmake_object_order_depends_target_BLT
-  DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/string.cpp.o.d
   FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include
   OBJECT_DIR = CMakeFiles/BLT.dir
@@ -99,7 +85,7 @@ build CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o: CXX_COMPILER__BLT_Rel
 #############################################
 # Link the static library libBLT.a
 
-build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/queues.cpp.o CMakeFiles/BLT.dir/src/blt/std/random.cpp.o CMakeFiles/BLT.dir/src/blt/std/string.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o
+build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = CMakeFiles/BLT.dir
   POST_BUILD = :

@@ -5,8 +5,14 @@
 #include "blt/profiling/profiler.h"
 #include "blt/std/logging.h"
 #include "blt/std/time.h"
+#include "blt/std/format.h"
 #include <chrono>
 #include <thread>
+
+void print(const std::vector<std::string>& vtr) {
+    for (const auto& line : vtr)
+        BLT_TRACE(line);
+}
 
 int main() {
     binaryTreeTest();
@@ -51,6 +57,24 @@ int main() {
     
     BLT_PRINT_PROFILE("Help", blt::logging::LOG_LEVEL::TRACE);
     BLT_PRINT_ORDERED("Help", blt::logging::LOG_LEVEL::TRACE);
+    
+    blt::string::TableFormatter formatter;
+    formatter.addColumn(blt::string::TableColumn{"Test1"});
+    formatter.addColumn(blt::string::TableColumn{"Test2"});
+    formatter.addColumn(blt::string::TableColumn{"Test Column"});
+    formatter.addColumn(blt::string::TableColumn{"Test3"});
+    
+    formatter.addRow({"This", "This LARGE", "222", "5000"});
+    formatter.addRow({"OTHER", "LARGE", "6", "1"});
+    formatter.addRow({"hheee", "looo", "m8", "loser"});
+    
+    print(formatter.createTable(true, true));
+    BLT_TRACE("");
+    print(formatter.createTable(false, true));
+    BLT_TRACE("");
+    print(formatter.createTable(true, false));
+    BLT_TRACE("");
+    print(formatter.createTable(false, false));
     
     return 0;
 }
