@@ -62,3 +62,6 @@ namespace blt::profiling {
     #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__);
     #define BLT_PRINT_ORDERED(profileName, ...) blt::profiling::printOrderedProfile(profileName, ##__VA_ARGS__);
 #endif
+
+#define BLT_INTERVAL_START(profileName, intervalName) BLT_START_INTERVAL(profileName, intervalName)
+#define BLT_INTERVAL_END(profileName, intervalName) BLT_END_INTERVAL(profileName, intervalName)

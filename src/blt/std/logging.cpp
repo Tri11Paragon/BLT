@@ -84,7 +84,7 @@ namespace blt::logging {
     };
     
     // by default everything is enabled
-    LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true, "./"};
+    LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true, "./log/"};
     LogFileWriter writer{"./"};
     
     void init(LOG_PROPERTIES properties) {

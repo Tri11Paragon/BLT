@@ -26,10 +26,13 @@ else()
     set(NBT_FILES "")
 endif()
 
-#include parallel hashmaps if the user decided to download the submodule.
-if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/CMakeLists.txt)
-    set(USE_PHMAPS)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap/)
+#include zlib if the user has it.
+find_package(ZLIB QUIET)
+
+if (${ZLIB_FOUND})
+    include_directories(${ZLIB_INCLUDE_DIRS})
+else()
+    message("ZLIB was not found, this is fine however if you wish you use gzip with NBT it is required.")
 endif()
 
 include_directories(include/)
@@ -39,12 +42,16 @@ message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES})
-target_include_directories(BLT PUBLIC include/)
+configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
 
-if(${USE_PHMAPS})
-     target_link_libraries(BLT phmap)
+add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES})
+
+target_include_directories(BLT PUBLIC include/)
+target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
+if(${ZLIB_FOUND})
+     target_link_libraries(BLT PUBLIC ZLIB::ZLIB)
 endif()
+
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
 if(${BUILD_TESTS})

@@ -4,8 +4,8 @@
  * See LICENSE file for license detail
  */
 
-#ifndef BLT_TESTS_LOGGING_H
-#define BLT_TESTS_LOGGING_H
+#ifndef BLT_LOGGING_H
+#define BLT_LOGGING_H
 
 #include <string>
 
@@ -19,7 +19,7 @@ namespace blt::logging {
         bool m_useColor = true;
         bool m_logToConsole = true;
         bool m_logToFile = true;
-        const char* m_directory = "./";
+        const char* m_directory = "./log/";
         LOG_LEVEL minLevel = TRACE;
         
         explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile, const char* directory):

@@ -44,6 +44,123 @@ namespace blt::string {
         return paddedString;
     }
     
+    struct utf8_string {
+        char* characters;
+        unsigned int size;
+    };
+    
+    // taken from java, adapted for c++.
+    static inline utf8_string createUTFString(const std::string& str) {
+        
+        const unsigned int strlen = str.size();
+        unsigned int utflen = strlen;
+        
+        for (int i = 0; i < strlen; i++) {
+            unsigned char c = str[i];
+            if (c >= 0x80 || c == 0)
+                utflen += (c >= 0x800) ? 2 : 1;
+        }
+        
+        if (utflen > 65535 || /* overflow */ utflen < strlen)
+            throw "UTF Error";
+        
+        utf8_string chars{};
+        chars.size = utflen + 2;
+        chars.characters = new char[chars.size];
+        
+        int count = 0;
+        chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
+        chars.characters[count++] = (char) ((utflen >> 8) & 0xFF);
+        
+        int i = 0;
+        for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
+            int c = (unsigned char) str[i];
+            if (c >= 0x80 || c == 0) break;
+            chars.characters[count++] = (char) c;
+        }
+        
+        for (; i < strlen; i++) {
+            int c = (unsigned char) str[i];
+            if (c < 0x80 && c != 0) {
+                chars.characters[count++] = (char) c;
+            } else if (c >= 0x800) {
+                chars.characters[count++] = (char) (0xE0 | ((c >> 12) & 0x0F));
+                chars.characters[count++] = (char) (0x80 | ((c >> 6) & 0x3F));
+                chars.characters[count++] = (char) (0x80 | ((c >> 0) & 0x3F));
+            } else {
+                chars.characters[count++] = (char) (0xC0 | ((c >> 6) & 0x1F));
+                chars.characters[count++] = (char) (0x80 | ((c >> 0) & 0x3F));
+            }
+        }
+        return chars;
+    }
+    
+    static inline std::string getStringFromUTF8(const utf8_string& str) {
+        auto utflen = str.size;
+        int c, char2, char3;
+        int count = 0;
+        int chararr_count = 0;
+        
+        auto chararr = new char[utflen + 1];
+        
+        while (count < utflen) {
+            c = (int) str.characters[count] & 0xff;
+            if (c > 127) break;
+            count++;
+            chararr[chararr_count++] = (char) c;
+        }
+        
+        while (count < utflen) {
+            c = (int) str.characters[count] & 0xff;
+            switch (c >> 4) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    /* 0xxxxxxx*/
+                    count++;
+                    chararr[chararr_count++] = (char) c;
+                    break;
+                case 12:
+                case 13:
+                    /* 110x xxxx   10xx xxxx*/
+                    count += 2;
+                    if (count > utflen)
+                        throw "malformed input: partial character at end";
+                    char2 = (int) str.characters[count - 1];
+                    if ((char2 & 0xC0) != 0x80)
+                        throw "malformed input around byte " + std::to_string(count);
+                    chararr[chararr_count++] = (char) (((c & 0x1F) << 6) |
+                                                       (char2 & 0x3F));
+                case 14:
+                    /* 1110 xxxx  10xx xxxx  10xx xxxx */
+                    count += 3;
+                    if (count > utflen)
+                        throw "malformed input: partial character at end";
+                    char2 = (int) str.characters[count - 2];
+                    char3 = (int) str.characters[count - 1];
+                    if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
+                        throw "malformed input around byte " + std::to_string(count - 1);
+                    chararr[chararr_count++] = (char) (((c & 0x0F) << 12) |
+                                                       ((char2 & 0x3F) << 6) |
+                                                       ((char3 & 0x3F) << 0));
+                    break;
+                default:
+                    /* 10xx xxxx,  1111 xxxx */
+                    throw "malformed input around byte " + std::to_string(count);
+                    break;
+            }
+        }
+        chararr[utflen] = '\0';
+        std::string strs {chararr};
+        delete[] chararr;
+        return strs;
+    }
+    
     struct TableColumn {
         std::string columnName;
         size_t maxColumnLength = 0;

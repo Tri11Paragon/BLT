@@ -8,14 +8,5 @@
 #include <fstream>
 
 namespace blt::nbt {
-    /**
-     * Reads the entire NBT file when the read() function is called.
-     */
-    class NBTReader {
-        private:
-            std::string m_file;
-            
-        public:
-            explicit NBTReader(std::string file): m_file(std::move(file)) {}
-    };
+
 }
