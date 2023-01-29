@@ -43,7 +43,7 @@ inline void nbt_tests(){
     BLT_INFO("%d, %c, %d, %d, %d, %s", testByteIn[0], testByteIn[1], testByteIn[2], testShortIn, testIntIn, strIn.c_str());
     
     
-    auto bufferSize = 1024 * 128;
+    auto bufferSize = 1024 * 1024;
     char* buffer = new char[bufferSize];
     char* read_buffer = new char[bufferSize];
     char* read_block_buffer = new char[bufferSize];
@@ -52,10 +52,43 @@ inline void nbt_tests(){
         buffer[i] = i+1;
     
     BLT_START_INTERVAL("nbt", "Raw Write");
-    std::fstream largeOutput("HeyThere.txt", std::ios::in | std::ios::binary);
-    
-    largeOutput.write(buffer, bufferSize);
+        std::fstream largeOutput("HeyThere.txt", std::ios::out | std::ios::binary);
+        largeOutput.write(buffer, bufferSize);
+        largeOutput.flush();
+        largeOutput.close();
     BLT_END_INTERVAL("nbt", "Raw Write");
+    
+    BLT_START_INTERVAL("nbt", "Raw Read");
+        std::fstream largeInput("HeyThere.txt", std::ios::in | std::ios::binary);
+        largeInput.read(read_buffer, bufferSize);
+        largeInput.close();
+    BLT_END_INTERVAL("nbt", "Raw Read");
+    
+    BLT_START_INTERVAL("nbt", "Block Read");
+        std::fstream largeBlockInput("HeyThere.txt", std::ios::in | std::ios::binary);
+        blt::nbt::NBTByteFStreamReader byteLargeBlockInput(largeBlockInput, 1024 * 128);
+        byteLargeBlockInput.readBytes(read_block_buffer, bufferSize);
+        largeBlockInput.close();
+    BLT_END_INTERVAL("nbt", "Block Read");
+    
+    bool fstream_in_correct = true;
+    bool nbt_block_in_correct = true;
+    for (int i = 0; i < bufferSize; i++) {
+        if (read_buffer[i] != buffer[i])
+            fstream_in_correct = false;
+        if (read_block_buffer[i] != buffer[i])
+            nbt_block_in_correct = false;
+        if (!fstream_in_correct && !nbt_block_in_correct)
+            break;
+    }
+    
+    BLT_INFO("FStream Read Correctly? %s;", fstream_in_correct ? "True" : "False");
+    BLT_INFO("NBT Block Stream Correctly? %s;\n", nbt_block_in_correct ? "True" : "False");
+    BLT_PRINT_ORDERED("nbt");
+    
+    delete[] read_buffer;
+    delete[] read_block_buffer;
+    delete[] buffer;
     
 }
 
