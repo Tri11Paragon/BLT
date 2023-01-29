@@ -58,7 +58,7 @@ namespace blt::profiling {
     }
     
     void printProfile(const std::string& profileName, int loggingLevel) {
-        string::TableFormatter formatter;
+        string::TableFormatter formatter {profileName};
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});
         formatter.addColumn({"Time (ms)"});
@@ -105,7 +105,7 @@ namespace blt::profiling {
     
         std::sort(unorderedIntervalVector.begin(), unorderedIntervalVector.end(), timeCompare);
     
-        string::TableFormatter formatter;
+        string::TableFormatter formatter {profileName};
         formatter.addColumn({"Order"});
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});

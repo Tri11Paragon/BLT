@@ -33,15 +33,16 @@ namespace blt::nbt {
         if (readIndex == 0)
             m_stream.read(m_buffer, (long) m_bufferSize);
         if (readIndex + bytes >= m_bufferSize) {
+            // copy out all the data from the current buffer
             auto bytesLeft = m_bufferSize - readIndex;
             memcpy(buffer, m_buffer + readIndex, bytesLeft);
             readIndex = 0;
             bytes -= bytesLeft;
-            readBytes(buffer + bytesLeft, bytes);
-//            m_stream.read(m_buffer, (long) m_bufferSize);
-//            memcpy(buffer + bytesLeft, m_buffer, bytes);
-//            readIndex += bytes;
+            // now to prevent large scale reading in small blocks, we should just read the entire thing into the buffer.
+            m_stream.read(buffer + bytesLeft, (long) bytes);
         } else {
+            // but in the case that the size of the data read is small, we should read in blocks and copy from that buffer
+            // that should be quicker since file operations are slow.
             std::memcpy(buffer, m_buffer + readIndex, bytes);
             readIndex += bytes;
         }

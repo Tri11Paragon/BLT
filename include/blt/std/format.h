@@ -174,12 +174,13 @@ namespace blt::string {
     
     class TableFormatter {
         private:
+            std::string m_tableName;
             int m_columnPadding;
             int m_maxColumnWidth;
             std::vector<TableColumn> columns;
             std::vector<TableRow> rows;
             
-            static std::string generateTopSeparator(size_t size);
+            std::string generateTopSeparator(size_t size);
             
             std::string generateColumnHeader();
             
@@ -192,8 +193,8 @@ namespace blt::string {
             }
         
         public:
-            explicit TableFormatter(int columnPadding = 2, int maxColumnWidth = 500):
-                    m_columnPadding(columnPadding), m_maxColumnWidth(maxColumnWidth) {}
+            explicit TableFormatter(std::string tableName = "", int columnPadding = 2, int maxColumnWidth = 500):
+                    m_tableName(std::move(tableName)), m_columnPadding(columnPadding), m_maxColumnWidth(maxColumnWidth) {}
             
             inline void addColumn(const TableColumn& column) {
                 columns.push_back(column);

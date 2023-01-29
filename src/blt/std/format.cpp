@@ -68,10 +68,33 @@ std::string blt::string::TableFormatter::generateColumnHeader() {
 }
 
 std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
-    std::string wholeWidthSeparator;
-    for (int i = 0; i < size; i++)
-        wholeWidthSeparator += "-";
-    return wholeWidthSeparator;
+    auto sizeOfName = m_tableName.empty() ? 0 : m_tableName.size() + 4;
+    auto sizeNameRemoved = size - sizeOfName;
+    
+    std::string halfWidthLeftSeparator;
+    std::string halfWidthRightSeparator;
+    
+    auto sizeNameFloor = (size_t) std::floor((double)sizeNameRemoved/2.0);
+    auto sizeNameCeil = (size_t) std::ceil((double)sizeNameRemoved/2.0);
+    
+    halfWidthLeftSeparator.reserve(sizeNameCeil);
+    halfWidthRightSeparator.reserve(sizeNameFloor);
+    
+    for (int i = 0; i < sizeNameFloor; i++)
+        halfWidthLeftSeparator += "-";
+    
+    for (int i = 0; i < sizeNameCeil; i++)
+        halfWidthRightSeparator += "-";
+    
+    std::string separator;
+    separator += halfWidthLeftSeparator;
+    if (sizeOfName != 0) {
+        separator += "{ ";
+        separator += m_tableName;
+        separator += " }";
+    }
+    separator += halfWidthRightSeparator;
+    return separator;
 }
 
 std::string blt::string::TableFormatter::generateSeparator(size_t size) {
