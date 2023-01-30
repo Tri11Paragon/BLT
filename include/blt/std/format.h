@@ -220,12 +220,5 @@ namespace blt::string {
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
     };
     
-    class LineGraphFormatter {
-        private:
-        
-        public:
-        
-    };
-    
 }
 #endif //BLT_TESTS_FORMAT_H

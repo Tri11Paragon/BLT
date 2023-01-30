@@ -121,3 +121,4 @@ void blt::string::TableFormatter::updateMaxColumnLengths() {
         }
     }
 }
+

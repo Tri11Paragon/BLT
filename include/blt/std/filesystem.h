@@ -52,6 +52,7 @@ namespace blt::fs {
      */
     class block_reader {
         protected:
+            // 32768 block size seems the fastest on my system
             unsigned long m_bufferSize;
         public:
             explicit block_reader(unsigned long bufferSize): m_bufferSize(bufferSize) {}

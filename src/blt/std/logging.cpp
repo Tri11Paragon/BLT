@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <ios>
 #include <thread>
+#include <filesystem>
 
 // https://en.cppreference.com/w/cpp/utility/variadic
 // https://medium.com/swlh/variadic-functions-3419c287a0d2
@@ -84,12 +85,13 @@ namespace blt::logging {
     };
     
     // by default everything is enabled
-    LOG_PROPERTIES BLT_LOGGING_PROPERTIES{true, true, true, "./log/"};
+    LOG_PROPERTIES BLT_LOGGING_PROPERTIES {};
     LogFileWriter writer{"./"};
     
     void init(LOG_PROPERTIES properties) {
         if (BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory)
             writer = LogFileWriter{properties.m_directory};
+        std::filesystem::create_directory(properties.m_directory);
         BLT_LOGGING_PROPERTIES = properties;
     }
     

@@ -19,7 +19,7 @@ namespace blt::logging {
         bool m_useColor = true;
         bool m_logToConsole = true;
         bool m_logToFile = true;
-        const char* m_directory = "./log/";
+        const char* m_directory = "./";
         LOG_LEVEL minLevel = TRACE;
         
         explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile, const char* directory):
