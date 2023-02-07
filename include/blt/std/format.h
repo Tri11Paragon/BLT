@@ -58,7 +58,7 @@ namespace blt::string {
         for (int i = 0; i < strlen; i++) {
             unsigned char c = str[i];
             if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
+                utflen += 1;
         }
         
         if (utflen > 65535 || /* overflow */ utflen < strlen)
