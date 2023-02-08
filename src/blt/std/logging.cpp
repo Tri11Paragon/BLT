@@ -61,8 +61,9 @@ namespace blt::logging {
     };
     
     void applyFormatting(const std::string& format, std::string& output, va_list& args){
-        char formattedChars[format.length()];
-        vsprintf(formattedChars, format.c_str(), args);
+        const char* fmt_c_str = format.c_str();
+        char formattedChars[1+std::vsnprintf(nullptr, 0, fmt_c_str, args)];
+        vsprintf(formattedChars, fmt_c_str, args);
         output = std::string(formattedChars);
     }
     
