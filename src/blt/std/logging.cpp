@@ -61,10 +61,9 @@ namespace blt::logging {
     };
     
     void applyFormatting(const std::string& format, std::string& output, va_list& args){
-        const char* fmt_c_str = format.c_str();
-        char formattedChars[1+std::vsnprintf(nullptr, 0, fmt_c_str, args)];
-        vsprintf(formattedChars, fmt_c_str, args);
-        output = std::string(formattedChars);
+        std::vector<char> buf(1+std::vsnprintf(nullptr, 0, format.c_str(), args));
+        vsprintf(buf.data(), format.c_str(), args);
+        output = std::string(buf.data());
     }
     
     const char* levelColors[6] = {
