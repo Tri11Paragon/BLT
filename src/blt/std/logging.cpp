@@ -100,7 +100,7 @@ namespace blt::logging {
     LogFileWriter writer{"./"};
     
     void init(LOG_PROPERTIES properties) {
-        if (BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory)
+        if (properties.m_logToFile && BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory)
             writer = LogFileWriter{properties.m_directory};
         if (properties.m_logToFile)
             std::filesystem::create_directory(properties.m_directory);
