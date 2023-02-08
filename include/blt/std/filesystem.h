@@ -9,39 +9,9 @@
 
 #include <fstream>
 #include <ios>
+#include "memory.h"
 
 namespace blt::fs {
-    
-    /**
-     * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
-     * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
-     * @tparam T type that is stored in buffer eg char
-     */
-    template<typename T>
-    struct scoped_buffer {
-        T* buffer;
-        unsigned long size;
-        
-        explicit scoped_buffer(unsigned long size): size(size) {
-            buffer = new T[size];
-        }
-        
-        scoped_buffer(scoped_buffer& copy) = delete;
-        
-        scoped_buffer(scoped_buffer&& move) = delete;
-        
-        scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
-        
-        scoped_buffer operator=(scoped_buffer&& moveAssignment) = delete;
-        
-        inline T& operator[](unsigned long index) const {
-            return buffer[index];
-        }
-        
-        ~scoped_buffer() {
-            delete[] buffer;
-        }
-    };
     
     /**
      * A simple interface which provides a way of reading the next block of data from a resource.

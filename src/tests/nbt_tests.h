@@ -13,8 +13,8 @@
 #include <blt/std/format.h>
 #include <blt/std/filesystem.h>
 
-inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const blt::fs::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
-    blt::fs::scoped_buffer<char> read_buffer{bufferToCompare.size};
+inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const blt::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
+    blt::scoped_buffer<char> read_buffer{bufferToCompare.size};
     std::fstream largeBlockInputLarge(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInputLarge(largeBlockInputLarge, bufferSize);
     byteLargeBlockInputLarge.read(read_buffer.buffer, bufferToCompare.size);
@@ -26,7 +26,7 @@ inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const 
     return true;
 }
 
-inline bool readIndividualUsingNBTBufferedReader(const std::string& file, const blt::fs::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
+inline bool readIndividualUsingNBTBufferedReader(const std::string& file, const blt::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
     std::fstream largeBlockInput(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInput(largeBlockInput, bufferSize);
     for (int i = 0; i < bufferToCompare.size; i++) {
@@ -43,7 +43,7 @@ inline bool readIndividualUsingNBTBufferedReader(const std::string& file, const 
 inline void nbt_read_tests(){
     constexpr auto bufferSize = 1024 * 1024;
     
-    blt::fs::scoped_buffer<char> buffer{bufferSize};
+    blt::scoped_buffer<char> buffer{bufferSize};
     
     char* read_buffer = new char[bufferSize];
     char* read_block_buffer = new char[bufferSize];
@@ -125,8 +125,8 @@ inline void nbt_read_tests(){
 inline void nbt_write_tests(){
     constexpr auto bufferSize = 1024 * 1024;
     
-    blt::fs::scoped_buffer<char> buffer{bufferSize};
-    blt::fs::scoped_buffer<char> read_buffer{bufferSize};
+    blt::scoped_buffer<char> buffer{bufferSize};
+    blt::scoped_buffer<char> read_buffer{bufferSize};
     
     for (int i = 0; i < bufferSize; i++)
         buffer.buffer[i] = i+1;

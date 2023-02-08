@@ -14,6 +14,7 @@
 #include <ios>
 #include <thread>
 #include <filesystem>
+#include <blt/std/memory.h>
 
 // https://en.cppreference.com/w/cpp/utility/variadic
 // https://medium.com/swlh/variadic-functions-3419c287a0d2
@@ -61,9 +62,19 @@ namespace blt::logging {
     };
     
     void applyFormatting(const std::string& format, std::string& output, va_list& args){
-        std::vector<char> buf(1+std::vsnprintf(nullptr, 0, format.c_str(), args));
-        vsprintf(buf.data(), format.c_str(), args);
-        output = std::string(buf.data());
+        // args must be copied because they will be consumed by the first vsnprintf
+        va_list args_copy;
+        va_copy(args_copy, args);
+        
+        auto buffer_size = std::vsnprintf(nullptr, 0, format.c_str(), args_copy) + 1;
+        // some compilers don't even allow you to do stack dynamic arrays. So always allocate on the heap.
+        // originally if the buffer was small enough the buffer was allocated on the stack because it made no sense to make a heap object
+        // that will be deleted a couple lines later.
+        scoped_buffer<char> buffer{static_cast<unsigned long>(buffer_size)};
+        vsnprintf(*buffer, buffer_size, format.c_str(), args);
+        output = std::string(*buffer);
+        
+        va_end(args_copy);
     }
     
     const char* levelColors[6] = {
