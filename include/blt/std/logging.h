@@ -41,6 +41,7 @@ namespace blt::logging {
                 logi(str);
             }
         #endif
+            void flush() const;
     };
     
     static logger tlog{TRACE};
@@ -129,6 +130,10 @@ namespace blt::logging {
     void log(unsigned short i, LOG_LEVEL level, int auto_line);
     void log(float f, LOG_LEVEL level, int auto_line);
     void log(double f, LOG_LEVEL level, int auto_line);
+    /**
+     * Will flush all buffers! This might cause issues with threads!
+     */
+    void flush();
 }
 
 #ifdef BLT_DISABLE_LOGGING

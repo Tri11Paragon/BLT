@@ -210,6 +210,33 @@ namespace blt::logging {
             thread_local_strings[id] = th_str;
         }
     }
+    
+    void logger::flush() const {
+        for (const auto& id : thread_local_strings) {
+            auto th_str = id.second;
+            bool hasEndingLinefeed = th_str[th_str.length() - 1] == '\n';
+            logging::log(th_str, false, level, !hasEndingLinefeed);
+            thread_local_strings[id.first] = "";
+        }
+    }
+    
+    void flush() {
+        // TODO: this will prevent proper level output. Please fixme
+        tlog.flush();
+        dlog.flush();
+        ilog.flush();
+        wlog.flush();
+        elog.flush();
+        flog.flush();
+        trace.flush();
+        debug.flush();
+        info.flush();
+        warn.flush();
+        error.flush();
+        fatal.flush();
+        std::cerr.flush();
+        std::cout.flush();
+    }
 }
 
 
