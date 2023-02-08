@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include "blt/std/string.h"
+#include "blt/std/format.h"
 #include <fstream>
 #include <unordered_map>
 #include <ios>
@@ -107,10 +108,28 @@ namespace blt::logging {
         BLT_LOGGING_PROPERTIES = properties;
     }
     
-    inline void log(const std::string& str, bool hasEndingLinefeed, LOG_LEVEL level, int auto_line){
+    inline std::string filename(const std::string& path){
+        if (BLT_LOGGING_PROPERTIES.m_logFullPath)
+            return path;
+        auto paths = blt::string::split(path, "/");
+        auto final = paths[paths.size()-1];
+        if (final == "/")
+            return paths[paths.size()-2];
+        return final;
+    }
+    
+    inline void log(const std::string& str, bool hasEndingLinefeed, LOG_LEVEL level, const char* file, int currentLine, int auto_line){
         if (level < BLT_LOGGING_PROPERTIES.minLevel)
             return;
         std::string outputString = System::getTimeStringLog();
+        bool includeExtras = BLT_LOGGING_PROPERTIES.m_logWithData && currentLine >= 0;
+        if (includeExtras) {
+            outputString += "[";
+            outputString += filename(file);
+            outputString += ":";
+            outputString += std::to_string(currentLine);
+            outputString += "] ";
+        }
         outputString += levelNames[level];
         outputString += str;
         
@@ -138,7 +157,7 @@ namespace blt::logging {
         }
     }
     
-    void log(const std::string& format, LOG_LEVEL level, int auto_line, ...) {
+    void log_internal(const std::string& format, LOG_LEVEL level, const char* file, int currentLine, int auto_line, ...) {
         va_list args;
         va_start(args, auto_line);
         
@@ -150,91 +169,57 @@ namespace blt::logging {
         if (hasEndingLinefeed)
             formattedString = formattedString.substr(0, formattedString.length()-1);
     
-        log(formattedString, hasEndingLinefeed, level, auto_line);
+        log(formattedString, hasEndingLinefeed, level, file, currentLine, auto_line);
     
         va_end(args);
     }
     
-    void log(int i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
+    // stores an association between thread -> log level -> current line buffer
+    std::unordered_map<std::thread::id, std::unordered_map<LOG_LEVEL, std::string>> thread_local_strings;
     
-    void log(long i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(unsigned int i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(unsigned long i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(char i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(unsigned char i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(short i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(unsigned short i, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(i), false, level, true);
-    }
-    
-    void log(float f, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(f), false, level, true);
-    }
-    
-    void log(double f, LOG_LEVEL level, int auto_line) {
-        log(std::to_string(f), false, level, true);
-    }
-    
-    std::unordered_map<std::thread::id, std::string> thread_local_strings;
-    
-    void logger::logi(const std::string& str) const {
+    void logger::log_internal(const std::string& str) const {
         auto id = std::this_thread::get_id();
-        auto th_str = thread_local_strings[id];
+        auto th_str = thread_local_strings[id][level];
         th_str += str;
         
         if (blt::string::contains(str, "\n")){
             // make sure new lines are properly formatted to prevent danging lines. Ie "[trace]: .... [debug]: ...."
             bool hasEndingLinefeed = str[str.length()-1] == '\n';
-            logging::log(th_str, false, level, !hasEndingLinefeed);
-            thread_local_strings[id] = "";
+            if (level == NONE) {
+                std::cout << th_str;
+            } else
+                logging::log(th_str, false, level, "", -1, !hasEndingLinefeed);
+            thread_local_strings[id][level] = "";
         } else {
-            thread_local_strings[id] = th_str;
+            thread_local_strings[id][level] = th_str;
         }
+    }
+    
+    void flushLogger_internal(std::thread::id id, LOG_LEVEL level){
+        auto th_str = thread_local_strings[id][level];
+        if (th_str.empty())
+            return;
+        bool hasEndingLinefeed = th_str[th_str.length() - 1] == '\n';
+        logging::log(th_str, false, level, "", -1, !hasEndingLinefeed);
+        thread_local_strings[id][level] = "";
     }
     
     void logger::flush() const {
         for (const auto& id : thread_local_strings) {
-            auto th_str = id.second;
-            bool hasEndingLinefeed = th_str[th_str.length() - 1] == '\n';
-            logging::log(th_str, false, level, !hasEndingLinefeed);
-            thread_local_strings[id.first] = "";
+            flushLogger_internal(id.first, level);
+        }
+    }
+    
+    void logger::flush_all() {
+        for (const auto& id : thread_local_strings) {
+            for (const auto& level : thread_local_strings[id.first]){
+                flushLogger_internal(id.first, level.first);
+            }
         }
     }
     
     void flush() {
-        // TODO: this will prevent proper level output. Please fixme
-        tlog.flush();
-        dlog.flush();
-        ilog.flush();
-        wlog.flush();
-        elog.flush();
-        flog.flush();
-        trace.flush();
-        debug.flush();
-        info.flush();
-        warn.flush();
-        error.flush();
-        fatal.flush();
+        logger::flush_all();
         std::cerr.flush();
         std::cout.flush();
     }

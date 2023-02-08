@@ -12,6 +12,7 @@
 #include <vector>
 
 namespace blt::string {
+    // TODO template the padding functions:
     
     /**
      * Ensure that string str has expected length, pad after the string otherwise.

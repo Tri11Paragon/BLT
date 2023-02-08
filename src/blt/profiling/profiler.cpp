@@ -46,18 +46,13 @@ namespace blt::profiling {
         return profiles[profileName];
     }
     
-    inline void print(const std::vector<std::string>& lines, int level) {
-        if (level < 0) {
-            for (const auto& line : lines)
-                std::cout << line;
-        } else {
-            auto& logger = logging::loggerLevelDecode[level];
-            for (const auto& line : lines)
-                logger << line;
-        }
+    inline void print(const std::vector<std::string>& lines, logging::LOG_LEVEL level) {
+        auto& logger = logging::getLoggerFromLevel(level);
+        for (const auto& line : lines)
+            logger << line;
     }
     
-    void printProfile(const std::string& profileName, int loggingLevel) {
+    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel) {
         string::TableFormatter formatter {profileName};
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});
@@ -91,7 +86,7 @@ namespace blt::profiling {
         return container1.difference < container2.difference;
     }
     
-    void printOrderedProfile(const std::string& profileName, int loggingLevel) {
+    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel) {
         const auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& points = profile.points;

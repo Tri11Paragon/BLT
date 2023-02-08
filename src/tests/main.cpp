@@ -14,5 +14,12 @@ int main() {
     
     nbt_tests();
     
+    blt::logging::tlog << "Test Output!\n";
+    blt::logging::tlog << 5;
+    blt::logging::flog << 5;
+    blt::logging::ilog << 5;
+    
+    blt::logging::flush();
+    
     return 0;
 }

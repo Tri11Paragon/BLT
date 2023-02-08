@@ -10,6 +10,7 @@
 #include <string>
 #include <blt/std/queue.h>
 #include <unordered_map>
+#include <blt/std/logging.h>
 
 /**
  * Defines several disableable macros (#define BLT_DISABLE_PROFILING). If you do not use these macros profiling will not be disableable
@@ -39,8 +40,8 @@ namespace blt::profiling {
     CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName);
     Profile getProfile(const std::string& profileName);
     
-    void printProfile(const std::string& profileName, int loggingLevel = -1);
-    void printOrderedProfile(const std::string& profileName, int loggingLevel = -1);
+    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE);
+    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE);
     
     void discardProfiles();
     void discardIntervals(const std::string& profileName);

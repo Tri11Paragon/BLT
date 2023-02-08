@@ -113,9 +113,9 @@ inline void nbt_read_tests(){
     }
     
     BLT_PRINT_ORDERED("nbt read");
-    BLT_TRACE("");
+    BLT_TRACE("{BLANK_LINE}");
     BLT_PRINT_ORDERED("nbt read block");
-    BLT_TRACE("");
+    BLT_TRACE("{BLANK_LINE}");
     BLT_PRINT_ORDERED("nbt read individual");
     
     delete[] read_buffer;
