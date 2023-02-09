@@ -116,12 +116,12 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #define BLT_TRACE(format, ...) log_internal(format, blt::logging::TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__);
-    #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__);
-    #define BLT_INFO(format, ...) log_internal(format, blt::logging::INFO, __FILE__, __LINE__, true, ##__VA_ARGS__);
-    #define BLT_WARN(format, ...) log_internal(format, blt::logging::WARN, __FILE__, __LINE__, true, ##__VA_ARGS__);
-    #define BLT_ERROR(format, ...) log_internal(format, blt::logging::ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__);
-    #define BLT_FATAL(format, ...) log_internal(format, blt::logging::FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__);
+    #define BLT_TRACE(format, ...) log_internal(format, blt::logging::TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_INFO(format, ...) log_internal(format, blt::logging::INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_WARN(format, ...) log_internal(format, blt::logging::WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_ERROR(format, ...) log_internal(format, blt::logging::ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_FATAL(format, ...) log_internal(format, blt::logging::FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
 #endif
 
 #endif //BLT_LOGGING_H

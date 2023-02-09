@@ -63,6 +63,13 @@ build CMakeFiles/BLT.dir/src/blt/std/format.cpp.o: CXX_COMPILER__BLT_Release /ho
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
+build CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/loader.cpp || cmake_object_order_depends_target_BLT
+  DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
+  OBJECT_DIR = CMakeFiles/BLT.dir
+  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
+
 build CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o.d
   FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
@@ -106,7 +113,7 @@ build CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o: CXX_COMPILER__BLT_Release 
 #############################################
 # Link the static library libBLT.a
 
-build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o
+build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_Release CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = CMakeFiles/BLT.dir
   POST_BUILD = :

@@ -122,14 +122,15 @@ namespace blt::logging {
         if (level < BLT_LOGGING_PROPERTIES.minLevel)
             return;
         std::string outputString = System::getTimeStringLog();
-        bool includeExtras = BLT_LOGGING_PROPERTIES.m_logWithData && currentLine >= 0;
-        if (includeExtras) {
-            outputString += "[";
+        
+        if (BLT_LOGGING_PROPERTIES.m_logWithData && currentLine >= 0) {
+            outputString +=  '[';
             outputString += filename(file);
-            outputString += ":";
+            outputString += ':';
             outputString += std::to_string(currentLine);
             outputString += "] ";
         }
+        
         outputString += levelNames[level];
         outputString += str;
         

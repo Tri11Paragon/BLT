@@ -1,5 +1,5 @@
 /opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=/opt/netbrains/clion/clion-2022.1.3/bin/ninja/linux/ninja -DBUILD_TESTS:BOOL=ON -G Ninja -S /home/brett/Documents/code/c++/BLT -B /home/brett/Documents/code/c++/BLT/cmake-build-release
-Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/filesystem.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/format.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp
+Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/filesystem.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/format.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/loader.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp
 Profiler Files /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp
 Source: /home/brett/Documents/code/c++/BLT
 Current Source: /home/brett/Documents/code/c++/BLT
