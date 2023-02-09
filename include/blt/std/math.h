@@ -509,12 +509,13 @@ namespace blt {
     }
     
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
-    static inline mat4x4 perspective(float fov, float near, float far){
+    // https://ogldev.org/www/tutorial12/tutorial12.html
+    static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far){
         mat4x4 perspectiveMat4x4;
         
-        float scale = 1.0f / (float)tan(fov * 0.5f * M_PI / 180.0f);
-        perspectiveMat4x4.m00(scale);
-        perspectiveMat4x4.m11(scale);
+        float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
+        perspectiveMat4x4.m00(1.0f/(aspect_ratio*halfTan));
+        perspectiveMat4x4.m11(1.0f/halfTan);
         perspectiveMat4x4.m22(-far / (far - near));
         perspectiveMat4x4.m32(-far * near / (far - near));
         perspectiveMat4x4.m23(-1);
