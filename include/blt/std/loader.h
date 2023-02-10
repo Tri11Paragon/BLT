@@ -20,7 +20,7 @@ namespace blt::fs {
     
     std::vector<std::string> recursiveShaderInclude(const std::string& path);
     
-    std::string loadShaderFile(const std::string& path) {
+    static inline std::string loadShaderFile(const std::string& path) {
         std::stringstream stringStream;
         
         auto lines = recursiveShaderInclude(path);
