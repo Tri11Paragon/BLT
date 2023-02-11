@@ -513,13 +513,13 @@ namespace blt {
     static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far){
         mat4x4 perspectiveMat4x4;
         
-        float oneOverFarMNear = 1.0f / (far - near);
+        float oneOverNearMFar = 1.0f / (near - far);
         
         float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
         perspectiveMat4x4.m00(1.0f/(aspect_ratio*halfTan));
         perspectiveMat4x4.m11(1.0f/halfTan);
-        perspectiveMat4x4.m22(-(far + near) * oneOverFarMNear);
-        perspectiveMat4x4.m32(-2 * far * near * oneOverFarMNear);
+        perspectiveMat4x4.m22((far + near) * oneOverNearMFar);
+        perspectiveMat4x4.m32(2 * far * near * oneOverNearMFar);
         perspectiveMat4x4.m23(-1);
         perspectiveMat4x4.m33(0);
         
