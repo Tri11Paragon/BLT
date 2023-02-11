@@ -11,7 +11,7 @@
 #ifndef BLT_TIME_H
 #define BLT_TIME_H
 
-namespace blt::System {
+namespace blt::system {
     static inline std::string ensureHasDigits(int current, int digits) {
         std::string asString = std::to_string(current);
         auto length = digits - asString.length();

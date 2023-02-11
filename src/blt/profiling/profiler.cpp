@@ -21,19 +21,19 @@ namespace blt::profiling {
     void startInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
         CaptureInterval interval{};
-        interval.start = System::getCurrentTimeNanoseconds();
+        interval.start = system::getCurrentTimeNanoseconds();
         profiles[profileName].intervals[intervalName] = interval;
     }
     
     void endInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
-        profiles[profileName].intervals[intervalName].end = System::getCurrentTimeNanoseconds();
+        profiles[profileName].intervals[intervalName].end = system::getCurrentTimeNanoseconds();
     }
     
     void point(const std::string& profileName, const std::string& pointName) {
         std::scoped_lock lock(profileLock);
         CapturePoint point{};
-        point.point = System::getCurrentTimeNanoseconds();
+        point.point = system::getCurrentTimeNanoseconds();
         point.name = pointName;
         profiles[profileName].points.push(point);
     }

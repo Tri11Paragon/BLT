@@ -516,12 +516,9 @@ namespace blt {
         float oneOverNearMFar = 1.0f / (near - far);
         
         float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
-//        perspectiveMat4x4.m00(1.0f/(aspect_ratio*halfTan));
-//        perspectiveMat4x4.m11(1.0f/halfTan);
-//        perspectiveMat4x4.m22((far + near) * oneOverNearMFar);
-//        perspectiveMat4x4.m32(2 * far * near * oneOverNearMFar);
-//        perspectiveMat4x4.m23(-1);
-//        perspectiveMat4x4.m33(0);
+        // this should be all it takes to create a mostly correct projection matrix
+        // the values are transposed because my matrix implementation is terrible.
+        // TODO: redo matrix implementation
         perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));
         perspectiveMat4x4.m11(float(1.0 / halfTan));
         perspectiveMat4x4.m22(float(-((far + near) / (far - near))));

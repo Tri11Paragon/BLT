@@ -33,7 +33,7 @@ namespace blt::logging {
             static constexpr int MAX_LINES = 100000;
         public:
             explicit LogFileWriter(const std::string& path): m_path(path){
-                auto currentTime = System::getTimeStringFS();
+                auto currentTime = system::getTimeStringFS();
                 output = new std::fstream(path + currentTime + ".log", std::ios::out | std::ios::app);
                 if (!output->good()){
                     throw std::runtime_error("Unable to open console filestream!\n");
@@ -52,7 +52,7 @@ namespace blt::logging {
                     output->close();
                     delete(output);
                     currentLines = 0;
-                    auto currentTime = System::getTimeStringFS();
+                    auto currentTime = system::getTimeStringFS();
                     output = new std::fstream(m_path + currentTime + ".log");
                 }
             }
@@ -121,7 +121,7 @@ namespace blt::logging {
     inline void log(const std::string& str, bool hasEndingLinefeed, LOG_LEVEL level, const char* file, int currentLine, int auto_line){
         if (level < BLT_LOGGING_PROPERTIES.minLevel)
             return;
-        std::string outputString = System::getTimeStringLog();
+        std::string outputString = system::getTimeStringLog();
         
         if (BLT_LOGGING_PROPERTIES.m_logWithData && currentLine >= 0) {
             outputString +=  '[';
