@@ -40,6 +40,7 @@ namespace blt {
             [[nodiscard]] inline float x() const {return elements[0];}
             [[nodiscard]] inline float y() const {return elements[1];}
             [[nodiscard]] inline float z() const {return elements[2];}
+            [[nodiscard]] inline float w() const {return elements[3];}
             
             inline float& operator[](int index) {
                 return elements[index];
@@ -102,6 +103,16 @@ namespace blt {
                 for (int i = 0; i < size; i++)
                     elements[i] -= f;
                 return *this;
+            }
+        
+            /**
+             * performs the dot product of left * right
+             */
+            static inline float dot(const vec<size>& left, const vec<size>& right) {
+                float dot = 0;
+                for (int i = 0; i < size; i++)
+                    dot += left[i] * right[i];
+                return dot;
             }
     };
     
