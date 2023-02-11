@@ -511,17 +511,22 @@ namespace blt {
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
     // https://ogldev.org/www/tutorial12/tutorial12.html
     static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far){
-        mat4x4 perspectiveMat4x4;
+        mat4x4 perspectiveMat4x4 {emptyMatrix};
         
         float oneOverNearMFar = 1.0f / (near - far);
         
         float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
-        perspectiveMat4x4.m00(1.0f/(aspect_ratio*halfTan));
-        perspectiveMat4x4.m11(1.0f/halfTan);
-        perspectiveMat4x4.m22((far + near) * oneOverNearMFar);
-        perspectiveMat4x4.m32(2 * far * near * oneOverNearMFar);
-        perspectiveMat4x4.m23(-1);
-        perspectiveMat4x4.m33(0);
+//        perspectiveMat4x4.m00(1.0f/(aspect_ratio*halfTan));
+//        perspectiveMat4x4.m11(1.0f/halfTan);
+//        perspectiveMat4x4.m22((far + near) * oneOverNearMFar);
+//        perspectiveMat4x4.m32(2 * far * near * oneOverNearMFar);
+//        perspectiveMat4x4.m23(-1);
+//        perspectiveMat4x4.m33(0);
+        perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));
+        perspectiveMat4x4.m11(float(1.0 / halfTan));
+        perspectiveMat4x4.m22(float(-((far + near) / (far - near))));
+        perspectiveMat4x4.m32(-1);
+        perspectiveMat4x4.m23(float(-((2 * near * far) / (far - near))));
         
         return perspectiveMat4x4;
     }
