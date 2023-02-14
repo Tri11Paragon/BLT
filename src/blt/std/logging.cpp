@@ -50,9 +50,9 @@ namespace blt::logging {
                 if (currentLines > MAX_LINES){
                     output->flush();
                     output->close();
-                    delete(output);
                     currentLines = 0;
                     auto currentTime = system::getTimeStringFS();
+                    delete(output);
                     output = new std::fstream(m_path + currentTime + ".log");
                 }
             }
