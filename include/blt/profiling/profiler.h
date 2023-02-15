@@ -18,20 +18,20 @@
  */
 
 namespace blt::profiling {
-    struct CapturePoint {
+    struct capture_point {
         std::string name;
         long point {};
     };
     
-    struct CaptureInterval {
+    struct capture_interval {
         long start;
         long end;
     };
     
-    struct Profile {
-        std::unordered_map<std::string, CaptureInterval> intervals;
-        std::unordered_map<std::string, std::vector<CaptureInterval>> historicalIntervals;
-        blt::flat_queue<CapturePoint> points;
+    struct profile {
+        std::unordered_map<std::string, capture_interval> intervals;
+        std::unordered_map<std::string, std::vector<capture_interval>> historicalIntervals;
+        blt::flat_queue<capture_point> points;
     };
     
     void startInterval(const std::string& profileName, const std::string& intervalName);
@@ -39,9 +39,9 @@ namespace blt::profiling {
     
     void point(const std::string& profileName, const std::string& pointName);
     
-    CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName);
-    std::vector<CaptureInterval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
-    Profile getProfile(const std::string& profileName);
+    capture_interval getInterval(const std::string& profileName, const std::string& intervalName);
+    std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
+    profile getProfile(const std::string& profileName);
     
     void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE);
     void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE);
@@ -49,6 +49,19 @@ namespace blt::profiling {
     void discardProfiles();
     void discardIntervals(const std::string& profileName);
     void discardPoints(const std::string& profileName);
+    
+    class scoped_interval {
+        private:
+            std::string m_Profile;
+            std::string m_Interval;
+        public:
+            scoped_interval(std::string profile, std::string interval): m_Profile(std::move(profile)), m_Interval(std::move(interval)) {
+                blt::profiling::startInterval(m_Profile, m_Interval);
+            }
+            ~scoped_interval() {
+                blt::profiling::endInterval(m_Profile, m_Interval);
+            }
+    };
 }
 
 #endif //BLT_PROFILER_H
@@ -60,11 +73,11 @@ namespace blt::profiling {
     #define BLT_PRINT_PROFILE(profileName, ...)
     #define BLT_PRINT_ORDERED(profileName, ...)
 #else
-    #define BLT_START_INTERVAL(profileName, intervalName) blt::profiling::startInterval(profileName, intervalName);
-    #define BLT_END_INTERVAL(profileName, intervalName) blt::profiling::endInterval(profileName, intervalName);
-    #define BLT_POINT(profileName, pointName) blt::profiling::point(profileName, pointName);
-    #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__);
-    #define BLT_PRINT_ORDERED(profileName, ...) blt::profiling::printOrderedProfile(profileName, ##__VA_ARGS__);
+    #define BLT_START_INTERVAL(profileName, intervalName) blt::profiling::startInterval(profileName, intervalName)
+    #define BLT_END_INTERVAL(profileName, intervalName) blt::profiling::endInterval(profileName, intervalName)
+    #define BLT_POINT(profileName, pointName) blt::profiling::point(profileName, pointName)
+    #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__)
+    #define BLT_PRINT_ORDERED(profileName, ...) blt::profiling::printOrderedProfile(profileName, ##__VA_ARGS__)
 #endif
 
 #define BLT_INTERVAL_START(profileName, intervalName) BLT_START_INTERVAL(profileName, intervalName)

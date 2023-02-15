@@ -16,11 +16,11 @@ namespace blt::profiling {
     
     // TODO: a better way
     std::mutex profileLock{};
-    std::unordered_map<std::string, Profile> profiles;
+    std::unordered_map<std::string, profile> profiles;
     
     void startInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
-        CaptureInterval interval{};
+        capture_interval interval{};
         interval.start = system::getCurrentTimeNanoseconds();
         profiles[profileName].intervals[intervalName] = interval;
     }
@@ -33,17 +33,17 @@ namespace blt::profiling {
     
     void point(const std::string& profileName, const std::string& pointName) {
         std::scoped_lock lock(profileLock);
-        CapturePoint point{};
+        capture_point point{};
         point.point = system::getCurrentTimeNanoseconds();
         point.name = pointName;
         profiles[profileName].points.push(point);
     }
     
-    CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName) {
+    capture_interval getInterval(const std::string& profileName, const std::string& intervalName) {
         return profiles[profileName].intervals[intervalName];
     }
     
-    Profile getProfile(const std::string& profileName) {
+    profile getProfile(const std::string& profileName) {
         return profiles[profileName];
     }
     
@@ -133,7 +133,7 @@ namespace blt::profiling {
         profiles[profileName].points = {};
     }
     
-    std::vector<CaptureInterval> getAllIntervals(const std::string& profileName, const std::string& intervalName) {
+    std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName) {
         return profiles[profileName].historicalIntervals[intervalName];
     }
 }
