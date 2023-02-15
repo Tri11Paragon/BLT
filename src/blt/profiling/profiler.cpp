@@ -54,11 +54,11 @@ namespace blt::profiling {
     }
     
     void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel, bool averageHistory, bool ignoreNegatives) {
-        string::TableFormatter formatter {profileName};
+        string::TableFormatter formatter{profileName};
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});
         formatter.addColumn({"Time (ms)"});
-    
+        
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& points = profile.points;
@@ -74,7 +74,11 @@ namespace blt::profiling {
                     total_difference += difference;
                 }
                 total_difference /= (long) history.size();
-                formatter.addRow({interval.first, std::to_string(total_difference), std::to_string((double) total_difference / 1000000.0)});
+                std::string name = "(";
+                name += std::to_string(history.size());
+                name += ") ";
+                name += interval.first;
+                formatter.addRow({name, std::to_string(total_difference), std::to_string((double) total_difference / 1000000.0)});
             } else {
                 const auto difference = interval.second.end - interval.second.start;
                 if (ignoreNegatives && difference < 0)
@@ -106,9 +110,9 @@ namespace blt::profiling {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& points = profile.points;
-    
+        
         std::vector<timeOrderContainer> unorderedIntervalVector;
-    
+        
         // TODO: refactor to reduce nesting
         
         for (const auto& interval : intervals) {
@@ -122,7 +126,11 @@ namespace blt::profiling {
                     total_difference += difference;
                 }
                 total_difference /= (long) history.size();
-                unorderedIntervalVector.emplace_back(total_difference, std::string("(H) ") += interval.first);
+                std::string name = "(";
+                name += std::to_string(history.size());
+                name += ") ";
+                name += interval.first;
+                unorderedIntervalVector.emplace_back(total_difference, name);
             } else {
                 const auto difference = interval.second.end - interval.second.start;
                 if (ignoreNegatives && difference < 0)
@@ -130,25 +138,27 @@ namespace blt::profiling {
                 unorderedIntervalVector.emplace_back(difference, interval.first);
             }
         }
-    
+        
         std::sort(unorderedIntervalVector.begin(), unorderedIntervalVector.end(), timeCompare);
-    
-        string::TableFormatter formatter {profileName};
+        
+        string::TableFormatter formatter{profileName};
         formatter.addColumn({"Order"});
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});
         formatter.addColumn({"Time (ms)"});
-    
+        
         int index = 1;
         for (const auto& interval : unorderedIntervalVector) {
-            formatter.addRow({std::to_string(index++), interval.name, std::to_string(interval.difference), std::to_string(interval.difference / 1000000.0)});
+            formatter.addRow(
+                    {std::to_string(index++), interval.name, std::to_string(interval.difference), std::to_string(interval.difference / 1000000.0)}
+            );
         }
-    
+        
         std::vector<std::string> updatedLines;
         const auto& lines = formatter.createTable(true, true);
         for (const auto& line : lines)
             updatedLines.emplace_back(line + "\n");
-    
+        
         print(updatedLines, loggingLevel);
     }
     
