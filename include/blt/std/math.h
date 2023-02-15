@@ -539,6 +539,20 @@ namespace blt {
         return perspectiveMat4x4;
     }
     
+    static inline mat4x4 ortho(float left, float right, float top, float bottom, float near, float far){
+        mat4x4 perspectiveMat4x4 {emptyMatrix};
+        
+        perspectiveMat4x4.m00(2/(right - left));
+        perspectiveMat4x4.m11(2/(top-bottom));
+        perspectiveMat4x4.m22(2/(far-near));
+        perspectiveMat4x4.m33(1);
+        perspectiveMat4x4.m03(-(right + left) / (right - left));
+        perspectiveMat4x4.m13(-(top + bottom) / (top - bottom));
+        perspectiveMat4x4.m23(-(far + near) / (far - near));
+        
+        return perspectiveMat4x4;
+    }
+    
 //    inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {
 //        return out << "\rMatrix4x4{" << v.m00() << ", " << v.m01() << ", " << v.m02() << ", " << v.m03() << "} \n"\
 // << "         {" << v.m10() << ", " << v.m11() << ", " << v.m12() << ", " << v.m13() << "} \n"\
