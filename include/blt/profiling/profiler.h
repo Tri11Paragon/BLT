@@ -43,8 +43,8 @@ namespace blt::profiling {
     std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
     profile getProfile(const std::string& profileName);
     
-    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE);
-    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE);
+    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false);
+    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false);
     
     void discardProfiles();
     void discardIntervals(const std::string& profileName);

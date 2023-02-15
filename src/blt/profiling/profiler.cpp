@@ -53,19 +53,30 @@ namespace blt::profiling {
             logger << line;
     }
     
-    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel) {
+    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel, bool averageHistory) {
         string::TableFormatter formatter {profileName};
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ns)"});
         formatter.addColumn({"Time (ms)"});
     
-        const auto& profile = profiles[profileName];
+        auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& points = profile.points;
         
         for (const auto& interval : intervals) {
-            const auto difference = interval.second.end - interval.second.start;
-            formatter.addRow({interval.first, std::to_string(difference), std::to_string((double)difference/1000000.0)});
+            if (averageHistory) {
+                const auto& history = profile.historicalIntervals[interval.first];
+                long total_difference = 0;
+                for (const auto& h_interval : history) {
+                    const auto difference = h_interval.end - h_interval.start;
+                    total_difference += difference;
+                }
+                total_difference /= (long) history.size();
+                formatter.addRow({interval.first, std::to_string(total_difference), std::to_string((double) total_difference / 1000000.0)});
+            } else {
+                const auto difference = interval.second.end - interval.second.start;
+                formatter.addRow({interval.first, std::to_string(difference), std::to_string((double) difference / 1000000.0)});
+            }
         }
         
         std::vector<std::string> updatedLines;
@@ -87,16 +98,27 @@ namespace blt::profiling {
         return container1.difference < container2.difference;
     }
     
-    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel) {
-        const auto& profile = profiles[profileName];
+    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory) {
+        auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& points = profile.points;
     
         std::vector<timeOrderContainer> unorderedIntervalVector;
     
         for (const auto& interval : intervals) {
-            const auto difference = interval.second.end - interval.second.start;
-            unorderedIntervalVector.emplace_back(difference, interval.first);
+            if (averageHistory) {
+                const auto& history = profile.historicalIntervals[interval.first];
+                long total_difference = 0;
+                for (const auto& h_interval : history) {
+                    const auto difference = h_interval.end - h_interval.start;
+                    total_difference += difference;
+                }
+                total_difference /= (long) history.size();
+                unorderedIntervalVector.emplace_back(total_difference, std::string("(H) ") += interval.first);
+            } else {
+                const auto difference = interval.second.end - interval.second.start;
+                unorderedIntervalVector.emplace_back(difference, interval.first);
+            }
         }
     
         std::sort(unorderedIntervalVector.begin(), unorderedIntervalVector.end(), timeCompare);
