@@ -28,6 +28,7 @@ namespace blt::profiling {
     void endInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
         profiles[profileName].intervals[intervalName].end = system::getCurrentTimeNanoseconds();
+        profiles[profileName].historicalIntervals[intervalName].push_back(profiles[profileName].intervals[intervalName]);
     }
     
     void point(const std::string& profileName, const std::string& pointName) {
@@ -125,9 +126,14 @@ namespace blt::profiling {
     
     void discardIntervals(const std::string& profileName) {
         profiles[profileName].intervals = {};
+        profiles[profileName].historicalIntervals = {};
     }
     
     void discardPoints(const std::string& profileName) {
         profiles[profileName].points = {};
+    }
+    
+    std::vector<CaptureInterval> getAllIntervals(const std::string& profileName, const std::string& intervalName) {
+        return profiles[profileName].historicalIntervals[intervalName];
     }
 }

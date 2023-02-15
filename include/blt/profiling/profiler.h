@@ -9,6 +9,7 @@
 
 #include <string>
 #include <blt/std/queue.h>
+#include <vector>
 #include <unordered_map>
 #include <blt/std/logging.h>
 
@@ -29,6 +30,7 @@ namespace blt::profiling {
     
     struct Profile {
         std::unordered_map<std::string, CaptureInterval> intervals;
+        std::unordered_map<std::string, std::vector<CaptureInterval>> historicalIntervals;
         blt::flat_queue<CapturePoint> points;
     };
     
@@ -38,6 +40,7 @@ namespace blt::profiling {
     void point(const std::string& profileName, const std::string& pointName);
     
     CaptureInterval getInterval(const std::string& profileName, const std::string& intervalName);
+    std::vector<CaptureInterval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
     Profile getProfile(const std::string& profileName);
     
     void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE);
