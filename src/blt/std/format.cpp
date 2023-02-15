@@ -80,11 +80,15 @@ std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
     halfWidthLeftSeparator.reserve(sizeNameCeil);
     halfWidthRightSeparator.reserve(sizeNameFloor);
     
-    for (int i = 0; i < sizeNameFloor; i++)
+    halfWidthLeftSeparator += "+";
+    
+    for (int i = 0; i < sizeNameFloor - 1; i++)
         halfWidthLeftSeparator += "-";
     
-    for (int i = 0; i < sizeNameCeil; i++)
+    for (int i = 0; i < sizeNameCeil - 1; i++)
         halfWidthRightSeparator += "-";
+    
+    halfWidthRightSeparator += "+";
     
     std::string separator;
     separator += halfWidthLeftSeparator;
