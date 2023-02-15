@@ -20,7 +20,7 @@
 namespace blt::profiling {
     struct capture_point {
         std::string name;
-        long point {};
+        long point{};
     };
     
     struct capture_interval {
@@ -35,19 +35,30 @@ namespace blt::profiling {
     };
     
     void startInterval(const std::string& profileName, const std::string& intervalName);
+    
     void endInterval(const std::string& profileName, const std::string& intervalName);
     
     void point(const std::string& profileName, const std::string& pointName);
     
     capture_interval getInterval(const std::string& profileName, const std::string& intervalName);
+    
     std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
+    
     profile getProfile(const std::string& profileName);
     
-    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false);
-    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false);
+    void printProfile(
+            const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false,
+            bool ignoreNegatives = true
+    );
+    
+    void printOrderedProfile(
+            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false, bool ignoreNegatives = true
+    );
     
     void discardProfiles();
+    
     void discardIntervals(const std::string& profileName);
+    
     void discardPoints(const std::string& profileName);
     
     class scoped_interval {
@@ -58,6 +69,7 @@ namespace blt::profiling {
             scoped_interval(std::string profile, std::string interval): m_Profile(std::move(profile)), m_Interval(std::move(interval)) {
                 blt::profiling::startInterval(m_Profile, m_Interval);
             }
+            
             ~scoped_interval() {
                 blt::profiling::endInterval(m_Profile, m_Interval);
             }
