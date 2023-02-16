@@ -563,12 +563,13 @@ namespace blt {
     template<typename T, int Size>
     class averagizer_o_matic {
         private:
-            T* data = new T[Size];
+            T* data;
             int index = 0;
             int m_default = 0;
         public:
             averagizer_o_matic(): averagizer_o_matic(0) {}
             explicit averagizer_o_matic(T default_value){
+                data = new T[Size];
                 for (int i = 0; i < Size; i++){
                     data[i] = default_value;
                 }
