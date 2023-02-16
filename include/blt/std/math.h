@@ -583,14 +583,10 @@ namespace blt {
             
             T average(){
                 T total = 0;
-                int size = 0;
                 for (int i = 0; i < Size; i++){
-                    if (data[i] == m_default)
-                        continue;
                     total += data[i];
-                    size++;
                 }
-                return total / size;
+                return total / Size;
             }
             
             ~averagizer_o_matic(){
