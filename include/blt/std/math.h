@@ -565,12 +565,14 @@ namespace blt {
         private:
             T* data = new T[Size];
             int index = 0;
+            int m_default = 0;
         public:
             averagizer_o_matic(): averagizer_o_matic(0) {}
             explicit averagizer_o_matic(T default_value){
                 for (int i = 0; i < Size; i++){
                     data[i] = default_value;
                 }
+                m_default = default_value;
             }
             
             void insert(T t){
@@ -581,10 +583,14 @@ namespace blt {
             
             T average(){
                 T total = 0;
+                int size = 0;
                 for (int i = 0; i < Size; i++){
+                    if (data[i] == m_default)
+                        continue;
                     total += data[i];
+                    size++;
                 }
-                return total / Size;
+                return total / size;
             }
             
             ~averagizer_o_matic(){
