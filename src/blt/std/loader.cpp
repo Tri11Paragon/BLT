@@ -23,7 +23,8 @@ std::vector<std::string> blt::fs::getLinesFromFile(const std::string& path) {
         // convert stream into std::string
         shaderSource = shaderStream.str();
     } catch (std::ifstream::failure& e) {
-        BLT_FATAL("Unable to read file '%s'!\n", path.c_str());
+        BLT_WARN("Unable to read file '%s'!\n", path.c_str());
+        throw std::runtime_error("Failed to read file!\n");
     }
     
     // split the shader into the lines, this way we can get out the #include statements.
