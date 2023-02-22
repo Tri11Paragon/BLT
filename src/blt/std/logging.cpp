@@ -98,11 +98,13 @@ namespace blt::logging {
     
     // by default everything is enabled
     LOG_PROPERTIES BLT_LOGGING_PROPERTIES {};
-    LogFileWriter writer{"./"};
+    LogFileWriter* writer = new LogFileWriter{"./"};
     
     void init(LOG_PROPERTIES properties) {
-        if (properties.m_logToFile && BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory)
-            writer = LogFileWriter{properties.m_directory};
+        if (properties.m_logToFile && BLT_LOGGING_PROPERTIES.m_directory != properties.m_directory) {
+            delete(writer);
+            writer = new LogFileWriter{properties.m_directory};
+        }
         if (properties.m_logToFile)
             std::filesystem::create_directory(properties.m_directory);
         BLT_LOGGING_PROPERTIES = properties;
@@ -154,7 +156,7 @@ namespace blt::logging {
         }
         
         if (BLT_LOGGING_PROPERTIES.m_logToFile) {
-            writer.writeLine(fileString);
+            writer->writeLine(fileString);
         }
     }
     
