@@ -83,7 +83,7 @@ namespace blt {
             inline mat4x4& scale(const vec4& vec) { return scale(vec[0], vec[1], vec[2]); }
             inline mat4x4& scale(const vec3& vec) { return scale(vec[0], vec[1], vec[2]); }
             
-            mat4x4&& transpose() {
+            [[nodiscard]] mat4x4 transpose() const {
                 mat4x4 copy{*this};
                 
                 for (int i = 0; i < 4; i++){
@@ -92,7 +92,7 @@ namespace blt {
                     }
                 }
                 
-                return std::move(copy);
+                return copy;
             }
             
             [[nodiscard]] inline float m(int row, int column) const { return data.single[row + column * 4]; };

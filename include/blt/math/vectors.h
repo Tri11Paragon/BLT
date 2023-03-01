@@ -64,7 +64,7 @@ struct vec {
             T negativeCopy[size];
             for (int i = 0; i < size; i++)
                 negativeCopy[i] = -elements[i];
-            return vec<size>{negativeCopy};
+            return vec<T, size>{negativeCopy};
         }
         
         inline vec<T, size>& operator+=(const vec<T, size>& other) {
@@ -114,12 +114,12 @@ struct vec {
         }
 };
 
-template<unsigned long size>
-inline vec<size> operator+(const vec<size>& left, const vec<size>& right) {
+template<typename T, unsigned long size>
+inline vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right) {
     float initializer[size];
     for (int i = 0; i < size; i++)
         initializer[i] = left[i] + right[i];
-    return vec<size>{initializer};
+    return vec<T, size>{initializer};
 }
 
 template<typename T, unsigned long size>
