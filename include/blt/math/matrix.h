@@ -274,8 +274,8 @@ namespace blt {
         perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));
         perspectiveMat4x4.m11(float(1.0 / halfTan));
         perspectiveMat4x4.m22(float(-((far + near) / (far - near))));
-        perspectiveMat4x4.m32(-1);
-        perspectiveMat4x4.m23(float(-((2 * near * far) / (far - near))));
+        perspectiveMat4x4.m23(-1);
+        perspectiveMat4x4.m32(float(-((2 * near * far) / (far - near))));
         
         return perspectiveMat4x4;
     }
@@ -287,9 +287,9 @@ namespace blt {
         perspectiveMat4x4.m11(2/(top-bottom));
         perspectiveMat4x4.m22(2/(far-near));
         perspectiveMat4x4.m33(1);
-        perspectiveMat4x4.m03(-(right + left) / (right - left));
-        perspectiveMat4x4.m13(-(top + bottom) / (top - bottom));
-        perspectiveMat4x4.m23(-(far + near) / (far - near));
+        perspectiveMat4x4.m30(-(right + left) / (right - left));
+        perspectiveMat4x4.m31(-(top + bottom) / (top - bottom));
+        perspectiveMat4x4.m32(-(far + near) / (far - near));
         
         return perspectiveMat4x4;
     }
