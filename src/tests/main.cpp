@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "profiling_tests.h"
 #include "nbt_tests.h"
+#include "queue_tests.h"
 
 int main() {
     binaryTreeTest();
@@ -20,6 +21,8 @@ int main() {
     blt::logging::ilog << 5;
     
     blt::logging::flush();
+    
+    test_queues();
     
     return 0;
 }
