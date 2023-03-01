@@ -3,7 +3,7 @@ Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/filesystem.cpp;/ho
 Profiler Files /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp
 Source: /home/brett/Documents/code/c++/BLT
 Current Source: /home/brett/Documents/code/c++/BLT
-BLT 0.5.0 Successfully included!
+BLT 0.5.1 Successfully included!
 BLT tests included!
 -- Configuring done
 -- Generating done

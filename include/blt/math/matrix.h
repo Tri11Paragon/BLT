@@ -262,6 +262,7 @@ namespace blt {
     
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
     // https://ogldev.org/www/tutorial12/tutorial12.html
+    // http://www.songho.ca/opengl/gl_projectionmatrix.html
     static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far){
         mat4x4 perspectiveMat4x4 {emptyMatrix};
         
