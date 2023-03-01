@@ -15,7 +15,7 @@ namespace blt {
     /**
      * fast number integer
      */
-    unsigned int f_randi(unsigned int seed) {
+    static inline unsigned int f_randi(unsigned int seed) {
         seed = (seed << 13) ^ seed;
         return ((seed * (seed * seed * 15731 + 789221) + 1376312589) & 0x7fffffff);
     }
@@ -23,7 +23,7 @@ namespace blt {
     /**
      * fast inverse sqrt
      */
-    float fsqrt(float n){
+    static inline float fsqrt(float n){
         int i;
         float x, y;
         x = n * 0.5f;
