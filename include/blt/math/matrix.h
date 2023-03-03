@@ -280,7 +280,7 @@ namespace blt {
     
     static inline mat4x4 ortho(float left, float right, float top, float bottom, float near, float far){
         mat4x4 perspectiveMat4x4 {emptyMatrix};
-        
+    
         perspectiveMat4x4.m00(2/(right - left));
         perspectiveMat4x4.m11(2/(top-bottom));
         perspectiveMat4x4.m22(2/(far-near));

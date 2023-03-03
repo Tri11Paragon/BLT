@@ -18,7 +18,7 @@ std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool
     std::vector<std::string> table;
     const auto& tableHeader = generateColumnHeader();
     const auto& topSeparator = generateTopSeparator(tableHeader.size());
-    const auto& lineSeparator = generateSeparator(tableHeader.size());
+    const auto& lineSeparator = generateSeparator(tableHeader.size() - 1);
     
     if (top)
         table.push_back(topSeparator);
@@ -108,7 +108,7 @@ std::string blt::string::TableFormatter::generateSeparator(size_t size) {
     for (int i = 0; i < size; i++) {
         if (i == nextIndex) {
             auto currentColumnSize = columns[currentColumnIndex++].maxColumnLength + m_columnPadding*2;
-            nextIndex += currentColumnSize+1;
+            nextIndex += currentColumnSize + 1;
             wholeWidthSeparator += "+";
         } else
             wholeWidthSeparator += "-";
