@@ -113,6 +113,7 @@ std::string blt::string::TableFormatter::generateSeparator(size_t size) {
         } else
             wholeWidthSeparator += "-";
     }
+    wholeWidthSeparator += "+";
     return wholeWidthSeparator;
 }
 
