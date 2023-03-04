@@ -69,33 +69,39 @@ namespace blt::profiling {
                 if (difference > 0)
                     total_difference += difference;
             }
-    
-            total_difference /= (long)interval_vec.size();
             
-            // create a new name for the interval that includes the sample size
-            std::string new_name = "(";
-            new_name += std::to_string(interval_vec.size());
-            new_name += ") ";
-            new_name += name;
+            total_difference /= (long) interval_vec.size();
             
             // we can exploit how the order func works by supplying the difference into end,
             // which sorts correctly despite not being a true interval.
-            averagedIntervals.insert({new_name, capture_interval{0, total_difference}});
+            averagedIntervals.insert({name, capture_interval{0, total_difference}});
         }
     }
     
     void writeProfile(std::ofstream& out, const std::string& profileName, bool averageHistory) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
+        const auto& intervals_hist = profile.historicalIntervals;
         const auto& points = profile.points;
-    
-        std::vector<IntervalComparable> ordered_vector;
+        
+        std::vector<IntervalComparable> order_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;
-    
+        
         if (averageHistory)
             averageIntervals(profile.historicalIntervals, averaged_intervals);
-    
-        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_vector);
+        
+        orderIntervals(averageHistory ? averaged_intervals : intervals, order_rows);
+        
+        out << "Order,Count,Interval,Time (ms),Time (ns)\n";
+        int index = 1;
+        for (const auto& row : order_rows) {
+            out << std::to_string(index++) << ","
+                << std::to_string(averageHistory ? intervals_hist.at(row.name).size() : 1) << ","
+                << row.name << ","
+                << std::to_string((double) row.difference / 1000000.0) << ","
+                << std::to_string(row.difference) << "\n";
+        }
+        out.flush();
     }
     
     void printProfile(
@@ -103,30 +109,35 @@ namespace blt::profiling {
     ) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
+        const auto& intervals_hist = profile.historicalIntervals;
         const auto& points = profile.points;
         
-        std::vector<IntervalComparable> ordered_vector;
+        std::vector<IntervalComparable> ordered_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;
         
         if (averageHistory)
             averageIntervals(profile.historicalIntervals, averaged_intervals);
         
-        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_vector);
+        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_rows);
         
         string::TableFormatter formatter{profileName};
         formatter.addColumn({"Order"});
+        formatter.addColumn({"Count"});
         formatter.addColumn({"Interval"});
-        formatter.addColumn({"Time (ns)"});
         formatter.addColumn({"Time (ms)"});
+        formatter.addColumn({"Time (ns)"});
         
         int index = 1;
-        for (const auto& interval : ordered_vector) {
+        for (const auto& row : ordered_rows) {
             formatter.addRow(
-                    {std::to_string(index++), interval.name, std::to_string(interval.difference),
-                     std::to_string((double)interval.difference / 1000000.0)}
+                    {std::to_string(index++),
+                     std::to_string(averageHistory ? intervals_hist.at(row.name).size() : 1),
+                     row.name,
+                     std::to_string((double) row.difference / 1000000.0),
+                     std::to_string(row.difference)}
             );
         }
-    
+        
         println(formatter.createTable(true, true), loggingLevel);
     }
 
