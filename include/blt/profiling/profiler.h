@@ -51,7 +51,7 @@ namespace blt::profiling {
     
     void printProfile(
             const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE,
-            bool averageHistory = false, bool ignoreNegatives = true
+            bool averageHistory = false
     );
     
     void writeProfile(std::ofstream& out, const std::string& profileName);
@@ -104,7 +104,6 @@ namespace blt::profiling {
  * @param profileName the profile to print
  * @param loggingLevel blt::logging::LOG_LEVEL to log with (default: NONE)
  * @param averageHistory use the historical collection of interval rows in an average or just the latest? (default: false)
- * @param ignoreNegatives ignore negative time values (default: true)
  */
     #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__)
 /**

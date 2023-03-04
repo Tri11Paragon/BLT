@@ -56,22 +56,29 @@ namespace blt::profiling {
             const std::unordered_map<std::string, std::vector<capture_interval>>& intervals,
             std::unordered_map<std::string, capture_interval>& averagedIntervals
     ) {
+        // average all intervals
         for (const auto& i : intervals) {
             const auto& name = i.first;
             const auto& interval_vec = i.second;
             long total_difference = 0;
             
-            for (const auto& value : interval_vec)
-                total_difference += value.end - value.start;
+            // calculate total difference
+            for (const auto& value : interval_vec) {
+                auto difference = value.end - value.start;
+                // negatives make no sense. remove them to prevent errors
+                if (difference > 0)
+                    total_difference += difference;
+            }
     
             total_difference /= (long)interval_vec.size();
             
+            // create a new name for the interval that includes the sample size
             std::string new_name = "(";
             new_name += std::to_string(interval_vec.size());
             new_name += ") ";
             new_name += name;
             
-            // can exploit how the order func works by supplying the difference into end,
+            // we can exploit how the order func works by supplying the difference into end,
             // which sorts correctly despite not being a true interval.
             averagedIntervals.insert({new_name, capture_interval{0, total_difference}});
         }
@@ -82,8 +89,7 @@ namespace blt::profiling {
     }
     
     void printProfile(
-            const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory,
-            bool ignoreNegatives
+            const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory
     ) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
