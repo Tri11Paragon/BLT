@@ -12,9 +12,10 @@
 #include <vector>
 #include <unordered_map>
 #include <blt/std/logging.h>
+#include <fstream>
 
 /**
- * Defines several disableable macros (#define BLT_DISABLE_PROFILING). If you do not use these macros profiling will not be disableable
+ * Defines several disableable macros (#define BLT_DISABLE_PROFILING). If you do not use these macros profiling cannot be disabled!
  */
 
 namespace blt::profiling {
@@ -42,18 +43,18 @@ namespace blt::profiling {
     
     capture_interval getInterval(const std::string& profileName, const std::string& intervalName);
     
-    std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName);
+    std::vector<capture_interval> getAllIntervals(
+            const std::string& profileName, const std::string& intervalName
+    );
     
     profile getProfile(const std::string& profileName);
     
     void printProfile(
-            const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false,
-            bool ignoreNegatives = true
+            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE,
+            bool averageHistory = false, bool ignoreNegatives = true
     );
     
-    void printOrderedProfile(
-            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE, bool averageHistory = false, bool ignoreNegatives = true
-    );
+    void writeProfile(std::ofstream& out, const std::string& profileName);
     
     void discardProfiles();
     
@@ -66,7 +67,8 @@ namespace blt::profiling {
             std::string m_Profile;
             std::string m_Interval;
         public:
-            scoped_interval(std::string profile, std::string interval): m_Profile(std::move(profile)), m_Interval(std::move(interval)) {
+            scoped_interval(std::string profile, std::string interval):
+                    m_Profile(std::move(profile)), m_Interval(std::move(interval)) {
                 blt::profiling::startInterval(m_Profile, m_Interval);
             }
             
@@ -82,15 +84,31 @@ namespace blt::profiling {
     #define BLT_START_INTERVAL(profileName, intervalName)
     #define BLT_END_INTERVAL(profileName, intervalName)
     #define BLT_POINT(profileName, pointName)
-    #define BLT_PRINT_PROFILE(profileName, ...)
     #define BLT_PRINT_ORDERED(profileName, ...)
+    #define BLT_WRITE_ORDERED(profileName, ...)
 #else
+/**
+ * Starts an interval to be measured, when ended the row will be added to the specified profile.
+ */
     #define BLT_START_INTERVAL(profileName, intervalName) blt::profiling::startInterval(profileName, intervalName)
+/**
+ * Ends an interval, adds the interval to the profile.
+ */
     #define BLT_END_INTERVAL(profileName, intervalName) blt::profiling::endInterval(profileName, intervalName)
+/**
+ * Measures this exact point in time.
+ */
     #define BLT_POINT(profileName, pointName) blt::profiling::point(profileName, pointName)
+/**
+ * Prints the profile order from least time to most time.
+ * @param profileName the profile to print
+ * @param loggingLevel blt::logging::LOG_LEVEL to log with (default: NONE)
+ * @param averageHistory use the historical collection of interval rows in an average or just the latest? (default: false)
+ * @param ignoreNegatives ignore negative time values (default: true)
+ */
     #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__)
-    #define BLT_PRINT_ORDERED(profileName, ...) blt::profiling::printOrderedProfile(profileName, ##__VA_ARGS__)
+/**
+ * writes the profile to an output stream, ordered from least time to most time, in CSV format.
+ */
+    #define BLT_WRITE_PROFILE(stream, profileName) blt::profiling::writeProfile(stream, profileName, true)
 #endif
-
-#define BLT_INTERVAL_START(profileName, intervalName) BLT_START_INTERVAL(profileName, intervalName)
-#define BLT_INTERVAL_END(profileName, intervalName) BLT_END_INTERVAL(profileName, intervalName)

@@ -18,6 +18,109 @@ namespace blt::profiling {
     std::mutex profileLock{};
     std::unordered_map<std::string, profile> profiles;
     
+    struct IntervalComparable {
+        long difference;
+        std::string name;
+        
+        IntervalComparable(long difference, std::string name):
+                difference(difference), name(std::move(name)) {}
+    };
+    
+    inline void print(const std::vector<std::string>& lines, logging::LOG_LEVEL level) {
+        auto& logger = logging::getLoggerFromLevel(level);
+        for (const auto& line : lines)
+            logger << line;
+    }
+    
+    /**
+     * Copy-sorts the unordered vector into the ordered vector, min -> max
+     */
+    inline void orderIntervals(
+            const std::unordered_map<std::string, capture_interval>& unordered,
+            std::vector<IntervalComparable>& ordered
+    ) {
+        // copy
+        for (const auto& i : unordered)
+            ordered.emplace_back(i.second.end - i.second.start, i.first);
+        
+        // sort
+        std::sort(
+                ordered.begin(), ordered.end(),
+                [&](const IntervalComparable& c1, const IntervalComparable& c2) -> bool {
+                    return c1.difference < c2.difference;
+                }
+        );
+    }
+    
+    inline void averageIntervals(
+            const std::unordered_map<std::string, std::vector<capture_interval>>& intervals,
+            std::unordered_map<std::string, capture_interval>& averagedIntervals
+    ) {
+        for (const auto& i : intervals) {
+            const auto& name = i.first;
+            const auto& interval_vec = i.second;
+            long total_difference = 0;
+            
+            for (const auto& value : interval_vec)
+                total_difference += value.end - value.start;
+    
+            total_difference /= (long)interval_vec.size();
+            
+            std::string new_name = "(";
+            new_name += std::to_string(interval_vec.size());
+            new_name += ") ";
+            new_name += name;
+            
+            // can exploit how the order func works by supplying the difference into end,
+            // which sorts correctly despite not being a true interval.
+            averagedIntervals.insert({new_name, capture_interval{0, total_difference}});
+        }
+    }
+    
+    void writeProfile(std::ofstream& out, const std::string& profileName, bool ordered) {
+    
+    }
+    
+    void printProfile(
+            const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory,
+            bool ignoreNegatives
+    ) {
+        auto& profile = profiles[profileName];
+        const auto& intervals = profile.intervals;
+        const auto& points = profile.points;
+        
+        std::vector<IntervalComparable> ordered_vector;
+        std::unordered_map<std::string, capture_interval> averaged_intervals;
+        
+        if (averageHistory)
+            averageIntervals(profile.historicalIntervals, averaged_intervals);
+        
+        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_vector);
+        
+        string::TableFormatter formatter{profileName};
+        formatter.addColumn({"Order"});
+        formatter.addColumn({"Interval"});
+        formatter.addColumn({"Time (ns)"});
+        formatter.addColumn({"Time (ms)"});
+        
+        int index = 1;
+        for (const auto& interval : ordered_vector) {
+            formatter.addRow(
+                    {std::to_string(index++), interval.name, std::to_string(interval.difference),
+                     std::to_string((double)interval.difference / 1000000.0)}
+            );
+        }
+        
+        std::vector<std::string> updatedLines;
+        const auto& lines = formatter.createTable(true, true);
+        for (const auto& line : lines)
+            updatedLines.emplace_back(line + "\n");
+        
+        print(updatedLines, loggingLevel);
+    }
+
+// --- small helper functions below ---
+    
     void startInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
         capture_interval interval{};
@@ -28,7 +131,9 @@ namespace blt::profiling {
     void endInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
         profiles[profileName].intervals[intervalName].end = system::getCurrentTimeNanoseconds();
-        profiles[profileName].historicalIntervals[intervalName].push_back(profiles[profileName].intervals[intervalName]);
+        profiles[profileName].historicalIntervals[intervalName].push_back(
+                profiles[profileName].intervals[intervalName]
+        );
     }
     
     void point(const std::string& profileName, const std::string& pointName) {
@@ -47,121 +152,6 @@ namespace blt::profiling {
         return profiles[profileName];
     }
     
-    inline void print(const std::vector<std::string>& lines, logging::LOG_LEVEL level) {
-        auto& logger = logging::getLoggerFromLevel(level);
-        for (const auto& line : lines)
-            logger << line;
-    }
-    
-    void printProfile(const std::string& profileName, blt::logging::LOG_LEVEL loggingLevel, bool averageHistory, bool ignoreNegatives) {
-        string::TableFormatter formatter{profileName};
-        formatter.addColumn({"Interval"});
-        formatter.addColumn({"Time (ns)"});
-        formatter.addColumn({"Time (ms)"});
-        
-        auto& profile = profiles[profileName];
-        const auto& intervals = profile.intervals;
-        const auto& points = profile.points;
-        
-        for (const auto& interval : intervals) {
-            if (averageHistory) {
-                const auto& history = profile.historicalIntervals[interval.first];
-                long total_difference = 0;
-                for (const auto& h_interval : history) {
-                    const auto difference = h_interval.end - h_interval.start;
-                    if (ignoreNegatives && difference < 0)
-                        continue;
-                    total_difference += difference;
-                }
-                total_difference /= (long) history.size();
-                std::string name = "(";
-                name += std::to_string(history.size());
-                name += ") ";
-                name += interval.first;
-                formatter.addRow({name, std::to_string(total_difference), std::to_string((double) total_difference / 1000000.0)});
-            } else {
-                const auto difference = interval.second.end - interval.second.start;
-                if (ignoreNegatives && difference < 0)
-                    continue;
-                formatter.addRow({interval.first, std::to_string(difference), std::to_string((double) difference / 1000000.0)});
-            }
-        }
-        
-        std::vector<std::string> updatedLines;
-        const auto& lines = formatter.createTable(true, true);
-        for (const auto& line : lines)
-            updatedLines.emplace_back(line + "\n");
-        
-        print(updatedLines, loggingLevel);
-    }
-    
-    struct timeOrderContainer {
-        long difference;
-        std::string name;
-        
-        timeOrderContainer(long difference, std::string name): difference(difference), name(std::move(name)) {}
-    };
-    
-    inline bool timeCompare(const timeOrderContainer& container1, const timeOrderContainer& container2) {
-        return container1.difference < container2.difference;
-    }
-    
-    void printOrderedProfile(const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory, bool ignoreNegatives) {
-        auto& profile = profiles[profileName];
-        const auto& intervals = profile.intervals;
-        const auto& points = profile.points;
-        
-        std::vector<timeOrderContainer> unorderedIntervalVector;
-        
-        // TODO: refactor to reduce nesting
-        
-        for (const auto& interval : intervals) {
-            if (averageHistory) {
-                const auto& history = profile.historicalIntervals[interval.first];
-                long total_difference = 0;
-                for (const auto& h_interval : history) {
-                    const auto difference = h_interval.end - h_interval.start;
-                    if (ignoreNegatives && difference < 0)
-                        continue;
-                    total_difference += difference;
-                }
-                total_difference /= (long) history.size();
-                std::string name = "(";
-                name += std::to_string(history.size());
-                name += ") ";
-                name += interval.first;
-                unorderedIntervalVector.emplace_back(total_difference, name);
-            } else {
-                const auto difference = interval.second.end - interval.second.start;
-                if (ignoreNegatives && difference < 0)
-                    continue;
-                unorderedIntervalVector.emplace_back(difference, interval.first);
-            }
-        }
-        
-        std::sort(unorderedIntervalVector.begin(), unorderedIntervalVector.end(), timeCompare);
-        
-        string::TableFormatter formatter{profileName};
-        formatter.addColumn({"Order"});
-        formatter.addColumn({"Interval"});
-        formatter.addColumn({"Time (ns)"});
-        formatter.addColumn({"Time (ms)"});
-        
-        int index = 1;
-        for (const auto& interval : unorderedIntervalVector) {
-            formatter.addRow(
-                    {std::to_string(index++), interval.name, std::to_string(interval.difference), std::to_string(interval.difference / 1000000.0)}
-            );
-        }
-        
-        std::vector<std::string> updatedLines;
-        const auto& lines = formatter.createTable(true, true);
-        for (const auto& line : lines)
-            updatedLines.emplace_back(line + "\n");
-        
-        print(updatedLines, loggingLevel);
-    }
-    
     void discardProfiles() {
         profiles = {};
     }
@@ -175,7 +165,10 @@ namespace blt::profiling {
         profiles[profileName].points = {};
     }
     
-    std::vector<capture_interval> getAllIntervals(const std::string& profileName, const std::string& intervalName) {
+    std::vector<capture_interval> getAllIntervals(
+            const std::string& profileName, const std::string& intervalName
+    ) {
         return profiles[profileName].historicalIntervals[intervalName];
     }
+    
 }

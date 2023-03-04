@@ -40,8 +40,6 @@ static void runProfilingAndTableTests() {
     
     BLT_PRINT_PROFILE("Help", blt::logging::LOG_LEVEL::TRACE);
     BLT_TRACE("");
-    BLT_PRINT_ORDERED("Help", blt::logging::LOG_LEVEL::TRACE);
-    BLT_TRACE("");
     
     blt::string::TableFormatter formatter;
     formatter.addColumn(blt::string::TableColumn{"Test1"});

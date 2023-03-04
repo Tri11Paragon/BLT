@@ -112,11 +112,11 @@ inline void nbt_read_tests(){
         BLT_INFO("NBT Block %s Stream Correctly? %s;\n", size_str.c_str(), nbt_block_large_correct ? "True" : "False");
     }
     
-    BLT_PRINT_ORDERED("nbt read");
+    BLT_PRINT_PROFILE("nbt read");
     BLT_TRACE("{BLANK_LINE}");
-    BLT_PRINT_ORDERED("nbt read block");
+    BLT_PRINT_PROFILE("nbt read block");
     BLT_TRACE("{BLANK_LINE}");
-    BLT_PRINT_ORDERED("nbt read individual");
+    BLT_PRINT_PROFILE("nbt read individual");
     
     delete[] read_buffer;
     delete[] read_block_buffer;
@@ -177,9 +177,9 @@ inline void nbt_write_tests(){
         BLT_INFO("NBT %s Individual Write Correctly? %s;\n", size_str.c_str(), results ? "True" : "False");
     }
     
-    BLT_PRINT_ORDERED("nbt write individual");
+    BLT_PRINT_PROFILE("nbt write individual");
     BLT_TRACE("");
-    BLT_PRINT_ORDERED("nbt write block");
+    BLT_PRINT_PROFILE("nbt write block");
 }
 
 inline void nbt_tests(){
