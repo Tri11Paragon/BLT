@@ -54,7 +54,7 @@ namespace blt::profiling {
             bool averageHistory = false
     );
     
-    void writeProfile(std::ofstream& out, const std::string& profileName);
+    void writeProfile(std::ofstream& out, const std::string& profileName, bool averageHistory = false);
     
     void discardProfiles();
     

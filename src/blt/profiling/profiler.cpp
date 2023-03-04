@@ -26,10 +26,10 @@ namespace blt::profiling {
                 difference(difference), name(std::move(name)) {}
     };
     
-    inline void print(const std::vector<std::string>& lines, logging::LOG_LEVEL level) {
+    inline void println(const std::vector<std::string>&& lines, logging::LOG_LEVEL level) {
         auto& logger = logging::getLoggerFromLevel(level);
         for (const auto& line : lines)
-            logger << line;
+            logger << line << "\n";
     }
     
     /**
@@ -84,8 +84,18 @@ namespace blt::profiling {
         }
     }
     
-    void writeProfile(std::ofstream& out, const std::string& profileName, bool ordered) {
+    void writeProfile(std::ofstream& out, const std::string& profileName, bool averageHistory) {
+        auto& profile = profiles[profileName];
+        const auto& intervals = profile.intervals;
+        const auto& points = profile.points;
     
+        std::vector<IntervalComparable> ordered_vector;
+        std::unordered_map<std::string, capture_interval> averaged_intervals;
+    
+        if (averageHistory)
+            averageIntervals(profile.historicalIntervals, averaged_intervals);
+    
+        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_vector);
     }
     
     void printProfile(
@@ -116,13 +126,8 @@ namespace blt::profiling {
                      std::to_string((double)interval.difference / 1000000.0)}
             );
         }
-        
-        std::vector<std::string> updatedLines;
-        const auto& lines = formatter.createTable(true, true);
-        for (const auto& line : lines)
-            updatedLines.emplace_back(line + "\n");
-        
-        print(updatedLines, loggingLevel);
+    
+        println(formatter.createTable(true, true), loggingLevel);
     }
 
 // --- small helper functions below ---
