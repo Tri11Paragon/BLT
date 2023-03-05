@@ -19,6 +19,12 @@ namespace blt::string {
         return collection;
     }
     
+    /**
+     * This is a fast rounding function and is not guaranteed to be 100% correct
+     * @tparam decimal_places
+     * @param value
+     * @return
+     */
     template<int decimal_places>
     static inline double round_up(double value) {
         constexpr double multiplier = _static_pow(decimal_places);
