@@ -46,6 +46,37 @@ namespace blt {
             delete[] buffer;
         }
     };
+    
+    template<typename T>
+    struct nullptr_initializer {
+        private:
+            T* m_ptr = nullptr;
+        public:
+            nullptr_initializer() = default;
+            explicit nullptr_initializer(T* ptr): m_ptr(ptr) {}
+            nullptr_initializer(const nullptr_initializer<T>& ptr): m_ptr(ptr.m_ptr) {}
+            nullptr_initializer(nullptr_initializer<T>&& ptr) noexcept : m_ptr(ptr.m_ptr) {}
+            
+            nullptr_initializer<T>& operator=(const nullptr_initializer<T>& ptr){
+                if (&ptr == this)
+                    return *this;
+                this->m_ptr = ptr.m_ptr;
+                return *this;
+            }
+            
+            nullptr_initializer<T>& operator=(nullptr_initializer<T>&& ptr) noexcept {
+                if (&ptr == this)
+                    return *this;
+                this->m_ptr = ptr.m_ptr;
+                return *this;
+            }
+            
+            inline T* operator->(){
+                return m_ptr;
+            }
+            
+            ~nullptr_initializer() = default;
+    };
 }
 
 #endif //BLT_TESTS_MEMORY_H
