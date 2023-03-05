@@ -71,7 +71,7 @@ namespace blt {
                 return *this;
             }
             
-            inline T*& operator->(){
+            inline T* operator->(){
                 return m_ptr;
             }
             
