@@ -12,6 +12,21 @@
 #include <vector>
 
 namespace blt::string {
+    static inline std::string fromBytes(unsigned long bytes){
+        if (bytes > 1073741824) {
+            // gigabyte
+            return std::to_string((double)bytes / 1024.0 / 1024.0 / 1024.0) += "gb";
+        } else if (bytes > 1048576) {
+            // megabyte
+            return std::to_string((double)bytes / 1024.0 / 1024.0) += "mb";
+        } else if (bytes > 1024) {
+            // kilobyte
+            return std::to_string((double)bytes / 1024.0) += "kb";
+        } else {
+            return std::to_string(bytes) += "b";
+        }
+    }
+    
     // TODO template the padding functions:
     
     /**
