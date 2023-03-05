@@ -90,7 +90,7 @@ namespace blt {
                 blt::flat_stack<BST_node*> nodeStack{};
                 
                 BST_node* current = root;
-                while (current != nullptr || !nodeStack.isEmpty()) {
+                while (current != nullptr || !nodeStack.empty()) {
                     // go all the way to the left subtree
                     while (current != nullptr) {
                         nodeStack.push(current);

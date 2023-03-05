@@ -12,16 +12,30 @@
 #include <vector>
 
 namespace blt::string {
+    static inline constexpr double _static_pow(int p) {
+        int collection = 1;
+        for (int i = 0; i < p; i++)
+            collection *= 10;
+        return collection;
+    }
+    
+    template<int decimal_places>
+    static inline double round_up(double value) {
+        constexpr double multiplier = _static_pow(decimal_places);
+        return ((int)(value * multiplier) + 1) / multiplier;
+    }
+    
+    
     static inline std::string fromBytes(unsigned long bytes){
         if (bytes > 1073741824) {
             // gigabyte
-            return std::to_string((double)bytes / 1024.0 / 1024.0 / 1024.0) += "gb";
+            return std::to_string(round_up<3>((double) bytes / 1024.0 / 1024.0 / 1024.0)) += "gb";
         } else if (bytes > 1048576) {
             // megabyte
-            return std::to_string((double)bytes / 1024.0 / 1024.0) += "mb";
+            return std::to_string(round_up<3>((double)bytes / 1024.0 / 1024.0)) += "mb";
         } else if (bytes > 1024) {
             // kilobyte
-            return std::to_string((double)bytes / 1024.0) += "kb";
+            return std::to_string(round_up<3>((double)bytes / 1024.0)) += "kb";
         } else {
             return std::to_string(bytes) += "b";
         }
