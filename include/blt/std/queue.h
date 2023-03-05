@@ -8,20 +8,9 @@
 #define BLT_QUEUE_H
 
 /**
- * Do no use any queue in this file. They are slower than std::queue.
+ *
  */
 namespace blt {
-    
-    template<typename T>
-    struct node {
-        T t;
-        node* next;
-        
-        node(const T& t, node* next) {
-            this->t = t;
-            this->next = next;
-        }
-    };
     
     /**
      * Standard array backed first in first out queue
@@ -39,20 +28,21 @@ namespace blt {
              * and deletes the old array from memory.
              * @param newSize new size of the internal array
              */
-            void expand(int newSize) {
-                auto tempData = new T[newSize];
+            void expand() {
+                int new_size = m_size * 2;
+                auto tempData = new T[new_size];
                 for (int i = 0; i < m_insertIndex; i++)
                     tempData[i] = m_data[i];
                 delete[] m_data;
                 m_data = tempData;
-                m_size = newSize;
+                m_size = new_size;
             }
         
         public:
             
             void push(const T& t) {
                 if (m_insertIndex >= m_size) {
-                    expand(m_size * 2);
+                    expand();
                 }
                 m_data[m_insertIndex++] = t;
             }
@@ -66,8 +56,6 @@ namespace blt {
             }
             
             void pop() {
-                // TODO: throw exception when popping would result in a overflow?
-                // I didn't make it an exception here due to not wanting to import the class.
                 if (isEmpty())
                     return;
                 m_insertIndex--;
@@ -96,29 +84,32 @@ namespace blt {
             int m_size = 16;
             int m_headIndex = 0;
             int m_insertIndex = 0;
-            T* m_data = new T[m_size];
-            
+            T* m_data;
             /**
-             * Expands the internal array to the new size, copying over the data and shifting its minimal position to index 0
-             * and deletes the old array from memory.
-             * @param newSize new size of the internal array
+             * Expands the internal array to allow for more storage of elements
              */
-            void expand(int newSize) {
-                auto tempData = new T[newSize];
-                for (int i = 0; i < m_size - m_headIndex; i++)
-                    tempData[i] = m_data[i + m_headIndex];
+            void expand() {
+                int new_size = m_size * 2;
+                int removed_size = m_size - m_headIndex;
+                auto tempData = new T[new_size];
+                // only copy data from where we've removed onward
+                for (int i = 0; i < removed_size; i++)
+                    tempData[i] = m_data[i + m_headIndex]; // but don't copy data we've pop'd
                 delete[] m_data;
-                m_insertIndex = m_size - m_headIndex;
                 m_headIndex = 0;
+                m_insertIndex = removed_size - 1;
                 m_data = tempData;
-                m_size = newSize;
+                m_size = new_size;
             }
         
         public:
+            flat_queue(): m_data(new T[m_size]) {
+            
+            }
             
             void push(const T& t) {
                 if (m_insertIndex+1 >= m_size) {
-                    expand(m_size * 2);
+                    expand();
                 }
                 m_data[m_insertIndex++] = t;
             }
@@ -132,8 +123,6 @@ namespace blt {
             }
             
             void pop() {
-                // TODO: throw exception when popping would result in a overflow?
-                // I didn't make it an exception here due to not wanting to import the class.
                 if (isEmpty())
                     return;
                 m_headIndex++;
@@ -157,40 +146,6 @@ namespace blt {
             
             ~flat_queue() {
                 delete[](m_data);
-            }
-    };
-    
-    // avoid this. it is very slow.
-    template<typename T>
-    class node_queue {
-        private:
-            node<T>* m_head;
-        public:
-            
-            void push(const T& t) {
-                if (m_head == nullptr)
-                    m_head = new node<T>(t, nullptr);
-                else
-                    m_head = new node<T>(t, m_head);
-            }
-            
-            [[nodiscard]] const T& front() const {
-                return m_head->t;
-            }
-            
-            void pop() {
-                auto nextNode = m_head->next;
-                delete (m_head);
-                m_head = nextNode;
-            }
-            
-            ~node_queue() {
-                auto next = m_head;
-                while (next != nullptr) {
-                    auto nextNode = next->next;
-                    delete (next);
-                    next = nextNode;
-                }
             }
     };
 }
