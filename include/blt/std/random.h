@@ -42,6 +42,16 @@ namespace blt {
                 delete distribution;
             }
     };
+    
+    template<typename T>
+    class simplex_noise {
+        private:
+        
+        public:
+            simplex_noise() {
+            
+            }
+    };
 }
 
 #endif //BLT_RANDOM_H

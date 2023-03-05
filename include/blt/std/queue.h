@@ -56,16 +56,16 @@ namespace blt {
             }
             
             void pop() {
-                if (isEmpty())
+                if (empty())
                     return;
                 m_insertIndex--;
             }
-            
-            bool isEmpty() {
+        
+            [[nodiscard]] inline bool empty() const {
                 return m_insertIndex <= 0;
             }
-            
-            int size() {
+        
+            [[nodiscard]] inline int size() const {
                 return m_insertIndex;
             }
             
@@ -106,8 +106,8 @@ namespace blt {
             flat_queue(): m_data(new T[m_size]) {
             
             }
-            
-            void push(const T& t) {
+        
+            inline void push(const T& t) {
                 if (m_insertIndex+1 >= m_size) {
                     expand();
                 }
@@ -121,26 +121,26 @@ namespace blt {
             [[nodiscard]] const T& front() const {
                 return m_data[m_headIndex];
             }
-            
-            void pop() {
-                if (isEmpty())
+        
+            inline void pop() {
+                if (empty())
                     return;
                 m_headIndex++;
             }
             
-            bool isEmpty() {
+            [[nodiscard]] inline bool empty() const {
                 return m_headIndex >= m_size;
             }
             
-            int size() {
+            [[nodiscard]] inline int size() const {
                 return m_insertIndex - m_headIndex;
             }
-            
-            T* begin(){
+        
+            inline T* begin(){
                 return m_data[m_headIndex];
             }
-            
-            T* end(){
+        
+            inline T* end(){
                 return m_data[m_insertIndex];
             }
             
