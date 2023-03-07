@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <blt/std/logging.h>
 #include <fstream>
+#include <cstdint>
+
 
 /**
  * Defines several disableable macros (#define BLT_DISABLE_PROFILING). If you do not use these macros profiling cannot be disabled!
@@ -29,9 +31,14 @@ namespace blt::profiling {
         long end;
     };
     
+    struct capture_history {
+        std::uint64_t count;
+        std::uint64_t total;
+    };
+    
     struct profile {
         std::unordered_map<std::string, capture_interval> intervals;
-        std::unordered_map<std::string, std::vector<capture_interval>> historicalIntervals;
+        std::unordered_map<std::string, capture_history> intervals_total;
         blt::flat_queue<capture_point> points;
     };
     
@@ -42,10 +49,6 @@ namespace blt::profiling {
     void point(const std::string& profileName, const std::string& pointName);
     
     capture_interval getInterval(const std::string& profileName, const std::string& intervalName);
-    
-    std::vector<capture_interval> getAllIntervals(
-            const std::string& profileName, const std::string& intervalName
-    );
     
     profile getProfile(const std::string& profileName);
     

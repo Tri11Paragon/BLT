@@ -37,13 +37,24 @@ namespace blt {
             
             vec(const vec<T, size>& copy): vec(copy.elements) {}
             
-            [[nodiscard]] inline T x() const { return elements[0]; }
+            [[nodiscard]] inline T x() const {
+                return elements[0];
+            }
             
-            [[nodiscard]] inline T y() const { return elements[1]; }
+            [[nodiscard]] inline T y() const {
+                static_assert(size > 1);
+                return elements[1];
+            }
             
-            [[nodiscard]] inline T z() const { return elements[2]; }
+            [[nodiscard]] inline T z() const {
+                static_assert(size > 2);
+                return elements[2];
+            }
             
-            [[nodiscard]] inline T w() const { return elements[3]; }
+            [[nodiscard]] inline T w() const {
+                static_assert(size > 3);
+                return elements[3];
+            }
             
             inline T& operator[](int index) {
                 return elements[index];
@@ -53,15 +64,9 @@ namespace blt {
                 return elements[index];
             }
             
-            inline vec<T, size>& operator=(T f) {
+            inline vec<T, size>& operator=(T v) {
                 for (int i = 0; i < size; i++)
-                    elements[i] = f;
-                return *this;
-            }
-            
-            inline vec<T, size>& operator=(int i) {
-                for (int _ = 0; _ < size; _++)
-                    elements[_] = i;
+                    elements[i] = v;
                 return *this;
             }
             
@@ -121,7 +126,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + right[i];
         return vec<T, size>{initializer};
@@ -129,7 +134,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] - right[i];
         return vec<T, size>{initializer};
@@ -137,7 +142,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator+(const vec<T, size>& left, float f) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + f;
         return vec<T, size>{initializer};
@@ -145,7 +150,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator-(const vec<T, size>& left, float f) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + f;
         return vec<T, size>{initializer};
@@ -153,7 +158,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator+(float f, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f + right[i];
         return vec<T, size>{initializer};
@@ -161,7 +166,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator-(float f, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f - right[i];
         return vec<T, size>{initializer};
@@ -169,7 +174,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] * right[i];
         return vec<T, size>{initializer};
@@ -177,7 +182,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator*(const vec<T, size>& left, float f) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] * f;
         return vec<T, size>{initializer};
@@ -185,7 +190,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator*(float f, const vec<T, size>& right) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f * right[i];
         return vec<T, size>{initializer};
@@ -193,7 +198,7 @@ namespace blt {
     
     template<typename T, unsigned long size>
     inline vec<T, size> operator/(const vec<T, size>& left, float f) {
-        float initializer[size];
+        T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] / f;
         return vec<T, size>{initializer};

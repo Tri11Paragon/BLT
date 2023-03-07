@@ -53,42 +53,31 @@ namespace blt::profiling {
     }
     
     inline void averageIntervals(
-            const std::unordered_map<std::string, std::vector<capture_interval>>& intervals,
+            const std::unordered_map<std::string, capture_history>& intervals,
             std::unordered_map<std::string, capture_interval>& averagedIntervals
     ) {
         // average all intervals
         for (const auto& i : intervals) {
             const auto& name = i.first;
             const auto& interval_vec = i.second;
-            long total_difference = 0;
-            
-            // calculate total difference
-            for (const auto& value : interval_vec) {
-                auto difference = value.end - value.start;
-                // negatives make no sense. remove them to prevent errors
-                if (difference > 0)
-                    total_difference += difference;
-            }
-            
-            total_difference /= (long) interval_vec.size();
             
             // we can exploit how the order func works by supplying the difference into end,
             // which sorts correctly despite not being a true interval.
-            averagedIntervals.insert({name, capture_interval{0, total_difference}});
+            averagedIntervals.insert({name, capture_interval{0, (long)(interval_vec.total / interval_vec.count)}});
         }
     }
     
     void writeProfile(std::ofstream& out, const std::string& profileName, bool averageHistory) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
-        const auto& intervals_hist = profile.historicalIntervals;
+        const auto& intervals_total = profile.intervals_total;
         const auto& points = profile.points;
         
         std::vector<IntervalComparable> order_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;
         
         if (averageHistory)
-            averageIntervals(profile.historicalIntervals, averaged_intervals);
+            averageIntervals(intervals_total, averaged_intervals);
         
         orderIntervals(averageHistory ? averaged_intervals : intervals, order_rows);
         
@@ -96,7 +85,7 @@ namespace blt::profiling {
         int index = 1;
         for (const auto& row : order_rows) {
             out << std::to_string(index++) << ","
-                << std::to_string(averageHistory ? intervals_hist.at(row.name).size() : 1) << ","
+                << std::to_string(averageHistory ? intervals_total.at(row.name).count : 1) << ","
                 << row.name << ","
                 << std::to_string((double) row.difference / 1000000.0) << ","
                 << std::to_string(row.difference) << "\n";
@@ -109,14 +98,14 @@ namespace blt::profiling {
     ) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
-        const auto& intervals_hist = profile.historicalIntervals;
+        const auto& intervals_total = profile.intervals_total;
         const auto& points = profile.points;
         
         std::vector<IntervalComparable> ordered_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;
         
         if (averageHistory)
-            averageIntervals(profile.historicalIntervals, averaged_intervals);
+            averageIntervals(intervals_total, averaged_intervals);
         
         orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_rows);
         
@@ -131,7 +120,7 @@ namespace blt::profiling {
         for (const auto& row : ordered_rows) {
             formatter.addRow(
                     {std::to_string(index++),
-                     std::to_string(averageHistory ? intervals_hist.at(row.name).size() : 1),
+                     std::to_string(averageHistory ? intervals_total.at(row.name).count : 1),
                      row.name,
                      std::to_string((double) row.difference / 1000000.0),
                      std::to_string(row.difference)}
@@ -152,10 +141,16 @@ namespace blt::profiling {
     
     void endInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
-        profiles[profileName].intervals[intervalName].end = system::getCurrentTimeNanoseconds();
-        profiles[profileName].historicalIntervals[intervalName].push_back(
-                profiles[profileName].intervals[intervalName]
-        );
+        auto& prof = profiles[profileName];
+        auto& ref = prof.intervals[intervalName];
+    
+        ref.end = system::getCurrentTimeNanoseconds();
+        
+        auto difference = ref.end - ref.start;
+        auto& href = prof.intervals_total[intervalName];
+    
+        href.total += difference;
+        href.count++;
     }
     
     void point(const std::string& profileName, const std::string& pointName) {
@@ -180,17 +175,11 @@ namespace blt::profiling {
     
     void discardIntervals(const std::string& profileName) {
         profiles[profileName].intervals = {};
-        profiles[profileName].historicalIntervals = {};
+        profiles[profileName].intervals_total = {};
     }
     
     void discardPoints(const std::string& profileName) {
         profiles[profileName].points = {};
-    }
-    
-    std::vector<capture_interval> getAllIntervals(
-            const std::string& profileName, const std::string& intervalName
-    ) {
-        return profiles[profileName].historicalIntervals[intervalName];
     }
     
 }

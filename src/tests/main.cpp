@@ -5,8 +5,20 @@
 #include "profiling_tests.h"
 #include "nbt_tests.h"
 #include "queue_tests.h"
+#include <bitset>
 
 int main() {
+    
+    int data = 0;
+    int index = 2;
+    data = data | index << (32 - 2);
+    auto fdata = *reinterpret_cast<float*>(&data);
+    
+    auto back_to_int = *reinterpret_cast<int*>(&fdata);
+    
+    std::string bits = std::bitset<32>((unsigned long long) back_to_int).to_string();
+    std::cout << bits << "\n";
+    return 0;
     binaryTreeTest();
     
     run_logging();
