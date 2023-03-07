@@ -99,7 +99,7 @@ namespace blt::profiling {
                 << row.name << ","
                 << std::to_string((double) row.difference / 1000000.0) << ","
                 << std::to_string(row.difference) << ","
-                << std::to_string(row.total) << "\n";
+                << std::to_string((double) row.total / 1000000.0) << "\n";
         }
         out.flush();
     }
@@ -136,7 +136,7 @@ namespace blt::profiling {
                      row.name,
                      std::to_string((double) row.difference / 1000000.0),
                      std::to_string(row.difference),
-                     std::to_string(row.total)}
+                     std::to_string((double) row.total / 1000000.0)}
             );
         }
         
