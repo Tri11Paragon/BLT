@@ -21,9 +21,13 @@ namespace blt::profiling {
     struct IntervalComparable {
         long difference;
         std::string name;
+        std::uint64_t total;
         
         IntervalComparable(long difference, std::string name):
-                difference(difference), name(std::move(name)) {}
+                difference(difference), name(std::move(name)), total(difference) {}
+        
+        IntervalComparable(long difference, std::string name, std::uint64_t total):
+                difference(difference), name(std::move(name)), total(total) {}
     };
     
     inline void println(const std::vector<std::string>&& lines, logging::LOG_LEVEL level) {
@@ -37,11 +41,15 @@ namespace blt::profiling {
      */
     inline void orderIntervals(
             const std::unordered_map<std::string, capture_interval>& unordered,
-            std::vector<IntervalComparable>& ordered
+            std::vector<IntervalComparable>& ordered, bool history
     ) {
         // copy
-        for (const auto& i : unordered)
-            ordered.emplace_back(i.second.end - i.second.start, i.first);
+        for (const auto& i : unordered) {
+            if (history)
+                ordered.emplace_back(i.second.end, i.first, i.second.start);
+            else
+                ordered.emplace_back(i.second.end - i.second.start, i.first);
+        }
         
         // sort
         std::sort(
@@ -63,7 +71,9 @@ namespace blt::profiling {
             
             // we can exploit how the order func works by supplying the difference into end,
             // which sorts correctly despite not being a true interval.
-            averagedIntervals.insert({name, capture_interval{0, (long)(interval_vec.total / interval_vec.count)}});
+            averagedIntervals.insert(
+                    {name, capture_interval{(long)interval_vec.total, (long) (interval_vec.total / interval_vec.count)}}
+            );
         }
     }
     
@@ -79,16 +89,17 @@ namespace blt::profiling {
         if (averageHistory)
             averageIntervals(intervals_total, averaged_intervals);
         
-        orderIntervals(averageHistory ? averaged_intervals : intervals, order_rows);
+        orderIntervals(averageHistory ? averaged_intervals : intervals, order_rows, averageHistory);
         
-        out << "Order,Count,Interval,Time (ms),Time (ns)\n";
+        out << "Order,Count,Interval,Time (ms),Time (ns),Total (ms)\n";
         int index = 1;
         for (const auto& row : order_rows) {
             out << std::to_string(index++) << ","
                 << std::to_string(averageHistory ? intervals_total.at(row.name).count : 1) << ","
                 << row.name << ","
                 << std::to_string((double) row.difference / 1000000.0) << ","
-                << std::to_string(row.difference) << "\n";
+                << std::to_string(row.difference) << ","
+                << std::to_string(row.total) << "\n";
         }
         out.flush();
     }
@@ -107,7 +118,7 @@ namespace blt::profiling {
         if (averageHistory)
             averageIntervals(intervals_total, averaged_intervals);
         
-        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_rows);
+        orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_rows, averageHistory);
         
         string::TableFormatter formatter{profileName};
         formatter.addColumn({"Order"});
@@ -115,6 +126,7 @@ namespace blt::profiling {
         formatter.addColumn({"Interval"});
         formatter.addColumn({"Time (ms)"});
         formatter.addColumn({"Time (ns)"});
+        formatter.addColumn({"Total (ms)"});
         
         int index = 1;
         for (const auto& row : ordered_rows) {
@@ -123,7 +135,8 @@ namespace blt::profiling {
                      std::to_string(averageHistory ? intervals_total.at(row.name).count : 1),
                      row.name,
                      std::to_string((double) row.difference / 1000000.0),
-                     std::to_string(row.difference)}
+                     std::to_string(row.difference),
+                     std::to_string(row.total)}
             );
         }
         
@@ -143,12 +156,12 @@ namespace blt::profiling {
         std::scoped_lock lock(profileLock);
         auto& prof = profiles[profileName];
         auto& ref = prof.intervals[intervalName];
-    
+        
         ref.end = system::getCurrentTimeNanoseconds();
         
         auto difference = ref.end - ref.start;
         auto& href = prof.intervals_total[intervalName];
-    
+        
         href.total += difference;
         href.count++;
     }
