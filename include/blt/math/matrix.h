@@ -216,6 +216,18 @@ namespace blt {
         return mat;
     }
     
+    inline vec4 operator*(const mat4x4& left, const vec4& right){
+        vec4 ret{0,0,0,0};
+        
+        for (int m = 0; m < 4; m++) {
+            for (int n = 0; n < 4; n++) {
+                ret[m] = ret[m] + left.m(m, n) * right[n];
+            }
+        }
+    
+        return ret;
+    }
+    
     // multiplies the const c with each element in the mat4x4 v
     inline mat4x4 operator*(float c, const mat4x4& v) {
         mat4x4 mat{};
