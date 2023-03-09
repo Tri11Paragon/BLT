@@ -56,6 +56,17 @@ namespace blt {
                 return elements[3];
             }
             
+            [[nodiscard]] inline T magnitude() const {
+                T total = 0;
+                for (int i = 0; i < size; i++)
+                    total += elements[i] * elements[i];
+                return std::sqrt(total);
+            }
+            
+            [[nodiscard]] inline vec<T, size> normalize() const {
+                return *this / this->magnitude();
+            }
+            
             inline T& operator[](int index) {
                 return elements[index];
             }
