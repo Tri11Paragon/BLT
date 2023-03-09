@@ -228,6 +228,16 @@ namespace blt {
         return ret;
     }
     
+    template<typename T, unsigned long size>
+    inline vec4 operator*(const mat4x4& left, const vec<T, size>& right){
+        vec4 ret{0,0,0,0};
+        
+        for (int i = 0; i < size; i++)
+            ret[i] = (float)right[i];
+        
+        return left * ret;
+    }
+    
     // multiplies the const c with each element in the mat4x4 v
     inline mat4x4 operator*(float c, const mat4x4& v) {
         mat4x4 mat{};
