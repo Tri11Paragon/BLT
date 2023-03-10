@@ -141,6 +141,12 @@ namespace blt {
                         left.z() * right.x() - left.x() * right.z(),
                         left.x() * right.y() - left.y() * right.x()};
             }
+            
+            static inline vec<T, size> project(const vec<T, size>& u, const vec<T, size>& v){
+                float du = dot(u);
+                float dv = dot(v);
+                return (du / dv) * v;
+            }
     };
     
     template<typename T, unsigned long size>
