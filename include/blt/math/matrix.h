@@ -83,6 +83,43 @@ namespace blt {
             inline mat4x4& scale(const vec4& vec) { return scale(vec[0], vec[1], vec[2]); }
             inline mat4x4& scale(const vec3& vec) { return scale(vec[0], vec[1], vec[2]); }
             
+            // angle in radians
+            inline mat4x4& rotateX(float angle){
+                mat4x4 rotationMatrix {};
+                rotationMatrix.m(1, 1, std::cos(angle));
+                rotationMatrix.m(1, 2, -std::sin(angle));
+                rotationMatrix.m(2, 1, std::sin(angle));
+                rotationMatrix.m(2, 2, std::cos(angle));
+                
+                *this = *this * rotationMatrix;
+                
+                return *this;
+            }
+        
+            inline mat4x4& rotateY(float angle){
+                mat4x4 rotationMatrix {};
+                rotationMatrix.m(0, 0, std::cos(angle));
+                rotationMatrix.m(0, 2, std::sin(angle));
+                rotationMatrix.m(2, 0, -std::sin(angle));
+                rotationMatrix.m(2, 2, std::cos(angle));
+            
+                *this = *this * rotationMatrix;
+            
+                return *this;
+            }
+        
+            inline mat4x4& rotateZ(float angle){
+                mat4x4 rotationMatrix {};
+                rotationMatrix.m(0, 0, std::cos(angle));
+                rotationMatrix.m(0, 1, -std::sin(angle));
+                rotationMatrix.m(1, 0, std::sin(angle));
+                rotationMatrix.m(1, 1, std::cos(angle));
+            
+                *this = *this * rotationMatrix;
+            
+                return *this;
+            }
+            
             [[nodiscard]] mat4x4 transpose() const {
                 mat4x4 copy{*this};
                 
