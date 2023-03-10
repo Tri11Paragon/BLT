@@ -133,6 +133,14 @@ namespace blt {
                     dot += left[i] * right[i];
                 return dot;
             }
+            
+            static inline vec<T, size> cross(const vec<T, size>& left, const vec<T, size>& right) {
+                // cross is only defined on vectors of size 3. 2D could be implemented, which is a TODO
+                static_assert(size == 3);
+                return {left.y() * right.z() - left.z() * right.y(),
+                        left.z() * right.x() - left.x() * right.z(),
+                        left.x() * right.y() - left.y() * right.x()};
+            }
     };
     
     template<typename T, unsigned long size>
