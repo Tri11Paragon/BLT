@@ -17,7 +17,7 @@ namespace blt {
     static inline logging::logger& operator<<(logging::logger& log, blt::vec<T, size> vec){
         log << "(";
         for (int i = 0; i < size; i++)
-            log << vec[i] << i == size-1 ? ")" : ", ";
+            log << vec[i] << ((i == size-1) ? ")" : ", ");
         return log;
     }
 
