@@ -12,6 +12,12 @@
 
 namespace blt {
     
+    constexpr float EPSILON = 0.0001f;
+    
+    static inline constexpr bool f_equal(float v1, float v2) {
+        return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
+    }
+    
     template<typename T, unsigned long size>
     struct vec {
         private:
@@ -130,14 +136,14 @@ namespace blt {
             /**
              * performs the dot product of left * right
              */
-            static inline T dot(const vec<T, size>& left, const vec<T, size>& right) {
+            static inline constexpr T dot(const vec<T, size>& left, const vec<T, size>& right) {
                 T dot = 0;
                 for (int i = 0; i < size; i++)
                     dot += left[i] * right[i];
                 return dot;
             }
             
-            static inline vec<T, size> cross(const vec<T, size>& left, const vec<T, size>& right) {
+            static inline constexpr vec<T, size> cross(const vec<T, size>& left, const vec<T, size>& right) {
                 // cross is only defined on vectors of size 3. 2D could be implemented, which is a TODO
                 static_assert(size == 3);
                 return {left.y() * right.z() - left.z() * right.y(),
@@ -145,7 +151,7 @@ namespace blt {
                         left.x() * right.y() - left.y() * right.x()};
             }
             
-            static inline vec<T, size> project(const vec<T, size>& u, const vec<T, size>& v){
+            static inline constexpr vec<T, size> project(const vec<T, size>& u, const vec<T, size>& v){
                 float du = dot(u);
                 float dv = dot(v);
                 return (du / dv) * v;
@@ -153,7 +159,7 @@ namespace blt {
     };
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + right[i];
@@ -161,7 +167,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] - right[i];
@@ -169,7 +175,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator+(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator+(const vec<T, size>& left, float f) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + f;
@@ -177,7 +183,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator-(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator-(const vec<T, size>& left, float f) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] + f;
@@ -185,7 +191,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator+(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator+(float f, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f + right[i];
@@ -193,7 +199,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator-(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator-(float f, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f - right[i];
@@ -201,7 +207,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] * right[i];
@@ -209,7 +215,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator*(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator*(const vec<T, size>& left, float f) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] * f;
@@ -217,7 +223,7 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator*(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator*(float f, const vec<T, size>& right) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = f * right[i];
@@ -225,11 +231,27 @@ namespace blt {
     }
     
     template<typename T, unsigned long size>
-    inline vec<T, size> operator/(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator/(const vec<T, size>& left, float f) {
         T initializer[size];
         for (int i = 0; i < size; i++)
             initializer[i] = left[i] / f;
         return vec<T, size>{initializer};
+    }
+    
+    template<typename T, unsigned long size>
+    inline constexpr bool operator==(const vec<T, size>& left, const vec<T, size>& right) {
+        for (int i = 0; i < size; i++)
+            if (left[i] != right[i])
+                return false;
+        return true;
+    }
+    
+    template<typename T, unsigned long size>
+    inline constexpr bool operator&&(const vec<T, size>& left, const vec<T, size>& right) {
+        for (int i = 0; i < size; i++)
+            if (!f_equal(left[i], right[i]))
+                return false;
+        return true;
     }
     
     typedef vec<float, 2> vec2f;

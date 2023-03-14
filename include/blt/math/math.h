@@ -12,12 +12,6 @@
 
 namespace blt {
     
-    constexpr float EPSILON = 0.0001f;
-    
-    static inline constexpr bool f_equal(float v1, float v2) {
-        return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
-    }
-    
     /**
      * fast number integer
      */
