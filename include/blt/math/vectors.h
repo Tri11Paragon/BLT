@@ -63,8 +63,11 @@ namespace blt {
                 return std::sqrt(total);
             }
             
-            [[nodiscard]] inline vec<T, size> normalize() const {
-                return *this / this->magnitude();
+            [[nodiscard]] inline vec<T, size>& normalize() const {
+                auto mag = this->magnitude();
+                if (mag == 0)
+                    return *this;
+                return *this / mag;
             }
             
             inline T& operator[](int index) {
