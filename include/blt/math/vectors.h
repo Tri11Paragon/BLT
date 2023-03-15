@@ -282,6 +282,46 @@ namespace blt {
     typedef vec3f vec3;
     typedef vec4f vec4;
     
+    namespace vec {
+        void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3) {
+            v1 = v.normalize();
+        
+            vec3 arbitraryVector{1, 0, 0};
+            if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9) {
+                arbitraryVector = vec3{0, 1, 0};
+            }
+        
+            v2 = vec3::cross(v, arbitraryVector).normalize();
+            v3 = vec3::cross(v1, v2);
+        }
+    
+        // Gram-Schmidt orthonormalization algorithm
+        void gramSchmidt(std::vector<vec3>& vectors) {
+            int n = (int)vectors.size();
+            std::vector<vec3> basis;
+        
+            // normalize first vector
+            basis.push_back(vectors[0]);
+            basis[0] = basis[0].normalize();
+        
+            // iterate over the rest of the vectors
+            for (int i = 1; i < n; ++i) {
+                // subtract the projections of the vector onto the previous basis vectors
+                vec3 new_vector = vectors[i];
+                for (int j = 0; j < i; ++j) {
+                    float projection = vec3::dot(vectors[i], basis[j]);
+                    new_vector[0] -= projection * basis[j].x();
+                    new_vector[1] -= projection * basis[j].y();
+                    new_vector[2] -= projection * basis[j].z();
+                }
+                // normalize the new basis vector
+                new_vector = new_vector.normalize();
+                basis.push_back(new_vector);
+            }
+        
+            vectors = basis;
+        }
+    }
 }
 
 #endif //BLT_TESTS_VECTORS_H
