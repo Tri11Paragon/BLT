@@ -282,7 +282,7 @@ namespace blt {
     typedef vec3f vec3;
     typedef vec4f vec4;
     
-    namespace vec {
+    namespace vec_algorithm {
         void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3) {
             v1 = v.normalize();
         
