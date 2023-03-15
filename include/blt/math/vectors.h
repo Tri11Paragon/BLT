@@ -283,7 +283,7 @@ namespace blt {
     typedef vec4f vec4;
     
     namespace vec_algorithm {
-        void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3) {
+        static inline void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3) {
             v1 = v.normalize();
         
             vec3 arbitraryVector{1, 0, 0};
@@ -296,7 +296,7 @@ namespace blt {
         }
     
         // Gram-Schmidt orthonormalization algorithm
-        void gramSchmidt(std::vector<vec3>& vectors) {
+        static inline void gramSchmidt(std::vector<vec3>& vectors) {
             int n = (int)vectors.size();
             std::vector<vec3> basis;
         
