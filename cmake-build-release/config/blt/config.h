@@ -1,0 +1,2 @@
+
+#define ZLIB_FOUND

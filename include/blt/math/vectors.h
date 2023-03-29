@@ -19,7 +19,7 @@ namespace blt {
         return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
     }
     
-    template<typename T, unsigned long size>
+    template<typename T, unsigned long size, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
     struct vec {
         private:
             T elements[size]{};
