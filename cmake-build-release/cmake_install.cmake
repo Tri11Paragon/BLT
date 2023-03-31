@@ -1,4 +1,4 @@
-# Install script for directory: /home/brett/Documents/code/c++/BLT
+# Install script for directory: /home/laptop/Documents/c++/BLT
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/brett/Documents/code/c++/BLT/cmake-build-release/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/laptop/Documents/c++/BLT/cmake-build-release/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

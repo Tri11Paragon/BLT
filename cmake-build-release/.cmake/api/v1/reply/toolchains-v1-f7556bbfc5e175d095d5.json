@@ -33,8 +33,8 @@
 						"gcc_s"
 					]
 				},
-				"path" : "/usr/bin/cc",
-				"version" : "12.2.0"
+				"path" : "/usr/bin/gcc-12",
+				"version" : "12.1.0"
 			},
 			"language" : "C",
 			"sourceFileExtensions" : 
@@ -79,8 +79,8 @@
 						"gcc"
 					]
 				},
-				"path" : "/usr/bin/c++",
-				"version" : "12.2.0"
+				"path" : "/usr/bin/g++-12",
+				"version" : "12.1.0"
 			},
 			"language" : "CXX",
 			"sourceFileExtensions" : 

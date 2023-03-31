@@ -85,7 +85,7 @@ static inline void random_access() {
     bool flat_valid = true;
     bool stack_valid = true;
     
-    BLT_START_INTERVAL("Access", "blt::flat_queue");
+    BLT_START_INTERVAL("Random", "blt::flat_queue");
     for (int i = 0; i < 500; i++) {
         auto front = blt_flat_queue.front();
         auto next = base_queue.front();
