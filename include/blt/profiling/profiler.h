@@ -26,6 +26,7 @@ namespace blt::profiling {
         long point{};
     };
     
+    
     struct capture_interval {
         long start;
         long end;
