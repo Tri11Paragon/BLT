@@ -58,15 +58,19 @@ namespace blt {
             }
             
             inline mat4x4& translate(float x, float y, float z) {
+                mat4x4 translation_mat {};
                 /**
                  * 9.005 Are OpenGL matrices column-major or row-major?
                  * For programming purposes, OpenGL matrices are 16-value arrays with base vectors laid out contiguously in memory.
                  * The translation components occupy the 13th, 14th, and 15th elements of the 16-element matrix,
                  * where indices are numbered from 1 to 16 as described in section 2.11.2 of the OpenGL 2.1 Specification.
                  */
-                m03(x);
-                m13(y);
-                m23(z);
+                translation_mat.m03(x);
+                translation_mat.m13(y);
+                translation_mat.m23(z);
+                
+                *this = *this * translation_mat;
+                
                 return *this;
             }
             
@@ -74,9 +78,14 @@ namespace blt {
             inline mat4x4& translate(const vec3& vec) { return translate(vec[0], vec[1], vec[2]); }
             
             inline mat4x4& scale(float x, float y, float z) {
+                mat4x4 scale_mat {};
+                
                 m00(m00() * x);
                 m11(m11() * y);
                 m22(m11() * z);
+                
+                *this = *this * scale_mat;
+                
                 return *this;
             }
             

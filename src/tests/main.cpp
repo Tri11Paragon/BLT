@@ -8,6 +8,7 @@
 #include "blt/math/vectors.h"
 #include "blt/math/matrix.h"
 #include <bitset>
+#include "hashmap_tests.h"
 
 int main() {
     binaryTreeTest();
@@ -40,6 +41,11 @@ int main() {
     auto result = m * v;
     
     std::cout << result.x() << " " << result.y() << " " << result.z() << " " << result.w() << std::endl;
+    
+    if (test_hashmaps()){
+        BLT_FATAL("Hashmap test failed!");
+        return 1;
+    }
     
     return 0;
 }
