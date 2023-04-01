@@ -20,6 +20,9 @@ BLT_BINARY_DIR:STATIC=/home/brett/Documents/code/c++/BLT/cmake-build-release
 //Value Computed by CMake
 BLT_IS_TOP_LEVEL:STATIC=ON
 
+//Dependencies for the target
+BLT_LIB_DEPENDS:STATIC=general;ZLIB::ZLIB;
+
 //Value Computed by CMake
 BLT_SOURCE_DIR:STATIC=/home/brett/Documents/code/c++/BLT
 

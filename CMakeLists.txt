@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.0)
 project(BLT VERSION 0.5.2)
 
 set(CMAKE_CXX_STANDARD 17)

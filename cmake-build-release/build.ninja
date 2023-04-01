@@ -51,56 +51,56 @@ build cmake_object_order_depends_target_BLT: phony || CMakeFiles/BLT.dir
 
 build CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/filesystem.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
 build CMakeFiles/BLT.dir/src/blt/std/format.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/format.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/format.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
 build CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/loader.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
 build CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
 build CMakeFiles/BLT.dir/src/blt/std/system.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/std/system.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/std
 
 build CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/profiling
 
 build CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/nbt/nbt.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/nbt
 
 build CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o: CXX_COMPILER__BLT_Release /home/brett/Documents/code/c++/BLT/src/blt/nbt/nbt_block.cpp || cmake_object_order_depends_target_BLT
   DEP_FILE = CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/nbt
@@ -132,7 +132,7 @@ build cmake_object_order_depends_target_BLT_TESTS: phony || cmake_object_order_d
 
 build CMakeFiles/BLT_TESTS.dir/src/tests/main.cpp.o: CXX_COMPILER__BLT_TESTS_Release /home/brett/Documents/code/c++/BLT/src/tests/main.cpp || cmake_object_order_depends_target_BLT_TESTS
   DEP_FILE = CMakeFiles/BLT_TESTS.dir/src/tests/main.cpp.o.d
-  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -fsanitize=address
+  FLAGS = -O3 -DNDEBUG -fdiagnostics-color=always -fsanitize=address -std=gnu++17
   INCLUDES = -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-release/config
   OBJECT_DIR = CMakeFiles/BLT_TESTS.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT_TESTS.dir/src/tests
@@ -147,7 +147,7 @@ build CMakeFiles/BLT_TESTS.dir/src/tests/main.cpp.o: CXX_COMPILER__BLT_TESTS_Rel
 
 build BLT_TESTS: CXX_EXECUTABLE_LINKER__BLT_TESTS_Release CMakeFiles/BLT_TESTS.dir/src/tests/main.cpp.o | libBLT.a /usr/lib/x86_64-linux-gnu/libz.so || libBLT.a
   FLAGS = -O3 -DNDEBUG
-  LINK_FLAGS = -fsanitize=address
+  LINK_FLAGS = -rdynamic  -fsanitize=address
   LINK_LIBRARIES = libBLT.a  /usr/lib/x86_64-linux-gnu/libz.so
   OBJECT_DIR = CMakeFiles/BLT_TESTS.dir
   POST_BUILD = :
@@ -192,6 +192,11 @@ build BLT: phony libBLT.a
 # Folder: /home/brett/Documents/code/c++/BLT/cmake-build-release
 
 build all: phony libBLT.a BLT_TESTS
+
+# =============================================================================
+# Unknown Build Time Dependencies.
+# Tell Ninja that they may appear as side effects of build rules
+# otherwise ordered by order-only dependencies.
 
 # =============================================================================
 # Built-in targets
