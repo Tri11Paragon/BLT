@@ -18,10 +18,10 @@ void run_logging() {
     BLT_ERROR("Hello World!\n");
     BLT_FATAL("Hello World!\n");
     
-    blt::logging::tlog << "Hello! " << "Double stream insertion! " << 51 << 65 << " ";
-    blt::logging::tlog << "Same Line! ";
-    blt::logging::tlog << "Write the end!\n";
-    blt::logging::tlog << "Seeee\n Super\n";
+    blt::logging::trace << "Hello! " << "Double stream insertion! " << 51 << 65 << " ";
+    blt::logging::trace << "Same Line! ";
+    blt::logging::trace << "Write the end!\n";
+    blt::logging::trace << "Seeee\n Super\n";
     
     std::string hello = "superSexyMax";
     std::cout << "String starts with: " << blt::string::contains(hello, "superSexyMaxE") << "\n";

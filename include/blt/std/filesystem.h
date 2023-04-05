@@ -69,7 +69,7 @@ namespace blt::fs {
             size_t readIndex = 0;
         public:
             explicit fstream_block_reader(std::fstream& stream, size_t bufferSize):
-                    m_stream(stream), m_buffer(new char[bufferSize]), block_reader(bufferSize) {}
+                    block_reader(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
             
             explicit fstream_block_reader(fstream_block_reader& copy) = delete;
             
@@ -93,7 +93,7 @@ namespace blt::fs {
             size_t writeIndex = 0;
         public:
             explicit fstream_block_writer(std::fstream& stream, size_t bufferSize):
-                    m_stream(stream), m_buffer(new char[bufferSize]), block_writer(bufferSize) {}
+                    block_writer(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
             
             explicit fstream_block_writer(fstream_block_writer& copy) = delete;
             

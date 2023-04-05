@@ -226,6 +226,15 @@ namespace blt::logging {
         std::cerr.flush();
         std::cout.flush();
     }
+    
+    void testLogging() {
+        trace << "Trace Test!\n";
+        debug << "Debug Test!\n";
+        info << "Info Test!\n";
+        warn << "Warn Test!\n";
+        error << "Error Test!\n";
+        fatal << "Fatal Test!\n";
+    }
 }
 
 

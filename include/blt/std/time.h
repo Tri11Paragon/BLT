@@ -19,7 +19,7 @@ namespace blt::system {
             return asString;
         std::string zeros;
         zeros.reserve(length);
-        for (int i = 0; i < length; i++){
+        for (unsigned int i = 0; i < length; i++){
             zeros += '0';
         }
         return zeros + asString;

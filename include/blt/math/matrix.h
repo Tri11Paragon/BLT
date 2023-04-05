@@ -51,6 +51,14 @@ namespace blt {
                 }
             }
             
+            mat4x4& operator=(const mat4x4& copy){
+                if (&copy == this)
+                    return *this;
+                for (int i = 0; i < 16; i++) {
+                    data.single[i] = copy.data.single[i];
+                }
+            }
+            
             explicit mat4x4(const float dat[16]) {
                 for (int i = 0; i < 16; i++) {
                     data.single[i] = dat[i];
@@ -333,8 +341,6 @@ namespace blt {
     // http://www.songho.ca/opengl/gl_projectionmatrix.html
     static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far){
         mat4x4 perspectiveMat4x4 {emptyMatrix};
-        
-        float oneOverNearMFar = 1.0f / (near - far);
         
         float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
         perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));

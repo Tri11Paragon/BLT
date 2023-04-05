@@ -28,7 +28,7 @@ std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool
     
     for (const auto& row : rows) {
         std::string rowString = "|";
-        for (int i = 0; i < row.rowValues.size(); i++) {
+        for (unsigned int i = 0; i < row.rowValues.size(); i++) {
             const auto& rowValue = row.rowValues[i];
             const auto& column = columns[i];
             const int spaceLeft = int(column.maxColumnLength) - int(rowValue.size());
@@ -51,7 +51,7 @@ std::string blt::string::TableFormatter::generateColumnHeader() {
     updateMaxColumnLengths();
     std::string header = "|";
     
-    for (int i = 0; i < columns.size(); i++) {
+    for (unsigned int i = 0; i < columns.size(); i++) {
         const auto& column = columns[i];
         auto columnPaddingLength = (int(column.maxColumnLength) - int(column.columnName.size()))/2.0;
         header += createPadding(int(m_columnPadding + (int)std::floor(columnPaddingLength)));
@@ -82,10 +82,10 @@ std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
     
     halfWidthLeftSeparator += "+";
     
-    for (int i = 0; i < sizeNameFloor - 1; i++)
+    for (unsigned int i = 0; i < sizeNameFloor - 1; i++)
         halfWidthLeftSeparator += "-";
     
-    for (int i = 0; i < sizeNameCeil - 1; i++)
+    for (unsigned int i = 0; i < sizeNameCeil - 1; i++)
         halfWidthRightSeparator += "-";
     
     halfWidthRightSeparator += "+";
@@ -105,7 +105,7 @@ std::string blt::string::TableFormatter::generateSeparator(size_t size) {
     size_t nextIndex = 0;
     size_t currentColumnIndex = 0;
     std::string wholeWidthSeparator;
-    for (int i = 0; i < size; i++) {
+    for (unsigned int i = 0; i < size; i++) {
         if (i == nextIndex) {
             auto currentColumnSize = columns[currentColumnIndex++].maxColumnLength + m_columnPadding*2;
             nextIndex += currentColumnSize + 1;
@@ -118,7 +118,7 @@ std::string blt::string::TableFormatter::generateSeparator(size_t size) {
 }
 
 void blt::string::TableFormatter::updateMaxColumnLengths() {
-    for (int i = 0; i < columns.size(); i++) {
+    for (unsigned int i = 0; i < columns.size(); i++) {
         auto& column = columns[i];
         column.maxColumnLength = column.columnName.size();
         for (const auto& row : rows) {

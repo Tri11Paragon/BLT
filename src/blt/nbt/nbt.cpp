@@ -25,6 +25,6 @@ namespace blt::nbt {
         
         auto strOut = std::move(blt::string::getStringFromUTF8(str));
         delete[] str.characters;
-        return std::move(strOut);
+        return strOut;
     }
 }

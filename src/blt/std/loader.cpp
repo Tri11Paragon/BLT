@@ -37,7 +37,7 @@ std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path
     auto mainLines = getLinesFromFile(path);
     std::unordered_map<int, std::vector<std::string>> includes;
     
-    for (int i = 0; i < mainLines.size(); i++) {
+    for (unsigned int i = 0; i < mainLines.size(); i++) {
         auto& line = mainLines[i];
         // if the line is an include statement then we want to add lines recursively.
         if (string::starts_with(line, "#include")) {
@@ -71,7 +71,7 @@ std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path
     std::vector<std::string> returnLines;
     
     // now combine all the loaded files while respecting the include's position in the file.
-    for (int i = 0; i < mainLines.size(); i++) {
+    for (unsigned int i = 0; i < mainLines.size(); i++) {
         if (!includes[i].empty()) {
             auto includedFileLines = includes[i];
             

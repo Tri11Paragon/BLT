@@ -28,20 +28,20 @@ namespace blt {
         float x, y;
         x = n * 0.5f;
         y = n;
-        i = * (int*) &y;
+        i = *reinterpret_cast<int*>(&y);
         i = 0x5f3759df - (i >> 1);
-        y = * (float*) &i;
+        y = *reinterpret_cast<float*>(&i);
         y = y * (1.5f - (x * y * y));
         y = y * (1.5f - (x * y * y));
         return y;
     }
     
-//    inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {
-//        return out << "\rMatrix4x4{" << v.m00() << ", " << v.m01() << ", " << v.m02() << ", " << v.m03() << "} \n"\
-// << "         {" << v.m10() << ", " << v.m11() << ", " << v.m12() << ", " << v.m13() << "} \n"\
-// << "         {" << v.m20() << ", " << v.m21() << ", " << v.m22() << ", " << v.m23() << "} \n"\
-// << "         {" << v.m30() << ", " << v.m31() << ", " << v.m32() << ", " << v.m33() << "} \n";
-//    }
+    /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {
+        return out << "\rMatrix4x4{" << v.m00() << ", " << v.m01() << ", " << v.m02() << ", " << v.m03() << "} \n"\
+ << "         {" << v.m10() << ", " << v.m11() << ", " << v.m12() << ", " << v.m13() << "} \n"\
+ << "         {" << v.m20() << ", " << v.m21() << ", " << v.m22() << ", " << v.m23() << "} \n"\
+ << "         {" << v.m30() << ", " << v.m31() << ", " << v.m32() << ", " << v.m33() << "} \n";
+    }*/
 
 }
 

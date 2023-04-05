@@ -52,6 +52,13 @@ if(${ZLIB_FOUND})
      target_link_libraries(BLT PUBLIC ZLIB::ZLIB)
 endif()
 
+if(MSVC)
+    target_compile_options(BLT PRIVATE /W4)
+else()
+    # perhaps we should warn on usused variables, but BLT will have lots of them.
+    target_compile_options(BLT PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
 if(${BUILD_TESTS})
@@ -64,6 +71,13 @@ if(${BUILD_TESTS})
 
     add_executable(BLT_TESTS ${TESTS_FILES})
 
-    target_link_libraries(BLT_TESTS BLT)
+    target_link_libraries(BLT_TESTS PUBLIC BLT)
+
+    if(MSVC)
+        target_compile_options(BLT_TESTS PRIVATE /W4)
+    else()
+        target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
     message("BLT tests included!")
 endif()

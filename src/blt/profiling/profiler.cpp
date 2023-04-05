@@ -81,7 +81,6 @@ namespace blt::profiling {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& intervals_total = profile.intervals_total;
-        const auto& points = profile.points;
         
         std::vector<IntervalComparable> order_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;
@@ -110,7 +109,6 @@ namespace blt::profiling {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
         const auto& intervals_total = profile.intervals_total;
-        const auto& points = profile.points;
         
         std::vector<IntervalComparable> ordered_rows;
         std::unordered_map<std::string, capture_interval> averaged_intervals;

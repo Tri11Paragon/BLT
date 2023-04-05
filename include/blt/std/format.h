@@ -60,7 +60,7 @@ namespace blt::string {
         if ((int) expectedLength - currentSize <= 0)
             return str;
         auto paddedString = str;
-        for (int i = 0; i < expectedLength - currentSize; i++)
+        for (size_t i = 0; i < expectedLength - currentSize; i++)
             paddedString += " ";
         return paddedString;
     }
@@ -74,7 +74,7 @@ namespace blt::string {
     static inline std::string prePadWithSpaces(const std::string& str, size_t expectedLength) {
         auto currentSize = str.length() - 1;
         auto paddedString = std::string();
-        for (int i = 0; i < expectedLength - currentSize; i++)
+        for (unsigned int i = 0; i < expectedLength - currentSize; i++)
             paddedString += " ";
         paddedString += str;
         return paddedString;
@@ -91,7 +91,7 @@ namespace blt::string {
         const unsigned int strlen = str.size();
         unsigned int utflen = strlen;
         
-        for (int i = 0; i < strlen; i++) {
+        for (unsigned int i = 0; i < strlen; i++) {
             unsigned char c = str[i];
             if (c >= 0x80 || c == 0)
                 utflen += 1;
@@ -108,7 +108,7 @@ namespace blt::string {
         chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         chars.characters[count++] = (char) ((utflen >> 8) & 0xFF);
         
-        int i = 0;
+        unsigned int i = 0;
         for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
             int c = (unsigned char) str[i];
             if (c >= 0x80 || c == 0) break;
@@ -132,7 +132,7 @@ namespace blt::string {
     }
     
     static inline std::string getStringFromUTF8(const utf8_string& str) {
-        auto utflen = str.size;
+        int utflen = (int) str.size;
         int c, char2, char3;
         int count = 0;
         int chararr_count = 0;
@@ -172,6 +172,7 @@ namespace blt::string {
                         throw "malformed input around byte " + std::to_string(count);
                     chararr[chararr_count++] = (char) (((c & 0x1F) << 6) |
                                                        (char2 & 0x3F));
+                    break;
                 case 14:
                     /* 1110 xxxx  10xx xxxx  10xx xxxx */
                     count += 3;

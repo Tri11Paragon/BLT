@@ -51,13 +51,6 @@ namespace blt::logging {
     };
     
     static logger std_out{NONE};
-    
-    static logger tlog{TRACE};
-    static logger dlog{DEBUG};
-    static logger ilog{INFO};
-    static logger wlog{WARN};
-    static logger elog{ERROR};
-    static logger flog{FATAL};
 
     static logger trace{TRACE};
     static logger debug{DEBUG};
@@ -67,7 +60,7 @@ namespace blt::logging {
     static logger fatal{FATAL};
     
     static inline logger& getLoggerFromLevel(LOG_LEVEL level) {
-        static logger loggerLevelDecode[7]{tlog, dlog, ilog, wlog, elog, flog, std_out};
+        static logger loggerLevelDecode[7]{trace, debug, info, warn, error, fatal, std_out};
         return loggerLevelDecode[level];
     }
     
@@ -106,6 +99,8 @@ namespace blt::logging {
      * Will flush all buffers! This might cause issues with threads!
      */
     void flush();
+    
+    void testLogging();
 }
 
 #ifdef BLT_DISABLE_LOGGING

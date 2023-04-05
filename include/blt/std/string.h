@@ -21,7 +21,7 @@ namespace blt::string {
             return false;
         auto chars = string.c_str();
         auto search_chars = search.c_str();
-        for (int i = 0; i < search.length(); i++){
+        for (unsigned int i = 0; i < search.length(); i++){
             if (chars[i] != search_chars[i])
                 return false;
         }
@@ -34,7 +34,7 @@ namespace blt::string {
         auto chars = string.c_str();
         auto search_chars = search.c_str();
         auto startPosition = string.length() - search.length();
-        for (int i = 0; i < search.length(); i++){
+        for (unsigned int i = 0; i < search.length(); i++){
             if (chars[startPosition + i] != search_chars[i])
                 return false;
         }
@@ -46,10 +46,10 @@ namespace blt::string {
             return false;
         auto chars = string.c_str();
         auto search_chars = search.c_str();
-        for (int i = 0; i < string.length(); i++){
+        for (unsigned int i = 0; i < string.length(); i++){
             if (chars[i] == search_chars[0]) {
                 bool correct = true;
-                for (int j = 0; j < search.length(); j++) {
+                for (unsigned int j = 0; j < search.length(); j++) {
                     if (chars[i + j] != search_chars[j]) {
                         correct = false;
                         break;

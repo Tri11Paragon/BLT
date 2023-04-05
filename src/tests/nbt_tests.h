@@ -18,7 +18,7 @@ inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const 
     std::fstream largeBlockInputLarge(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInputLarge(largeBlockInputLarge, bufferSize);
     byteLargeBlockInputLarge.read(read_buffer.buffer, bufferToCompare.size);
-    for (int i = 0; i < bufferToCompare.size; i++) {
+    for (unsigned int i = 0; i < bufferToCompare.size; i++) {
         if (read_buffer[i] != bufferToCompare.buffer[i])
             return false;
     }
@@ -29,7 +29,7 @@ inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const 
 inline bool readIndividualUsingNBTBufferedReader(const std::string& file, const blt::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
     std::fstream largeBlockInput(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInput(largeBlockInput, bufferSize);
-    for (int i = 0; i < bufferToCompare.size; i++) {
+    for (unsigned int i = 0; i < bufferToCompare.size; i++) {
         char byte;
         byteLargeBlockInput.read(&byte, 1);
         if (byte != bufferToCompare[i]) {

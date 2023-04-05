@@ -99,7 +99,7 @@ static inline void random_access() {
         blt_flat_queue.push(value);
         base_queue.push(value);
     }
-    for (int i = 0; i < values.size(); i++) {
+    for (unsigned int i = 0; i < values.size(); i++) {
         auto front = blt_flat_queue.front();
         auto next = base_queue.front();
         
