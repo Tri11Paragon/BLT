@@ -53,7 +53,7 @@ if(${ZLIB_FOUND})
 endif()
 
 if(MSVC)
-    target_compile_options(BLT PRIVATE /W4)
+    #target_compile_options(BLT PRIVATE /W4)
 else()
     # perhaps we should warn on usused variables, but BLT will have lots of them.
     target_compile_options(BLT PRIVATE -Wall -Wextra -Wpedantic)
@@ -64,8 +64,10 @@ message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 if(${BUILD_TESTS})
     project(BLT_TESTS)
 
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+    if(${CMAKE_BUILD_TYPE} MATCHES Debug AND LINUX)
+        add_compile_options(-fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
 
     file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
 
@@ -74,7 +76,10 @@ if(${BUILD_TESTS})
     target_link_libraries(BLT_TESTS PUBLIC BLT)
 
     if(MSVC)
-        target_compile_options(BLT_TESTS PRIVATE /W4)
+        #target_compile_options(BLT_TESTS PRIVATE /W4)
+        if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+            target_link_options(BLT_TESTS PRIVATE /DEBUG)
+        endif()
     else()
         target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
     endif()

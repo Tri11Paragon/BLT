@@ -24,6 +24,7 @@ std::vector<std::string> blt::fs::getLinesFromFile(const std::string& path) {
         shaderSource = shaderStream.str();
     } catch (std::ifstream::failure& e) {
         BLT_WARN("Unable to read file '%s'!\n", path.c_str());
+        BLT_WARN("Exception: %s", e.what());
         throw std::runtime_error("Failed to read file!\n");
     }
     
@@ -63,6 +64,7 @@ std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path
                 includes.insert({i, recursiveShaderInclude((pathOnly + "/" + file))});
             } catch (std::exception& e) {
                 BLT_FATAL("Shader file contains an invalid #include statement. (Missing < or \")\n");
+                BLT_FATAL("Exception: %s", e.what());
                 std::abort();
             }
         }
