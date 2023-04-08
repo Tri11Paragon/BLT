@@ -38,7 +38,7 @@ static void runProfilingAndTableTests() {
         BLT_END_INTERVAL("Help", "UnderSet" + std::to_string(i));
     }
     
-    BLT_PRINT_PROFILE("Help", blt::logging::LOG_LEVEL::TRACE);
+    BLT_PRINT_PROFILE("Help", blt::logging::LOG_LEVEL::BLT_TRACE);
     BLT_TRACE("");
     
     blt::string::TableFormatter formatter;

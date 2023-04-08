@@ -54,7 +54,7 @@ namespace blt::profiling {
     profile getProfile(const std::string& profileName);
     
     void printProfile(
-            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::NONE,
+            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::BLT_NONE,
             bool averageHistory = false
     );
     
@@ -106,7 +106,7 @@ namespace blt::profiling {
 /**
  * Prints the profile order from least time to most time.
  * @param profileName the profile to print
- * @param loggingLevel blt::logging::LOG_LEVEL to log with (default: NONE)
+ * @param loggingLevel blt::logging::LOG_LEVEL to log with (default: BLT_NONE)
  * @param averageHistory use the historical collection of interval rows in an average or just the latest? (default: false)
  */
     #define BLT_PRINT_PROFILE(profileName, ...) blt::profiling::printProfile(profileName, ##__VA_ARGS__)

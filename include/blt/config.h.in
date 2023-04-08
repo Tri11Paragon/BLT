@@ -1,2 +1,7 @@
+#ifndef BLT_CONFIG_H
+#define BLT_CONFIG_H
 
 #cmakedefine ZLIB_FOUND
+#cmakedefine BLT_ENABLE_LOGGING
+
+#endif // BLT_CONFIG_H

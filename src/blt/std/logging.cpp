@@ -88,12 +88,12 @@ namespace blt::logging {
     };
     
     const char* levelNames[6] = {
-            "[TRACE]: ",
-            "[DEBUG]: ",
-            "[INFO]:  ",
-            "[WARN]:  ",
-            "[ERROR]: ",
-            "[FATAL]: ",
+            "[BLT_TRACE]: ",
+            "[BLT_DEBUG]: ",
+            "[BLT_INFO]:  ",
+            "[BLT_WARN]:  ",
+            "[BLT_ERROR]: ",
+            "[BLT_FATAL]: ",
     };
     
     // by default everything is enabled
@@ -149,7 +149,7 @@ namespace blt::logging {
         }
     
         if (BLT_LOGGING_PROPERTIES.m_logToConsole) {
-            if (level > WARN)
+            if (level > BLT_WARN)
                 std::cerr << outputString;
             else
                 std::cout << outputString;
@@ -188,7 +188,7 @@ namespace blt::logging {
         if (blt::string::contains(str, "\n")){
             // make sure new lines are properly formatted to prevent danging lines. Ie "[trace]: .... [debug]: ...."
             bool hasEndingLinefeed = str[str.length()-1] == '\n';
-            if (level == NONE) {
+            if (level == BLT_NONE) {
                 std::cout << th_str;
             } else
                 logging::log(th_str, false, level, "", -1, !hasEndingLinefeed);

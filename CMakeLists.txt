@@ -7,6 +7,7 @@ option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
+option(BLT_ENABLE_LOGGING "Enable blt::logging" ON)
 
 if(${BUILD_STD} OR ${BUILD_PROFILING})
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")
@@ -36,6 +37,7 @@ else()
 endif()
 
 include_directories(include/)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
 message("Standard Files ${STD_FILES}")
 message("Profiler Files ${PROFILING_FILES}")
