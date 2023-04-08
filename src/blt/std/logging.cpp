@@ -166,8 +166,11 @@ namespace blt::logging {
         
         std::string formattedString;
         applyFormatting(format, formattedString, args);
-        
-        bool hasEndingLinefeed = formattedString[formattedString.length()-1] == '\n';
+
+        bool hasEndingLinefeed = false;
+
+        if (formattedString.length() > 0)
+            hasEndingLinefeed = formattedString[formattedString.length() - 1] == '\n';
         
         if (hasEndingLinefeed)
             formattedString = formattedString.substr(0, formattedString.length()-1);

@@ -88,7 +88,7 @@ namespace blt::string {
     // taken from java, adapted for c++.
     static inline utf8_string createUTFString(const std::string& str) {
         
-        const unsigned int strlen = str.size();
+        const unsigned int strlen = (unsigned int) str.size();
         unsigned int utflen = strlen;
         
         for (unsigned int i = 0; i < strlen; i++) {

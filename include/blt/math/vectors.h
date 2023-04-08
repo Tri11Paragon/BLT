@@ -19,8 +19,16 @@ namespace blt {
     static inline constexpr bool f_equal(float v1, float v2) {
         return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
     }
+
+#define MSVC_COMPILER (!defined(__GNUC__) && !defined(__clang__))
+
     
+#ifdef MSVC_COMPILER
+    template<typename T, uint32_t size>
+#else
+    // STFINAE is broken in MSVC?
     template<typename T, uint32_t size, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
+#endif
     struct vec {
         private:
             T elements[size]{};
@@ -78,7 +86,7 @@ namespace blt {
             }
             
             [[nodiscard]] inline vec<T, size> normalize() const {
-                auto mag = this->magnitude();
+                T mag = this->magnitude();
                 if (mag == 0)
                     return vec<T, size>(*this);
                 return *this / mag;
@@ -160,8 +168,8 @@ namespace blt {
             }
             
             static inline constexpr vec<T, size> project(const vec<T, size>& u, const vec<T, size>& v){
-                float du = dot(u);
-                float dv = dot(v);
+                T du = dot(u);
+                T dv = dot(v);
                 return (du / dv) * v;
             }
     };
@@ -183,7 +191,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator+(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator+(const vec<T, size>& left, T f) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] + f;
@@ -191,7 +199,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator-(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator-(const vec<T, size>& left, T f) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] + f;
@@ -199,7 +207,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator+(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator+(T f, const vec<T, size>& right) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f + right[i];
@@ -207,7 +215,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator-(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator-(T f, const vec<T, size>& right) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f - right[i];
@@ -223,7 +231,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator*(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator*(const vec<T, size>& left, T f) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] * f;
@@ -231,7 +239,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator*(float f, const vec<T, size>& right) {
+    inline constexpr vec<T, size> operator*(T f, const vec<T, size>& right) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f * right[i];
@@ -239,7 +247,7 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
-    inline constexpr vec<T, size> operator/(const vec<T, size>& left, float f) {
+    inline constexpr vec<T, size> operator/(const vec<T, size>& left, T f) {
         T initializer[size];
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] / f;
