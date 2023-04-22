@@ -45,8 +45,8 @@ namespace blt {
             }
             
             vec(const vec<T, size>& copy): vec(copy.elements, size) {}
-            template<typename _T, uint32_t _size>
-            vec(const vec<_T, _size>& copy): vec(copy.elements, size) {}
+            template<typename o_T, uint32_t o_size>
+            vec(const vec<o_T, o_size>& copy): vec(copy.elements, size) {}
             
             vec& operator=(const vec<T, size>& copy) {
                 if (&copy == this)
@@ -104,10 +104,10 @@ namespace blt {
             }
             
             inline vec<T, size> operator-() {
-                T negativeCopy[size];
+                vec<T, size> initializer{};
                 for (uint32_t i = 0; i < size; i++)
-                    negativeCopy[i] = -elements[i];
-                return vec<T, size>{negativeCopy};
+                    initializer[i] = -elements[i];
+                return vec<T, size>{initializer};
             }
             
             inline vec<T, size>& operator+=(const vec<T, size>& other) {
