@@ -39,12 +39,14 @@ namespace blt {
                     elements[i] = *(args.begin() + i);
             }
             
-            explicit vec(const T elem[size]) {
-                for (uint32_t i = 0; i < size; i++)
+            explicit vec(const T elem[], uint32_t v_size) {
+                for (uint32_t i = 0; i < v_size; i++)
                     elements[i] = elem[i];
             }
             
-            vec(const vec<T, size>& copy): vec(copy.elements) {}
+            vec(const vec<T, size>& copy): vec(copy.elements, size) {}
+            template<typename _T, uint32_t _size>
+            vec(const vec<_T, _size>& copy): vec(copy.elements, size) {}
             
             vec& operator=(const vec<T, size>& copy) {
                 if (&copy == this)
@@ -175,82 +177,82 @@ namespace blt {
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] + right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] - right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator+(const vec<T, size>& left, T f) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] + f;
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator-(const vec<T, size>& left, T f) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] + f;
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator+(T f, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f + right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator-(T f, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f - right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] * right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator*(const vec<T, size>& left, T f) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] * f;
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator*(T f, const vec<T, size>& right) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = f * right[i];
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
     inline constexpr vec<T, size> operator/(const vec<T, size>& left, T f) {
-        T initializer[size];
+        vec<T, size> initializer{};
         for (uint32_t i = 0; i < size; i++)
             initializer[i] = left[i] / f;
-        return vec<T, size>{initializer};
+        return initializer;
     }
     
     template<typename T, uint32_t size>
