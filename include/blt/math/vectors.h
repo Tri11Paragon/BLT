@@ -25,7 +25,7 @@ namespace blt {
     
     template<typename T, uint32_t size>
     struct vec {
-        private:
+        protected:
             T elements[size]{};
         public:
             
