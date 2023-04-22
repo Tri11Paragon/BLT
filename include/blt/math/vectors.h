@@ -25,7 +25,7 @@ namespace blt {
     
     template<typename T, uint32_t size>
     struct vec {
-        protected:
+        private:
             T elements[size]{};
         public:
             
@@ -39,14 +39,18 @@ namespace blt {
                     elements[i] = *(args.begin() + i);
             }
             
-            explicit vec(const T elem[], uint32_t v_size) {
-                for (uint32_t i = 0; i < v_size; i++)
+            explicit vec(const T elem[size]) {
+                for (uint32_t i = 0; i < size; i++)
                     elements[i] = elem[i];
             }
             
-            vec(const vec<T, size>& copy): vec(copy.elements, size) {}
+            vec(const vec<T, size>& copy): vec(copy.elements) {}
+            
             template<typename o_T, uint32_t o_size>
-            vec(const vec<o_T, o_size>& copy): vec(copy.elements, size) {}
+            explicit vec(const vec<o_T, o_size>& copy) {
+                for (uint32_t i = 0; i < o_size; i++)
+                    elements[i] = copy[i];
+            }
             
             vec& operator=(const vec<T, size>& copy) {
                 if (&copy == this)
