@@ -21,14 +21,9 @@ namespace blt {
     }
 
 #define MSVC_COMPILER (!defined(__GNUC__) && !defined(__clang__))
-
     
-#ifdef MSVC_COMPILER
+    
     template<typename T, uint32_t size>
-#else
-    // STFINAE is broken in MSVC?
-    template<typename T, uint32_t size, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-#endif
     struct vec {
         private:
             T elements[size]{};
@@ -159,7 +154,9 @@ namespace blt {
                 return dot;
             }
             
-            static inline constexpr vec<T, size> cross(const vec<T, size>& left, const vec<T, size>& right) {
+            static inline constexpr vec<T, size> cross(
+                    const vec<T, size>& left, const vec<T, size>& right
+            ) {
                 // cross is only defined on vectors of size 3. 2D could be implemented, which is a TODO
                 static_assert(size == 3);
                 return {left.y() * right.z() - left.z() * right.y(),
@@ -167,7 +164,9 @@ namespace blt {
                         left.x() * right.y() - left.y() * right.x()};
             }
             
-            static inline constexpr vec<T, size> project(const vec<T, size>& u, const vec<T, size>& v){
+            static inline constexpr vec<T, size> project(
+                    const vec<T, size>& u, const vec<T, size>& v
+            ) {
                 T du = dot(u);
                 T dv = dot(v);
                 return (du / dv) * v;
@@ -301,25 +300,25 @@ namespace blt {
     namespace vec_algorithm {
         static inline void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3) {
             v1 = v.normalize();
-        
+            
             vec3 arbitraryVector{1, 0, 0};
             if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9) {
                 arbitraryVector = vec3{0, 1, 0};
             }
-        
+            
             v2 = vec3::cross(v, arbitraryVector).normalize();
             v3 = vec3::cross(v1, v2);
         }
-    
+        
         // Gram-Schmidt orthonormalization algorithm
         static inline void gramSchmidt(std::vector<vec3>& vectors) {
-            int n = (int)vectors.size();
+            int n = (int) vectors.size();
             std::vector<vec3> basis;
-        
+            
             // normalize first vector
             basis.push_back(vectors[0]);
             basis[0] = basis[0].normalize();
-        
+            
             // iterate over the rest of the vectors
             for (int i = 1; i < n; ++i) {
                 // subtract the projections of the vector onto the previous basis vectors
@@ -334,7 +333,7 @@ namespace blt {
                 new_vector = new_vector.normalize();
                 basis.push_back(new_vector);
             }
-        
+            
             vectors = basis;
         }
     }

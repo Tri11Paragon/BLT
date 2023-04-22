@@ -62,6 +62,7 @@ namespace blt {
                 for (int i = 0; i < 16; i++) {
                     data.single[i] = copy.data.single[i];
                 }
+                return *this;
             }
             
             explicit mat4x4(const float dat[16]) {
