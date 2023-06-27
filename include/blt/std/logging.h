@@ -33,31 +33,39 @@ namespace blt::logging {
         const char* m_directory = "./";
         LOG_LEVEL minLevel = BLT_TRACE;
         
-        explicit constexpr LOG_PROPERTIES(bool useColor, bool logToConsole, bool logToFile, const char* directory):
-                m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile), m_directory(directory) {}
+        explicit constexpr LOG_PROPERTIES(
+                bool useColor, bool logToConsole, bool logToFile, const char* directory
+        ):
+                m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile),
+                m_directory(directory) {}
         
         explicit constexpr LOG_PROPERTIES() = default;
     };
     
     struct logger {
         LOG_LEVEL level;
+        
         void log_internal(const std::string& str) const;
         // evil hack, todo: better way
-        #ifdef BLT_DISABLE_LOGGING
-            void log(const std::string& str) const {
-            
-            }
-        #else
-            void log(const std::string& str) const {
-                log_internal(str);
-            }
-        #endif
-            void flush() const;
-            static void flush_all();
+#ifdef BLT_DISABLE_LOGGING
+        void log(const std::string& str) const {
+        
+        }
+#else
+        
+        void log(const std::string& str) const {
+            log_internal(str);
+        }
+
+#endif
+        
+        void flush() const;
+        
+        static void flush_all();
     };
     
     static logger std_out{BLT_NONE};
-
+    
     static logger trace{BLT_TRACE};
     static logger debug{BLT_DEBUG};
     static logger info{BLT_INFO};
@@ -82,7 +90,11 @@ namespace blt::logging {
     }
     
     void init(LOG_PROPERTIES properties);
-    void log_internal(const std::string& format, LOG_LEVEL level, const char* file, int currentLine, int auto_line, ...);
+    
+    void log_internal(
+            const std::string& format, LOG_LEVEL level, const char* file, int currentLine,
+            int auto_line, ...
+    );
     
     // template voodoo magic (SFINAE, "Substitution Failure Is Not An Error")
     // https://stackoverflow.com/questions/44848011/c-limit-template-type-to-numbers
@@ -98,9 +110,12 @@ namespace blt::logging {
      * @param auto_line put a new line at the end if none exists if true
      */
     template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    inline void log_internal(T t, LOG_LEVEL level, const char* file, int currentLine, int auto_line){
+    inline void log_internal(
+            T t, LOG_LEVEL level, const char* file, int currentLine, int auto_line
+    ) {
         log_internal(std::to_string(t), level, file, currentLine, auto_line);
     }
+    
     /**
      * Will flush all buffers! This might cause issues with threads!
      */
@@ -109,7 +124,7 @@ namespace blt::logging {
     void testLogging();
 }
 
-#ifdef BLT_DISABLE_LOGGING
+#ifndef BLT_ENABLE_LOGGING
     #define BLT_TRACE(format, ...)
     #define BLT_DEBUG(format, ...)
     #define BLT_INFO(format, ...)
@@ -117,12 +132,14 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #define BLT_TRACE(format, ...) log_internal(format, blt::logging::BLT_TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
-    #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::BLT_DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
-    #define BLT_INFO(format, ...) log_internal(format, blt::logging::BLT_INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
-    #define BLT_WARN(format, ...) log_internal(format, blt::logging::BLT_WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
-    #define BLT_ERROR(format, ...) log_internal(format, blt::logging::BLT_ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
-    #define BLT_FATAL(format, ...) log_internal(format, blt::logging::BLT_FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #ifndef BLT_DISABLE_LOGGING
+        #define BLT_TRACE(format, ...) log_internal(format, blt::logging::BLT_TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::BLT_DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_INFO(format, ...) log_internal(format, blt::logging::BLT_INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_WARN(format, ...) log_internal(format, blt::logging::BLT_WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_ERROR(format, ...) log_internal(format, blt::logging::BLT_ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_FATAL(format, ...) log_internal(format, blt::logging::BLT_FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #endif
 #endif
 
 #endif //BLT_LOGGING_H

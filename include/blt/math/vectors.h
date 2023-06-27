@@ -26,7 +26,7 @@ namespace blt {
     template<typename T, uint32_t size>
     struct vec {
         private:
-            T elements[size]{};
+            T elements[size];
         public:
             
             vec() {
@@ -48,7 +48,7 @@ namespace blt {
             
             template<typename o_T, uint32_t o_size>
             explicit vec(const vec<o_T, o_size>& copy) {
-                for (uint32_t i = 0; i < o_size; i++)
+                for (uint32_t i = 0; i < std::min(o_size, size); i++)
                     elements[i] = copy[i];
             }
             
