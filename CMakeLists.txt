@@ -9,6 +9,8 @@ option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
 option(BLT_ENABLE_LOGGING "Enable blt::logging" ON)
 
+configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
+
 if(${BUILD_STD} OR ${BUILD_PROFILING})
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")
 else()
@@ -43,8 +45,6 @@ message("Standard Files ${STD_FILES}")
 message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
-
-configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
 
 add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES})
 
