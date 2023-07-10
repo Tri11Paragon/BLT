@@ -26,7 +26,7 @@ namespace blt::string {
             void expand();
         public:
             void trim();
-            std::string toString();
+            std::string str();
             
             StringBuffer(){
                 characterBuffer = static_cast<char*>(malloc(BLOCK_SIZE));

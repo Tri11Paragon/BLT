@@ -23,7 +23,7 @@ blt::string::StringBuffer& blt::string::StringBuffer::operator<<(char c) {
     return *this;
 }
 
-std::string blt::string::StringBuffer::toString() {
+std::string blt::string::StringBuffer::str() {
     trim();
     return std::string{characterBuffer};
 }
