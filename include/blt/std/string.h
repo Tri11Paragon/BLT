@@ -35,6 +35,14 @@ namespace blt::string {
             
             StringBuffer& operator<<(char c);
             
+            template<typename T>
+            inline StringBuffer& operator<<(T t) {
+                auto str = std::to_string(t);
+                for (char c : str)
+                    *this << c;
+                return *this;
+            }
+            
             ~StringBuffer() {
                 free(characterBuffer);
             }
