@@ -96,7 +96,7 @@ namespace blt {
                 
                 m00(m00() * x);
                 m11(m11() * y);
-                m22(m11() * z);
+                m22(m22() * z);
                 
                 *this = *this * scale_mat;
                 
