@@ -36,7 +36,7 @@ namespace blt::string {
             StringBuffer& operator<<(char c);
             StringBuffer& operator<<(const std::string& str) {
                 for (char c : str)
-                    *this << str;
+                    *this << c;
                 return *this;
             }
             
