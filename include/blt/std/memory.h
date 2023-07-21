@@ -136,12 +136,12 @@ namespace blt {
             V* _values;
             size_t _size = 0;
         public:
-            
-            
             enum_storage(std::initializer_list<std::pair<K, V>> init){
                 for (auto& i : init)
-                    _size = std::max((size_t)i, _size);
+                    _size = std::max((size_t)i.first, _size);
                 _values = new V[_size];
+                for (auto& v : init)
+                    _values[(size_t)v.first] = v.second;
             }
             
             inline V& operator[](size_t index){

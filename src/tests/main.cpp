@@ -19,10 +19,10 @@ int main() {
     
     nbt_tests();
     
-    blt::logging::trace << "Test Output!\n";
-    blt::logging::trace << 5;
-    blt::logging::trace << 5;
-    blt::logging::trace << 5;
+//    blt::logging::trace << "Test Output!\n";
+//    blt::logging::trace << 5;
+//    blt::logging::trace << 5;
+//    blt::logging::trace << 5;
     
     blt::logging::flush();
     

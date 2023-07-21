@@ -5,7 +5,7 @@
  */
 #include <blt/std/format.h>
 #include <cmath>
-#include "blt/std/logging_old.h"
+#include "blt/std/logging.h"
 
 std::string createPadding(int padAmount) {
     std::string padStr;

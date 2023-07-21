@@ -7,7 +7,7 @@
 #include <mutex>
 #include <vector>
 #include <blt/std/time.h>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 #include <iostream>
 #include <algorithm>
 #include <blt/std/format.h>
@@ -31,9 +31,11 @@ namespace blt::profiling {
     };
     
     inline void println(const std::vector<std::string>&& lines, logging::log_level level) {
-        auto& logger = logging::getLoggerFromLevel(level);
         for (const auto& line : lines)
-            logger << line << "\n";
+            BLT_INFO_STREAM << line << "\n";
+//        auto& logger = logging::getLoggerFromLevel(level);
+//        for (const auto& line : lines)
+//            logger << line << "\n";
     }
     
     /**

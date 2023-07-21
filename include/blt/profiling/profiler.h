@@ -11,7 +11,7 @@
 #include <blt/std/queue.h>
 #include <vector>
 #include <unordered_map>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 #include <fstream>
 #include <cstdint>
 

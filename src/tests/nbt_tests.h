@@ -9,7 +9,7 @@
 
 #include <blt/nbt/nbt.h>
 #include <blt/profiling/profiler.h>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 #include <blt/std/format.h>
 #include <blt/std/filesystem.h>
 

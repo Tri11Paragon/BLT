@@ -9,7 +9,7 @@
 
 #include <blt/math/vectors.h>
 #include <blt/math/matrix.h>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 
 namespace blt {
 

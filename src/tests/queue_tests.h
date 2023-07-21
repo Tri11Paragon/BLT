@@ -9,7 +9,7 @@
 
 #include <queue>
 #include <blt/std/queue.h>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 #include <blt/profiling/profiler.h>
 #include <array>
 #include <blt/std/random.h>

@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <string>
 #include <blt/std/string.h>
-#include <blt/std/logging_old.h>
+#include <blt/std/logging.h>
 
 namespace blt::fs {
     std::vector<std::string> getLinesFromFile(const std::string& path);

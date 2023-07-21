@@ -8,7 +8,7 @@
 #define BLT_TESTS_PROFILING_TESTS_H
 
 #include "blt/profiling/profiler.h"
-#include "blt/std/logging_old.h"
+#include "blt/std/logging.h"
 #include "blt/std/time.h"
 #include "blt/std/format.h"
 
