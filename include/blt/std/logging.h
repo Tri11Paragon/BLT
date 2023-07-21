@@ -11,7 +11,6 @@
 #include <type_traits>
 #include <functional>
 #include <blt/config.h>
-#include <iostream>
 
 namespace blt::logging {
     
@@ -68,9 +67,16 @@ namespace blt::logging {
          *  - ${{RAW_STR}}      // raw user string without formatting applied (NOTE: format args are not provided!)
          *  - ${{STR}}          // the user supplied string (format applied!)
          */
-        std::string logOutputFormat = "[${{HOUR}}:${{MINUTE}}:${{SECOND}] ${{LF}}[${{LOG_LEVEL}}]${{R}} ${{CNR}}${{STR}}";
-        std::string levelNames[10] = {"STDOUT", "TRACE0, TRACE1, TRACE2", "TRACE3", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
-        std::string levelColors[10] = {"\033[0m", "\033[22;97m", "\033[97m", "\033[97m", "\033[97m", "\033[36m", "\033[92m", "\033[93m", "\033[91m", "\033[97;41m"};
+        std::string logOutputFormat = "\033[94m[${{TIME}}]${{RC}} ${{LF}}[${{LOG_LEVEL}}]${{RC}} \033[35m(${{FILE}}:${{LINE}})${{RC}} ${{CNR}}${{STR}}${{RC}}\n";
+        std::string levelNames[11] = {"STDOUT", "TRACE0", "TRACE1", "TRACE2", "TRACE3", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
+        std::string levelColors[11] = {"\033[0m", "\033[22;97m", "\033[97m", "\033[97m", "\033[97m", "\033[97m", "\033[36m", "\033[92m", "\033[93m", "\033[91m", "\033[97;41m"};
+        // if true prints the whole path to the file (eg /home/user/.../.../project/src/source.cpp:line#)
+        bool printFullFileName = false;
+        // the logging lib will keep track of the largest line found so far and try to keep the spacing accordingly
+        // this is not thread safe!
+        bool ensureAlignment = false;
+        // the current alignment width found (you shouldn't chance this variable!)
+        size_t currentWidth = 0;
     };
     
     struct logger {
@@ -121,7 +127,7 @@ namespace blt::logging {
     void setThreadName(const std::string& name);
 }
 
-#define BLT_LOGGING_IMPLEMENTATION
+//#define BLT_LOGGING_IMPLEMENTATION
 #ifdef BLT_LOGGING_IMPLEMENTATION
 
     #include <iostream>
@@ -130,6 +136,7 @@ namespace blt::logging {
     #include <unordered_map>
     #include <thread>
     #include <cstdarg>
+    #include <iostream>
 
 namespace blt::logging {
     
@@ -172,7 +179,7 @@ namespace blt::logging {
                 return *this;
             }
             
-            tag& operator[](const std::string& name){
+            tag& operator[](const std::string& name) const {
                 auto h = hash(tag{name, nullptr});
                 if (h > size)
                     std::cerr << "Tag out of bounds";
@@ -187,14 +194,14 @@ namespace blt::logging {
     #define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
     #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year); \
         S += '-'; \
-        S += std::to_string(now->tm_mon); \
+        S += ensureHasDigits(now->tm_mon, 2); \
         S += '-'; \
-        S += std::to_string(now->tm_mday);
-    #define BLT_CUR_TIME(S) auto S = std::to_string(now->tm_hour); \
-        S += '-'; \
-        S += std::to_string(now->tm_min); \
-        S += '-'; \
-        S += std::to_string(now->tm_sec);
+        S += ensureHasDigits(now->tm_mday, 2);
+    #define BLT_CUR_TIME(S) auto S = ensureHasDigits(now->tm_hour, 2); \
+        S += ':'; \
+        S += ensureHasDigits(now->tm_min, 2); \
+        S += ':'; \
+        S += ensureHasDigits(now->tm_sec, 2);
     
     static inline std::string ensureHasDigits(int current, int digits) {
         std::string asString = std::to_string(current);
@@ -313,8 +320,8 @@ namespace blt::logging {
     }
     
     inline std::string filename(const std::string& path){
-//        if (BLT_LOGGING_PROPERTIES.m_logFullPath)
-//            return path;
+        if (loggingFormat.printFullFileName)
+            return path;
         auto paths = split(path, "/");
         auto final = paths[paths.size()-1];
         if (final == "/")
@@ -338,20 +345,99 @@ namespace blt::logging {
             }
     };
     
-    std::string applyFormatString(const std::string& str){
-        return str;
+    void applyCFormatting(const std::string& format, std::string& output, va_list& args){
+        // args must be copied because they will be consumed by the first vsnprintf
+        va_list args_copy;
+        va_copy(args_copy, args);
+        
+        auto buffer_size = std::vsnprintf(nullptr, 0, format.c_str(), args_copy) + 1;
+        auto* buffer = new char[static_cast<unsigned long>(buffer_size)];
+        
+        vsnprintf(buffer, buffer_size, format.c_str(), args);
+        output = std::string(buffer);
+        
+        delete[] buffer;
+        
+        va_end(args_copy);
+    }
+    
+    /**
+     * Checks if the next character in the parser is a tag opening, if not output the chars to the out string
+     */
+    inline bool tagOpening(string_parser& parser, std::string& out){
+        char c;
+        if (parser.has_next() && (c = parser.next()) == '{')
+            if (parser.has_next() && (c = parser.next()) == '{')
+                return true;
+            else
+                out += c;
+        else
+            out += c;
+        return false;
+    }
+    
+    std::string applyFormatString(const std::string& str, log_level level, const char* file, int line){
+        // this can be speedup by preprocessing the string into an easily callable class
+        // where all the variables are ready to be substituted in one step
+        // and all static information already entered
+        string_parser parser(loggingFormat.logOutputFormat);
+        std::string out;
+        
+        while (parser.has_next()){
+            char c = parser.next();
+            std::string nonTag;
+            if (c == '$' && tagOpening(parser, nonTag)){
+                std::string tag;
+                while (parser.has_next()){
+                    c = parser.next();
+                    if (c == '}')
+                        break;
+                    tag += c;
+                }
+                c = parser.next();
+                if (parser.has_next() && c != '}') {
+                    std::cerr << "Error processing tag, is not closed with two '}'!\n";
+                    break;
+                }
+                if (loggingFormat.ensureAlignment && tag == "STR") {
+                    auto currentOutputWidth = out.size();
+                    auto& longestWidth = loggingFormat.currentWidth;
+                    longestWidth = std::max(longestWidth, currentOutputWidth);
+                    // pad with spaces
+                    if (currentOutputWidth != longestWidth){
+                        for (size_t i = currentOutputWidth; i < longestWidth; i++)
+                            out += ' ';
+                    }
+                }
+                tag_func_param param{
+                    level, filename({file}), std::to_string(line), str, str
+                };
+                out += tagMap[tag].func(param);
+            } else {
+                out += c;
+                out += nonTag;
+            }
+        }
+        
+        return out;
     }
     
     void log(const std::string& format, log_level level, const char* file, int line, ...) {
         va_list args;
         va_start(args, line);
         
-        std::string out = format;
+        std::string withoutLn = format;
+        auto len = withoutLn.length();
         
-        if (out.length() > 0 && out[out.length() - 1] == '\n')
-            out = out.substr(0, out.length()-1);
+        if (len > 0 && withoutLn[len - 1] == '\n')
+            withoutLn = withoutLn.substr(0, len-1);
         
+        std::string out;
         
+        applyCFormatting(withoutLn, out, args);
+        
+        std::cout << applyFormatString(out, level, file, line);
+        //std::cout.flush();
         
         va_end(args);
     }
@@ -390,6 +476,7 @@ namespace blt::logging {
     #define BLT_FATAL(format, ...)
 #else
     #define BLT_LOG(format, level, ...) log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
     #ifndef BLT_ENABLE_TRACE
         #define BLT_TRACE(format, ...)
         #define BLT_TRACE0_STREAM blt::logging::empty_logger{}
@@ -399,11 +486,11 @@ namespace blt::logging {
         #define BLT_TRACE_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_TRACE(format, ...) BLT_LOG(format, blt::logging::log_level::TRACE, ##__VA_ARGS__)
-        #define BLT_TRACE0_STREAM blt::logging::logger{blt::logging::log_level::TRACE0, __FILE__, __LINE__}
-        #define BLT_TRACE1_STREAM blt::logging::logger{blt::logging::log_level::TRACE1, __FILE__, __LINE__}
-        #define BLT_TRACE2_STREAM blt::logging::logger{blt::logging::log_level::TRACE2, __FILE__, __LINE__}
-        #define BLT_TRACE3_STREAM blt::logging::logger{blt::logging::log_level::TRACE3, __FILE__, __LINE__}
-        #define BLT_TRACE_STREAM blt::logging::logger{blt::logging::log_level::TRACE, __FILE__, __LINE__}
+        #define BLT_TRACE0_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE0)
+        #define BLT_TRACE1_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE1)
+        #define BLT_TRACE2_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE2)
+        #define BLT_TRACE3_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE3)
+        #define BLT_TRACE_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE)
     #endif
     
     #ifndef BLT_ENABLE_DEBUG
@@ -411,7 +498,7 @@ namespace blt::logging {
         #define BLT_DEBUG_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_DEBUG(format, ...) BLT_LOG(format, blt::logging::log_level::DEBUG, ##__VA_ARGS__)
-        #define BLT_DEBUG_STREAM blt::logging::logger{blt::logging::log_level::DEBUG, __FILE__, __LINE__}
+        #define BLT_DEBUG_STREAM BLT_LOG_STREAM(blt::logging::log_level::DEBUG)
     #endif
     
     #ifndef BLT_ENABLE_INFO
@@ -419,7 +506,7 @@ namespace blt::logging {
         #define BLT_INFO_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_INFO(format, ...) BLT_LOG(format, blt::logging::log_level::INFO, ##__VA_ARGS__)
-        #define BLT_INFO_STREAM blt::logging::logger{blt::logging::log_level::INFO, __FILE__, __LINE__}
+        #define BLT_INFO_STREAM BLT_LOG_STREAM(blt::logging::log_level::INFO)
     #endif
     
     #ifndef BLT_ENABLE_WARN
@@ -427,7 +514,7 @@ namespace blt::logging {
         #define BLT_WARN_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_WARN(format, ...) BLT_LOG(format, blt::logging::log_level::WARN, ##__VA_ARGS__)
-        #define BLT_WARN_STREAM blt::logging::logger{blt::logging::log_level::WARN, __FILE__, __LINE__}
+        #define BLT_WARN_STREAM BLT_LOG_STREAM(blt::logging::log_level::WARN)
     #endif
     
     #ifndef BLT_ENABLE_ERROR
@@ -435,7 +522,7 @@ namespace blt::logging {
         #define BLT_ERROR_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_ERROR(format, ...) BLT_LOG(format, blt::logging::log_level::ERROR, ##__VA_ARGS__)
-        #define BLT_ERROR_STREAM blt::logging::logger{blt::logging::log_level::ERROR, __FILE__, __LINE__}
+        #define BLT_ERROR_STREAM BLT_LOG_STREAM(blt::logging::log_level::ERROR)
     #endif
     
     #ifndef BLT_ENABLE_FATAL
@@ -443,7 +530,7 @@ namespace blt::logging {
         #define BLT_FATAL_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_FATAL(format, ...) BLT_LOG(format, blt::logging::log_level::FATAL, ##__VA_ARGS__)
-        #define BLT_FATAL_STREAM blt::logging::logger{blt::logging::log_level::FATAL, __FILE__, __LINE__}
+        #define BLT_FATAL_STREAM BLT_LOG_STREAM(blt::logging::log_level::FATAL)
     #endif
 #endif
 

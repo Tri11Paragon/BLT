@@ -17,12 +17,15 @@ int main() {
     
     runProfilingAndTableTests();
     
+    blt::logging::flush();
+    
     nbt_tests();
     
-//    blt::logging::trace << "Test Output!\n";
-//    blt::logging::trace << 5;
-//    blt::logging::trace << 5;
-//    blt::logging::trace << 5;
+    BLT_TRACE0_STREAM << "Test Output!\n";
+    BLT_TRACE1_STREAM << 5 << "\n";
+    BLT_TRACE2_STREAM << 5 << "\n";
+    BLT_TRACE3_STREAM << 5 << "\n";
+    BLT_TRACE_STREAM << "TRACEY\n";
     
     blt::logging::flush();
     
@@ -46,6 +49,13 @@ int main() {
         BLT_FATAL("Hashmap test failed!");
         return 1;
     }
+    
+    BLT_TRACE("Hello Trace!");
+    BLT_DEBUG("Hello Debug!");
+    BLT_INFO("Hello Info!");
+    BLT_WARN("Hello Warn!");
+    BLT_ERROR("Hello Error!");
+    BLT_FATAL("Hello Fatal!");
     
     return 0;
 }

@@ -32,7 +32,7 @@ namespace blt::profiling {
     
     inline void println(const std::vector<std::string>&& lines, logging::log_level level) {
         for (const auto& line : lines)
-            BLT_INFO_STREAM << line << "\n";
+            BLT_LOG_STREAM(level) << line << "\n";
 //        auto& logger = logging::getLoggerFromLevel(level);
 //        for (const auto& line : lines)
 //            logger << line << "\n";
