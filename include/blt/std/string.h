@@ -12,7 +12,7 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
-#include <blt/std/logging.h>
+#include <blt/std/logging_old.h>
 
 namespace blt::string {
     

@@ -11,7 +11,7 @@
 #include <blt/std/queue.h>
 #include <vector>
 #include <unordered_map>
-#include <blt/std/logging.h>
+#include <blt/std/logging_old.h>
 #include <fstream>
 #include <cstdint>
 
@@ -54,7 +54,7 @@ namespace blt::profiling {
     profile getProfile(const std::string& profileName);
     
     void printProfile(
-            const std::string& profileName, logging::LogLevel loggingLevel = logging::LogLevel::NONE,
+            const std::string& profileName, logging::log_level loggingLevel = logging::log_level::NONE,
             bool averageHistory = false
     );
     

@@ -8,7 +8,7 @@
 #define BLT_TESTS_PROFILING_TESTS_H
 
 #include "blt/profiling/profiler.h"
-#include "blt/std/logging.h"
+#include "blt/std/logging_old.h"
 #include "blt/std/time.h"
 #include "blt/std/format.h"
 
@@ -38,7 +38,7 @@ static void runProfilingAndTableTests() {
         BLT_END_INTERVAL("Help", "UnderSet" + std::to_string(i));
     }
     
-    BLT_PRINT_PROFILE("Help", blt::logging::LogLevel::TRACE);
+    BLT_PRINT_PROFILE("Help", blt::logging::log_level::TRACE);
     BLT_TRACE("");
     
     blt::string::TableFormatter formatter;

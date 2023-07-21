@@ -9,7 +9,7 @@
 
 #include <queue>
 #include <blt/std/queue.h>
-#include <blt/std/logging.h>
+#include <blt/std/logging_old.h>
 #include <blt/profiling/profiler.h>
 #include <array>
 #include <blt/std/random.h>
@@ -140,9 +140,9 @@ static inline void test_queues() {
     fill_queues();
     random_access();
     
-    BLT_PRINT_PROFILE("Insert", blt::logging::LogLevel::INFO, true);
-    BLT_PRINT_PROFILE("Access", blt::logging::LogLevel::INFO, true);
-    BLT_PRINT_PROFILE("Random", blt::logging::LogLevel::INFO, true);
+    BLT_PRINT_PROFILE("Insert", blt::logging::log_level::INFO, true);
+    BLT_PRINT_PROFILE("Access", blt::logging::log_level::INFO, true);
+    BLT_PRINT_PROFILE("Random", blt::logging::log_level::INFO, true);
 }
 
 #endif //BLT_TESTS_QUEUE_TESTS_H

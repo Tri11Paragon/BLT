@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(BLT VERSION 0.5.2)
+project(BLT VERSION 0.6.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -7,7 +7,13 @@ option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
-option(BLT_ENABLE_LOGGING "Enable blt::logging" ON)
+option(BLT_ENABLE_LOGGING "Enable blt::logging (all macros and will safely disable logging function!)" ON)
+option(BLT_ENABLE_TRACE "Enable blt::logging BLT_TRACE macro" ON)
+option(BLT_ENABLE_DEBUG "Enable blt::logging BLT_DEBUG macro" ON)
+option(BLT_ENABLE_INFO "Enable blt::logging BLT_INFO macro" ON)
+option(BLT_ENABLE_WARN "Enable blt::logging BLT_WARN macro" ON)
+option(BLT_ENABLE_ERROR "Enable blt::logging BLT_ERROR macro" ON)
+option(BLT_ENABLE_FATAL "Enable blt::logging BLT_FATAL macro" ON)
 
 if(${BUILD_STD} OR ${BUILD_PROFILING})
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")

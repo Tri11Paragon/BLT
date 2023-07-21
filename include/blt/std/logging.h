@@ -1,138 +1,99 @@
 /*
- * Created by Brett on 23/01/23.
+ * Created by Brett on 20/07/23.
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
 
-#ifndef BLT_LOGGING_H
-#define BLT_LOGGING_H
+#ifndef BLT_TESTS_LOGGING2_H
+#define BLT_TESTS_LOGGING2_H
 
 #include <string>
 #include <type_traits>
+#include <functional>
 #include <blt/config.h>
 
 namespace blt::logging {
     
-    enum class LogLevel {
+    enum class log_level {
         // low level
         TRACE0, TRACE1, TRACE2, TRACE3,
         // normal
         TRACE, DEBUG, INFO,
-        WARN,
         // errors
-        ERROR, FATAL,
+        WARN, ERROR, FATAL,
         // default
         NONE
     };
     
-    class ILogHandler {
-        public:
-            virtual void log(std::string message, LogLevel level) = 0;
+    struct log_tag {
+        // tag without the ${{ or }}
+        std::string tag;
+        // function to run, log level and raw user input string are provided
+        std::function<std::string(blt::logging::log_level, std::string)> func;
     };
     
-    struct LOG_PROPERTIES {
-        bool m_useColor = true;
-        bool m_logToConsole = true;
-        bool m_logToFile = true;
-        // include file + line data?
-        bool m_logWithData = true;
-        // print the whole path or just the file name?
-        bool m_logFullPath = false;
-        const char* m_directory = "./";
-        LogLevel minLevel = LogLevel::TRACE;
-        
-        explicit constexpr LOG_PROPERTIES(
-                bool useColor, bool logToConsole, bool logToFile, const char* directory
-        ):
-                m_useColor(useColor), m_logToConsole(logToConsole), m_logToFile(logToFile),
-                m_directory(directory) {}
-        
-        explicit constexpr LOG_PROPERTIES() = default;
+    struct log_format {
+        /**
+         * the log output format is the string which will be used to create the log output string
+         *
+         * Available tags:
+         *  - ${{YEAR}}         // current year
+         *  - ${{MONTH}}        // current month
+         *  - ${{DAY}}          // current day
+         *  - ${{HOUR}}         // current hour
+         *  - ${{MINUTE}}       // current minute
+         *  - ${{SECOND}}       // current second
+         *  - ${{MS}}           // current millisecond
+         *  - ${{LF}}            // log level color (ASCII color code)
+         *  - ${{R}}            // ASCII color reset
+         *  - ${{LOG_LEVEL}}    // current log level
+         *  - ${{THREAD_NAME}}  // current thread name, NOTE: thread names must be set by calling "setThreadName()" from the thread in question!
+         *  - ${{FILE}}         // file from which the macro is invoked
+         *  - ${{LINE}}         // line in the from which the macro is invoked
+         *  - ${{RAW_STR}}      // raw user string without formatting applied (NOTE: format args are not provided!)
+         *  - ${{STR}}          // the user supplied string (format applied!)
+         */
+        std::string logOutputFormat = "[${{HOUR}}:${{MINUTE}}:${{SECOND}] ${{LF}}[${{LOG_LEVEL}}]${{R}} ${{STR}}";
     };
     
-    struct logger {
-        LogLevel level;
-        
-        void log_internal(const std::string& str) const;
-        // evil hack, todo: better way
-#ifdef BLT_DISABLE_LOGGING
-        void log(const std::string& str) const {
-        
-        }
-#else
-        
-        void log(const std::string& str) const {
-            log_internal(str);
-        }
-
-#endif
-        
-        void flush() const;
-        
-        static void flush_all();
-    };
-    
-    static logger std_out{LogLevel::NONE};
-    
-    static logger trace{LogLevel::TRACE};
-    static logger debug{LogLevel::DEBUG};
-    static logger info{LogLevel::INFO};
-    static logger warn{LogLevel::WARN};
-    static logger error{LogLevel::ERROR};
-    static logger fatal{LogLevel::FATAL};
-    
-    static inline logger& getLoggerFromLevel(LogLevel level) {
-        static logger loggerLevelDecode[11]{trace, trace, trace, trace, trace, debug, info, warn, error, fatal, std_out};
-        return loggerLevelDecode[(int)level];
-    }
-    
-    static inline logger& operator<<(logger& out, const std::string& str) {
-        out.log(str);
-        return out;
-    }
+    void log(log_level level, const std::string& format, const char* file, int line, ...);
     
     template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    static inline logger& operator<<(logger& out, T t) {
-        out.log(std::to_string(t));
-        return out;
+    inline void log(T t, log_level level, const char* file, int line) {
+        log(std::to_string(t), level, file, line);
     }
     
-    void init(LOG_PROPERTIES properties);
-    
-    void log_internal(
-            const std::string& format, LogLevel level, const char* file, int currentLine,
-            int auto_line, ...
-    );
-    
-    // template voodoo magic (SFINAE, "Substitution Failure Is Not An Error")
-    // https://stackoverflow.com/questions/44848011/c-limit-template-type-to-numbers
-    // std::enable_if has a member called type if the condition is true.
-    // What I am doing is saying that if the condition is true then the template has a non type
-    // template parameter of type type* (which is void* since the default type for enable_if is void) and it's value is nullptr.
-    // if the condition is false, the substitution fails, and the entire template is silently (no compiler error) discarded from the overload set.
-    /**
-     * Logs an is_arithmetic type to the console.
-     * @tparam T type to log
-     * @param t the value to log
-     * @param level logger level to log at
-     * @param auto_line put a new line at the end if none exists if true
-     */
-    template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    inline void log_internal(
-            T t, LogLevel level, const char* file, int currentLine, int auto_line
-    ) {
-        log_internal(std::to_string(t), level, file, currentLine, auto_line);
-    }
-    
-    /**
-     * Will flush all buffers! This might cause issues with threads!
-     */
     void flush();
     
-    void testLogging();
+    void setThreadName(const std::string& name);
+    
 }
 
-#ifndef BLT_ENABLE_LOGGING
+#ifdef BLT_LOGGING_IMPLEMENTATION
+    
+    #include <iostream>
+
+namespace blt::logging {
+    
+    void log(const std::string& format, log_level level, const char* file, int line, ...) {
+        
+    }
+    
+    void setThreadName(const std::string& name) {
+        
+    }
+    
+    void flush() {
+        std::cerr.flush();
+        std::cout.flush();
+    }
+    
+}
+
+#endif
+
+#if !defined(BLT_ENABLE_LOGGING) || defined(BLT_DISABLE_LOGGING)
+    #define BLT_LOG(format, level, ...)
     #define BLT_TRACE(format, ...)
     #define BLT_DEBUG(format, ...)
     #define BLT_INFO(format, ...)
@@ -140,14 +101,42 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #ifndef BLT_DISABLE_LOGGING
-        #define BLT_TRACE(format, ...) log_internal(format, blt::logging::LogLevel::TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::LogLevel::DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_INFO(format, ...) log_internal(format, blt::logging::LogLevel::INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_WARN(format, ...) log_internal(format, blt::logging::LogLevel::WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_ERROR(format, ...) log_internal(format, blt::logging::LogLevel::ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_FATAL(format, ...) log_internal(format, blt::logging::LogLevel::FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
+    #define BLT_LOG(format, level, ...) log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
+    #ifndef BLT_ENABLE_TRACE
+        #define BLT_TRACE(format, ...)
+    #else
+        #define BLT_TRACE(format, ...) BLT_LOG(format, blt::logging::log_level::TRACE, ##__VA_ARGS__)
+    #endif
+    
+    #ifndef BLT_ENABLE_DEBUG
+        #define BLT_DEBUG(format, ...)
+    #else
+        #define BLT_DEBUG(format, ...) BLT_LOG(format, blt::logging::log_level::DEBUG, ##__VA_ARGS__)
+    #endif
+    
+    #ifndef BLT_ENABLE_INFO
+        #define BLT_INFO(format, ...)
+    #else
+        #define BLT_INFO(format, ...) BLT_LOG(format, blt::logging::log_level::INFO, ##__VA_ARGS__)
+    #endif
+    
+    #ifndef BLT_ENABLE_WARN
+        #define BLT_WARN(format, ...)
+    #else
+        #define BLT_WARN(format, ...) BLT_LOG(format, blt::logging::log_level::WARN, ##__VA_ARGS__)
+    #endif
+    
+    #ifndef BLT_ENABLE_ERROR
+        #define BLT_ERROR(format, ...)
+    #else
+        #define BLT_ERROR(format, ...) BLT_LOG(format, blt::logging::log_level::ERROR, ##__VA_ARGS__)
+    #endif
+    
+    #ifndef BLT_ENABLE_FATAL
+        #define BLT_FATAL(format, ...)
+    #else
+        #define BLT_FATAL(format, ...) BLT_LOG(format, blt::logging::log_level::FATAL, ##__VA_ARGS__)
     #endif
 #endif
 
-#endif //BLT_LOGGING_H
+#endif //BLT_TESTS_LOGGING2_H
