@@ -75,8 +75,8 @@ namespace blt::logging {
     
     struct logger {
         log_level level;
-        std::string file;
-        std::string line;
+        const char* file;
+        int line;
     };
     
     struct empty_logger {
@@ -129,6 +129,7 @@ namespace blt::logging {
     #include <ctime>
     #include <unordered_map>
     #include <thread>
+    #include <cstdarg>
 
 namespace blt::logging {
     
@@ -299,12 +300,71 @@ namespace blt::logging {
             }},
     };
     
+    static inline std::vector<std::string> split(std::string s, const std::string& delim) {
+        size_t pos = 0;
+        std::vector<std::string> tokens;
+        while ((pos = s.find(delim)) != std::string::npos) {
+            auto token = s.substr(0, pos);
+            tokens.push_back(token);
+            s.erase(0, pos + delim.length());
+        }
+        tokens.push_back(s);
+        return tokens;
+    }
+    
+    inline std::string filename(const std::string& path){
+//        if (BLT_LOGGING_PROPERTIES.m_logFullPath)
+//            return path;
+        auto paths = split(path, "/");
+        auto final = paths[paths.size()-1];
+        if (final == "/")
+            return paths[paths.size()-2];
+        return final;
+    }
+    
+    class string_parser {
+        private:
+            std::string _str;
+            size_t _pos;
+        public:
+            explicit string_parser(std::string str): _str(std::move(str)), _pos(0) {}
+            
+            inline char next(){
+                return _str[_pos++];
+            }
+            
+            [[nodiscard]] inline bool has_next() const {
+                return _pos < _str.size();
+            }
+    };
+    
+    std::string applyFormatString(const std::string& str){
+        return str;
+    }
+    
     void log(const std::string& format, log_level level, const char* file, int line, ...) {
+        va_list args;
+        va_start(args, line);
         
+        std::string out = format;
+        
+        if (out.length() > 0 && out[out.length() - 1] == '\n')
+            out = out.substr(0, out.length()-1);
+        
+        
+        
+        va_end(args);
     }
     
     void log_stream(const std::string& str, const logger& logger) {
-        loggingStreamLines[]
+        auto& s = loggingStreamLines[std::this_thread::get_id()][logger.level];
+        s += str;
+        for (char c : str){
+            if (c == '\n'){
+                log(s, logger.level, logger.file, logger.line);
+                s = "";
+            }
+        }
     }
     
     void setThreadName(const std::string& name) {
@@ -339,11 +399,11 @@ namespace blt::logging {
         #define BLT_TRACE_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_TRACE(format, ...) BLT_LOG(format, blt::logging::log_level::TRACE, ##__VA_ARGS__)
-        #define BLT_TRACE0_STREAM blt::logging::logger{blt::logging::log_level::TRACE0, std::string(__FILE__), std::to_string(__LINE__)}
-        #define BLT_TRACE1_STREAM blt::logging::logger{blt::logging::log_level::TRACE1, std::string(__FILE__), std::to_string(__LINE__)}
-        #define BLT_TRACE2_STREAM blt::logging::logger{blt::logging::log_level::TRACE2, std::string(__FILE__), std::to_string(__LINE__)}
-        #define BLT_TRACE3_STREAM blt::logging::logger{blt::logging::log_level::TRACE3, std::string(__FILE__), std::to_string(__LINE__)}
-        #define BLT_TRACE_STREAM blt::logging::logger{blt::logging::log_level::TRACE, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_TRACE0_STREAM blt::logging::logger{blt::logging::log_level::TRACE0, __FILE__, __LINE__}
+        #define BLT_TRACE1_STREAM blt::logging::logger{blt::logging::log_level::TRACE1, __FILE__, __LINE__}
+        #define BLT_TRACE2_STREAM blt::logging::logger{blt::logging::log_level::TRACE2, __FILE__, __LINE__}
+        #define BLT_TRACE3_STREAM blt::logging::logger{blt::logging::log_level::TRACE3, __FILE__, __LINE__}
+        #define BLT_TRACE_STREAM blt::logging::logger{blt::logging::log_level::TRACE, __FILE__, __LINE__}
     #endif
     
     #ifndef BLT_ENABLE_DEBUG
@@ -351,7 +411,7 @@ namespace blt::logging {
         #define BLT_DEBUG_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_DEBUG(format, ...) BLT_LOG(format, blt::logging::log_level::DEBUG, ##__VA_ARGS__)
-        #define BLT_DEBUG_STREAM blt::logging::logger{blt::logging::log_level::DEBUG, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_DEBUG_STREAM blt::logging::logger{blt::logging::log_level::DEBUG, __FILE__, __LINE__}
     #endif
     
     #ifndef BLT_ENABLE_INFO
@@ -359,7 +419,7 @@ namespace blt::logging {
         #define BLT_INFO_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_INFO(format, ...) BLT_LOG(format, blt::logging::log_level::INFO, ##__VA_ARGS__)
-        #define BLT_INFO_STREAM blt::logging::logger{blt::logging::log_level::INFO, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_INFO_STREAM blt::logging::logger{blt::logging::log_level::INFO, __FILE__, __LINE__}
     #endif
     
     #ifndef BLT_ENABLE_WARN
@@ -367,7 +427,7 @@ namespace blt::logging {
         #define BLT_WARN_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_WARN(format, ...) BLT_LOG(format, blt::logging::log_level::WARN, ##__VA_ARGS__)
-        #define BLT_WARN_STREAM blt::logging::logger{blt::logging::log_level::WARN, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_WARN_STREAM blt::logging::logger{blt::logging::log_level::WARN, __FILE__, __LINE__}
     #endif
     
     #ifndef BLT_ENABLE_ERROR
@@ -375,7 +435,7 @@ namespace blt::logging {
         #define BLT_ERROR_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_ERROR(format, ...) BLT_LOG(format, blt::logging::log_level::ERROR, ##__VA_ARGS__)
-        #define BLT_ERROR_STREAM blt::logging::logger{blt::logging::log_level::ERROR, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_ERROR_STREAM blt::logging::logger{blt::logging::log_level::ERROR, __FILE__, __LINE__}
     #endif
     
     #ifndef BLT_ENABLE_FATAL
@@ -383,7 +443,7 @@ namespace blt::logging {
         #define BLT_FATAL_STREAM blt::logging::empty_logger{}
     #else
         #define BLT_FATAL(format, ...) BLT_LOG(format, blt::logging::log_level::FATAL, ##__VA_ARGS__)
-        #define BLT_FATAL_STREAM blt::logging::logger{blt::logging::log_level::FATAL, std::string(__FILE__), std::to_string(__LINE__)}
+        #define BLT_FATAL_STREAM blt::logging::logger{blt::logging::log_level::FATAL, __FILE__, __LINE__}
     #endif
 #endif
 
