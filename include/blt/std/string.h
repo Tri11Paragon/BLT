@@ -16,6 +16,41 @@
 
 namespace blt::string {
     
+    class StringBuffer {
+        private:
+            const size_t BLOCK_SIZE = 4096;
+            size_t front = 0;
+            size_t size = 0;
+            char* characterBuffer = nullptr;
+            
+            void expand();
+        public:
+            void trim();
+            std::string str();
+            
+            StringBuffer(){
+                characterBuffer = static_cast<char*>(malloc(BLOCK_SIZE));
+                size = BLOCK_SIZE;
+            }
+            
+            StringBuffer& operator<<(char c);
+            StringBuffer& operator<<(const std::string& str) {
+                for (char c : str)
+                    *this << c;
+                return *this;
+            }
+            
+            template<typename T>
+            inline StringBuffer& operator<<(T t) {
+                *this << std::to_string(t);
+                return *this;
+            }
+            
+            ~StringBuffer() {
+                free(characterBuffer);
+            }
+    };
+    
     static inline bool starts_with(const std::string& string, const std::string& search){
         if (search.length() > string.length())
             return false;
@@ -153,6 +188,7 @@ namespace blt::string {
         trim(s);
         return s;
     }
+    
 }
 
 #endif //BLT_STRING_H
