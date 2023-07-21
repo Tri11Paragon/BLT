@@ -125,9 +125,13 @@ namespace blt::logging {
     void flush();
     
     void setThreadName(const std::string& name);
+    void setLogFormat(const log_format& format);
+    void setLogColor(log_level level, const std::string& newFormat);
+    void setLogName(log_level level, const std::string& newFormat);
+    void setLogOutputFormat(const std::string& newFormat);
 }
 
-//#define BLT_LOGGING_IMPLEMENTATION
+#define BLT_LOGGING_IMPLEMENTATION
 #ifdef BLT_LOGGING_IMPLEMENTATION
 
     #include <iostream>
@@ -455,6 +459,19 @@ namespace blt::logging {
     
     void setThreadName(const std::string& name) {
         loggingThreadNames[std::this_thread::get_id()] = name;
+    }
+    
+    void setLogFormat(const log_format& format){
+        loggingFormat = format;
+    }
+    void setLogColor(log_level level, const std::string& newFormat){
+        loggingFormat.levelColors[(int)level] = newFormat;
+    }
+    void setLogName(log_level level, const std::string& newFormat){
+        loggingFormat.levelNames[(int)level] = newFormat;
+    }
+    void setLogOutputFormat(const std::string& newFormat){
+        loggingFormat.logOutputFormat = newFormat;
     }
     
     void flush() {
