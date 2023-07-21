@@ -7,7 +7,53 @@
 #ifndef BLT_TESTS_MEMORY_H
 #define BLT_TESTS_MEMORY_H
 
+#include <initializer_list>
+#include <iterator>
+
 namespace blt {
+    
+    template<typename V>
+    struct ptr_iterator {
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using difference_type   = std::ptrdiff_t;
+            using value_type        = V;
+            using pointer           = value_type*;
+            using reference         = value_type&;
+            
+            explicit ptr_iterator(V* v): _v(v) {}
+            
+            reference operator*() const { return *_v; }
+            pointer operator->() { return _v; }
+            ptr_iterator& operator++() {
+                _v++;
+                return *this;
+            }
+            ptr_iterator& operator--() {
+                _v--;
+                return *this;
+            }
+            ptr_iterator operator++(int){
+                auto tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+            ptr_iterator operator--(int){
+                auto tmp = *this;
+                --(*this);
+                return tmp;
+            }
+            friend bool operator==(const ptr_iterator& a, const ptr_iterator& b) {
+                return a._v == b._v;
+            }
+            friend bool operator!=(const ptr_iterator& a, const ptr_iterator& b) {
+                return a._v != b._v;
+            }
+        
+        private:
+            V* _v;
+    };
+    
 /**
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
      * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
@@ -76,6 +122,51 @@ namespace blt {
             }
             
             ~nullptr_initializer() = default;
+    };
+    
+    /**
+     * Creates a hash-map like association between an enum key and any arbitrary value.
+     * The storage is backed by a contiguous array for faster access.
+     * @tparam K enum value
+     * @tparam V associated value
+     */
+    template<typename K, typename V>
+    class enum_storage {
+        private:
+            V* _values;
+            size_t _size = 0;
+        public:
+            
+            
+            enum_storage(std::initializer_list<std::pair<K, V>> init){
+                for (auto& i : init)
+                    _size = std::max((size_t)i, _size);
+                _values = new V[_size];
+            }
+            
+            inline V& operator[](size_t index){
+                return _values[index];
+            }
+            
+            inline const V& operator[](size_t index) const {
+                return _values[index];
+            }
+            
+            [[nodiscard]] inline size_t size() const {
+                return _size;
+            }
+            
+            ptr_iterator<V> begin(){
+                return ptr_iterator{_values};
+            }
+            
+            ptr_iterator<V> end(){
+                return ptr_iterator{&_values[_size]};
+            }
+            
+            ~enum_storage(){
+                delete[] _values;
+            }
     };
 }
 

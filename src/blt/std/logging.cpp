@@ -22,6 +22,8 @@
 // https://publications.gbdirect.co.uk//c_book/chapter9/stdarg.html
 // https://cplusplus.com/reference/cstdio/printf/
 
+#include <blt/std/memory.h>
+
 
 namespace blt::logging {
     
@@ -120,7 +122,7 @@ namespace blt::logging {
         return final;
     }
     
-    inline void log(const std::string& str, bool hasEndingLinefeed, LOG_LEVEL level, const char* file, int currentLine, int auto_line){
+    inline void log(const std::string& str, bool hasEndingLinefeed, LogLevel level, const char* file, int currentLine, int auto_line){
         if (level < BLT_LOGGING_PROPERTIES.minLevel)
             return;
         std::string outputString = system::getTimeStringLog();
@@ -133,13 +135,13 @@ namespace blt::logging {
             outputString += "] ";
         }
         
-        outputString += levelNames[level];
+        outputString += levelNames[(int)level];
         outputString += str;
         
         std::string fileString = outputString;
     
         if (BLT_LOGGING_PROPERTIES.m_useColor) {
-            outputString = levelColors[level] + outputString;
+            outputString = levelColors[(int)level] + outputString;
             outputString += "\033[0m";
         }
     
@@ -149,7 +151,7 @@ namespace blt::logging {
         }
     
         if (BLT_LOGGING_PROPERTIES.m_logToConsole) {
-            if (level > BLT_WARN)
+            if (level > LogLevel::WARN)
                 std::cerr << outputString;
             else
                 std::cout << outputString;
@@ -160,7 +162,7 @@ namespace blt::logging {
         }
     }
     
-    void log_internal(const std::string& format, LOG_LEVEL level, const char* file, int currentLine, int auto_line, ...) {
+    void log_internal(const std::string& format, LogLevel level, const char* file, int currentLine, int auto_line, ...) {
         va_list args;
         va_start(args, auto_line);
         
@@ -181,7 +183,7 @@ namespace blt::logging {
     }
     
     // stores an association between thread -> log level -> current line buffer
-    std::unordered_map<std::thread::id, std::unordered_map<LOG_LEVEL, std::string>> thread_local_strings;
+    std::unordered_map<std::thread::id, std::unordered_map<LogLevel, std::string>> thread_local_strings;
     
     void logger::log_internal(const std::string& str) const {
         auto id = std::this_thread::get_id();
@@ -191,7 +193,7 @@ namespace blt::logging {
         if (blt::string::contains(str, "\n")){
             // make sure new lines are properly formatted to prevent danging lines. Ie "[trace]: .... [debug]: ...."
             bool hasEndingLinefeed = str[str.length()-1] == '\n';
-            if (level == BLT_NONE) {
+            if (level == LogLevel::NONE) {
                 std::cout << th_str;
             } else
                 logging::log(th_str, false, level, "", -1, !hasEndingLinefeed);
@@ -201,7 +203,7 @@ namespace blt::logging {
         }
     }
     
-    void flushLogger_internal(std::thread::id id, LOG_LEVEL level){
+    void flushLogger_internal(std::thread::id id, LogLevel level){
         auto th_str = thread_local_strings[id][level];
         if (th_str.empty())
             return;

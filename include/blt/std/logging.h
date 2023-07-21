@@ -13,13 +13,21 @@
 
 namespace blt::logging {
     
-    enum LOG_LEVEL {
+    enum class LogLevel {
+        // low level
+        TRACE0, TRACE1, TRACE2, TRACE3,
         // normal
-        BLT_TRACE = 0, BLT_DEBUG = 1, BLT_INFO = 2,
+        TRACE, DEBUG, INFO,
+        WARN,
         // errors
-        BLT_WARN = 3, BLT_ERROR = 4, BLT_FATAL = 5,
+        ERROR, FATAL,
         // default
-        BLT_NONE = 6
+        NONE
+    };
+    
+    class ILogHandler {
+        public:
+            virtual void log(std::string message, LogLevel level) = 0;
     };
     
     struct LOG_PROPERTIES {
@@ -31,7 +39,7 @@ namespace blt::logging {
         // print the whole path or just the file name?
         bool m_logFullPath = false;
         const char* m_directory = "./";
-        LOG_LEVEL minLevel = BLT_TRACE;
+        LogLevel minLevel = LogLevel::TRACE;
         
         explicit constexpr LOG_PROPERTIES(
                 bool useColor, bool logToConsole, bool logToFile, const char* directory
@@ -43,7 +51,7 @@ namespace blt::logging {
     };
     
     struct logger {
-        LOG_LEVEL level;
+        LogLevel level;
         
         void log_internal(const std::string& str) const;
         // evil hack, todo: better way
@@ -64,18 +72,18 @@ namespace blt::logging {
         static void flush_all();
     };
     
-    static logger std_out{BLT_NONE};
+    static logger std_out{LogLevel::NONE};
     
-    static logger trace{BLT_TRACE};
-    static logger debug{BLT_DEBUG};
-    static logger info{BLT_INFO};
-    static logger warn{BLT_WARN};
-    static logger error{BLT_ERROR};
-    static logger fatal{BLT_FATAL};
+    static logger trace{LogLevel::TRACE};
+    static logger debug{LogLevel::DEBUG};
+    static logger info{LogLevel::INFO};
+    static logger warn{LogLevel::WARN};
+    static logger error{LogLevel::ERROR};
+    static logger fatal{LogLevel::FATAL};
     
-    static inline logger& getLoggerFromLevel(LOG_LEVEL level) {
-        static logger loggerLevelDecode[7]{trace, debug, info, warn, error, fatal, std_out};
-        return loggerLevelDecode[level];
+    static inline logger& getLoggerFromLevel(LogLevel level) {
+        static logger loggerLevelDecode[11]{trace, trace, trace, trace, trace, debug, info, warn, error, fatal, std_out};
+        return loggerLevelDecode[(int)level];
     }
     
     static inline logger& operator<<(logger& out, const std::string& str) {
@@ -92,7 +100,7 @@ namespace blt::logging {
     void init(LOG_PROPERTIES properties);
     
     void log_internal(
-            const std::string& format, LOG_LEVEL level, const char* file, int currentLine,
+            const std::string& format, LogLevel level, const char* file, int currentLine,
             int auto_line, ...
     );
     
@@ -111,7 +119,7 @@ namespace blt::logging {
      */
     template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
     inline void log_internal(
-            T t, LOG_LEVEL level, const char* file, int currentLine, int auto_line
+            T t, LogLevel level, const char* file, int currentLine, int auto_line
     ) {
         log_internal(std::to_string(t), level, file, currentLine, auto_line);
     }
@@ -133,12 +141,12 @@ namespace blt::logging {
     #define BLT_FATAL(format, ...)
 #else
     #ifndef BLT_DISABLE_LOGGING
-        #define BLT_TRACE(format, ...) log_internal(format, blt::logging::BLT_TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::BLT_DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_INFO(format, ...) log_internal(format, blt::logging::BLT_INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_WARN(format, ...) log_internal(format, blt::logging::BLT_WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_ERROR(format, ...) log_internal(format, blt::logging::BLT_ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
-        #define BLT_FATAL(format, ...) log_internal(format, blt::logging::BLT_FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_TRACE(format, ...) log_internal(format, blt::logging::LogLevel::TRACE, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_DEBUG(format, ...) log_internal(format, blt::logging::LogLevel::DEBUG, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_INFO(format, ...) log_internal(format, blt::logging::LogLevel::INFO, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_WARN(format, ...) log_internal(format, blt::logging::LogLevel::WARN, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_ERROR(format, ...) log_internal(format, blt::logging::LogLevel::ERROR, __FILE__, __LINE__, true, ##__VA_ARGS__)
+        #define BLT_FATAL(format, ...) log_internal(format, blt::logging::LogLevel::FATAL, __FILE__, __LINE__, true, ##__VA_ARGS__)
     #endif
 #endif
 

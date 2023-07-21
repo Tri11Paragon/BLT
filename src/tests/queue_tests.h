@@ -140,9 +140,9 @@ static inline void test_queues() {
     fill_queues();
     random_access();
     
-    BLT_PRINT_PROFILE("Insert", blt::logging::LOG_LEVEL::BLT_INFO, true);
-    BLT_PRINT_PROFILE("Access", blt::logging::LOG_LEVEL::BLT_INFO, true);
-    BLT_PRINT_PROFILE("Random", blt::logging::LOG_LEVEL::BLT_INFO, true);
+    BLT_PRINT_PROFILE("Insert", blt::logging::LogLevel::INFO, true);
+    BLT_PRINT_PROFILE("Access", blt::logging::LogLevel::INFO, true);
+    BLT_PRINT_PROFILE("Random", blt::logging::LogLevel::INFO, true);
 }
 
 #endif //BLT_TESTS_QUEUE_TESTS_H

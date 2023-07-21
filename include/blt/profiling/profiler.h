@@ -54,7 +54,7 @@ namespace blt::profiling {
     profile getProfile(const std::string& profileName);
     
     void printProfile(
-            const std::string& profileName, logging::LOG_LEVEL loggingLevel = logging::BLT_NONE,
+            const std::string& profileName, logging::LogLevel loggingLevel = logging::LogLevel::NONE,
             bool averageHistory = false
     );
     

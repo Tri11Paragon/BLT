@@ -30,7 +30,7 @@ namespace blt::profiling {
                 difference(difference), name(std::move(name)), total(total) {}
     };
     
-    inline void println(const std::vector<std::string>&& lines, logging::LOG_LEVEL level) {
+    inline void println(const std::vector<std::string>&& lines, logging::LogLevel level) {
         auto& logger = logging::getLoggerFromLevel(level);
         for (const auto& line : lines)
             logger << line << "\n";
@@ -104,7 +104,7 @@ namespace blt::profiling {
     }
     
     void printProfile(
-            const std::string& profileName, logging::LOG_LEVEL loggingLevel, bool averageHistory
+            const std::string& profileName, logging::LogLevel loggingLevel, bool averageHistory
     ) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;
