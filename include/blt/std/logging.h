@@ -75,8 +75,25 @@ namespace blt::logging {
         // the logging lib will keep track of the largest line found so far and try to keep the spacing accordingly
         // this is not thread safe!
         bool ensureAlignment = false;
+        // should we log to file?
+        bool logToFile = false;
+        // should we log to console?
+        bool logToConsole = true;
+        // where should we log? (empty for current binary directory) should end in a / if not empty!
+        std::string logFilePath;
+        // logs to a file called $fileName_$count.log where count is the number of rollover files
+        // this accepts any of the macros above, using level names and colors should work but isn't supported.
+        std::string logFileName = "${{ISO_YEAR}}";
+        // default limit on file size: 10mb;
+        size_t logMaxFileSize = 1024 * 1024 * 10;
+        /**
+         * Variables below this line should never be changed by the user!
+         */
         // the current alignment width found (you shouldn't chance this variable!)
         size_t currentWidth = 0;
+        // current number of file roll-overs. you shouldn't change this either.
+        size_t currentRollover = 0;
+        std::string lastFile;
     };
     
     struct logger {
@@ -129,6 +146,11 @@ namespace blt::logging {
     void setLogColor(log_level level, const std::string& newFormat);
     void setLogName(log_level level, const std::string& newFormat);
     void setLogOutputFormat(const std::string& newFormat);
+    void setLogToFile(bool shouldLogToFile);
+    void setLogToConsole(bool shouldLogToConsole);
+    void setLogPath(const std::string& path);
+    void setLogFileName(const std::string& fileName);
+    void setMaxFileSize(size_t fileSize);
 }
 
 #define BLT_LOGGING_IMPLEMENTATION
@@ -141,6 +163,9 @@ namespace blt::logging {
     #include <thread>
     #include <cstdarg>
     #include <iostream>
+    #include <filesystem>
+    #include <ios>
+    #include <fstream>
 
 namespace blt::logging {
     
@@ -152,7 +177,7 @@ namespace blt::logging {
             tag* tags;
             size_t size;
             
-            [[nodiscard]] inline size_t hash(const tag& t) const {
+            [[nodiscard]] static inline size_t hash(const tag& t) {
                 size_t h = t.tag[0]+ t.tag[1] * 3;
                 return h;
             }
@@ -195,6 +220,57 @@ namespace blt::logging {
             }
     };
     
+    class LogFileWriter {
+        private:
+            std::string m_path;
+            std::fstream* output;
+            int currentLines = 0;
+            static constexpr int MAX_LINES = 100000;
+        public:
+            explicit LogFileWriter() = default;
+            
+            void writeLine(const std::string& path, const std::string& line){
+                if (path != m_path){
+                    clear();
+                    delete output;
+                    output = new std::fstream(path, std::ios::out | std::ios::app);
+                    if (!output->good()){
+                        throw std::runtime_error("Unable to open console filestream!\n");
+                    }
+                }
+                if (!output->good()){
+                    std::cerr << "There has been an error in the logging file stream!\n";
+                    output->clear();
+                }
+                *output << line;
+                currentLines++;
+                if (currentLines > MAX_LINES){
+                    output->flush();
+                    output->close();
+                    currentLines = 0;
+                    auto currentTime = system::getTimeStringFS();
+                    delete(output);
+                    output = new std::fstream(m_path + currentTime + ".log");
+                }
+            }
+            
+            void clear(){
+                if (output != nullptr) {
+                    try {
+                        output->flush();
+                        output->close();
+                    } catch (std::exception& e){
+                        std::cerr << e.what() << "\n";
+                    }
+                }
+            }
+            
+            ~LogFileWriter() {
+                clear();
+                delete(output);
+            }
+    };
+    
     #define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
     #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year); \
         S += '-'; \
@@ -223,6 +299,7 @@ namespace blt::logging {
     log_format loggingFormat {};
     hashmap<std::thread::id, std::string> loggingThreadNames;
     hashmap<std::thread::id, hashmap<blt::logging::log_level, std::string>> loggingStreamLines;
+    LogFileWriter writer;
     
     const tag_map tagMap = {
             {"YEAR", [](const tag_func_param&) -> std::string {
@@ -380,13 +457,7 @@ namespace blt::logging {
         return false;
     }
     
-    std::string applyFormatString(const std::string& str, log_level level, const char* file, int line){
-        // this can be speedup by preprocessing the string into an easily callable class
-        // where all the variables are ready to be substituted in one step
-        // and all static information already entered
-        string_parser parser(loggingFormat.logOutputFormat);
-        std::string out;
-        
+    void parseString(string_parser& parser, std::string& out, const std::string& userStr, log_level level, const char* file, int line){
         while (parser.has_next()){
             char c = parser.next();
             std::string nonTag;
@@ -414,7 +485,7 @@ namespace blt::logging {
                     }
                 }
                 tag_func_param param{
-                    level, filename({file}), std::to_string(line), str, str
+                        level, filename({file}), std::to_string(line), userStr, userStr
                 };
                 out += tagMap[tag].func(param);
             } else {
@@ -422,6 +493,15 @@ namespace blt::logging {
                 out += nonTag;
             }
         }
+    }
+    
+    std::string applyFormatString(const std::string& str, log_level level, const char* file, int line){
+        // this can be speedup by preprocessing the string into an easily callable class
+        // where all the variables are ready to be substituted in one step
+        // and all static information already entered
+        string_parser parser(loggingFormat.logOutputFormat);
+        std::string out;
+        parseString(parser, out, str, level, file, line);
         
         return out;
     }
@@ -440,7 +520,42 @@ namespace blt::logging {
         
         applyCFormatting(withoutLn, out, args);
         
-        std::cout << applyFormatString(out, level, file, line);
+        std::string finalFormattedOutput = applyFormatString(out, level, file, line);
+        
+        if (loggingFormat.logToConsole)
+            std::cout << finalFormattedOutput;
+        
+        
+        if (loggingFormat.logToFile){
+            string_parser parser(loggingFormat.logFileName);
+            std::string fileName;
+            parseString(parser, fileName, withoutLn, level, file, line);
+            
+            auto path = loggingFormat.logFilePath;
+            if (!path.empty() && path[path.length()-1] != '/')
+                path += '/';
+            
+            // if the file has changed (new day in default case) we should reset the rollover count
+            if (loggingFormat.lastFile != fileName){
+                loggingFormat.currentRollover = 0;
+                loggingFormat.lastFile = fileName;
+            }
+            
+            path += fileName;
+            path += '-';
+            path += std::to_string(loggingFormat.currentRollover);
+            path += ".log";
+            
+            if (std::filesystem::exists(path)) {
+                auto fileSize = std::filesystem::file_size(path);
+                
+                // will start on next file
+                if (fileSize > loggingFormat.logMaxFileSize)
+                    loggingFormat.currentRollover++;
+            }
+            
+            writer.writeLine(path, finalFormattedOutput);
+        }
         //std::cout.flush();
         
         va_end(args);
@@ -472,6 +587,21 @@ namespace blt::logging {
     }
     void setLogOutputFormat(const std::string& newFormat){
         loggingFormat.logOutputFormat = newFormat;
+    }
+    void setLogToFile(bool shouldLogToFile){
+        loggingFormat.logToFile = shouldLogToFile;
+    }
+    void setLogToConsole(bool shouldLogToConsole){
+        loggingFormat.logToConsole = shouldLogToConsole;
+    }
+    void setLogPath(const std::string& path){
+        loggingFormat.logFilePath = path;
+    }
+    void setLogFileName(const std::string& fileName){
+        loggingFormat.logFileName = fileName;
+    }
+    void setMaxFileSize(size_t fileSize) {
+        loggingFormat.logMaxFileSize = fileSize;
     }
     
     void flush() {
