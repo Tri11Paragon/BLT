@@ -263,7 +263,7 @@ namespace blt::logging {
     #define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
     #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year + 1900); \
         S += '-'; \
-        S += ensureHasDigits(now->tm_mon, 2); \
+        S += ensureHasDigits(now->tm_mon+1, 2); \
         S += '-'; \
         S += ensureHasDigits(now->tm_mday, 2);
     #define BLT_CUR_TIME(S) auto S = ensureHasDigits(now->tm_hour, 2); \
@@ -297,7 +297,7 @@ namespace blt::logging {
             }},
             {"MONTH", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_mon, 2);
+                return ensureHasDigits(now->tm_mon+1, 2);
             }},
             {"DAY", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
@@ -448,7 +448,7 @@ namespace blt::logging {
      * Checks if the next character in the parser is a tag opening, if not output the chars to the out string
      */
     inline bool tagOpening(string_parser& parser, std::string& out){
-        char c;
+        char c = ' ';
         if (parser.has_next() && (c = parser.next()) == '{')
             if (parser.has_next() && (c = parser.next()) == '{')
                 return true;
