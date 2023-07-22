@@ -76,7 +76,7 @@ namespace blt::logging {
         // this is not thread safe!
         bool ensureAlignment = false;
         // should we log to file?
-        bool logToFile = false;
+        bool logToFile = true;
         // should we log to console?
         bool logToConsole = true;
         // where should we log? (empty for current binary directory) should end in a / if not empty!
@@ -153,7 +153,7 @@ namespace blt::logging {
     void setMaxFileSize(size_t fileSize);
 }
 
-#define BLT_LOGGING_IMPLEMENTATION
+//#define BLT_LOGGING_IMPLEMENTATION
 #ifdef BLT_LOGGING_IMPLEMENTATION
 
     #include <iostream>
@@ -223,14 +223,12 @@ namespace blt::logging {
     class LogFileWriter {
         private:
             std::string m_path;
-            std::fstream* output;
-            int currentLines = 0;
-            static constexpr int MAX_LINES = 100000;
+            std::fstream* output = nullptr;
         public:
             explicit LogFileWriter() = default;
             
             void writeLine(const std::string& path, const std::string& line){
-                if (path != m_path){
+                if (path != m_path || output == nullptr){
                     clear();
                     delete output;
                     output = new std::fstream(path, std::ios::out | std::ios::app);
@@ -243,15 +241,6 @@ namespace blt::logging {
                     output->clear();
                 }
                 *output << line;
-                currentLines++;
-                if (currentLines > MAX_LINES){
-                    output->flush();
-                    output->close();
-                    currentLines = 0;
-                    auto currentTime = system::getTimeStringFS();
-                    delete(output);
-                    output = new std::fstream(m_path + currentTime + ".log");
-                }
             }
             
             void clear(){
@@ -272,7 +261,7 @@ namespace blt::logging {
     };
     
     #define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
-    #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year); \
+    #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year + 1900); \
         S += '-'; \
         S += ensureHasDigits(now->tm_mon, 2); \
         S += '-'; \
@@ -426,6 +415,19 @@ namespace blt::logging {
             }
     };
     
+    std::string stripANSI(const std::string& str){
+        string_parser parser(str);
+        std::string out;
+        while (parser.has_next()){
+            char c = parser.next();
+            if (c == '\033'){
+                while (parser.has_next() && parser.next() != 'm');
+            } else
+                out += c;
+        }
+        return out;
+    }
+    
     void applyCFormatting(const std::string& format, std::string& output, va_list& args){
         // args must be copied because they will be consumed by the first vsnprintf
         va_list args_copy;
@@ -554,7 +556,7 @@ namespace blt::logging {
                     loggingFormat.currentRollover++;
             }
             
-            writer.writeLine(path, finalFormattedOutput);
+            writer.writeLine(path, stripANSI(finalFormattedOutput));
         }
         //std::cout.flush();
         
