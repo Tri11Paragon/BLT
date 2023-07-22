@@ -615,8 +615,9 @@ namespace blt::logging {
 
 #endif
 
-#if !defined(BLT_ENABLE_LOGGING) || defined(BLT_DISABLE_LOGGING)
+#ifdef BLT_DISABLE_LOGGING
     #define BLT_LOG(format, level, ...)
+    #define BLT_LOG_STREAM(level)
     #define BLT_TRACE(format, ...)
     #define BLT_DEBUG(format, ...)
     #define BLT_INFO(format, ...)
@@ -626,7 +627,7 @@ namespace blt::logging {
 #else
     #define BLT_LOG(format, level, ...) log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
     #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
-    #ifndef BLT_ENABLE_TRACE
+    #ifdef BLT_DISABLE_TRACE
         #define BLT_TRACE(format, ...)
         #define BLT_TRACE0_STREAM blt::logging::empty_logger{}
         #define BLT_TRACE1_STREAM blt::logging::empty_logger{}
@@ -642,7 +643,7 @@ namespace blt::logging {
         #define BLT_TRACE_STREAM BLT_LOG_STREAM(blt::logging::log_level::TRACE)
     #endif
     
-    #ifndef BLT_ENABLE_DEBUG
+    #ifdef BLT_DISABLE_DEBUG
         #define BLT_DEBUG(format, ...)
         #define BLT_DEBUG_STREAM blt::logging::empty_logger{}
     #else
@@ -650,7 +651,7 @@ namespace blt::logging {
         #define BLT_DEBUG_STREAM BLT_LOG_STREAM(blt::logging::log_level::DEBUG)
     #endif
     
-    #ifndef BLT_ENABLE_INFO
+    #ifdef BLT_DISABLE_INFO
         #define BLT_INFO(format, ...)
         #define BLT_INFO_STREAM blt::logging::empty_logger{}
     #else
@@ -658,7 +659,7 @@ namespace blt::logging {
         #define BLT_INFO_STREAM BLT_LOG_STREAM(blt::logging::log_level::INFO)
     #endif
     
-    #ifndef BLT_ENABLE_WARN
+    #ifdef BLT_DISABLE_WARN
         #define BLT_WARN(format, ...)
         #define BLT_WARN_STREAM blt::logging::empty_logger{}
     #else
@@ -666,7 +667,7 @@ namespace blt::logging {
         #define BLT_WARN_STREAM BLT_LOG_STREAM(blt::logging::log_level::WARN)
     #endif
     
-    #ifndef BLT_ENABLE_ERROR
+    #ifdef BLT_DISABLE_ERROR
         #define BLT_ERROR(format, ...)
         #define BLT_ERROR_STREAM blt::logging::empty_logger{}
     #else
@@ -674,7 +675,7 @@ namespace blt::logging {
         #define BLT_ERROR_STREAM BLT_LOG_STREAM(blt::logging::log_level::ERROR)
     #endif
     
-    #ifndef BLT_ENABLE_FATAL
+    #ifdef BLT_DISABLE_FATAL
         #define BLT_FATAL(format, ...)
         #define BLT_FATAL_STREAM blt::logging::empty_logger{}
     #else
