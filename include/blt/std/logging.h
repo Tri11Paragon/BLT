@@ -618,6 +618,16 @@ namespace blt::logging {
 #ifdef BLT_DISABLE_LOGGING
     #define BLT_LOG(format, level, ...)
     #define BLT_LOG_STREAM(level)
+    #define BLT_TRACE0_STREAM
+    #define BLT_TRACE1_STREAM
+    #define BLT_TRACE2_STREAM
+    #define BLT_TRACE3_STREAM
+    #define BLT_TRACE_STREAM
+    #define BLT_DEBUG_STREAM
+    #define BLT_INFO_STREAM
+    #define BLT_WARN_STREAM
+    #define BLT_ERROR_STREAM
+    #define BLT_FATAL_STREAM
     #define BLT_TRACE(format, ...)
     #define BLT_DEBUG(format, ...)
     #define BLT_INFO(format, ...)
