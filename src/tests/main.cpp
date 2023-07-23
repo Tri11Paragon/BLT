@@ -57,25 +57,32 @@ int main() {
     BLT_ERROR("Hello Error!");
     BLT_FATAL("Hello Fatal!");
     
-    int vals[100];
+    constexpr int size = 100;
+    uint32_t vals[size];
     
-    for (int & val : vals)
+    for (uint32_t & val : vals)
         val = 0;
     
     uint32_t seed = 1023;
-    for (int i = 0; i < 1203000; i++){
+    for (int i = 0; i < 10000000; i++){
         seed = seed * i;
-        vals[blt::random::randomInt(seed, 0, 100)]++;
+        vals[blt::random::randomInt(seed, 0, size)] += 1;
     }
     
-    std::fstream csv("./randoms2.csv", std::ios::out);
+    uint32_t mean = 0;
+    for (uint32_t& val : vals)
+        mean += val;
+    mean /= size;
     
-    csv << "index,count\n";
-    for (int i = 0; i < 100; i++){
-        csv << i << "," << vals[i] << "\n";
+    uint32_t std = 0;
+    for (uint32_t& val : vals) {
+        auto e = (val - mean);
+        std += e * e;
     }
     
-    csv.close();
+    auto stdev = sqrt((double)std / (double)size);
+    
+    BLT_INFO("STDDEV of # random values: %f", stdev);
     
     return 0;
 }
