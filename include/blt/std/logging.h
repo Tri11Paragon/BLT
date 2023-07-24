@@ -76,7 +76,7 @@ namespace blt::logging {
         // this is not thread safe!
         bool ensureAlignment = false;
         // should we log to file?
-        bool logToFile = true;
+        bool logToFile = false;
         // should we log to console?
         bool logToConsole = true;
         // where should we log? (empty for current binary directory) should end in a / if not empty!
