@@ -65,32 +65,53 @@ namespace blt {
      */
     template<typename T>
     struct scoped_buffer {
-        T* buffer;
-        unsigned long size;
-        
-        explicit scoped_buffer(unsigned long size): size(size) {
-            buffer = new T[size];
-        }
-        
-        scoped_buffer(scoped_buffer& copy) = delete;
-        
-        scoped_buffer(scoped_buffer&& move) = delete;
-        
-        scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
-        
-        scoped_buffer operator=(scoped_buffer&& moveAssignment) = delete;
-        
-        inline T& operator[](unsigned long index) const {
-            return buffer[index];
-        }
-        
-        inline T* operator*(){
-            return buffer;
-        }
-        
-        ~scoped_buffer() {
-            delete[] buffer;
-        }
+        private:
+            T* _buffer;
+            size_t _size;
+        public:
+            explicit scoped_buffer(size_t size): _size(size) {
+                _buffer = new T[size];
+            }
+            
+            scoped_buffer(scoped_buffer& copy) = delete;
+            
+            scoped_buffer(scoped_buffer&& move) = delete;
+            
+            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
+            
+            scoped_buffer operator=(scoped_buffer&& moveAssignment) = delete;
+            
+            inline T& operator[](unsigned long index) {
+                return _buffer[index];
+            }
+            
+            inline const T& operator[](unsigned long index) const {
+                return _buffer[index];
+            }
+            
+            inline T* operator*(){
+                return _buffer;
+            }
+            
+            [[nodiscard]] inline size_t size() const {
+                return _size;
+            }
+            
+            inline T* ptr(){
+                return _buffer;
+            }
+            
+            ptr_iterator<T> begin(){
+                return ptr_iterator{_buffer};
+            }
+            
+            ptr_iterator<T> end(){
+                return ptr_iterator{&_buffer[_size]};
+            }
+            
+            ~scoped_buffer() {
+                delete[] _buffer;
+            }
     };
     
     template<typename T>

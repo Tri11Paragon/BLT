@@ -29,6 +29,14 @@ namespace blt::system {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
     
+    static inline auto nanoTime() {
+        return getCurrentTimeNanoseconds();
+    }
+    
+    static inline auto getCurrentTimeMilliseconds(){
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+    
     /**
      * Standard time string is formatted as follows:
      * Year-Month-Date Hour:Min:Second
