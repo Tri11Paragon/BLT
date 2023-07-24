@@ -197,6 +197,7 @@ namespace blt {
                 delete[] _values;
             }
     };
+    
 }
 
 #endif //BLT_TESTS_MEMORY_H

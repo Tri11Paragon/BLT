@@ -9,6 +9,42 @@
 #include "blt/math/matrix.h"
 #include <bitset>
 #include "hashmap_tests.h"
+#include <functional>
+
+std::function<int(int i)> test{
+    [](int i) -> int {
+        int acc = 1;
+        for (int j = 0; j < i; j++){
+            acc += j * i;
+        }
+        return acc;
+    }
+};
+
+int test_as_func(int i){
+    int acc = 1;
+    for (int j = 0; j < i; j++){
+        acc += j * i;
+    }
+    return acc;
+}
+
+class super_func {
+    public:
+        virtual int test(int i) = 0;
+        virtual ~super_func() = default;
+};
+
+class class_func : public super_func {
+    public:
+        int test(int i) override {
+            int acc = 1;
+            for (int j = 0; j < i; j++){
+                acc += j * i;
+            }
+            return acc;
+        }
+};
 
 int main(int argc, char** argv) {
     
@@ -18,6 +54,42 @@ int main(int argc, char** argv) {
         }
         blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
     }
+    
+    class_func* funy = new class_func;
+    super_func* virtual_funy = new class_func;
+    
+    int num_of_tests = 100000;
+    int acc = 1;
+    BLT_START_INTERVAL("Functions Test", "std::function");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = test(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "std::function");
+    
+    BLT_START_INTERVAL("Functions Test", "normal function");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = test_as_func(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "normal function");
+    
+    BLT_START_INTERVAL("Functions Test", "virtual class direct");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = funy->test(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "virtual class direct");
+    
+    BLT_START_INTERVAL("Functions Test", "virtual class");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = virtual_funy->test(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "virtual class");
+    
+    BLT_PRINT_PROFILE("Functions Test");
+    delete virtual_funy;
     
     binaryTreeTest();
     

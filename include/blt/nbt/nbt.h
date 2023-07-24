@@ -15,26 +15,20 @@ namespace blt::nbt {
     
     std::string readUTF8String(std::fstream& stream);
     
-    enum class nbt_type : char {
-        tag_end = 0,
-        tag_byte = 1,
-        tag_short = 2,
-        tag_int = 3,
-        tag_long = 4,
-        tag_float = 5,
-        tag_double = 6,
-        tag_byte_array = 7,
-        tag_string = 8,
-        tag_list = 9,
-        tag_compound = 10,
-        tag_int_array = 11,
-        tag_long_array = 12
-    };
-    
-    class nbt_tag {
-        public:
-            virtual void readTag() = 0;
-            virtual void writeTag() = 0;
+    enum class nbt_tag : char {
+        END = 0,
+        BYTE = 1,
+        SHORT = 2,
+        INT = 3,
+        LONG = 4,
+        FLOAT = 5,
+        DOUBLE = 6,
+        BYTE_ARRAY = 7,
+        STRING = 8,
+        LIST = 9,
+        COMPOUND = 10,
+        INT_ARRAY = 11,
+        LONG_ARRAY = 12
     };
     
     class NBTDecoder {
@@ -51,7 +45,6 @@ namespace blt::nbt {
     class NBTReader {
         private:
             std::string m_file;
-        
         public:
             explicit NBTReader(std::string file): m_file(std::move(file)) {}
     };
