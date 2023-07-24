@@ -73,13 +73,23 @@ namespace blt {
                 _buffer = new T[size];
             }
             
-            scoped_buffer(scoped_buffer& copy) = delete;
+            scoped_buffer(const scoped_buffer& copy) = delete;
             
-            scoped_buffer(scoped_buffer&& move) = delete;
+            scoped_buffer(scoped_buffer&& move) noexcept {
+                _buffer = move._buffer;
+                _size = move.size();
+                move._buffer = nullptr;
+            }
             
             scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
             
-            scoped_buffer operator=(scoped_buffer&& moveAssignment) = delete;
+            scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept {
+                _buffer = moveAssignment._buffer;
+                _size = moveAssignment.size();
+                moveAssignment._buffer = nullptr;
+                
+                return *this;
+            }
             
             inline T& operator[](unsigned long index) {
                 return _buffer[index];
