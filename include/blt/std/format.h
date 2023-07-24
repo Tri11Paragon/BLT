@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 #include <blt/math/math.h>
-#include <blt/std/memory.h>
 
 namespace blt::string {
     
@@ -64,12 +63,12 @@ namespace blt::string {
     }
     
     struct utf8_string {
-        blt::scoped_buffer<char> characters;
+        char* characters;
+        unsigned int size;
     };
     
     // taken from java, adapted for c++.
     static inline utf8_string createUTFString(const std::string& str) {
-        
         const auto strlen = (unsigned int) str.size();
         unsigned int utflen = strlen;
         
@@ -82,7 +81,9 @@ namespace blt::string {
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw "UTF Error";
         
-        utf8_string chars{scoped_buffer<char>{utflen + 2}};
+        utf8_string chars{};
+        chars.size = utflen + 2;
+        chars.characters = new char[chars.size];
         
         int count = 0;
         chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);

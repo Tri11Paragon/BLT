@@ -58,9 +58,7 @@ namespace blt {
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
      * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
      * The internal buffer is allocated on the heap.
-     * The operator * has been overloaded to return the internal buffer. (or just use scoped_buffer.buffer if you wish to be explicit)
-     * The operator & was not used because I think it is stupid to do so.
-     * "*" on a reference is fine however since it isn't used to dereference in the case.
+     * The operator * has been overloaded to return the internal buffer.
      * @tparam T type that is stored in buffer eg char
      */
     template<typename T>
