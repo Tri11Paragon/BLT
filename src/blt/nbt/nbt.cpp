@@ -27,4 +27,16 @@ namespace blt::nbt {
         delete[] str.characters;
         return strOut;
     }
+    
+    void named_tag::writeName(std::fstream& out) {
+        writeUTF8String(out, name);
+    }
+    
+    void named_tag::readName(std::fstream& in) {
+        name = readUTF8String(in);
+    }
+    
+    void tag_end::writePayload(std::fstream& out) {
+        out.put('\0');
+    }
 }
