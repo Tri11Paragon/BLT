@@ -23,7 +23,7 @@ namespace blt::nbt {
         
         stream.read(str.characters, str.size);
         
-        auto strOut = std::move(blt::string::getStringFromUTF8(str));
+        auto strOut = blt::string::getStringFromUTF8(str);
         delete[] str.characters;
         return strOut;
     }

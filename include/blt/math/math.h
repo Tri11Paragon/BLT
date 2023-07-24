@@ -36,6 +36,26 @@ namespace blt {
         return y;
     }
     
+    
+    static inline constexpr double pow(int b, int p) {
+        int collection = 1;
+        for (int i = 0; i < p; i++)
+            collection *= b;
+        return collection;
+    }
+    
+    /**
+     * This is a fast rounding function and is not guaranteed to be 100% correct
+     * @tparam decimal_places
+     * @param value
+     * @return
+     */
+    template<int decimal_places>
+    static inline double round_up(double value) {
+        constexpr double multiplier = pow(10, decimal_places);
+        return ((int)(value * multiplier) + 1) / multiplier;
+    }
+    
     /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {
         return out << "\rMatrix4x4{" << v.m00() << ", " << v.m01() << ", " << v.m02() << ", " << v.m03() << "} \n"\
  << "         {" << v.m10() << ", " << v.m11() << ", " << v.m12() << ", " << v.m13() << "} \n"\

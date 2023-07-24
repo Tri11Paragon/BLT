@@ -10,27 +10,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <blt/math/math.h>
 
 namespace blt::string {
-    static inline constexpr double _static_pow(int p) {
-        int collection = 1;
-        for (int i = 0; i < p; i++)
-            collection *= 10;
-        return collection;
-    }
-    
-    /**
-     * This is a fast rounding function and is not guaranteed to be 100% correct
-     * @tparam decimal_places
-     * @param value
-     * @return
-     */
-    template<int decimal_places>
-    static inline double round_up(double value) {
-        constexpr double multiplier = _static_pow(decimal_places);
-        return ((int)(value * multiplier) + 1) / multiplier;
-    }
-    
     
     static inline std::string fromBytes(unsigned long bytes){
         if (bytes > 1073741824) {

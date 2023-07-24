@@ -15,7 +15,7 @@ namespace blt::nbt {
     
     std::string readUTF8String(std::fstream& stream);
     
-    enum nbt_type {
+    enum class nbt_type : char {
         tag_end = 0,
         tag_byte = 1,
         tag_short = 2,
