@@ -10,7 +10,15 @@
 #include <bitset>
 #include "hashmap_tests.h"
 
-int main() {
+int main(int argc, char** argv) {
+    
+    if (argc > 1 && std::string(argv[1]) == "--no_color") {
+        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
+            blt::logging::setLogColor((blt::logging::log_level)i, "");
+        }
+        blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
+    }
+    
     binaryTreeTest();
     
     run_logging();
