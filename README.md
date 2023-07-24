@@ -1,5 +1,5 @@
 # **BLT v0.6.1a**
-A common utilities library I find useful
+A C++20 common utilities library to make thing easy! 
 
 ![Icon](icon_large.png)
 

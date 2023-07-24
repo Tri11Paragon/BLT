@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
-project(BLT VERSION 0.6.1)
+project(BLT VERSION 0.7.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)

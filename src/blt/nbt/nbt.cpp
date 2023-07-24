@@ -28,15 +28,15 @@ namespace blt::nbt {
         return strOut;
     }
     
-    void named_tag::writeName(std::fstream& out) {
+    void writeName(std::fstream& out, const std::string& name) {
         writeUTF8String(out, name);
     }
     
-    void named_tag::readName(std::fstream& in) {
-        name = readUTF8String(in);
+    std::string readName(std::fstream& in) {
+        return readUTF8String(in);
     }
     
-    void tag_end::writePayload(std::fstream& out) {
+    void writePayload(std::fstream& out) {
         out.put('\0');
     }
 }

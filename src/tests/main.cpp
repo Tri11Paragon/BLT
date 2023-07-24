@@ -46,6 +46,16 @@ class class_func : public super_func {
         }
 };
 
+int (*func_func)(int) = [](int i) -> int {
+    int acc = 1;
+    for (int j = 0; j < i; j++){
+        acc += j * i;
+    }
+    return acc;
+};
+
+int (*func_func_in)(int) = &test_as_func;
+
 int main(int argc, char** argv) {
     
     if (argc > 1 && std::string(argv[1]) == "--no_color") {
@@ -55,7 +65,7 @@ int main(int argc, char** argv) {
         blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
     }
     
-    class_func* funy = new class_func;
+    auto* funy = new class_func;
     super_func* virtual_funy = new class_func;
     
     int num_of_tests = 100000;
@@ -87,6 +97,20 @@ int main(int argc, char** argv) {
         acc = virtual_funy->test(acc);
     }
     BLT_END_INTERVAL("Functions Test", "virtual class");
+    
+    BLT_START_INTERVAL("Functions Test", "funcptr lambda");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = func_func(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "funcptr lambda");
+    
+    BLT_START_INTERVAL("Functions Test", "c function ptr");
+    acc = 1;
+    for (int i = 0; i < num_of_tests; i++){
+        acc = func_func_in(acc);
+    }
+    BLT_END_INTERVAL("Functions Test", "c function ptr");
     
     BLT_PRINT_PROFILE("Functions Test");
     delete virtual_funy;

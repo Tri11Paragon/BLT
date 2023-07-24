@@ -33,28 +33,8 @@ namespace blt::nbt {
         LONG_ARRAY = 12
     };
     
-    class tag {
-        public:
-            virtual void writePayload(std::fstream& out) = 0;
-            virtual void readPayload(std::fstream& in) = 0;
-    };
-    
-    class named_tag : public tag {
-        private:
-            std::string name;
-        public:
-            explicit named_tag(std::string name): name(std::move(name)) {}
-            named_tag() = default;
-            void writeName(std::fstream& out);
-            void readName(std::fstream& in);
-    };
-    
-    class tag_end : public tag {
-        public:
-            void writePayload(std::fstream& out) final;
-            // nothing to read
-            void readPayload(std::fstream& in) final {}
-    };
+    void writeName(std::fstream& out, const std::string& name);
+    std::string readName(std::fstream& in);
     
     class NBTDecoder {
         private:
