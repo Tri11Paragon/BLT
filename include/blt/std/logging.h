@@ -522,6 +522,11 @@ namespace blt::logging {
         
         applyCFormatting(withoutLn, out, args);
         
+        if (level == log_level::NONE){
+            std::cout << out << std::endl;
+            return;
+        }
+        
         std::string finalFormattedOutput = applyFormatString(out, level, file, line);
         
         if (loggingFormat.logToConsole)

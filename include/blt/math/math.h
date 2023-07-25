@@ -19,7 +19,9 @@ namespace blt {
         seed = (seed << 13) ^ seed;
         return ((seed * (seed * seed * 15731 + 789221) + 1376312589) & 0x7fffffff);
     }
-    
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     /**
      * fast inverse sqrt
      */
@@ -35,6 +37,8 @@ namespace blt {
         y = y * (1.5f - (x * y * y));
         return y;
     }
+
+#pragma GCC diagnostic pop
     
     
     static inline constexpr double pow(int b, int p) {
