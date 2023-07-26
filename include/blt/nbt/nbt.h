@@ -8,22 +8,56 @@
 #define BLT_TESTS_NBT_H
 
 #include <utility>
+#include <bit>
+#include <cstring>
+#include <type_traits>
 
 #include "blt/std/format.h"
 #include "blt/std/filesystem.h"
 
 namespace blt::nbt {
-    void writeUTF8String(std::fstream& stream, const std::string& str);
+    void writeUTF8String(blt::fs::block_writer& stream, const std::string& str);
     
-    std::string readUTF8String(std::fstream& stream);
+    std::string readUTF8String(blt::fs::block_reader& stream);
     
     // Used to grab the byte-data of any T element. Defaults to Big Endian, however can be configured to use little endian
     template <typename T>
-    int toBytes(const T& in, char* out);
+    inline static int toBytes(const T& in, char* out) {
+        std::memcpy(out, (void*) &in, sizeof(T));
+        
+        if constexpr (std::endian::native == std::endian::little) {
+            for (size_t i = 0; i < sizeof(T) / 2; i++)
+                std::swap(out[i], out[sizeof(T) - 1 - i]);
+        }
+        
+        return 0;
+    }
     
     // Used to cast the binary data of any T object, into a T object.
     template <typename T>
-    int fromBytes(const char* in, T* out);
+    inline static int fromBytes(const char* in, T* out) {
+        memcpy(out, in, sizeof(T));
+        
+        if constexpr (std::endian::native == std::endian::little) {
+            for (size_t i = 0; i < sizeof(T) / 2; i++)
+                std::swap(((char*) (out))[i], ((char*) (out))[sizeof(T) - 1 - i]);
+        }
+        
+        return 0;
+    }
+    
+    template<typename T>
+    inline static void writeData(blt::fs::block_writer& out, const T& d){
+        char data[sizeof(T)];
+        toBytes(d, data);
+        out.write(data, sizeof(T));
+    }
+    template<typename T>
+    inline static void readData(blt::fs::block_reader& in, T& d) {
+        char data[sizeof(T)];
+        in.read(data, sizeof(T));
+        fromBytes(data, &d);
+    }
     
     
     enum class nbt_tag : char {
@@ -49,10 +83,20 @@ namespace blt::nbt {
         public:
             explicit tag_t(nbt_tag type): type(type) {};
             explicit tag_t(nbt_tag type, std::string name): type(type), name(std::move(name)) {}
-            virtual void writePayload(std::fstream& out) = 0;
-            virtual void readPayload(std::fstream& in) = 0;
-            void writeName(std::fstream& out);
-            void readName(std::fstream& in);
+            virtual void writePayload(blt::fs::block_writer& out) = 0;
+            virtual void readPayload(blt::fs::block_reader& in) = 0;
+            void writeName(blt::fs::block_writer& out) {
+                writeUTF8String(out, name);
+            }
+            void readName(blt::fs::block_reader& in) {
+                name = readUTF8String(in);
+            }
+            [[nodiscard]] inline nbt_tag getType() const {
+                return type;
+            }
+            [[nodiscard]] inline const std::string& getName() const {
+                return name;
+            }
     };
     
     template<typename T>
@@ -60,30 +104,206 @@ namespace blt::nbt {
         protected:
             T t;
         public:
-            explicit tag(nbt_tag type): tag_t(type) {};
-            explicit tag(nbt_tag type, std::string name): tag_t(type, std::move(name)) {}
+            explicit tag(nbt_tag type): tag_t(type) {}
+            tag(nbt_tag type, std::string name, T t): tag_t(type, std::move(name)), t(std::move(t)) {}
+            void writePayload(blt::fs::block_writer& out) override {
+                if constexpr(std::is_arithmetic<T>::value)
+                    writeData(out, t);
+            }
+            void readPayload(blt::fs::block_reader& in) override {
+                if constexpr(std::is_arithmetic<T>::value)
+                    readData(in, t);
+            }
             [[nodiscard]] inline const T& get() const {return t;}
             inline T& get() {return t;}
     };
     
     class tag_end : public tag<char> {
         public:
-            void writePayload(std::fstream& out) final;
+            void writePayload(blt::fs::block_writer&) final {}
             // nothing to read
-            void readPayload(std::fstream&) final {}
+            void readPayload(blt::fs::block_reader&) final {}
     };
     
-    class tag_byte : public tag<char> {
+    class tag_byte : public tag<int8_t> {
         public:
-            void writePayload(std::fstream& out) final;
-            void readPayload(std::fstream& in) final;
+            tag_byte(): tag(nbt_tag::BYTE) {}
+            tag_byte(const std::string& name, int8_t b): tag(nbt_tag::BYTE, name, b) {}
     };
     
     class tag_short : public tag<int16_t> {
         public:
-            void writePayload(std::fstream& out) final;
-            void readPayload(std::fstream& in) final;
+            tag_short(): tag(nbt_tag::SHORT) {}
+            tag_short(const std::string& name, int16_t s): tag(nbt_tag::SHORT, name, s) {}
     };
+    
+    class tag_int : public tag<int32_t> {
+        public:
+            tag_int(): tag(nbt_tag::INT) {}
+            tag_int(const std::string& name, int32_t i): tag(nbt_tag::INT, name, i) {}
+    };
+    
+    class tag_long : public tag<int64_t> {
+        public:
+            tag_long(): tag(nbt_tag::LONG) {}
+            tag_long(const std::string& name, int64_t l): tag(nbt_tag::LONG, name, l) {}
+    };
+    
+    class tag_float : public tag<float> {
+        public:
+            tag_float(): tag(nbt_tag::FLOAT) {}
+            tag_float(const std::string& name, float f): tag(nbt_tag::FLOAT, name, f) {}
+    };
+    
+    class tag_double : public tag<double> {
+        public:
+            tag_double(): tag(nbt_tag::DOUBLE) {}
+            tag_double(const std::string& name, double d): tag(nbt_tag::DOUBLE, name, d) {}
+    };
+    
+    class tag_byte_array : public tag<std::vector<int8_t>> {
+        public:
+            tag_byte_array(): tag(nbt_tag::BYTE_ARRAY) {}
+            tag_byte_array(const std::string& name, const std::vector<int8_t>& v): tag(nbt_tag::BYTE_ARRAY, name, v) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                auto length = (int32_t) t.size();
+                writeData(out, length);
+                // TODO on the writer (remove need for cast + more std::fstream functions)
+                out.write(reinterpret_cast<char*>(t.data()), length);
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                int32_t length;
+                readData(in, length);
+                t.reserve(length);
+                in.read(reinterpret_cast<char*>(t.data()), length);
+            }
+    };
+    
+    class tag_string : public tag<std::string> {
+        public:
+            tag_string(): tag(nbt_tag::STRING) {}
+            tag_string(const std::string& name, const std::string& s): tag(nbt_tag::BYTE_ARRAY, name, s) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                writeUTF8String(out, t);
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                t = readUTF8String(in);
+            }
+    };
+    
+    class tag_int_array : public tag<std::vector<int32_t>> {
+        public:
+            tag_int_array(): tag(nbt_tag::INT_ARRAY) {}
+            tag_int_array(const std::string& name, const std::vector<int32_t>& v): tag(nbt_tag::INT, name, v) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                auto length = (int32_t) t.size();
+                writeData(out, length);
+                for (int i = 0; i < length; i++)
+                    writeData(out, t[i]);
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                int32_t length;
+                readData(in, length);
+                t.reserve(length);
+                for (int i = 0; i < length; i++)
+                    readData(in, t[i]);
+            }
+    };
+    
+    class tag_long_array : public tag<std::vector<int64_t>> {
+        public:
+            tag_long_array(): tag(nbt_tag::LONG_ARRAY) {}
+            tag_long_array(const std::string& name, const std::vector<int64_t>& v): tag(nbt_tag::LONG_ARRAY, name, v) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                auto length = (int32_t) t.size();
+                writeData(out, length);
+                for (int i = 0; i < length; i++)
+                    writeData(out, t[i]);
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                int32_t length;
+                readData(in, length);
+                t.reserve(length);
+                for (int i = 0; i < length; i++)
+                    readData(in, t[i]);
+            }
+    };
+    
+    // EVIL HACK
+    static tag_t* newCompound();
+
+#define BLT_NBT_POPULATE_VEC(type, vec, length) for (int i = 0; i < length; i++) vec.push_back(type);
+    
+    class tag_list : public tag<std::vector<tag_t*>> {
+        public:
+            tag_list(): tag(nbt_tag::LIST) {}
+            tag_list(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::LIST, name, v) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                if (t.empty())
+                    writeData(out, (char)nbt_tag::END);
+                else
+                    writeData(out, (char)t[0]->getType());
+                auto length = (int32_t) t.size();
+                writeData(out, length);
+                for (const auto& v : t)
+                    v->writePayload(out);
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                char id;
+                int32_t length;
+                readData(in, id);
+                readData(in, length);
+                if (length == 0 || id == 0)
+                    return;
+                switch ((nbt_tag) id) {
+                    case nbt_tag::END:
+                        break;
+                    case nbt_tag::BYTE:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_byte, t, length);
+                        break;
+                    case nbt_tag::SHORT:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_short, t, length);
+                        break;
+                    case nbt_tag::INT:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_int, t, length);
+                        break;
+                    case nbt_tag::LONG:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_long, t, length);
+                        break;
+                    case nbt_tag::FLOAT:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_float, t, length);
+                        break;
+                    case nbt_tag::DOUBLE:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_double, t, length);
+                        break;
+                    case nbt_tag::BYTE_ARRAY:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_byte_array, t, length);
+                        break;
+                    case nbt_tag::STRING:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_string, t, length);
+                        break;
+                    case nbt_tag::LIST:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_list, t, length);
+                        break;
+                    case nbt_tag::COMPOUND:
+                        BLT_NBT_POPULATE_VEC(newCompound(), t, length);
+                        break;
+                    case nbt_tag::INT_ARRAY:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_int_array, t, length);
+                        break;
+                    case nbt_tag::LONG_ARRAY:
+                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_long_array, t, length);
+                        break;
+                }
+                for (int i = 0; i < length; i++)
+                    t[i]->readPayload(in);
+            }
+    };
+    
+    
+    static tag_t* newCompound(){
+    
+    }
     
     class NBTDecoder {
         private:

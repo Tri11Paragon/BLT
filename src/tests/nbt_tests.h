@@ -193,7 +193,7 @@ inline void nbt_tests(){
     testOutput.write(testByte, 3);
     testOutput.write(reinterpret_cast<char*>(&testShort), sizeof(short));
     testOutput.write(reinterpret_cast<char*>(&testInt), sizeof(int));
-    blt::nbt::writeUTF8String(testOutput, "HelloHowManyCanWeFit!");
+    //blt::nbt::writeUTF8String(testOutput, "HelloHowManyCanWeFit!");
     
     //testOutput.flush();
     testOutput.close();
@@ -207,10 +207,10 @@ inline void nbt_tests(){
     testInput.read(testByteIn, 3);
     testInput.read(reinterpret_cast<char*>(&testShortIn), sizeof(short));
     testInput.read(reinterpret_cast<char*>(&testIntIn), sizeof(int));
-    std::string strIn = blt::nbt::readUTF8String(testInput);
+    //std::string strIn = blt::nbt::readUTF8String(testInput);
     
     testInput.close();
-    BLT_INFO("%d, %c, %d, %d, %d, %s", testByteIn[0], testByteIn[1], testByteIn[2], testShortIn, testIntIn, strIn.c_str());
+    //BLT_INFO("%d, %c, %d, %d, %d, %s", testByteIn[0], testByteIn[1], testByteIn[2], testShortIn, testIntIn, strIn.c_str());
     
     nbt_read_tests();
     nbt_write_tests();

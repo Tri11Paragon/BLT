@@ -29,6 +29,16 @@ int test_as_func(int i){
     return acc;
 }
 
+inline int test_as_func_inline(int i){
+    int acc = 1;
+    for (int j = 0; j < i; j++){
+        acc += j * i;
+    }
+    return acc;
+}
+
+std::function<int(int i)> test_func_as_std(&test_as_func);
+
 class super_func {
     public:
         virtual int test(int i) = 0;
@@ -68,51 +78,75 @@ int main(int argc, char** argv) {
     auto* funy = new class_func;
     super_func* virtual_funy = new class_func;
     
-    int num_of_tests = 100000;
-    int acc = 1;
-    BLT_START_INTERVAL("Functions Test", "std::function");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = test(acc);
+    for (int _ = 0; _ < 100; _++ ) {
+        int num_of_tests = 10000;
+        int acc = 1;
+        BLT_START_INTERVAL("Functions Test", "std::function (lambda)");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += test(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "std::function (lambda)");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "std::function (normal)");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += test_func_as_std(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "std::function (normal)");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "normal function");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += test_as_func(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "normal function");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "(inline) normal function");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += test_as_func_inline(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "(inline) normal function");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "virtual class direct");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += funy->test(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "virtual class direct");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "virtual class");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += virtual_funy->test(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "virtual class");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "funcptr lambda");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += func_func(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "funcptr lambda");
+        BLT_TRACE(acc);
+        
+        BLT_START_INTERVAL("Functions Test", "c function ptr");
+        acc = 1;
+        for (int i = 0; i < num_of_tests; i++) {
+            acc += func_func_in(i);
+        }
+        BLT_END_INTERVAL("Functions Test", "c function ptr");
+        BLT_TRACE(acc);
     }
-    BLT_END_INTERVAL("Functions Test", "std::function");
     
-    BLT_START_INTERVAL("Functions Test", "normal function");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = test_as_func(acc);
-    }
-    BLT_END_INTERVAL("Functions Test", "normal function");
-    
-    BLT_START_INTERVAL("Functions Test", "virtual class direct");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = funy->test(acc);
-    }
-    BLT_END_INTERVAL("Functions Test", "virtual class direct");
-    
-    BLT_START_INTERVAL("Functions Test", "virtual class");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = virtual_funy->test(acc);
-    }
-    BLT_END_INTERVAL("Functions Test", "virtual class");
-    
-    BLT_START_INTERVAL("Functions Test", "funcptr lambda");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = func_func(acc);
-    }
-    BLT_END_INTERVAL("Functions Test", "funcptr lambda");
-    
-    BLT_START_INTERVAL("Functions Test", "c function ptr");
-    acc = 1;
-    for (int i = 0; i < num_of_tests; i++){
-        acc = func_func_in(acc);
-    }
-    BLT_END_INTERVAL("Functions Test", "c function ptr");
-    
-    BLT_PRINT_PROFILE("Functions Test");
+    BLT_PRINT_PROFILE("Functions Test", blt::logging::log_level::NONE, true);
     delete virtual_funy;
     
     binaryTreeTest();
