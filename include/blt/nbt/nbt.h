@@ -11,11 +11,17 @@
 #include <bit>
 #include <cstring>
 #include <type_traits>
+#include <unordered_map>
 
 #include "blt/std/format.h"
 #include "blt/std/filesystem.h"
 
 namespace blt::nbt {
+#ifndef HASHMAP
+    template<typename K, typename V>
+    using HASHMAP = std::unordered_map<K, V>;
+#endif
+    
     void writeUTF8String(blt::fs::block_writer& stream, const std::string& str);
     
     std::string readUTF8String(blt::fs::block_reader& stream);
@@ -52,13 +58,13 @@ namespace blt::nbt {
         toBytes(d, data);
         out.write(data, sizeof(T));
     }
+    
     template<typename T>
     inline static void readData(blt::fs::block_reader& in, T& d) {
         char data[sizeof(T)];
         in.read(data, sizeof(T));
         fromBytes(data, &d);
     }
-    
     
     enum class nbt_tag : char {
         END = 0,
@@ -268,6 +274,12 @@ namespace blt::nbt {
                     return new blt::nbt::tag_long_array;
             }
         }
+        static HASHMAP<std::string, tag_t*> toHashmap(const std::vector<tag_t*>& v){
+            HASHMAP<std::string, tag_t*> tags;
+            for (const auto& t : v)
+                tags[t->getName()] = t;
+            return tags;
+        }
     }
     
     class tag_list : public tag<std::vector<tag_t*>> {
@@ -303,10 +315,11 @@ namespace blt::nbt {
             }
     };
     
-    class tag_compound : public tag<std::vector<tag_t*>> {
+    class tag_compound : public tag<HASHMAP<std::string, tag_t*>> {
         public:
             tag_compound(): tag(nbt_tag::COMPOUND) {}
-            tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
+            tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
+            tag_compound(const std::string& name, const HASHMAP<std::string, tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
             void writePayload(blt::fs::block_writer& out) final {
                 for (auto*& v : t){
                     out.put((char) v->getType());
@@ -334,22 +347,23 @@ namespace blt::nbt {
         return new blt::nbt::tag_list;
     }
     
-    class NBTDecoder {
-        private:
-            blt::fs::block_reader* m_reader;
-        public:
-            explicit NBTDecoder(blt::fs::block_reader* reader): m_reader(reader) {}
-        
-    };
-    
-    /**
-     * Reads the entire NBT file when the read() function is called.
-     */
     class NBTReader {
         private:
-            std::string m_file;
+            blt::fs::block_reader& reader;
         public:
-            explicit NBTReader(std::string file): m_file(std::move(file)) {}
+            explicit NBTReader(blt::fs::block_reader& reader): reader(reader) {}
+            
+    };
+    
+    class NBTWriter {
+        private:
+            blt::fs::block_writer& writer;
+            tag_compound* root = nullptr;
+        public:
+            explicit NBTWriter(blt::fs::block_writer& writer): writer(writer) {}
+            void readFully(){
+            
+            }
     };
     
 }
