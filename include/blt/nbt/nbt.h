@@ -319,12 +319,14 @@ namespace blt::nbt {
         public:
             tag_compound(): tag(nbt_tag::COMPOUND) {}
             tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
+            tag_compound(const std::string& name, const std::initializer_list<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
             tag_compound(const std::string& name, const HASHMAP<std::string, tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
             void writePayload(blt::fs::block_writer& out) final {
-                for (auto*& v : t){
-                    out.put((char) v->getType());
-                    v->writeName(out);
-                    v->writePayload(out);
+                for (const auto& v : t){
+                    auto tag = v.second;
+                    out.put((char) tag->getType());
+                    tag->writeName(out);
+                    tag->writePayload(out);
                 }
                 out.put('\0');
             }
@@ -334,7 +336,7 @@ namespace blt::nbt {
                     auto* v = _internal_::toType(type);
                     v->readName(in);
                     v->readPayload(in);
-                    t.push_back(v);
+                    t[v->getName()] = v;
                 }
             }
     };
@@ -350,19 +352,33 @@ namespace blt::nbt {
     class NBTReader {
         private:
             blt::fs::block_reader& reader;
+            tag_compound* root = nullptr;
         public:
             explicit NBTReader(blt::fs::block_reader& reader): reader(reader) {}
             
+            void read();
+            
+            template<typename T>
+            [[nodiscard]] T* getTag(const std::string& name){
+                auto& tag = root->get()[name];
+                T t;
+                if (tag->getType() != t.getType()) {
+                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    throw std::runtime_error("Requested Tag does not match stored type!");
+                }
+                return dynamic_cast<T*>(tag);
+            }
     };
     
     class NBTWriter {
         private:
             blt::fs::block_writer& writer;
-            tag_compound* root = nullptr;
         public:
             explicit NBTWriter(blt::fs::block_writer& writer): writer(writer) {}
-            void readFully(){
-            
+            void write(tag_compound* root){
+                writer.put((char)nbt_tag::COMPOUND);
+                root->writeName(writer);
+                root->writePayload(writer);
             }
     };
     
