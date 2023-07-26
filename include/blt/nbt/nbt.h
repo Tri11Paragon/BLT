@@ -97,6 +97,7 @@ namespace blt::nbt {
             [[nodiscard]] inline const std::string& getName() const {
                 return name;
             }
+            virtual ~tag_t() = default;
     };
     
     template<typename T>
@@ -116,6 +117,7 @@ namespace blt::nbt {
             }
             [[nodiscard]] inline const T& get() const {return t;}
             inline T& get() {return t;}
+            ~tag() override = default;
     };
     
     class tag_end : public tag<char> {
@@ -229,10 +231,44 @@ namespace blt::nbt {
             }
     };
     
-    // EVIL HACK
-    static tag_t* newCompound();
-
 #define BLT_NBT_POPULATE_VEC(type, vec, length) for (int i = 0; i < length; i++) vec.push_back(type);
+    
+    namespace _internal_ {
+        // EVIL HACK
+        static tag_t* newCompound();
+        static tag_t* newList();
+        static tag_t* toType(char id){
+            switch ((nbt_tag) id) {
+                case nbt_tag::END:
+                    return nullptr;
+                    break;
+                case nbt_tag::BYTE:
+                    return new blt::nbt::tag_byte;
+                case nbt_tag::SHORT:
+                    return new blt::nbt::tag_short;
+                case nbt_tag::INT:
+                    return new blt::nbt::tag_int;
+                case nbt_tag::LONG:
+                    return new blt::nbt::tag_long;
+                case nbt_tag::FLOAT:
+                    return new blt::nbt::tag_float;
+                case nbt_tag::DOUBLE:
+                    return new blt::nbt::tag_double;
+                case nbt_tag::BYTE_ARRAY:
+                    return new blt::nbt::tag_byte_array;
+                case nbt_tag::STRING:
+                    return new blt::nbt::tag_string;
+                case nbt_tag::LIST:
+                    return _internal_::newList();
+                case nbt_tag::COMPOUND:
+                    return _internal_::newCompound();
+                case nbt_tag::INT_ARRAY:
+                    return new blt::nbt::tag_int_array;
+                case nbt_tag::LONG_ARRAY:
+                    return new blt::nbt::tag_long_array;
+            }
+        }
+    }
     
     class tag_list : public tag<std::vector<tag_t*>> {
         public:
@@ -255,54 +291,47 @@ namespace blt::nbt {
                 readData(in, length);
                 if (length == 0 || id == 0)
                     return;
-                switch ((nbt_tag) id) {
-                    case nbt_tag::END:
-                        break;
-                    case nbt_tag::BYTE:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_byte, t, length);
-                        break;
-                    case nbt_tag::SHORT:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_short, t, length);
-                        break;
-                    case nbt_tag::INT:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_int, t, length);
-                        break;
-                    case nbt_tag::LONG:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_long, t, length);
-                        break;
-                    case nbt_tag::FLOAT:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_float, t, length);
-                        break;
-                    case nbt_tag::DOUBLE:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_double, t, length);
-                        break;
-                    case nbt_tag::BYTE_ARRAY:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_byte_array, t, length);
-                        break;
-                    case nbt_tag::STRING:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_string, t, length);
-                        break;
-                    case nbt_tag::LIST:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_list, t, length);
-                        break;
-                    case nbt_tag::COMPOUND:
-                        BLT_NBT_POPULATE_VEC(newCompound(), t, length);
-                        break;
-                    case nbt_tag::INT_ARRAY:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_int_array, t, length);
-                        break;
-                    case nbt_tag::LONG_ARRAY:
-                        BLT_NBT_POPULATE_VEC(new blt::nbt::tag_long_array, t, length);
-                        break;
-                }
-                for (int i = 0; i < length; i++)
+                t.reserve(length);
+                for (int i = 0; i < length; i++) {
+                    t[i] = _internal_::toType(id);
                     t[i]->readPayload(in);
+                }
+            }
+            ~tag_list() override {
+                for (auto* p : t)
+                    delete p;
             }
     };
     
+    class tag_compound : public tag<std::vector<tag_t*>> {
+        public:
+            tag_compound(): tag(nbt_tag::COMPOUND) {}
+            tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
+            void writePayload(blt::fs::block_writer& out) final {
+                for (auto*& v : t){
+                    out.put((char) v->getType());
+                    v->writeName(out);
+                    v->writePayload(out);
+                }
+                out.put('\0');
+            }
+            void readPayload(blt::fs::block_reader& in) final {
+                char type;
+                while ((type = in.get()) != (char)nbt_tag::END){
+                    auto* v = _internal_::toType(type);
+                    v->readName(in);
+                    v->readPayload(in);
+                    t.push_back(v);
+                }
+            }
+    };
     
-    static tag_t* newCompound(){
+    static tag_t* _internal_::newCompound(){
+        return new blt::nbt::tag_compound;
+    }
     
+    static tag_t* _internal_::newList() {
+        return new blt::nbt::tag_list;
     }
     
     class NBTDecoder {

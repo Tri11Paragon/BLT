@@ -34,6 +34,11 @@ namespace blt::fs {
              * @return status code. non-zero return codes indicates a failure has occurred.
              */
             virtual int read(char* buffer, size_t bytes) = 0;
+            virtual char get(){
+                char c[1];
+                read(c, 1);
+                return c[0];
+            }
     };
     
     /**
@@ -52,6 +57,11 @@ namespace blt::fs {
              * @return non-zero code if failure
              */
             virtual int write(char* buffer, size_t bytes) = 0;
+            virtual int put(char c){
+                char a[1];
+                a[0] = c;
+                return write(a, 1);
+            }
             
             /**
              * Ensures that the internal buffer is written to the filesystem.
