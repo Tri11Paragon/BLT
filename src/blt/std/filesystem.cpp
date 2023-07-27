@@ -40,7 +40,7 @@ int blt::fs::fstream_block_writer::write(char* buffer, size_t bytes) {
     return 0;
 }
 
-void blt::fs::fstream_block_writer::flush() {
+void blt::fs::fstream_block_writer::flush_internal() {
     m_stream.write(m_buffer, (long) writeIndex);
     writeIndex = 0;
 }

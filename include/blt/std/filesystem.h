@@ -78,7 +78,7 @@ namespace blt::fs {
             char* m_buffer;
             size_t readIndex = 0;
         public:
-            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize):
+            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize = 131072):
                     block_reader(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
             
             explicit fstream_block_reader(fstream_block_reader& copy) = delete;
@@ -101,8 +101,9 @@ namespace blt::fs {
             std::fstream& m_stream;
             char* m_buffer;
             size_t writeIndex = 0;
+            void flush_internal();
         public:
-            explicit fstream_block_writer(std::fstream& stream, size_t bufferSize):
+            explicit fstream_block_writer(std::fstream& stream, size_t bufferSize = 131072):
                     block_writer(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
             
             explicit fstream_block_writer(fstream_block_writer& copy) = delete;
@@ -114,9 +115,12 @@ namespace blt::fs {
             fstream_block_writer& operator=(const fstream_block_writer&& move) = delete;
             
             int write(char* buffer, size_t bytes) override;
-            void flush() override;
+            inline void flush() override {
+                flush_internal();
+            }
             
             ~fstream_block_writer() {
+                flush_internal();
                 delete[] m_buffer;
             }
     };

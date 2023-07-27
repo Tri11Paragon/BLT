@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     auto* funy = new class_func;
     super_func* virtual_funy = new class_func;
     
-    for (int _ = 0; _ < 100; _++ ) {
+    for (int _ = 0; _ < 10; _++ ) {
         int num_of_tests = 10000;
         int acc = 1;
         BLT_START_INTERVAL("Functions Test", "std::function (lambda)");
@@ -221,6 +221,14 @@ int main(int argc, char** argv) {
     auto stdev = sqrt((double)std / (double)size);
     
     BLT_INFO("STDDEV of # random values: %f", stdev);
+    
+    std::fstream nbtFile("super_file.nbt", std::ios::out | std::ios::binary);
+    blt::fs::fstream_block_writer blockWriter(nbtFile);
+    blt::nbt::NBTWriter nbtWriter(blockWriter);
+    nbtWriter.write(new blt::nbt::tag_compound("root", {
+        new blt::nbt::tag_byte("super_byte", 8),
+        new blt::nbt::tag_short("shortTest", 32767),
+    }));
     
     return 0;
 }

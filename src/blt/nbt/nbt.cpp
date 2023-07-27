@@ -16,9 +16,9 @@ namespace blt::nbt {
     }
     
     std::string readUTF8String(blt::fs::block_reader& stream) {
-        unsigned short utflen;
+        int16_t utflen;
         
-        stream.read(reinterpret_cast<char*>(&utflen), sizeof(utflen));
+        readData(stream, utflen);
         
         blt::string::utf8_string str{};
         str.size = utflen;

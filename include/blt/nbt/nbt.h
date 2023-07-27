@@ -15,6 +15,7 @@
 
 #include "blt/std/format.h"
 #include "blt/std/filesystem.h"
+#include "blt/std/logging.h"
 
 namespace blt::nbt {
 #ifndef HASHMAP
@@ -273,6 +274,8 @@ namespace blt::nbt {
                 case nbt_tag::LONG_ARRAY:
                     return new blt::nbt::tag_long_array;
             }
+            BLT_WARN("Tag Type not found!");
+            return nullptr;
         }
         static HASHMAP<std::string, tag_t*> toHashmap(const std::vector<tag_t*>& v){
             HASHMAP<std::string, tag_t*> tags;

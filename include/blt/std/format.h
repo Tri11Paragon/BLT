@@ -86,8 +86,8 @@ namespace blt::string {
         chars.characters = new char[chars.size];
         
         int count = 0;
-        chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         chars.characters[count++] = (char) ((utflen >> 8) & 0xFF);
+        chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         
         unsigned int i = 0;
         for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
