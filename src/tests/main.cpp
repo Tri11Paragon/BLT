@@ -228,6 +228,9 @@ int main(int argc, char** argv) {
     nbtWriter.write(new blt::nbt::tag_compound("root", {
         new blt::nbt::tag_byte("super_byte", 8),
         new blt::nbt::tag_short("shortTest", 32767),
+        new blt::nbt::tag_compound("SEXY_COMPOUND", {
+        
+        })
     }));
     
     return 0;

@@ -342,6 +342,10 @@ namespace blt::nbt {
                     t[v->getName()] = v;
                 }
             }
+            ~tag_compound() override {
+                for (auto& v : t)
+                    delete v.second;
+            }
     };
     
     static tag_t* _internal_::newCompound(){
@@ -371,6 +375,9 @@ namespace blt::nbt {
                 }
                 return dynamic_cast<T*>(tag);
             }
+            ~NBTReader() {
+                delete root;
+            }
     };
     
     class NBTWriter {
@@ -378,11 +385,20 @@ namespace blt::nbt {
             blt::fs::block_writer& writer;
         public:
             explicit NBTWriter(blt::fs::block_writer& writer): writer(writer) {}
+            /**
+             * Write a compound tag and then DELETES the tag. If you don't wish for the memory to be freed, please use the reference version!
+             * @param root root NBT tag to write, this function assumes ownership of this pointer.
+             */
             void write(tag_compound* root){
-                writer.put((char)nbt_tag::COMPOUND);
-                root->writeName(writer);
-                root->writePayload(writer);
+                write(*root);
+                delete root;
             }
+            void write(tag_compound& root){
+                writer.put((char)nbt_tag::COMPOUND);
+                root.writeName(writer);
+                root.writePayload(writer);
+            }
+            ~NBTWriter() = default;
     };
     
 }
