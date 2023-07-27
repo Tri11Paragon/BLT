@@ -191,7 +191,7 @@ namespace blt::nbt {
     class tag_string : public tag<std::string> {
         public:
             tag_string(): tag(nbt_tag::STRING) {}
-            tag_string(const std::string& name, const std::string& s): tag(nbt_tag::BYTE_ARRAY, name, s) {}
+            tag_string(const std::string& name, const std::string& s): tag(nbt_tag::STRING, name, s) {}
             void writePayload(blt::fs::block_writer& out) final {
                 writeUTF8String(out, t);
             }
@@ -203,7 +203,7 @@ namespace blt::nbt {
     class tag_int_array : public tag<std::vector<int32_t>> {
         public:
             tag_int_array(): tag(nbt_tag::INT_ARRAY) {}
-            tag_int_array(const std::string& name, const std::vector<int32_t>& v): tag(nbt_tag::INT, name, v) {}
+            tag_int_array(const std::string& name, const std::vector<int32_t>& v): tag(nbt_tag::INT_ARRAY, name, v) {}
             void writePayload(blt::fs::block_writer& out) final {
                 auto length = (int32_t) t.size();
                 writeData(out, length);

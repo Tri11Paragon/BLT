@@ -229,7 +229,31 @@ int main(int argc, char** argv) {
         new blt::nbt::tag_byte("super_byte", 8),
         new blt::nbt::tag_short("shortTest", 32767),
         new blt::nbt::tag_compound("SEXY_COMPOUND", {
-        
+            new blt::nbt::tag_list("my list", {
+                new blt::nbt::tag_long("", 1230),
+                new blt::nbt::tag_long("", 2),
+                new blt::nbt::tag_long("", 50340535),
+                new blt::nbt::tag_long("", 55),
+                new blt::nbt::tag_long("", 256),
+                new blt::nbt::tag_long("", 512),
+                new blt::nbt::tag_long("", 9999999999),
+            }),
+            new blt::nbt::tag_double("OMG IT'S A DOUBLE", 1320.04324),
+            new blt::nbt::tag_float("OMG IT'S A FLOAT", 12.04324),
+            new blt::nbt::tag_compound("Triple", {
+                new blt::nbt::tag_int("Test int", 32),
+                new blt::nbt::tag_byte_array("super array", {
+                        51, 23, 12, 04, 33, 53, 11, 22, 3, 93, 120
+                }),
+                new blt::nbt::tag_string("I am a string", "I have stringy contents"),
+                new blt::nbt::tag_string("name", "Bananrama"),
+                new blt::nbt::tag_int_array("int array", {
+                        1230, 234023, 21300, 2309230, 2340230, 2, 1, 32, 3265, 12, 53, 123, 7, 56, 12
+                }),
+                new blt::nbt::tag_long_array("valid", {
+                        1230, 5320, 323200234402304, 230023, 23042034, 230230, 2301203, 123010230, 12300123
+                })
+            })
         })
     }));
     
