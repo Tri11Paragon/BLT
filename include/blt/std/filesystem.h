@@ -75,11 +75,10 @@ namespace blt::fs {
     class fstream_block_reader : public block_reader {
         private:
             std::fstream& m_stream;
-            char* m_buffer;
+            char* m_buffer = nullptr;
             size_t readIndex = 0;
         public:
-            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize = 131072):
-                    block_reader(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
+            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize = 131072);
             
             explicit fstream_block_reader(fstream_block_reader& copy) = delete;
             

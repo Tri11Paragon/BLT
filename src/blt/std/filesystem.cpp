@@ -5,6 +5,14 @@
  */
 #include <blt/std/filesystem.h>
 #include <cstring>
+#include "blt/std/logging.h"
+
+blt::fs::fstream_block_reader::fstream_block_reader(std::fstream& stream, size_t bufferSize) :
+        block_reader(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {
+    if (!m_stream.good() || m_stream.fail())
+        BLT_WARN("Provided std::fstream is not good! Clearing!");
+    m_stream.clear();
+}
 
 int blt::fs::fstream_block_reader::read(char* buffer, size_t bytes) {
     if (readIndex == 0)

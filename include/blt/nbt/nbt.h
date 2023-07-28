@@ -299,6 +299,7 @@ namespace blt::nbt {
                 for (const auto& v : t)
                     v->writePayload(out);
             }
+            
             void readPayload(blt::fs::block_reader& in) final {
                 char id;
                 int32_t length;
@@ -312,6 +313,35 @@ namespace blt::nbt {
                     t[i]->readPayload(in);
                 }
             }
+            
+            inline void put(tag_t* tag) {
+                t.push_back(tag);
+            }
+            
+            inline tag_t*& operator[](size_t i){
+                return t[i];
+            }
+            
+            template<typename T>
+            [[nodiscard]] T* getTag(size_t i){
+                if constexpr (!std::is_base_of<tag_t, T>::value) {
+                    static_assert("WARNING: provided type isn't of type tag. Cannot cast expression!");
+                    BLT_WARN("You have requested an invalid type. Please use types of tag_t when using getTag");
+                    return nullptr;
+                }
+                auto& tag = t[i];
+                T t;
+                if (tag->getType() != t.getType()) {
+                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    throw std::runtime_error("Requested Tag does not match stored type!");
+                }
+                return dynamic_cast<T*>(tag);
+            }
+            
+            [[nodiscard]] inline size_t size() const {
+                return t.size();
+            }
+            
             ~tag_list() override {
                 for (auto* p : t)
                     delete p;
@@ -324,6 +354,35 @@ namespace blt::nbt {
             tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
             tag_compound(const std::string& name, const std::initializer_list<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
             tag_compound(const std::string& name, const HASHMAP<std::string, tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
+            
+            inline void put(tag_t* tag) {
+                t[tag->getName()] = tag;
+            }
+            
+            template<typename T>
+            [[nodiscard]] T* getTag(const std::string& name){
+                if constexpr (!std::is_base_of<tag_t, T>::value) {
+                    static_assert("WARNING: provided type isn't of type tag. Cannot cast expression!");
+                    BLT_WARN("You have requested an invalid type. Please use types of tag_t when using getTag");
+                    return nullptr;
+                }
+                auto& tag = t[name];
+                T t;
+                if (tag->getType() != t.getType()) {
+                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    throw std::runtime_error("Requested Tag does not match stored type!");
+                }
+                return dynamic_cast<T*>(tag);
+            }
+            
+            inline tag_t*& operator[](const std::string& name){
+                return t[name];
+            }
+            
+            inline void operator()(tag_t* tag){
+                t[tag->getName()] = tag;
+            }
+            
             void writePayload(blt::fs::block_writer& out) final {
                 for (const auto& v : t){
                     auto tag = v.second;
@@ -367,6 +426,11 @@ namespace blt::nbt {
             
             template<typename T>
             [[nodiscard]] T* getTag(const std::string& name){
+                if constexpr (!std::is_base_of<tag_t, T>::value) {
+                    static_assert("WARNING: provided type isn't of type tag. Cannot cast expression!");
+                    BLT_WARN("You have requested an invalid type. Please use types of tag_t when using getTag");
+                    return nullptr;
+                }
                 auto& tag = root->get()[name];
                 T t;
                 if (tag->getType() != t.getType()) {

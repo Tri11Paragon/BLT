@@ -33,8 +33,10 @@ namespace blt::nbt {
     
     void NBTReader::read() {
         char t = reader.get();
-        if (t != (char)nbt_tag::COMPOUND)
+        if (t != (char)nbt_tag::COMPOUND) {
+            BLT_WARN("Found %d", t);
             throw std::runtime_error("Incorrectly formatted NBT data! Root tag must be a compound tag!");
+        }
         root = new tag_compound;
         root->readName(reader);
         root->readPayload(reader);

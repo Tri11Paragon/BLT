@@ -193,12 +193,20 @@ namespace blt::logging {
             }
         public:
             tag_map(std::initializer_list<tag> initial_tags){
-                tags = new tag[(size = 16)];
-                for (auto& t : initial_tags)
+                tags = new tag[(size = 32)];
+                for (const auto& t : initial_tags)
                     insert(t);
             }
+            tag_map(const tag_map& copy) {
+                tags = new tag[(size = copy.size)];
+                for (size_t i = 0; i < size; i++)
+                    tags[i] = copy.tags[i];
+            }
+            
             
             tag_map& insert(const tag& t){
+                if (t.tag.empty())
+                    return *this;
                 auto h = hash(t);
                 if (h > size)
                     expand();
@@ -217,6 +225,7 @@ namespace blt::logging {
             
             ~tag_map(){
                 delete[] tags;
+                tags = nullptr;
             }
     };
     
@@ -290,7 +299,7 @@ namespace blt::logging {
     hashmap<std::thread::id, hashmap<blt::logging::log_level, std::string>> loggingStreamLines;
     LogFileWriter writer;
     
-    const tag_map tagMap = {
+    const std::unique_ptr<tag_map> tagMap = std::make_unique<tag_map>(tag_map{
             {"YEAR", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
                 return std::to_string(now->tm_year);
@@ -374,8 +383,8 @@ namespace blt::logging {
             }},
             {"STR", [](const tag_func_param& f) -> std::string {
                 return f.formatted_string;
-            }},
-    };
+            }}
+    });
     
     static inline std::vector<std::string> split(std::string s, const std::string& delim) {
         size_t pos = 0;
@@ -489,7 +498,7 @@ namespace blt::logging {
                 tag_func_param param{
                         level, filename({file}), std::to_string(line), userStr, userStr
                 };
-                out += tagMap[tag].func(param);
+                out += (*tagMap)[tag].func(param);
             } else {
                 out += c;
                 out += nonTag;

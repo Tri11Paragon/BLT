@@ -3,6 +3,9 @@ project(BLT VERSION 0.7.0)
 
 set(CMAKE_CXX_STANDARD 20)
 
+option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
+option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
+option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
@@ -63,7 +66,7 @@ endif()
 if(MSVC)
     #target_compile_options(BLT PRIVATE /W4)
 else()
-    # perhaps we should warn on usused variables, but BLT will have lots of them.
+    # perhaps we should warn on unused variables, but BLT will have lots of them.
     target_compile_options(BLT PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
@@ -71,11 +74,6 @@ message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
 if(${BUILD_TESTS})
     project(BLT_TESTS)
-
-    if(${CMAKE_BUILD_TYPE} MATCHES Debug AND LINUX)
-        add_compile_options(-fsanitize=address)
-        add_link_options(-fsanitize=address)
-    endif()
 
     file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
 
@@ -91,6 +89,21 @@ if(${BUILD_TESTS})
     else()
         target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
     endif()
+
+    if (${ENABLE_ADDRSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
+    endif ()
+
+    if (${ENABLE_UBSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+    endif ()
+
+    if (${ENABLE_TSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
+    endif ()
 
     message("BLT tests included!")
 endif()
