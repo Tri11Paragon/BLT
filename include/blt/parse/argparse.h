@@ -11,27 +11,44 @@
 #include <string>
 #include <initializer_list>
 #include <optional>
-#include <unordered_map>
-
-namespace blt::parser {
 
 #ifndef HASHMAP
-    #define HASHMAP HASHMAP
-    template<typename K, typename V>
-    using HASHMAP = std::unordered_map<K, V>();
+    #if defined __has_include && __has_include(<parallel_hashmap/phmap.h>)
+        #define HASHMAP HASHMAP
+        
+        #include <parallel_hashmap/phmap.h>
+        #include <parallel_hashmap/phmap_fwd_decl.h>
+
+template<typename K, typename V>
+using HASHMAP = phmap::flat_hash_map<K, V>();
+template<typename K>
+using HASHSET = phmap::flat_hash_set<K>();
+    #else
+        #define HASHMAP HASHMAP
+        #include <unordered_map>
+        #include <set>
+
+template<typename K, typename V>
+using HASHMAP = std::unordered_map<K, V>();
+
+template<typename K>
+using HASHSET = std::unordered_set<K>();
+    #endif
 #endif
 
+namespace blt::parser {
+    
     enum class arg_action {
-            STORE,
-            STORE_CONST,
-            STORE_TRUE,
-            STORE_FALSE,
-            APPEND,
-            APPEND_CONST,
-            COUNT,
-            HELP,
-            VERSION,
-            EXTEND
+        STORE,
+        STORE_CONST,
+        STORE_TRUE,
+        STORE_FALSE,
+        APPEND,
+        APPEND_CONST,
+        COUNT,
+        HELP,
+        VERSION,
+        EXTEND
     };
     
     class arg_t {
@@ -47,22 +64,31 @@ namespace blt::parser {
             std::vector<std::string> flags;
             
             void insertAndSort(const std::string& str);
+        
         public:
             arg_vector() = default;
-            arg_vector(std::vector<std::string> args);
+            
+            arg_vector(const std::vector<std::string>& args);
+            
             arg_vector(std::initializer_list<std::string> args);
+            
             arg_vector(const std::string& arg);
+            
             arg_vector(const char* arg);
             
             arg_vector& operator=(const std::string& arg);
+            
             arg_vector& operator=(const char* arg);
+            
             arg_vector& operator=(std::initializer_list<std::string>& args);
+            
             arg_vector& operator=(std::vector<std::string>& args);
             
-            [[nodiscard]] inline std::vector<std::string>& getNames(){
+            [[nodiscard]] inline std::vector<std::string>& getNames() {
                 return names;
             }
-            [[nodiscard]] inline std::vector<std::string>& getFlags(){
+            
+            [[nodiscard]] inline std::vector<std::string>& getFlags() {
                 return flags;
             }
     };
@@ -74,20 +100,30 @@ namespace blt::parser {
             static constexpr int ALL_REQUIRED = 0x4;
             int args = 0;
             int flags = 0;
+            
             void decode(char c);
+        
         public:
             arg_nargs() = default;
+            
             arg_nargs(int args): args(args) {}
+            
             arg_nargs(char c);
+            
             arg_nargs(std::string s);
+            
             arg_nargs(const char* s);
+            
             arg_nargs& operator=(const std::string& s);
+            
             arg_nargs& operator=(const char* s);
+            
             arg_nargs& operator=(char c);
+            
             arg_nargs& operator=(int args);
     };
     
-    struct args_properties {
+    struct arg_properties {
         private:
         public:
             arg_vector a_flags;
@@ -101,12 +137,69 @@ namespace blt::parser {
             bool a_required = false;
     };
     
-    class argparse {
+    class arg_tokenizer {
+        private:
+            static constexpr char FLAG = '-';
+            std::vector<std::string> args;
+            size_t nextIndex = 0;
+            
+            inline const std::string& get(size_t i){
+                return args[i];
+            }
+            inline const std::string& next(size_t& i){
+                return args[i++];
+            }
+            inline bool hasNext(size_t i){
+                return (size_t)i < args.size();
+            }
+            inline bool isFlag(size_t i){
+                return get(i).starts_with(FLAG);
+            }
+        public:
+            arg_tokenizer() = default;
+            
+            arg_tokenizer(const char** argv, size_t argc);
+            
+            inline void forward() {
+                nextIndex++;
+            }
+            
+            inline const std::string& get() {
+                return get(nextIndex);
+            }
+            
+            inline const std::string& next() {
+                return next(nextIndex);
+            }
+            
+            inline bool hasNext() {
+                return hasNext(nextIndex);
+            }
+            
+            inline bool isFlag() {
+                return isFlag(nextIndex);
+            }
+            
+            inline bool isValue() {
+                return isValue(nextIndex);
+            }
+    };
+    
+    struct arg_results {
         private:
         
         public:
+        
+    };
+    
+    class argparse {
+        private:
+            arg_tokenizer tokenizer;
+        public:
             argparse() = default;
             
+            void addArgument(const arg_properties& args);
+        
     };
     
 }

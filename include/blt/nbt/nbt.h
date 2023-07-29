@@ -17,12 +17,29 @@
 #include "blt/std/filesystem.h"
 #include "blt/std/logging.h"
 
-namespace blt::nbt {
 #ifndef HASHMAP
-    #define HASHMAP HASHMAP
-    template<typename K, typename V>
-    using HASHMAP = std::unordered_map<K, V>;
+    #if defined __has_include && __has_include(<parallel_hashmap/phmap.h>)
+        #define HASHMAP HASHMAP
+        #include <parallel_hashmap/phmap.h>
+        #include <parallel_hashmap/phmap_fwd_decl.h>
+        template<typename K, typename V>
+        using HASHMAP = phmap::flat_hash_map<K, V>();
+        template<typename K>
+        using HASHSET = phmap::flat_hash_set<K>();
+    #else
+        #define HASHMAP HASHMAP
+        #include <unordered_map>
+        #include <set>
+    
+        template<typename K, typename V>
+        using HASHMAP = std::unordered_map<K, V>();
+    
+        template<typename K>
+        using HASHSET = std::unordered_set<K>();
+    #endif
 #endif
+
+namespace blt::nbt {
     
     void writeUTF8String(blt::fs::block_writer& stream, const std::string& str);
     

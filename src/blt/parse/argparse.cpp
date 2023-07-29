@@ -7,7 +7,7 @@
 
 namespace blt::parser {
     
-    arg_vector::arg_vector(std::vector<std::string> args) {
+    arg_vector::arg_vector(const std::vector<std::string>& args) {
         for (auto& arg : args)
             insertAndSort(arg);
     }
@@ -93,5 +93,14 @@ namespace blt::parser {
             flags |= ALL_REQUIRED;
         if (c == '*')
             flags |= ALL;
+    }
+    
+    arg_tokenizer::arg_tokenizer(const char** argv, size_t argc) {
+        for (size_t i = 0; i < argc; i++)
+            args.emplace_back(argv[i]);
+    }
+    
+    void argparse::addArgument(const arg_properties& args) {
+    
     }
 }
