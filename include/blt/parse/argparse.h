@@ -91,6 +91,14 @@ namespace blt::parser {
             [[nodiscard]] inline std::vector<std::string>& getFlags() {
                 return flags;
             }
+            
+            [[nodiscard]] inline const std::vector<std::string>& getNames() const {
+                return names;
+            }
+            
+            [[nodiscard]] inline const std::vector<std::string>& getFlags() const {
+                return flags;
+            }
     };
     
     class arg_nargs {
@@ -191,6 +199,8 @@ namespace blt::parser {
     class argparse {
         private:
             arg_tokenizer tokenizer;
+            
+            static bool validateArgument(const arg_properties& args);
         public:
             argparse() = default;
             

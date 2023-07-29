@@ -4,6 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/parse/argparse.h>
+#include "blt/std/logging.h"
 
 namespace blt::parser {
     
@@ -100,7 +101,17 @@ namespace blt::parser {
             args.emplace_back(argv[i]);
     }
     
-    void argparse::addArgument(const arg_properties& args) {
-    
+    bool argparse::validateArgument(const arg_properties& args) {
+        return !args.a_flags.getFlags().empty() ^ !args.a_flags.getNames().empty();
     }
+    
+    void argparse::addArgument(const arg_properties& args) {
+        if (!validateArgument(args)) {
+            BLT_WARN("Argument contains both flags and positional names, this is not allowed!");
+            BLT_WARN("(Discarding argument)");
+            return;
+        }
+    }
+    
+    
 }
