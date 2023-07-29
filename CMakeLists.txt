@@ -45,8 +45,9 @@ else()
     set(PARSE_FILES "")
 endif()
 
-if(EXISTS libraries/parallel-hashmap)
-    include_directories(libraries/parallel-hashmap)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
+    message("Found Parallel Hashmaps")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
 endif()
 
 #include zlib if the user has it.
@@ -73,9 +74,9 @@ target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
 if(${ZLIB_FOUND})
      target_link_libraries(BLT PUBLIC ZLIB::ZLIB)
 endif()
-if(EXISTS ${CMAKE_SOURCE_DIR}/libraries/parallel-hashmap)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Including phmap")
-    target_include_directories(BLT PUBLIC libraries/parallel-hashmap)
+    target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
 endif()
 
 if(MSVC)

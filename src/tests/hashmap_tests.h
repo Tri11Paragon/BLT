@@ -7,7 +7,7 @@
 #ifndef BLT_TESTS_HASHMAP_TEXTS_H
 #define BLT_TESTS_HASHMAP_TEXTS_H
 
-#include <blt/std/hash_map.h>
+#include <blt/std/hashmap.h>
 
 inline static int test_hashmaps(){
     

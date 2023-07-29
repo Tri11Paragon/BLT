@@ -11,30 +11,7 @@
 #include <string>
 #include <initializer_list>
 #include <optional>
-
-#ifndef HASHMAP
-    #if defined __has_include && __has_include(<parallel_hashmap/phmap.h>)
-        #define HASHMAP HASHMAP
-        
-        #include <parallel_hashmap/phmap.h>
-        #include <parallel_hashmap/phmap_fwd_decl.h>
-
-template<typename K, typename V>
-using HASHMAP = phmap::flat_hash_map<K, V>();
-template<typename K>
-using HASHSET = phmap::flat_hash_set<K>();
-    #else
-        #define HASHMAP HASHMAP
-        #include <unordered_map>
-        #include <unordered_set>
-
-template<typename K, typename V>
-using HASHMAP = std::unordered_map<K, V>();
-
-template<typename K>
-using HASHSET = std::unordered_set<K>();
-    #endif
-#endif
+#include <blt/std/hashmap.h>
 
 namespace blt::parser {
     
