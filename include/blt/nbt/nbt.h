@@ -19,6 +19,7 @@
 
 namespace blt::nbt {
 #ifndef HASHMAP
+    #define HASHMAP HASHMAP
     template<typename K, typename V>
     using HASHMAP = std::unordered_map<K, V>;
 #endif

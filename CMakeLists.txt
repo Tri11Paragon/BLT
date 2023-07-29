@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(BLT VERSION 0.7.0)
+project(BLT VERSION 0.8.0)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -9,6 +9,7 @@ option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
+option(BUILD_PARSE "Build the BLT parsers" ON)
 option(BUILD_TESTS "Build the BLT test set" OFF)
 option(BLT_DISABLE_LOGGING "Disable blt::logging (all macros and will safely disable logging function!)" OFF)
 option(BLT_DISABLE_TRACE "Disable blt::logging BLT_TRACE macro" OFF)
@@ -38,6 +39,12 @@ else()
     set(NBT_FILES "")
 endif()
 
+if(${BUILD_PARSE})
+    file(GLOB_RECURSE PARSE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/parse/*.cpp")
+else()
+    set(PARSE_FILES "")
+endif()
+
 #include zlib if the user has it.
 find_package(ZLIB QUIET)
 
@@ -55,7 +62,7 @@ message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES})
+add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
 
 target_include_directories(BLT PUBLIC include/)
 target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
