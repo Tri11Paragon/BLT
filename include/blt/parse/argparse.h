@@ -179,10 +179,6 @@ namespace blt::parser {
             inline bool isFlag() {
                 return isFlag(nextIndex);
             }
-            
-            inline bool isValue() {
-                return isValue(nextIndex);
-            }
     };
     
     struct arg_results {
