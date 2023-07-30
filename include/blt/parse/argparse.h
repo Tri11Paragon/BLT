@@ -112,13 +112,13 @@ namespace blt::parser {
         private:
         public:
             arg_vector a_flags;
-            arg_action a_action;
-            arg_nargs a_nargs;
-            std::optional<std::string> a_const;
-            std::string a_default;
-            std::string a_def;
-            std::string a_help;
-            std::string a_metavar;
+            arg_action a_action = arg_action::STORE;
+            arg_nargs a_nargs = 0;
+            std::optional<std::string> a_const{};
+            std::string a_default{};
+            std::string a_def{};
+            std::string a_help{};
+            std::string a_metavar{};
             bool a_required = false;
     };
     
@@ -143,7 +143,7 @@ namespace blt::parser {
         public:
             arg_tokenizer() = default;
             
-            arg_tokenizer(const char** argv, size_t argc);
+            arg_tokenizer(size_t argc, const char** argv);
             
             inline void forward() {
                 nextIndex++;
@@ -166,23 +166,28 @@ namespace blt::parser {
             }
     };
     
-    struct arg_results {
-        private:
-        
-        public:
-        
-    };
-    
     class argparse {
         private:
             arg_tokenizer tokenizer;
+            
+            struct {
+                std::vector<arg_properties> argStorage;
+                HASHMAP<std::string, arg_properties*> flagAssociations;
+                HASHMAP<std::string, arg_properties*> nameAssociations;
+            } user_args;
+            
+            struct arg_results {
+                std::string programName;
+                HASHMAP<std::string, std::string> positionalArgs;
+                
+            } loaded_args;
             
             static bool validateArgument(const arg_properties& args);
         public:
             argparse() = default;
             
             void addArgument(const arg_properties& args);
-        
+            const arg_results& parse_args(int argc, const char** argv);
     };
     
 }

@@ -96,7 +96,7 @@ namespace blt::parser {
             flags |= ALL;
     }
     
-    arg_tokenizer::arg_tokenizer(const char** argv, size_t argc) {
+    arg_tokenizer::arg_tokenizer(size_t argc, const char** argv) {
         for (size_t i = 0; i < argc; i++)
             args.emplace_back(argv[i]);
     }
@@ -111,6 +111,27 @@ namespace blt::parser {
             BLT_WARN("(Discarding argument)");
             return;
         }
+        // store one copy of the properties (arg properties could in theory be very large!)
+        auto pos = user_args.argStorage.size();
+        user_args.argStorage.push_back(args);
+        auto& arg = user_args.argStorage[pos];
+        // associate the arg properties per name and flag to allow for quick access when parsing
+        auto& names = args.a_flags.getNames();
+        for (const auto& name : names)
+            user_args.nameAssociations[name] = &arg;
+        
+        auto& flags = args.a_flags.getFlags();
+        for (const auto& flag : flags)
+            user_args.flagAssociations[flag] = &arg;
+    }
+    
+    const argparse::arg_results& argparse::parse_args(int argc, const char** argv) {
+        loaded_args = {};
+        arg_tokenizer asToken(argc, argv);
+        loaded_args.programName = asToken.next();
+        BLT_TRACE("Loading args for %s", loaded_args.programName.c_str());
+        
+        return loaded_args;
     }
     
     

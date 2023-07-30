@@ -1,15 +1,16 @@
 
 #include <unordered_map>
-#include "binary_trees.h"
-#include "logging.h"
+//#include "binary_trees.h"
+//#include "logging.h"
 #include "profiling_tests.h"
 #include "nbt_tests.h"
-#include "queue_tests.h"
-#include "blt/math/vectors.h"
-#include "blt/math/matrix.h"
-#include <bitset>
-#include "hashmap_tests.h"
-#include <functional>
+#include "blt/parse/argparse.h"
+//#include "queue_tests.h"
+//#include "blt/math/vectors.h"
+//#include "blt/math/matrix.h"
+//#include <bitset>
+//#include "hashmap_tests.h"
+//#include <functional>
 
 std::function<int(int i)> test{
     [](int i) -> int {
@@ -66,7 +67,10 @@ int (*func_func)(int) = [](int i) -> int {
 
 int (*func_func_in)(int) = &test_as_func;
 
-int main(int argc, char** argv) {
+int main(int argc, const char** argv) {
+    blt::parser::argparse parser;
+    parser.addArgument({{"--foo", "-f"}});
+    auto args = parser.parse_args(argc, argv);
 //
 //    if (argc > 1 && std::string(argv[1]) == "--no_color") {
 //        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
