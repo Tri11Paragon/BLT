@@ -118,7 +118,7 @@ namespace blt::parser {
         // associate the arg properties per name and flag to allow for quick access when parsing
         auto& names = args.a_flags.getNames();
         for (const auto& name : names)
-            user_args.nameAssociations[name] = &arg;
+            user_args.nameAssociations.emplace_back(name, &arg);
         
         auto& flags = args.a_flags.getFlags();
         for (const auto& flag : flags)
@@ -130,6 +130,15 @@ namespace blt::parser {
         arg_tokenizer asToken(argc, argv);
         loaded_args.programName = asToken.next();
         BLT_TRACE("Loading args for %s", loaded_args.programName.c_str());
+        
+        size_t lastPositional;
+        while (asToken.hasNext()) {
+            if (!asToken.isFlag()){
+                loaded_args.positionalArgs[user_args.nameAssociations[lastPositional].first] = asToken.next();
+                continue;
+            }
+            
+        }
         
         return loaded_args;
     }

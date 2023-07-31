@@ -71,6 +71,8 @@ int main(int argc, const char** argv) {
     blt::parser::argparse parser;
     parser.addArgument({{"--foo", "-f"}});
     auto args = parser.parse_args(argc, argv);
+    const char* r[2]{"BLT_TESTS", "--foo"};
+    auto args2 = parser.parse_args(2, r);
 //
 //    if (argc > 1 && std::string(argv[1]) == "--no_color") {
 //        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {

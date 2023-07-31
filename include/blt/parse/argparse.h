@@ -131,14 +131,8 @@ namespace blt::parser {
             inline const std::string& get(size_t i){
                 return args[i];
             }
-            inline const std::string& next(size_t& i){
-                return args[i++];
-            }
             inline bool hasNext(size_t i){
                 return (size_t)i < args.size();
-            }
-            inline bool isFlag(size_t i){
-                return get(i).starts_with(FLAG);
             }
         public:
             arg_tokenizer() = default;
@@ -154,11 +148,15 @@ namespace blt::parser {
             }
             
             inline const std::string& next() {
-                return next(nextIndex);
+                return get(nextIndex++);
             }
             
             inline bool hasNext() {
                 return hasNext(nextIndex);
+            }
+            
+            inline bool isFlag(size_t i){
+                return get(i).starts_with(FLAG);
             }
             
             inline bool isFlag() {
@@ -173,7 +171,7 @@ namespace blt::parser {
             struct {
                 std::vector<arg_properties> argStorage;
                 HASHMAP<std::string, arg_properties*> flagAssociations;
-                HASHMAP<std::string, arg_properties*> nameAssociations;
+                std::vector<std::pair<std::string, arg_properties*>> nameAssociations;
             } user_args;
             
             struct arg_results {
