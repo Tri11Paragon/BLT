@@ -154,9 +154,9 @@ namespace blt::parser {
             arg_vector_t a_flags;
             arg_action_t a_action = arg_action_t::STORE;
             arg_nargs_t a_nargs = 0;
-            std::optional<std::string> a_const{};
+            std::string a_const{};
             std::string a_default{};
-            std::string a_def{};
+            std::string a_dest{};
             std::string a_help{};
             std::string a_metavar{};
             bool a_required = false;
@@ -231,6 +231,7 @@ namespace blt::parser {
             } loaded_args;
         private:
             static bool validateArgument(const arg_properties_t& args);
+            bool consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v);
             bool consumeFlagArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, arg_data_t& arg_data);
             void handlePositionalArgument(arg_tokenizer_t& arg_tokenizer, size_t& last_pos);
             void handleFlagArgument(arg_tokenizer_t& arg_tokenizer);

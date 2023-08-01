@@ -128,6 +128,13 @@ namespace blt::parser {
         
         if (args.a_required)
             user_args.required_vars.insert(args.a_flags);
+        
+        if (args.a_nargs.flags == arg_nargs_t::UNKNOWN) {
+            if (args.a_flags.getNames().empty())
+                loaded_args.flag_args[args.a_flags] = args.a_default;
+            else
+                loaded_args.positional_args[args.a_flags] = args.a_default;
+        }
     }
     
     const argparse::arg_results& argparse::parse_args(int argc, const char** argv) {
@@ -136,7 +143,7 @@ namespace blt::parser {
         loaded_args.program_name = arg_tokenizer.next();
         BLT_TRACE("Loading args for %s", loaded_args.program_name.c_str());
         
-        size_t last_positional;
+        size_t last_positional = 0;
         while (arg_tokenizer.hasNext()) {
             // a token isn't a flag it must be a positional arg as flags will consume nargs
             if (!arg_tokenizer.isFlag()){
@@ -170,6 +177,7 @@ namespace blt::parser {
         }
         
         auto flag_properties = loc->second;
+        auto dest = flag_properties->a_dest.empty() ? flag_properties->a_flags : arg_vector_t{flag_properties->a_dest};
         
         arg_data_t data;
         switch(flag_properties->a_action){
@@ -203,7 +211,7 @@ namespace blt::parser {
             case arg_action_t::VERSION:
                 break;
         }
-        loaded_args.flag_args[flag_properties->a_flags] = data;
+        loaded_args.flag_args[dest] = data;
     }
     
     bool argparse::consumeFlagArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, arg_data_t& arg_data) {
@@ -214,6 +222,35 @@ namespace blt::parser {
             if (arg_tokenizer.isFlag())
                 return false;
             
+        }
+        return false;
+    }
+    
+    bool argparse::consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v) {
+        switch (properties.a_nargs.flags) {
+            case 0:
+                for (int i = 0; i < properties.a_nargs.args; i++) {
+                    if (arg_tokenizer.isFlag()) {
+                        BLT_WARN("Expected %d arguments, got flag instead!", properties.a_nargs.args);
+                        return false;
+                    }
+                    v.emplace_back(arg_tokenizer.next());
+                }
+                return true;
+            case arg_nargs_t::UNKNOWN:
+                // no arg next
+                if (arg_tokenizer.isFlag()) {
+                    if (!properties.a_const.empty())
+                        v.emplace_back(properties.a_const);
+                    return true;
+                }
+                v.emplace_back(arg_tokenizer.next());
+                return true;
+            case arg_nargs_t::ALL:
+                
+                break;
+            case arg_nargs_t::ALL_REQUIRED:
+                break;
         }
         return false;
     }
