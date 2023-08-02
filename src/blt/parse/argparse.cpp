@@ -5,6 +5,7 @@
  */
 #include <blt/parse/argparse.h>
 #include "blt/std/logging.h"
+#include <blt/std/string.h>
 
 namespace blt::parser {
     
@@ -169,9 +170,26 @@ namespace blt::parser {
         // token is a flag, find out special information about it
         auto flag = arg_tokenizer.next();
         
+        if (flag.starts_with("--"))
+            processFlag(arg_tokenizer, flag);
+        else {
+            // handle special args like -vvv
+            if (!flag.starts_with('-'))
+                BLT_TRACE("Flag processed but does not start with '-'!");
+            // size without -
+            auto len = flag.size()-1;
+            // get flag type
+            std::string str = "- ";
+            str[1] = flag[1];
+            for (size_t i = 0; i < len; i++)
+                processFlag(arg_tokenizer, str);
+        }
+    }
+    
+    void argparse::processFlag(arg_tokenizer_t& arg_tokenizer, const std::string& flag) {
         auto loc = user_args.flag_associations.find(flag);
         if (loc == user_args.flag_associations.end()){
-            BLT_WARN("Flag '%s' not an option!");
+            BLT_WARN("Flag '%s' not an option!", flag.c_str());
             printHelp();
             return;
         }
@@ -179,13 +197,21 @@ namespace blt::parser {
         auto flag_properties = loc->second;
         auto dest = flag_properties->a_dest.empty() ? flag_properties->a_flags : arg_vector_t{flag_properties->a_dest};
         
-        arg_data_t data;
+        arg_data_t& data = loaded_args.flag_args[dest];
         switch(flag_properties->a_action){
             case arg_action_t::HELP:
                 printHelp();
                 break;
-            case arg_action_t::STORE:
+            case arg_action_t::STORE: {
+                std::vector<std::string> v;
+                if (!consumeArguments(arg_tokenizer, *flag_properties, v))
+                    return;
+                if (v.size() == 1)
+                    data = v[0];
+                else
+                    data = v;
                 break;
+            }
             case arg_action_t::STORE_CONST:
                 data = flag_properties->a_const;
                 break;
@@ -195,35 +221,36 @@ namespace blt::parser {
             case arg_action_t::STORE_TRUE:
                 data = true;
                 break;
-            case arg_action_t::APPEND:
-                if (holds_alternative<std::vector<std::string>>(data)){
-                    auto& l = get<std::vector<std::string>>(data);
-                    
-                } else
-                    BLT_WARN("Requested append to data which doesn't contain a list!");
+            case arg_action_t::COUNT: {
+                if (!std::holds_alternative<int32_t>(data))
+                    data = 0;
+                data = std::get<int32_t>(data) + 1;
                 break;
-            case arg_action_t::APPEND_CONST:
+            }
+            case arg_action_t::EXTEND: {
                 break;
-            case arg_action_t::COUNT:
+            }
+            case arg_action_t::VERSION: {
+                auto file = filename(loaded_args.program_name);
+                BLT_INFO("%s, %s", file.c_str(), flag_properties->a_version.c_str());
                 break;
-            case arg_action_t::EXTEND:
+            }
+            case arg_action_t::APPEND_CONST: {
+                if (!holds_alternative<std::vector<std::string>>(data)) {
+                    data = std::vector<std::string>();
+                }
+                auto& l = get<std::vector<std::string>>(data);
+                l.emplace_back(flag_properties->a_const);
                 break;
-            case arg_action_t::VERSION:
+            }
+            case arg_action_t::APPEND: {
+                if (!holds_alternative<std::vector<std::string>>(data))
+                    data = std::vector<std::string>();
+                auto& l = get<std::vector<std::string>>(data);
+                consumeArguments(arg_tokenizer, *flag_properties, l);
                 break;
+            }
         }
-        loaded_args.flag_args[dest] = data;
-    }
-    
-    bool argparse::consumeFlagArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, arg_data_t& arg_data) {
-        // since the function is called after the flag is consumed, isFlag()/ will return information about the next arg
-        if (properties.a_nargs.flags) {
-        
-        } else {
-            if (arg_tokenizer.isFlag())
-                return false;
-            
-        }
-        return false;
     }
     
     bool argparse::consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v) {
@@ -231,7 +258,7 @@ namespace blt::parser {
             case 0:
                 for (int i = 0; i < properties.a_nargs.args; i++) {
                     if (arg_tokenizer.isFlag()) {
-                        BLT_WARN("Expected %d arguments, got flag instead!", properties.a_nargs.args);
+                        BLT_WARN("Expected %d arguments, found flag instead!", properties.a_nargs.args);
                         return false;
                     }
                     v.emplace_back(arg_tokenizer.next());
@@ -247,12 +274,27 @@ namespace blt::parser {
                 v.emplace_back(arg_tokenizer.next());
                 return true;
             case arg_nargs_t::ALL:
-                
-                break;
+                while (arg_tokenizer.hasNext() && !arg_tokenizer.isFlag())
+                    v.emplace_back(arg_tokenizer.next());
+                return true;
             case arg_nargs_t::ALL_REQUIRED:
-                break;
+                if (arg_tokenizer.isFlag()) {
+                    BLT_WARN("At least one argument is required!");
+                    return false;
+                }
+                while (arg_tokenizer.hasNext() && !arg_tokenizer.isFlag())
+                    v.emplace_back(arg_tokenizer.next());
+                return true;
         }
         return false;
+    }
+    
+    std::string argparse::filename(const std::string& path) {
+        auto paths = blt::string::split(path, "/");
+        auto final = paths[paths.size()-1];
+        if (final == "/")
+            return paths[paths.size()-2];
+        return final;
     }
     
     

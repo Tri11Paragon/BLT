@@ -158,6 +158,7 @@ namespace blt::parser {
             std::string a_default{};
             std::string a_dest{};
             std::string a_help{};
+            std::string a_version{};
             std::string a_metavar{};
             bool a_required = false;
     };
@@ -208,7 +209,7 @@ namespace blt::parser {
     
     class argparse {
         public:
-            typedef std::variant<std::string, bool, std::vector<std::string>> arg_data_t;
+            typedef std::variant<std::string, bool, int32_t, std::vector<std::string>> arg_data_t;
         private:
             struct {
                     friend argparse;
@@ -230,11 +231,12 @@ namespace blt::parser {
                     HASHMAP <arg_vector_t, arg_data_t, arg_vector_t::hash, arg_vector_t::equals> flag_args;
             } loaded_args;
         private:
+            static std::string filename(const std::string& path);
             static bool validateArgument(const arg_properties_t& args);
-            bool consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v);
-            bool consumeFlagArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, arg_data_t& arg_data);
+            static bool consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v);
             void handlePositionalArgument(arg_tokenizer_t& arg_tokenizer, size_t& last_pos);
             void handleFlagArgument(arg_tokenizer_t& arg_tokenizer);
+            void processFlag(arg_tokenizer_t& arg_tokenizer, const std::string& flag);
         public:
             argparse() = default;
             
