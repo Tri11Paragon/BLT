@@ -305,10 +305,10 @@ namespace blt::nbt {
                 readData(in, length);
                 if (length == 0 || id == 0)
                     return;
-                t.reserve(length);
                 for (int i = 0; i < length; i++) {
-                    t[i] = _internal_::toType(id);
-                    t[i]->readPayload(in);
+                    auto v = _internal_::toType(id);
+                    v->readPayload(in);
+                    t.push_back(v);
                 }
             }
             

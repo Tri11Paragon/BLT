@@ -178,13 +178,14 @@ namespace blt::logging {
             size_t size;
             
             [[nodiscard]] static inline size_t hash(const tag& t) {
-                size_t h = t.tag[0]+ t.tag[1] * 3;
-                return h;
+                size_t h = t.tag[1] * 3 - t.tag[0];
+                return h - 100;
             }
             
-            inline void expand(){
+            // TODO: fix
+            void expand() {
                 auto newSize = size * 2;
-                tag* newTags = new tag[newSize];
+                auto newTags = new tag[newSize];
                 for (size_t i = 0; i < size; i++)
                     newTags[i] = tags[i];
                 delete[] tags;
@@ -193,7 +194,10 @@ namespace blt::logging {
             }
         public:
             tag_map(std::initializer_list<tag> initial_tags){
-                tags = new tag[(size = 32)];
+                size_t max = 0;
+                for (const auto& t : initial_tags)
+                    max = std::max(max, hash(t));
+                tags = new tag[(size = max+1)];
                 for (const auto& t : initial_tags)
                     insert(t);
             }
@@ -203,17 +207,13 @@ namespace blt::logging {
                     tags[i] = copy.tags[i];
             }
             
-            
-            tag_map& insert(const tag& t){
-                if (t.tag.empty())
-                    return *this;
+            void insert(const tag& t) {
                 auto h = hash(t);
-                if (h > size)
-                    expand();
+                //if (h > size)
+                //    expand();
                 if (!tags[h].tag.empty())
                     std::cerr << "Tag not empty! " << tags[h].tag << "!!!\n";
                 tags[h] = t;
-                return *this;
             }
             
             tag& operator[](const std::string& name) const {

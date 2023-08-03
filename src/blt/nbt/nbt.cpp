@@ -38,6 +38,7 @@ namespace blt::nbt {
             throw std::runtime_error("Incorrectly formatted NBT data! Root tag must be a compound tag!");
         }
         root = new tag_compound;
+        assert(root != nullptr);
         root->readName(reader);
         root->readPayload(reader);
     }

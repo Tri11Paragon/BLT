@@ -1,0 +1,12 @@
+/opt/netbrains/clion/clion-2022.1.3/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_MAKE_PROGRAM=/opt/netbrains/clion/clion-2022.1.3/bin/ninja/linux/x64/ninja -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DBUILD_TESTS:BOOL=ON -DENABLE_ADDRSAN:BOOL=ON -DENABLE_UBSAN:BOOL=ON -G Ninja -S /home/brett/Documents/code/c++/BLT -B /home/brett/Documents/code/c++/BLT/cmake-build-reldebug-asan
+Found Parallel Hashmaps
+Standard Files /home/brett/Documents/code/c++/BLT/src/blt/std/filesystem.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/format.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/loader.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/logging.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/string.cpp;/home/brett/Documents/code/c++/BLT/src/blt/std/system.cpp
+Profiler Files /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp
+Source: /home/brett/Documents/code/c++/BLT
+Current Source: /home/brett/Documents/code/c++/BLT
+Including phmap
+BLT 0.8.0 Successfully included!
+BLT tests included!
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/brett/Documents/code/c++/BLT/cmake-build-reldebug-asan
