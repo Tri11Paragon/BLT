@@ -5,7 +5,7 @@ Profiler Files /home/brett/Documents/code/c++/BLT/src/blt/profiling/profiler.cpp
 Source: /home/brett/Documents/code/c++/BLT
 Current Source: /home/brett/Documents/code/c++/BLT
 Including phmap
-BLT 0.8.0 Successfully included!
+BLT 0.8.1 Successfully included!
 BLT tests included!
 -- Configuring done (0.0s)
 -- Generating done (0.0s)
