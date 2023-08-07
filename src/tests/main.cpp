@@ -4,7 +4,7 @@
 //#include "logging.h"
 #include "profiling_tests.h"
 #include "nbt_tests.h"
-#include "blt/parse/argparse_2.h"
+#include "blt/parse/argparse.h"
 //#include "queue_tests.h"
 //#include "blt/math/vectors.h"
 //#include "blt/math/matrix.h"
@@ -79,7 +79,8 @@ int main(int argc, const char** argv) {
     std::vector<std::string> superArgs {
         "BLT_TESTS",
         "Sexy",
-        "--poo", "I have poop",
+        "-p", "I have poop",
+        "-f"
     };
     auto args2 = parser.parse_args(superArgs);
     

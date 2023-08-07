@@ -119,13 +119,6 @@ build CMakeFiles/BLT.dir/src/blt/parse/argparse.cpp.o: CXX_COMPILER__BLT_unscann
   OBJECT_DIR = CMakeFiles/BLT.dir
   OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/parse
 
-build CMakeFiles/BLT.dir/src/blt/parse/argparse_2.cpp.o: CXX_COMPILER__BLT_unscanned_RelWithDebInfo /home/brett/Documents/code/c++/BLT/src/blt/parse/argparse_2.cpp || cmake_object_order_depends_target_BLT
-  DEP_FILE = CMakeFiles/BLT.dir/src/blt/parse/argparse_2.cpp.o.d
-  FLAGS = -O2 -g -DNDEBUG -std=gnu++20 -fdiagnostics-color=always -Wall -Wextra -Wpedantic
-  INCLUDES = -I/home/brett/Documents/code/c++/BLT/libraries/parallel-hashmap -I/home/brett/Documents/code/c++/BLT/include -I/home/brett/Documents/code/c++/BLT/cmake-build-reldebug-asan/config
-  OBJECT_DIR = CMakeFiles/BLT.dir
-  OBJECT_FILE_DIR = CMakeFiles/BLT.dir/src/blt/parse
-
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target BLT
@@ -134,7 +127,7 @@ build CMakeFiles/BLT.dir/src/blt/parse/argparse_2.cpp.o: CXX_COMPILER__BLT_unsca
 #############################################
 # Link the static library libBLT.a
 
-build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_RelWithDebInfo CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/string.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o CMakeFiles/BLT.dir/src/blt/parse/argparse.cpp.o CMakeFiles/BLT.dir/src/blt/parse/argparse_2.cpp.o
+build libBLT.a: CXX_STATIC_LIBRARY_LINKER__BLT_RelWithDebInfo CMakeFiles/BLT.dir/src/blt/std/filesystem.cpp.o CMakeFiles/BLT.dir/src/blt/std/format.cpp.o CMakeFiles/BLT.dir/src/blt/std/loader.cpp.o CMakeFiles/BLT.dir/src/blt/std/logging.cpp.o CMakeFiles/BLT.dir/src/blt/std/string.cpp.o CMakeFiles/BLT.dir/src/blt/std/system.cpp.o CMakeFiles/BLT.dir/src/blt/profiling/profiler.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt.cpp.o CMakeFiles/BLT.dir/src/blt/nbt/nbt_block.cpp.o CMakeFiles/BLT.dir/src/blt/parse/argparse.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O2 -g -DNDEBUG
   OBJECT_DIR = CMakeFiles/BLT.dir
   POST_BUILD = :

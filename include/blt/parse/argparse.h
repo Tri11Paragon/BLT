@@ -1,5 +1,5 @@
 /*
- * Created by Brett on 28/07/23.
+ * Created by Brett on 06/08/23.
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
@@ -7,17 +7,22 @@
 #ifndef BLT_TESTS_ARGPARSE_H
 #define BLT_TESTS_ARGPARSE_H
 
+#include <utility>
 #include <vector>
 #include <string>
 #include <initializer_list>
 #include <optional>
 #include <blt/std/hashmap.h>
 #include <variant>
-#include <blt/std/logging.h>
 
-namespace blt::parser {
+namespace blt
+{
+    typedef std::variant<std::string, bool, int32_t> arg_data_internal_t;
+    typedef std::vector<arg_data_internal_t> arg_data_vec_t;
+    typedef std::variant<arg_data_internal_t, arg_data_vec_t> arg_data_t;
     
-    enum class arg_action_t {
+    enum class arg_action_t
+    {
         STORE,
         STORE_CONST,
         STORE_TRUE,
@@ -30,73 +35,50 @@ namespace blt::parser {
         EXTEND
     };
     
-    enum class arg_result_t {
-        BOOL,
-        VALUE,
-        VECTOR
-    };
-    
-    class arg_vector_t {
-        private:
-            std::vector<std::string> names;
-            std::vector<std::string> flags;
-            bool isFlags = false;
-            
-            void insertAndSort(const std::string& str);
-        public:
-            arg_vector_t() = default;
-            
-            arg_vector_t(const std::vector<std::string>& args);
-            
-            arg_vector_t(std::initializer_list<std::string> args);
-            
-            arg_vector_t(const std::string& arg);
-            
-            arg_vector_t(const char* arg);
-            
-            arg_vector_t& operator=(const std::string& arg);
-            
-            arg_vector_t& operator=(const char* arg);
-            
-            arg_vector_t& operator=(std::initializer_list<std::string>& args);
-            
-            arg_vector_t& operator=(std::vector<std::string>& args);
-            
-            [[nodiscard]] inline std::vector<std::string>& getNames() {
-                return names;
-            }
-            
-            [[nodiscard]] inline std::vector<std::string>& getFlags() {
-                return flags;
-            }
-            
-            [[nodiscard]] inline const std::vector<std::string>& getNames() const {
-                return names;
-            }
-            
-            [[nodiscard]] inline const std::vector<std::string>& getFlags() const {
-                return flags;
-            }
-            
-            /**
-             * @return true if contains flags
-             */
-            [[nodiscard]] inline bool isFlag() const {
-                return isFlags;
-            }
-            
-            [[nodiscard]] inline bool contains(std::string_view string) const {
-                return std::any_of(flags.begin(), flags.end(), [&string](const auto& flag) -> bool {
-                    return flag == string;
-                }) || std::any_of(names.begin(), names.end(), [&string](const auto& name) -> bool {
-                    return name == string;
-                });
-            }
-    };
-    
-    class arg_nargs_t {
-        private:
+    class arg_vector_t
+    {
             friend class arg_parse;
+        
+        private:
+            std::vector<std::string> flags;
+            std::string name;
+            
+            void validateFlags();
+        
+        public:
+            arg_vector_t(std::vector<std::string> flags): flags(std::move(flags))
+            {
+                validateFlags();
+            }
+            
+            arg_vector_t(std::initializer_list<std::string> flags): flags(flags)
+            {
+                validateFlags();
+            }
+            
+            arg_vector_t(const char* str);
+            arg_vector_t(const std::string& str);
+            
+            [[nodiscard]] inline bool isFlag() const
+            {
+                return !flags.empty();
+            }
+            
+            [[nodiscard]] inline bool contains(const std::string& str)
+            {
+                return std::any_of(
+                        flags.begin(), flags.end(), [&str](const std::string& flag) -> bool {
+                            return flag == str;
+                        }
+                ) || str == name;
+            }
+    };
+    
+    class arg_nargs_t
+    {
+            friend class arg_parse;
+        
+        private:
             static constexpr int UNKNOWN = 0x1;
             static constexpr int ALL = 0x2;
             static constexpr int ALL_REQUIRED = 0x4;
@@ -110,182 +92,239 @@ namespace blt::parser {
         public:
             arg_nargs_t() = default;
             
-            arg_nargs_t(int args): args(args) {}
+            arg_nargs_t(int args): args(args)
+            {}
             
             arg_nargs_t(char c);
             
             arg_nargs_t(std::string s);
             
             arg_nargs_t(const char* s);
-            
-            arg_nargs_t& operator=(const std::string& s);
-            
-            arg_nargs_t& operator=(const char* s);
-            
-            arg_nargs_t& operator=(char c);
-            
-            arg_nargs_t& operator=(int args);
     };
     
-    struct arg_properties_t {
+    struct arg_properties_t
+    {
         private:
         public:
             arg_vector_t a_flags;
             arg_action_t a_action = arg_action_t::STORE;
             arg_nargs_t a_nargs = 1;
             std::string a_const{};
-            std::string a_default{};
+            arg_data_internal_t a_default{};
             std::string a_dest{};
             std::string a_help{};
             std::string a_version{};
             std::string a_metavar{};
-            bool a_required = false;
+            bool a_required = true;
     };
     
-    class arg_builder {
+    class arg_builder
+    {
             arg_properties_t properties;
         public:
-            arg_builder(const arg_vector_t& flags): properties(flags) {}
+            arg_builder(const arg_vector_t& flags): properties(flags)
+            {}
             
-            inline arg_properties_t build() {
+            inline arg_properties_t build()
+            {
                 return properties;
             }
             
-            inline arg_builder& setAction(arg_action_t action){
+            inline arg_builder& setAction(arg_action_t action)
+            {
                 properties.a_action = action;
                 return *this;
             }
             
-            inline arg_builder& setNArgs(const arg_nargs_t& nargs){
+            inline arg_builder& setNArgs(const arg_nargs_t& nargs)
+            {
                 properties.a_nargs = nargs;
                 return *this;
             }
             
-            inline arg_builder& setConst(const std::string& a_const){
+            inline arg_builder& setConst(const std::string& a_const)
+            {
                 properties.a_const = a_const;
                 return *this;
             }
             
-            inline arg_builder& setDefault(const std::string& def){
+            inline arg_builder& setDefault(const arg_data_internal_t& def)
+            {
                 properties.a_default = def;
                 return *this;
             }
             
-            inline arg_builder& setDest(const std::string& dest){
+            inline arg_builder& setDest(const std::string& dest)
+            {
                 properties.a_dest = dest;
                 return *this;
             }
             
-            inline arg_builder& setHelp(const std::string& help){
+            inline arg_builder& setHelp(const std::string& help)
+            {
                 properties.a_help = help;
                 return *this;
             }
             
-            inline arg_builder& setVersion(const std::string& version){
+            inline arg_builder& setVersion(const std::string& version)
+            {
                 properties.a_version = version;
                 return *this;
             }
             
-            inline arg_builder& setMetavar(const std::string& metavar){
+            inline arg_builder& setMetavar(const std::string& metavar)
+            {
                 properties.a_metavar = metavar;
                 return *this;
             }
             
-            inline arg_builder& setRequired(){
+            inline arg_builder& setRequired()
+            {
                 properties.a_required = true;
                 return *this;
             }
-            
-    };
-    
-    class arg_tokenizer_t {
-        private:
-            static constexpr char FLAG = '-';
-            std::vector<std::string> args;
-            size_t nextIndex = 0;
-            
-            inline const std::string& get(size_t i) {
-                return args[i];
-            }
-            
-            inline bool hasNext(size_t i) {
-                return (size_t) i < args.size();
-            }
         
+    };
+    
+    class arg_tokenizer
+    {
+        private:
+            std::vector<std::string> args;
+            size_t currentIndex = 0;
         public:
-            arg_tokenizer_t() = default;
+            arg_tokenizer(std::vector<std::string> args): args(std::move(args))
+            {}
             
-            arg_tokenizer_t(size_t argc, const char** argv);
-            
-            inline void forward() {
-                nextIndex++;
+            // returns the current arg
+            inline const std::string& get()
+            {
+                return args[currentIndex];
             }
             
-            inline const std::string& get() {
-                return get(nextIndex);
+            // returns if we have next arg to process
+            inline bool hasNext()
+            {
+                return currentIndex + 1 < args.size();
             }
             
-            inline const std::string& next() {
-                return get(nextIndex++);
+            inline bool hasCurrent()
+            {
+                return currentIndex < args.size();
             }
             
-            inline bool hasNext() {
-                return hasNext(nextIndex);
+            // returns true if the current arg is a flag
+            inline bool isFlag()
+            {
+                return args[currentIndex].starts_with('-');
             }
             
-            inline bool isFlag(size_t i) {
-                return get(i).starts_with(FLAG);
+            // returns true if we have next and the next arg is a flag
+            inline bool isNextFlag()
+            {
+                return hasNext() && args[currentIndex + 1].starts_with('-');
             }
             
-            inline bool isFlag() {
-                return isFlag(nextIndex);
+            // advances to the next flag
+            inline size_t advance()
+            {
+                return currentIndex++;
             }
     };
     
-    class arg_parse {
-        public:
-            typedef std::variant<std::string, bool, int32_t, std::vector<std::string>> arg_data_t;
+    class arg_parse
+    {
         private:
-            struct {
+            struct
+            {
                     friend arg_parse;
                 private:
-                    std::vector<arg_properties_t> arg_storage;
+                    std::vector<arg_properties_t*> arg_properties_storage;
                 public:
-                    std::vector<std::pair<std::string, arg_properties_t*>> name_associations;
+                    std::vector<arg_properties_t*> name_associations;
                     HASHMAP<std::string, arg_properties_t*> flag_associations;
-                    HASHSET<std::string> required_vars;
             } user_args;
             
-            struct arg_results {
+            struct arg_results
+            {
                     friend arg_parse;
                 private:
-                    HASHSET<std::string> found_required;
+                    // stores dest value not the flag/name!
+                    HASHSET<std::string> found_args;
                     std::vector<std::string> unrecognized_args;
                 public:
                     std::string program_name;
-                    HASHMAP <std::string, arg_data_t> positional_args;
-                    HASHMAP <std::string, arg_data_t> flag_args;
+                    HASHMAP<std::string, arg_data_t> data;
+                    
+                    inline arg_data_t& operator[](const std::string& key)
+                    {
+                        return data[key];
+                    }
+                    
+                    inline auto begin()
+                    {
+                        return data.begin();
+                    }
+                    
+                    inline auto end()
+                    {
+                        return data.end();
+                    }
+                    
+                    inline bool contains(const std::string& key)
+                    {
+                        return data.find(key) != data.end();
+                    }
             } loaded_args;
+        
         private:
             static std::string filename(const std::string& path);
-            static bool validateArgument(const arg_properties_t& args);
-            static bool consumeArguments(arg_tokenizer_t& arg_tokenizer, const arg_properties_t& properties, std::vector<std::string>& v_out);
-            void handlePositionalArgument(arg_tokenizer_t& arg_tokenizer, size_t& last_pos);
-            void handleFlagArgument(arg_tokenizer_t& arg_tokenizer);
-            void processFlag(arg_tokenizer_t& arg_tokenizer, const std::string& flag);
+            
+            // expects that the current flag has already been consumed (advanced past), leaves tokenizer in a state where the next element is 'current'
+            static bool consumeArguments(arg_tokenizer& tokenizer, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out);
+            
+            void handlePositionalArgument(arg_tokenizer& tokenizer, size_t& last_pos);
+            
+            void handleFlagArgument(arg_tokenizer& tokenizer);
+            
+            void processFlag(arg_tokenizer& tokenizer, const std::string& flag);
+        
+            template<typename T>
+            static inline bool holds_alternative(const arg_data_t& v){
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::holds_alternative<T>(v);
+                else
+                    return std::holds_alternative<arg_data_internal_t>(v) && std::holds_alternative<T>(std::get<arg_data_internal_t>(v));
+            }
+            template<typename T>
+            static inline T& get(arg_data_t& v){
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::get<arg_data_vec_t>(v);
+                else
+                    return std::get<T>(std::get<arg_data_internal_t>(v));
+            }
         public:
-            arg_parse() {
-                //addArgument(arg_builder({"--help", "-h"}).setAction(arg_action_t::HELP).setHelp("Show this help menu").build());
+            arg_parse()
+            {
+                addArgument(arg_builder({"--help", "-h"}).setAction(arg_action_t::HELP).setHelp("Show this help menu").build());
             };
             
             void addArgument(const arg_properties_t& args);
             
-            const arg_results& parse_args(int argc, const char** argv);
+            arg_results parse_args(int argc, const char** argv);
+            
+            arg_results parse_args(const std::vector<std::string>& args);
             
             void printHelp();
+            
+            ~arg_parse()
+            {
+                for (auto* p : user_args.arg_properties_storage)
+                    delete p;
+            }
     };
     
-    std::string to_string(const blt::parser::arg_parse::arg_data_t& v);
+    std::string to_string(const blt::arg_data_t& v);
+    std::string to_string(const blt::arg_data_internal_t& v);
     
 }
 
