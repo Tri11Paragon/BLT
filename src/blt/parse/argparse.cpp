@@ -68,6 +68,20 @@ namespace blt
             name = str;
     }
     
+    std::string arg_vector_t::getFirstFullFlag()
+    {
+        // assign flag so it always exists, will be first '-' flag if we fail to find a '--' flag
+        std::string flag = flags[0];
+        // search for first '--' flag
+        for (const auto& f : flags)
+            if (f.starts_with("--"))
+            {
+                flag = f;
+                break;
+            }
+        return flag;
+    }
+    
     std::string to_string(const arg_data_t& v)
     {
         if (holds_alternative<arg_data_internal_t>(v))
@@ -119,19 +133,8 @@ namespace blt
         if (properties->a_dest.empty())
         {
             if (properties->a_flags.isFlag())
-            {
-                // take first arg so a_dest exists, could be - or --
-                properties->a_dest = properties->a_flags.flags[0];
-                // look for a -- arg (python's behaviour)
-                for (const auto& flag : properties->a_flags.flags)
-                {
-                    if (flag.starts_with("--"))
-                    {
-                        properties->a_dest = flag;
-                        break;
-                    }
-                }
-            } else
+                properties->a_dest = properties->a_flags.getFirstFullFlag();
+            else
                 properties->a_dest = properties->a_flags.name;
         }
         
@@ -291,6 +294,7 @@ namespace blt
         switch (properties->a_action)
         {
             case arg_action_t::HELP:
+                printUsage();
                 printHelp();
                 break;
             case arg_action_t::STORE:
@@ -409,20 +413,150 @@ namespace blt
         unrec = unrec.substr(0, unrec.size() - 1);
         printUsage();
         std::cout << loaded_args.program_name << ": error: unrecognized args: " << unrec << "\n";
-        printHelp();
-        
-        return loaded_args;
+        std::exit(0);
+    }
+    
+    bool arg_parse::takesArgs(const arg_properties_t* const& arg)
+    {
+        switch (arg->a_action)
+        {
+            case arg_action_t::STORE_CONST:
+            case arg_action_t::STORE_TRUE:
+            case arg_action_t::STORE_FALSE:
+            case arg_action_t::APPEND_CONST:
+            case arg_action_t::COUNT:
+            case arg_action_t::HELP:
+            case arg_action_t::VERSION:
+                return false;
+            case arg_action_t::STORE:
+            case arg_action_t::APPEND:
+            case arg_action_t::EXTEND:
+                return arg->a_nargs.takesArgs();
+        }
+        return false;
     }
     
     void arg_parse::printHelp() const
     {
-        std::cout << ("I am helpful!\n");
+        std::cout << "\npositional arguments:\n";
+        // spaces per tab
+        const size_t tab_size = 8;
+        size_t max_length = 0;
+        // search for longest pos arg length
+        for (const auto& arg : user_args.arg_properties_storage)
+        {
+            if (!arg->a_flags.isFlag())
+                max_length = std::max(arg->a_flags.name.size(), max_length);
+            else {
+                auto tmp = getFlagHelp(arg);
+                max_length = std::max(tmp.size(), max_length);
+            }
+        }
+        for (const auto& arg : user_args.arg_properties_storage)
+        {
+            if (!arg->a_flags.isFlag())
+            {
+                const auto& name = arg->a_flags.name;
+                std::cout << name;
+                auto size = std::max(static_cast<int64_t>(max_length) - static_cast<int64_t>(name.size()), 0l);
+                size += tab_size;
+                for (int64_t i = 0; i < size; i++)
+                    std::cout << " ";
+                std::cout << arg->a_help << "\n";
+            }
+        }
+        std::cout << "\noptions:\n";
+        for (const auto& arg : user_args.arg_properties_storage)
+        {
+            if (arg->a_flags.isFlag())
+            {
+                const auto& name = getFlagHelp(arg);
+                std::cout << name;
+                auto size = std::max(static_cast<int64_t>(max_length) - static_cast<int64_t>(name.size()), 0l);
+                size += tab_size;
+                for (int64_t i = 0; i < size; i++)
+                    std::cout << " ";
+                std::cout << arg->a_help << "\n";
+            }
+        }
+        
         std::exit(0);
     }
     
     void arg_parse::printUsage() const
     {
+        std::string usage = "Usage: " + loaded_args.program_name + " ";
+        std::cout << usage;
+        size_t current_line_length = 0;
+        
+        for (const auto& arg : user_args.arg_properties_storage)
+        {
+            auto meta = getMetavar(arg);
+            
+            std::string str = "[";
+            if (arg->a_flags.isFlag())
+            {
+                str += arg->a_flags.getFirstFullFlag();
+                if (takesArgs(arg))
+                {
+                    str += " ";
+                    str += meta;
+                    str += "";
+                }
+                str += "]";
+                str += ' ';
+            } else
+            {
+                str += "<";
+                str += arg->a_flags.name;
+                str += ">] ";
+            }
+            
+            current_line_length += str.size();
+            checkAndPrintFormattingLine(current_line_length, usage.size());
+            
+            std::cout << str;
+        }
+        std::cout << "\n";
+    }
     
+    void arg_parse::checkAndPrintFormattingLine(size_t& current_line_length, size_t spacing) const
+    {
+        if (current_line_length > user_args.max_line_length)
+        {
+            std::cout << "\n";
+            for (size_t i = 0; i < spacing; i++)
+                std::cout << " ";
+            current_line_length = 0;
+        }
+    }
     
+    std::string arg_parse::getMetavar(const arg_properties_t* const& arg)
+    {
+        auto meta = arg->a_metavar;
+        
+        if (meta.empty())
+            meta = blt::string::toUpperCase(arg->a_dest);
+        
+        return meta;
+    }
+    
+    std::string arg_parse::getFlagHelp(const arg_properties_t* const& arg)
+    {
+        auto meta = getMetavar(arg);
+        // bad that we have to create this twice!
+        std::string tmp;
+        for (const auto& flag : arg->a_flags.flags)
+        {
+            tmp += flag;
+            if (takesArgs(arg))
+            {
+                tmp += ' ';
+                tmp += meta;
+            }
+            tmp += ", ";
+        }
+        tmp = tmp.substr(0, tmp.size()-2);
+        return tmp;
     }
 }

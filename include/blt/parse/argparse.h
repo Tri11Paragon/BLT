@@ -57,6 +57,7 @@ namespace blt
             }
             
             arg_vector_t(const char* str);
+            
             arg_vector_t(const std::string& str);
             
             [[nodiscard]] inline bool isFlag() const
@@ -72,6 +73,9 @@ namespace blt
                         }
                 ) || str == name;
             }
+            
+            // returns the first flag that starts with '--' otherwise return the first '-' flag
+            [[nodiscard]] std::string getFirstFullFlag();
     };
     
     class arg_nargs_t
@@ -100,6 +104,11 @@ namespace blt
             arg_nargs_t(std::string s);
             
             arg_nargs_t(const char* s);
+            
+            [[nodiscard]] bool takesArgs() const
+            {
+                return args > 0 || flags > 0;
+            }
     };
     
     struct arg_properties_t
@@ -239,6 +248,11 @@ namespace blt
                     friend arg_parse;
                 private:
                     std::vector<arg_properties_t*> arg_properties_storage;
+                    size_t max_line_length = 80;
+                    // TODO: grouping like git's help
+                    // pre/postfix applied to the help message
+                    std::string prefix;
+                    std::string postfix;
                 public:
                     std::vector<arg_properties_t*> name_associations;
                     HASHMAP<std::string, arg_properties_t*> flag_associations;
@@ -278,34 +292,50 @@ namespace blt
         
         private:
             static std::string filename(const std::string& path);
+            static std::string getMetavar(const arg_properties_t* const& arg);
+            static std::string getFlagHelp(const arg_properties_t* const& arg);
+            
+            static bool takesArgs(const arg_properties_t* const& arg);
+            
+            /**
+             * prints out a new line if current line length is greater than max line length, using spacing to generate the next line's
+             * beginning spaces.
+             */
+            void checkAndPrintFormattingLine(size_t& current_line_length, size_t spacing) const;
             
             // expects that the current flag has already been consumed (advanced past), leaves tokenizer in a state where the next element is 'current'
-            bool consumeArguments(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out) const;
+            bool consumeArguments(
+                    arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out
+            ) const;
             
             void handlePositionalArgument(arg_tokenizer& tokenizer, size_t& last_pos);
             
             void handleFlagArgument(arg_tokenizer& tokenizer);
             
             void processFlag(arg_tokenizer& tokenizer, const std::string& flag);
-        
+            
             template<typename T>
-            static inline bool holds_alternative(const arg_data_t& v){
+            static inline bool holds_alternative(const arg_data_t& v)
+            {
                 if constexpr (std::is_same_v<T, arg_data_vec_t>)
                     return std::holds_alternative<T>(v);
                 else
                     return std::holds_alternative<arg_data_internal_t>(v) && std::holds_alternative<T>(std::get<arg_data_internal_t>(v));
             }
+            
             template<typename T>
-            static inline T& get(arg_data_t& v){
+            static inline T& get(arg_data_t& v)
+            {
                 if constexpr (std::is_same_v<T, arg_data_vec_t>)
                     return std::get<arg_data_vec_t>(v);
                 else
                     return std::get<T>(std::get<arg_data_internal_t>(v));
             }
+        
         public:
-            arg_parse()
+            arg_parse(const std::string& helpMessage = "show this help menu and exit")
             {
-                addArgument(arg_builder({"--help", "-h"}).setAction(arg_action_t::HELP).setHelp("Show this help menu").build());
+                addArgument(arg_builder({"--help", "-h"}).setAction(arg_action_t::HELP).setHelp(helpMessage).build());
             };
             
             void addArgument(const arg_properties_t& args);
@@ -315,7 +345,23 @@ namespace blt
             arg_results parse_args(const std::vector<std::string>& args);
             
             void printUsage() const;
+            
             void printHelp() const;
+            
+            inline void setHelpPrefix(const std::string& str)
+            {
+                user_args.prefix = str;
+            }
+            
+            inline void setHelpPostfix(const std::string& str)
+            {
+                user_args.postfix = str;
+            }
+            
+            inline void setMaxLineLength(size_t size)
+            {
+                user_args.max_line_length = size;
+            }
             
             ~arg_parse()
             {
@@ -325,6 +371,7 @@ namespace blt
     };
     
     std::string to_string(const blt::arg_data_t& v);
+    
     std::string to_string(const blt::arg_data_internal_t& v);
     
 }

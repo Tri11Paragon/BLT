@@ -73,14 +73,14 @@ int main(int argc, const char** argv) {
     parser.addArgument(blt::arg_builder("--foo").setAction(blt::arg_action_t::STORE_TRUE).setDefault(false).build());
     parser.addArgument(blt::arg_builder({"--goo", "-g"}).build());
     parser.addArgument(blt::arg_builder({"--oop", "-o"}).build());
-    parser.addArgument(blt::arg_builder("Sexy_pos").build());
+    parser.addArgument(blt::arg_builder("Sexy_pos").setHelp("I am helpful!").build());
     
     auto args = parser.parse_args(argc, argv);
     std::vector<std::string> superArgs {
         "BLT_TESTS",
         "Sexy",
         "-p", "I have poop",
-        "-f"
+        "--help"
     };
     auto args2 = parser.parse_args(superArgs);
     
