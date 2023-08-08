@@ -12,7 +12,6 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
-#include <blt/std/logging.h>
 
 namespace blt::string {
     

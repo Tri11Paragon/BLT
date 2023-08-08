@@ -70,7 +70,7 @@ int (*func_func_in)(int) = &test_as_func;
 int main(int argc, const char** argv) {
     blt::arg_parse parser;
     parser.addArgument(blt::arg_builder({"--poo", "-p"}).build());
-    parser.addArgument(blt::arg_builder({"--foo", "-f"}).setAction(blt::arg_action_t::STORE_TRUE).setDefault(false).build());
+    parser.addArgument(blt::arg_builder("--foo").setAction(blt::arg_action_t::STORE_TRUE).setDefault(false).build());
     parser.addArgument(blt::arg_builder({"--goo", "-g"}).build());
     parser.addArgument(blt::arg_builder({"--oop", "-o"}).build());
     parser.addArgument(blt::arg_builder("Sexy_pos").build());

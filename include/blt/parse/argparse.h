@@ -280,7 +280,7 @@ namespace blt
             static std::string filename(const std::string& path);
             
             // expects that the current flag has already been consumed (advanced past), leaves tokenizer in a state where the next element is 'current'
-            static bool consumeArguments(arg_tokenizer& tokenizer, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out);
+            bool consumeArguments(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out) const;
             
             void handlePositionalArgument(arg_tokenizer& tokenizer, size_t& last_pos);
             
@@ -314,7 +314,8 @@ namespace blt
             
             arg_results parse_args(const std::vector<std::string>& args);
             
-            void printHelp();
+            void printUsage() const;
+            void printHelp() const;
             
             ~arg_parse()
             {
