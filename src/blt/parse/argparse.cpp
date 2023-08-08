@@ -438,6 +438,11 @@ namespace blt
     
     void arg_parse::printHelp() const
     {
+        if (!user_args.prefix.empty())
+        {
+            std::cout << "\n";
+            std::cout << user_args.prefix;
+        }
         std::cout << "\npositional arguments:\n";
         // spaces per tab
         const size_t tab_size = 8;
@@ -478,6 +483,11 @@ namespace blt
                     std::cout << " ";
                 std::cout << arg->a_help << "\n";
             }
+        }
+        if (!user_args.postfix.empty())
+        {
+            std::cout << user_args.postfix;
+            std::cout << "\n";
         }
         
         std::exit(0);
