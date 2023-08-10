@@ -291,7 +291,6 @@ namespace blt
             } loaded_args;
         
         private:
-            static std::string filename(const std::string& path);
             static std::string getMetavar(const arg_properties_t* const& arg);
             static std::string getFlagHelp(const arg_properties_t* const& arg);
             
@@ -362,6 +361,8 @@ namespace blt
             {
                 user_args.max_line_length = size;
             }
+            
+            static std::string filename(const std::string& path);
             
             ~arg_parse()
             {

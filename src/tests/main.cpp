@@ -69,25 +69,10 @@ int (*func_func_in)(int) = &test_as_func;
 
 int main(int argc, const char** argv) {
     blt::arg_parse parser;
-    parser.addArgument(blt::arg_builder({"--poo", "-p"}).build());
-    parser.addArgument(blt::arg_builder("--foo").setAction(blt::arg_action_t::STORE_TRUE).setDefault(false).build());
-    parser.addArgument(blt::arg_builder({"--goo", "-g"}).build());
-    parser.addArgument(blt::arg_builder({"--oop", "-o"}).build());
-    parser.addArgument(blt::arg_builder("Sexy_pos").setHelp("I am helpful!").build());
+    parser.addArgument(blt::arg_builder({"-c", "--no-color"}).setAction(blt::arg_action_t::STORE_TRUE).build());
     
     auto args = parser.parse_args(argc, argv);
-    std::vector<std::string> superArgs {
-        "BLT_TESTS",
-        "Sexy",
-        "-p", "I have poop",
-        "--help"
-    };
-    auto args2 = parser.parse_args(superArgs);
     
-    for (const auto& a : args2.data){
-        BLT_TRACE("['%s' = '%s']", a.first.c_str(), blt::to_string(a.second).c_str());
-    }
-    BLT_TRACE(args2.program_name);
 //
 //    if (argc > 1 && std::string(argv[1]) == "--no_color") {
 //        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
