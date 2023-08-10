@@ -5,6 +5,7 @@
  */
 #include <blt/nbt/nbt.h>
 #include <blt/std/logging.h>
+#include <cassert>
 
 #include <type_traits>
 
