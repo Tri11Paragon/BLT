@@ -14,6 +14,7 @@
 #include <optional>
 #include <blt/std/hashmap.h>
 #include <variant>
+#include <algorithm>
 
 namespace blt
 {
@@ -312,6 +313,8 @@ namespace blt
             void handleFlagArgument(arg_tokenizer& tokenizer);
             
             void processFlag(arg_tokenizer& tokenizer, const std::string& flag);
+            
+        public:
             
             template<typename T>
             static inline bool holds_alternative(const arg_data_t& v)
