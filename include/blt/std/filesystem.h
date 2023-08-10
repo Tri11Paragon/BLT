@@ -34,6 +34,11 @@ namespace blt::fs {
              * @return status code. non-zero return codes indicates a failure has occurred.
              */
             virtual int read(char* buffer, size_t bytes) = 0;
+            virtual char get(){
+                char c[1];
+                read(c, 1);
+                return c[0];
+            }
     };
     
     /**
@@ -52,6 +57,11 @@ namespace blt::fs {
              * @return non-zero code if failure
              */
             virtual int write(char* buffer, size_t bytes) = 0;
+            virtual int put(char c){
+                char a[1];
+                a[0] = c;
+                return write(a, 1);
+            }
             
             /**
              * Ensures that the internal buffer is written to the filesystem.
@@ -65,11 +75,10 @@ namespace blt::fs {
     class fstream_block_reader : public block_reader {
         private:
             std::fstream& m_stream;
-            char* m_buffer;
+            char* m_buffer = nullptr;
             size_t readIndex = 0;
         public:
-            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize):
-                    block_reader(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
+            explicit fstream_block_reader(std::fstream& stream, size_t bufferSize = 131072);
             
             explicit fstream_block_reader(fstream_block_reader& copy) = delete;
             
@@ -91,8 +100,9 @@ namespace blt::fs {
             std::fstream& m_stream;
             char* m_buffer;
             size_t writeIndex = 0;
+            void flush_internal();
         public:
-            explicit fstream_block_writer(std::fstream& stream, size_t bufferSize):
+            explicit fstream_block_writer(std::fstream& stream, size_t bufferSize = 131072):
                     block_writer(bufferSize), m_stream(stream), m_buffer(new char[bufferSize]) {}
             
             explicit fstream_block_writer(fstream_block_writer& copy) = delete;
@@ -104,9 +114,12 @@ namespace blt::fs {
             fstream_block_writer& operator=(const fstream_block_writer&& move) = delete;
             
             int write(char* buffer, size_t bytes) override;
-            void flush() override;
+            inline void flush() override {
+                flush_internal();
+            }
             
             ~fstream_block_writer() {
+                flush_internal();
                 delete[] m_buffer;
             }
     };

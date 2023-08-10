@@ -14,12 +14,12 @@
 #include <blt/std/filesystem.h>
 
 inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const blt::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
-    blt::scoped_buffer<char> read_buffer{bufferToCompare.size};
+    blt::scoped_buffer<char> read_buffer{bufferToCompare.size()};
     std::fstream largeBlockInputLarge(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInputLarge(largeBlockInputLarge, bufferSize);
-    byteLargeBlockInputLarge.read(read_buffer.buffer, bufferToCompare.size);
-    for (unsigned int i = 0; i < bufferToCompare.size; i++) {
-        if (read_buffer[i] != bufferToCompare.buffer[i])
+    byteLargeBlockInputLarge.read(*read_buffer, bufferToCompare.size());
+    for (unsigned int i = 0; i < bufferToCompare.size(); i++) {
+        if (read_buffer[i] != bufferToCompare[i])
             return false;
     }
     largeBlockInputLarge.close();
@@ -29,7 +29,7 @@ inline bool readLargeBlockUsingNBTBufferedReader(const std::string& file, const 
 inline bool readIndividualUsingNBTBufferedReader(const std::string& file, const blt::scoped_buffer<char>& bufferToCompare, size_t bufferSize) {
     std::fstream largeBlockInput(file, std::ios::in | std::ios::binary);
     blt::fs::fstream_block_reader byteLargeBlockInput(largeBlockInput, bufferSize);
-    for (unsigned int i = 0; i < bufferToCompare.size; i++) {
+    for (unsigned int i = 0; i < bufferToCompare.size(); i++) {
         char byte;
         byteLargeBlockInput.read(&byte, 1);
         if (byte != bufferToCompare[i]) {
@@ -52,11 +52,11 @@ inline void nbt_read_tests(){
     bool fstream_large_correct = true;
     
     for (int i = 0; i < bufferSize; i++)
-        buffer.buffer[i] = i+1;
+        buffer[i] = i + 1;
     
     BLT_START_INTERVAL("nbt read", "Raw Write");
     std::fstream largeOutput("HeyThere.txt", std::ios::out | std::ios::binary);
-    largeOutput.write(buffer.buffer, bufferSize);
+    largeOutput.write(*buffer, bufferSize);
     largeOutput.flush();
     largeOutput.close();
     BLT_END_INTERVAL("nbt read", "Raw Write");
@@ -129,7 +129,7 @@ inline void nbt_write_tests(){
     blt::scoped_buffer<char> read_buffer{bufferSize};
     
     for (int i = 0; i < bufferSize; i++)
-        buffer.buffer[i] = i+1;
+        buffer[i] = i + 1;
     
     std::fstream fileOutput("IAmAFile.txt", std::ios::binary | std::ios::out);
     for (int i = 0; i < 8; i++) {
@@ -139,11 +139,11 @@ inline void nbt_write_tests(){
         blt::fs::fstream_block_writer writer(fileOutput, size);
         
         BLT_START_INTERVAL("nbt write block", profiler_string);
-        writer.write(buffer.buffer, buffer.size);
+        writer.write(*buffer, buffer.size());
         BLT_END_INTERVAL("nbt write block", profiler_string);
         BLT_START_INTERVAL("nbt write individual", profiler_string);
         for (int j = 0; j < bufferSize; j++) {
-            writer.write(&buffer.buffer[j], 1);
+            writer.write(&buffer[j], 1);
         }
         BLT_END_INTERVAL("nbt write individual", profiler_string);
     }
@@ -155,7 +155,7 @@ inline void nbt_write_tests(){
         auto size = (size_t) std::pow(2, 11 + i);
         auto size_str = std::to_string(size);
         bool results = true;
-        fileInput.read(read_buffer.buffer, bufferSize);
+        fileInput.read(*read_buffer, bufferSize);
         for (int j = 0; j < bufferSize; j++) {
             if (buffer[j] != read_buffer[j]) {
                 results = false;
@@ -166,7 +166,7 @@ inline void nbt_write_tests(){
         BLT_INFO("NBT %s Block Write Correctly? %s;\n", size_str.c_str(), results ? "True" : "False");
     
         results = true;
-        fileInput.read(read_buffer.buffer, bufferSize);
+        fileInput.read(*read_buffer, bufferSize);
         for (int j = 0; j < bufferSize; j++) {
             if (buffer[j] != read_buffer[j]) {
                 results = false;
@@ -193,7 +193,7 @@ inline void nbt_tests(){
     testOutput.write(testByte, 3);
     testOutput.write(reinterpret_cast<char*>(&testShort), sizeof(short));
     testOutput.write(reinterpret_cast<char*>(&testInt), sizeof(int));
-    blt::nbt::writeUTF8String(testOutput, "HelloHowManyCanWeFit!");
+    //blt::nbt::writeUTF8String(testOutput, "HelloHowManyCanWeFit!");
     
     //testOutput.flush();
     testOutput.close();
@@ -207,10 +207,10 @@ inline void nbt_tests(){
     testInput.read(testByteIn, 3);
     testInput.read(reinterpret_cast<char*>(&testShortIn), sizeof(short));
     testInput.read(reinterpret_cast<char*>(&testIntIn), sizeof(int));
-    std::string strIn = blt::nbt::readUTF8String(testInput);
+    //std::string strIn = blt::nbt::readUTF8String(testInput);
     
     testInput.close();
-    BLT_INFO("%d, %c, %d, %d, %d, %s", testByteIn[0], testByteIn[1], testByteIn[2], testShortIn, testIntIn, strIn.c_str());
+    //BLT_INFO("%d, %c, %d, %d, %d, %s", testByteIn[0], testByteIn[1], testByteIn[2], testShortIn, testIntIn, strIn.c_str());
     
     nbt_read_tests();
     nbt_write_tests();

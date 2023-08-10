@@ -12,7 +12,6 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
-#include <blt/std/logging.h>
 
 namespace blt::string {
     
@@ -139,6 +138,26 @@ namespace blt::string {
         tokens.push_back(s);
         return tokens;
     }
+    
+    // https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
+    static bool replace(std::string& str, const std::string& from, const std::string& to) {
+        size_t start_pos = str.find(from);
+        if(start_pos == std::string::npos)
+            return false;
+        str.replace(start_pos, from.length(), to);
+        return true;
+    }
+    
+    static void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+        if(from.empty())
+            return;
+        size_t start_pos = 0;
+        while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+            str.replace(start_pos, from.length(), to);
+            start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+        }
+    }
+    
     
     // taken from https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
     // would've preferred to use boost lib but instructions said to avoid external libs

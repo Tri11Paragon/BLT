@@ -10,27 +10,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <blt/math/math.h>
 
 namespace blt::string {
-    static inline constexpr double _static_pow(int p) {
-        int collection = 1;
-        for (int i = 0; i < p; i++)
-            collection *= 10;
-        return collection;
-    }
-    
-    /**
-     * This is a fast rounding function and is not guaranteed to be 100% correct
-     * @tparam decimal_places
-     * @param value
-     * @return
-     */
-    template<int decimal_places>
-    static inline double round_up(double value) {
-        constexpr double multiplier = _static_pow(decimal_places);
-        return ((int)(value * multiplier) + 1) / multiplier;
-    }
-    
     
     static inline std::string fromBytes(unsigned long bytes){
         if (bytes > 1073741824) {
@@ -87,8 +69,7 @@ namespace blt::string {
     
     // taken from java, adapted for c++.
     static inline utf8_string createUTFString(const std::string& str) {
-        
-        const unsigned int strlen = (unsigned int) str.size();
+        const auto strlen = (unsigned int) str.size();
         unsigned int utflen = strlen;
         
         for (unsigned int i = 0; i < strlen; i++) {
@@ -105,8 +86,8 @@ namespace blt::string {
         chars.characters = new char[chars.size];
         
         int count = 0;
-        chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         chars.characters[count++] = (char) ((utflen >> 8) & 0xFF);
+        chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         
         unsigned int i = 0;
         for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII

@@ -4,18 +4,22 @@
  * See LICENSE file for license detail
  */
 #include <blt/nbt/nbt.h>
+#include <blt/std/logging.h>
+#include <cassert>
+
+#include <type_traits>
 
 namespace blt::nbt {
-    void writeUTF8String(std::fstream& stream, const std::string& str) {
+    void writeUTF8String(blt::fs::block_writer& stream, const std::string& str) {
         blt::string::utf8_string str8 = blt::string::createUTFString(str);
         stream.write(str8.characters, str8.size);
         delete[] str8.characters;
     }
     
-    std::string readUTF8String(std::fstream& stream) {
-        unsigned short utflen;
+    std::string readUTF8String(blt::fs::block_reader& stream) {
+        int16_t utflen;
         
-        stream.read(reinterpret_cast<char*>(&utflen), sizeof(utflen));
+        readData(stream, utflen);
         
         blt::string::utf8_string str{};
         str.size = utflen;
@@ -23,8 +27,20 @@ namespace blt::nbt {
         
         stream.read(str.characters, str.size);
         
-        auto strOut = std::move(blt::string::getStringFromUTF8(str));
+        auto strOut = blt::string::getStringFromUTF8(str);
         delete[] str.characters;
         return strOut;
+    }
+    
+    void NBTReader::read() {
+        char t = reader.get();
+        if (t != (char)nbt_tag::COMPOUND) {
+            BLT_WARN("Found %d", t);
+            throw std::runtime_error("Incorrectly formatted NBT data! Root tag must be a compound tag!");
+        }
+        root = new tag_compound;
+        assert(root != nullptr);
+        root->readName(reader);
+        root->readPayload(reader);
     }
 }

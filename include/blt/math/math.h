@@ -19,7 +19,9 @@ namespace blt {
         seed = (seed << 13) ^ seed;
         return ((seed * (seed * seed * 15731 + 789221) + 1376312589) & 0x7fffffff);
     }
-    
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
     /**
      * fast inverse sqrt
      */
@@ -34,6 +36,28 @@ namespace blt {
         y = y * (1.5f - (x * y * y));
         y = y * (1.5f - (x * y * y));
         return y;
+    }
+
+#pragma GCC diagnostic pop
+    
+    
+    static inline constexpr double pow(int b, int p) {
+        int collection = 1;
+        for (int i = 0; i < p; i++)
+            collection *= b;
+        return collection;
+    }
+    
+    /**
+     * This is a fast rounding function and is not guaranteed to be 100% correct
+     * @tparam decimal_places
+     * @param value
+     * @return
+     */
+    template<int decimal_places>
+    static inline double round_up(double value) {
+        constexpr double multiplier = pow(10, decimal_places);
+        return ((int)(value * multiplier) + 1) / multiplier;
     }
     
     /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {

@@ -1,5 +1,5 @@
-# **BLT v0.6.0a**
-A common utilities library I find useful
+# **BLT v0.8.0a**
+A C++20 common utilities library to make thing easy! 
 
 ![Icon](icon_large.png)
 
@@ -26,11 +26,10 @@ If you are using BLT as a CMake library (as you should!) this is done for you.
 - ## Data Structures
   - Queue / Stack 
     - faster than std::queue / std::stack
-  - Binary Tree
-  - Hashmap (TODO)
+    - backed by a contiguous array
 - ## Utility
-  - Simple Random Interface
-    - No more worrying about min/max bounds!
+  - Simple Random Wrapper Interface
+  - Simple random functions based on the PCG Hash
   - ### String Functions
     - starts_with
     - ends_with
@@ -40,14 +39,12 @@ If you are using BLT as a CMake library (as you should!) this is done for you.
     - split
     - trim
   - Logging
-    - Trace / Debug / Info / Warn / Error / Fatal
-    - Log to file
-    - Log to console with color!
-    - Easy to disable for release
-      - define BLT_DISABLE_LOGGING before including the logging.h file.
+    - See blt::logging section above
   - Time
     - Current time in nanoseconds (without all the c++ gobbledygook)
+      - Java's currentTimeMilliseconds
+      - nanoTime as well
+      - `std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count()` becomes `blt::system::nanoTime()`
     - Formatted time string with year/month/date + current time
 - ## Profiling
-  - Basic profiler
-    - WIP
+  - Basic profiler with history and formatted output

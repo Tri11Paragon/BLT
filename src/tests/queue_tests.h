@@ -129,7 +129,7 @@ static inline void random_access() {
 }
 
 static inline void test_queues() {
-    blt::random<int, std::uniform_int_distribution> rand{1, 100};
+    blt::random::random<int, std::uniform_int_distribution> rand{1, 100};
     
     for (int& value : values){
         value = rand.get();

@@ -58,39 +58,68 @@ namespace blt {
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
      * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
      * The internal buffer is allocated on the heap.
-     * The operator * has been overloaded to return the internal buffer. (or just use scoped_buffer.buffer if you wish to be explicit)
-     * The operator & was not used because I think it is stupid to do so.
-     * "*" on a reference is fine however since it isn't used to dereference in the case.
+     * The operator * has been overloaded to return the internal buffer.
      * @tparam T type that is stored in buffer eg char
      */
     template<typename T>
     struct scoped_buffer {
-        T* buffer;
-        unsigned long size;
-        
-        explicit scoped_buffer(unsigned long size): size(size) {
-            buffer = new T[size];
-        }
-        
-        scoped_buffer(scoped_buffer& copy) = delete;
-        
-        scoped_buffer(scoped_buffer&& move) = delete;
-        
-        scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
-        
-        scoped_buffer operator=(scoped_buffer&& moveAssignment) = delete;
-        
-        inline T& operator[](unsigned long index) const {
-            return buffer[index];
-        }
-        
-        inline T* operator*(){
-            return buffer;
-        }
-        
-        ~scoped_buffer() {
-            delete[] buffer;
-        }
+        private:
+            T* _buffer;
+            size_t _size;
+        public:
+            explicit scoped_buffer(size_t size): _size(size) {
+                _buffer = new T[size];
+            }
+            
+            scoped_buffer(const scoped_buffer& copy) = delete;
+            
+            scoped_buffer(scoped_buffer&& move) noexcept {
+                _buffer = move._buffer;
+                _size = move.size();
+                move._buffer = nullptr;
+            }
+            
+            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
+            
+            scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept {
+                _buffer = moveAssignment._buffer;
+                _size = moveAssignment.size();
+                moveAssignment._buffer = nullptr;
+                
+                return *this;
+            }
+            
+            inline T& operator[](unsigned long index) {
+                return _buffer[index];
+            }
+            
+            inline const T& operator[](unsigned long index) const {
+                return _buffer[index];
+            }
+            
+            inline T* operator*(){
+                return _buffer;
+            }
+            
+            [[nodiscard]] inline size_t size() const {
+                return _size;
+            }
+            
+            inline T* ptr(){
+                return _buffer;
+            }
+            
+            ptr_iterator<T> begin(){
+                return ptr_iterator{_buffer};
+            }
+            
+            ptr_iterator<T> end(){
+                return ptr_iterator{&_buffer[_size]};
+            }
+            
+            ~scoped_buffer() {
+                delete[] _buffer;
+            }
     };
     
     template<typename T>
@@ -168,6 +197,7 @@ namespace blt {
                 delete[] _values;
             }
     };
+    
 }
 
 #endif //BLT_TESTS_MEMORY_H
