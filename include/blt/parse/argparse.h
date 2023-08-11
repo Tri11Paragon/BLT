@@ -287,6 +287,10 @@ namespace blt
                     
                     inline bool contains(const std::string& key)
                     {
+                        if (key.starts_with("--"))
+                            return data.find(key.substr(2)) != data.end();
+                        if (key.starts_with('-'))
+                            return data.find(key.substr(1)) != data.end();
                         return data.find(key) != data.end();
                     }
             } loaded_args;

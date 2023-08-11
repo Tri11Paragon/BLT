@@ -70,8 +70,13 @@ int (*func_func_in)(int) = &test_as_func;
 int main(int argc, const char** argv) {
     blt::arg_parse parser;
     parser.addArgument(blt::arg_builder({"-c", "--no-color"}).setAction(blt::arg_action_t::STORE_TRUE).build());
+    parser.addArgument(blt::arg_builder("--nbt").setHelp("Run NBT tests.").setAction(blt::arg_action_t::STORE_TRUE).build());
     
     auto args = parser.parse_args(argc, argv);
+    
+    for (auto& a : args)
+        BLT_TRACE(a.first);
+    BLT_TRACE(args.contains("nbt"));
     
     if (args.contains("--no-color")) {
         for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
@@ -228,6 +233,7 @@ int main(int argc, const char** argv) {
 //
 //    BLT_INFO("STDDEV of # random values: %f", stdev);
     
+    if (args.contains("--nbt"))
     {
         std::fstream nbtFile("super_file.nbt", std::ios::out | std::ios::binary);
         blt::fs::fstream_block_writer blockWriter(nbtFile);
@@ -285,13 +291,16 @@ int main(int argc, const char** argv) {
         nbtFile.close();
     }
     
-    std::fstream nbtInputFile("super_file.nbt", std::ios::in | std::ios::binary);
-    blt::fs::fstream_block_reader blockReader(nbtInputFile);
-    blt::nbt::NBTReader nbtReader(blockReader);
-    nbtReader.read();
-    
-    auto shortTag = nbtReader.getTag<blt::nbt::tag_short>("shortTest");
-    BLT_TRACE("Got short: %d", shortTag->get());
+    if (args.contains("--nbt"))
+    {
+        std::fstream nbtInputFile("super_file.nbt", std::ios::in | std::ios::binary);
+        blt::fs::fstream_block_reader blockReader(nbtInputFile);
+        blt::nbt::NBTReader nbtReader(blockReader);
+        nbtReader.read();
+        
+        auto shortTag = nbtReader.getTag<blt::nbt::tag_short>("shortTest");
+        BLT_TRACE("Got short: %d", shortTag->get());
+    }
     
     return 0;
 }
