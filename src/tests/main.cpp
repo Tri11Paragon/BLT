@@ -73,13 +73,12 @@ int main(int argc, const char** argv) {
     
     auto args = parser.parse_args(argc, argv);
     
-//
-//    if (argc > 1 && std::string(argv[1]) == "--no_color") {
-//        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
-//            blt::logging::setLogColor((blt::logging::log_level)i, "");
-//        }
-//        blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
-//    }
+    if (args.contains("--no-color")) {
+        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
+            blt::logging::setLogColor((blt::logging::log_level)i, "");
+        }
+        blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
+    }
 //
 //    auto* funy = new class_func;
 //    super_func* virtual_funy = new class_func;
