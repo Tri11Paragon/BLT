@@ -13,26 +13,31 @@
 //#include <functional>
 
 std::function<int(int i)> test{
-    [](int i) -> int {
-        int acc = 1;
-        for (int j = 0; j < i; j++){
-            acc += j * i;
+        [](int i) -> int {
+            int acc = 1;
+            for (int j = 0; j < i; j++)
+            {
+                acc += j * i;
+            }
+            return acc;
         }
-        return acc;
-    }
 };
 
-int test_as_func(int i){
+int test_as_func(int i)
+{
     int acc = 1;
-    for (int j = 0; j < i; j++){
+    for (int j = 0; j < i; j++)
+    {
         acc += j * i;
     }
     return acc;
 }
 
-inline int test_as_func_inline(int i){
+inline int test_as_func_inline(int i)
+{
     int acc = 1;
-    for (int j = 0; j < i; j++){
+    for (int j = 0; j < i; j++)
+    {
         acc += j * i;
     }
     return acc;
@@ -40,50 +45,69 @@ inline int test_as_func_inline(int i){
 
 std::function<int(int i)> test_func_as_std(&test_as_func);
 
-class super_func {
+class super_func
+{
     public:
         virtual int test(int i) = 0;
+        
         virtual ~super_func() = default;
 };
 
-class class_func : public super_func {
+class class_func : public super_func
+{
     public:
-        int test(int i) override {
+        int test(int i) override
+        {
             int acc = 1;
-            for (int j = 0; j < i; j++){
+            for (int j = 0; j < i; j++)
+            {
                 acc += j * i;
             }
             return acc;
         }
 };
 
-int (*func_func)(int) = [](int i) -> int {
+int (* func_func)(int) = [](int i) -> int {
     int acc = 1;
-    for (int j = 0; j < i; j++){
+    for (int j = 0; j < i; j++)
+    {
         acc += j * i;
     }
     return acc;
 };
 
-int (*func_func_in)(int) = &test_as_func;
+int (* func_func_in)(int) = &test_as_func;
 
-int main(int argc, const char** argv) {
+int main(int argc, const char** argv)
+{
     blt::arg_parse parser;
     parser.addArgument(blt::arg_builder({"-c", "--no-color"}).setAction(blt::arg_action_t::STORE_TRUE).build());
-    parser.addArgument(blt::arg_builder("--nbt").setHelp("Run NBT tests.").setAction(blt::arg_action_t::STORE_TRUE).build());
+    parser.addArgument(
+            blt::arg_builder("--nbt")
+                    .setHelp("Run NBT tests. Accepts optional # of bytes to write. Default: 1mb")
+                    .setMetavar("bytes")
+                    .setAction(blt::arg_action_t::STORE)
+                    .setNArgs('?').build());
     
     auto args = parser.parse_args(argc, argv);
     
-    for (auto& a : args)
-        BLT_TRACE(a.first);
-    BLT_TRACE(args.contains("nbt"));
-    
-    if (args.contains("--no-color")) {
-        for (int i = (int)blt::logging::log_level::NONE; i < (int)blt::logging::log_level::FATAL; i++) {
-            blt::logging::setLogColor((blt::logging::log_level)i, "");
-        }
+    if (args.contains("--no-color"))
+    {
+        for (int i = (int) blt::logging::log_level::NONE; i < (int) blt::logging::log_level::FATAL; i++)
+            blt::logging::setLogColor((blt::logging::log_level) i, "");
         blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
     }
+    
+    if (args.contains("--nbt"))
+    {
+        auto v = blt::arg_parse::get<std::string>(args["nbt"]);
+        if (v.empty())
+            v = "1048576";
+        blt::tests::nbtFSTest(std::stoul(v));
+        blt::tests::nbtWrite();
+        blt::tests::nbtRead();
+    }
+
 //
 //    auto* funy = new class_func;
 //    super_func* virtual_funy = new class_func;
@@ -232,75 +256,6 @@ int main(int argc, const char** argv) {
 //    auto stdev = sqrt((double)std / (double)size);
 //
 //    BLT_INFO("STDDEV of # random values: %f", stdev);
-    
-    if (args.contains("--nbt"))
-    {
-        std::fstream nbtFile("super_file.nbt", std::ios::out | std::ios::binary);
-        blt::fs::fstream_block_writer blockWriter(nbtFile);
-        blt::nbt::NBTWriter nbtWriter(blockWriter);
-        nbtWriter.write(
-                new blt::nbt::tag_compound(
-                        "root", {
-                                new blt::nbt::tag_byte("super_byte", 8),
-                                new blt::nbt::tag_short("shortTest", 32767),
-                                new blt::nbt::tag_compound(
-                                        "SEXY_COMPOUND", {
-                                                new blt::nbt::tag_list(
-                                                        "my list", {
-                                                                new blt::nbt::tag_long("", 1230),
-                                                                new blt::nbt::tag_long("", 2),
-                                                                new blt::nbt::tag_long("", 50340535),
-                                                                new blt::nbt::tag_long("", 55),
-                                                                new blt::nbt::tag_long("", 256),
-                                                                new blt::nbt::tag_long("", 512),
-                                                                new blt::nbt::tag_long("", 9999999999),
-                                                        }
-                                                ),
-                                                new blt::nbt::tag_double("OMG IT'S A DOUBLE", 1320.04324),
-                                                new blt::nbt::tag_float("OMG IT'S A FLOAT", 12.04324),
-                                                new blt::nbt::tag_compound(
-                                                        "Triple", {
-                                                                new blt::nbt::tag_int("Test int", 32),
-                                                                new blt::nbt::tag_byte_array(
-                                                                        "super array", {
-                                                                                51, 23, 12, 04, 33, 53, 11, 22, 3, 93, 120
-                                                                        }
-                                                                ),
-                                                                new blt::nbt::tag_string("I am a string", "I have stringy contents"),
-                                                                new blt::nbt::tag_string("name", "Bananrama"),
-                                                                new blt::nbt::tag_int_array(
-                                                                        "int array", {
-                                                                                1230, 234023, 21300, 2309230, 2340230, 2, 1, 32, 3265, 12, 53, 123, 7,
-                                                                                56, 12
-                                                                        }
-                                                                ),
-                                                                new blt::nbt::tag_long_array(
-                                                                        "valid", {
-                                                                                1230, 5320, 323200234402304, 230023, 23042034, 230230, 2301203,
-                                                                                123010230, 12300123
-                                                                        }
-                                                                )
-                                                        }
-                                                )
-                                        }
-                                )
-                        }
-                ));
-        
-        blockWriter.flush();
-        nbtFile.close();
-    }
-    
-    if (args.contains("--nbt"))
-    {
-        std::fstream nbtInputFile("super_file.nbt", std::ios::in | std::ios::binary);
-        blt::fs::fstream_block_reader blockReader(nbtInputFile);
-        blt::nbt::NBTReader nbtReader(blockReader);
-        nbtReader.read();
-        
-        auto shortTag = nbtReader.getTag<blt::nbt::tag_short>("shortTest");
-        BLT_TRACE("Got short: %d", shortTag->get());
-    }
     
     return 0;
 }
