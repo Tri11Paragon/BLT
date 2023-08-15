@@ -287,12 +287,15 @@ namespace blt
                     
                     inline bool contains(const std::string& key)
                     {
+                        if (key.starts_with("--"))
+                            return data.find(key.substr(2)) != data.end();
+                        if (key.starts_with('-'))
+                            return data.find(key.substr(1)) != data.end();
                         return data.find(key) != data.end();
                     }
             } loaded_args;
         
         private:
-            static std::string filename(const std::string& path);
             static std::string getMetavar(const arg_properties_t* const& arg);
             static std::string getFlagHelp(const arg_properties_t* const& arg);
             
@@ -365,6 +368,8 @@ namespace blt
             {
                 user_args.max_line_length = size;
             }
+            
+            static std::string filename(const std::string& path);
             
             ~arg_parse()
             {

@@ -495,7 +495,7 @@ namespace blt
     
     void arg_parse::printUsage() const
     {
-        std::string usage = "Usage: " + loaded_args.program_name + " ";
+        std::string usage = "Usage: " + filename(loaded_args.program_name) + " ";
         std::cout << usage;
         size_t current_line_length = 0;
         
