@@ -649,7 +649,7 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #define BLT_LOG(format, level, ...) log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define BLT_LOG(format, level, ...) blt::logging::log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
     #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
     #ifdef BLT_DISABLE_TRACE
         #define BLT_TRACE(format, ...)
