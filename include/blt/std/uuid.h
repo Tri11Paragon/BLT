@@ -154,11 +154,11 @@ namespace blt::uuid
     
     static uuid_t genV4()
     {
-        static std::random_device rd;
+        std::random_device rd;
         std::seed_seq seed{ rd(), rd(), rd(), rd() };
-        static std::mt19937_64 gen(seed);
-        static std::uniform_int_distribution<int> dis(0, 15);
-        static std::uniform_int_distribution<> dis2(8, 11);
+        std::mt19937_64 gen(seed);
+        std::uniform_int_distribution<int> dis(0, 15);
+        std::uniform_int_distribution<> dis2(8, 11);
         
         std::stringstream ss;
         int i;
