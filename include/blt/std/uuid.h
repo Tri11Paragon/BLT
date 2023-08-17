@@ -2,7 +2,7 @@
 // Created by brett on 15/08/23.
 //
 
-#ifndef BLT_UUID_H
+#if !defined(BLT_UUID_H) && defined(__has_include) && __has_include(<openssl/sha.h>)
 #define BLT_UUID_H
 
 #include <string>
@@ -145,7 +145,6 @@ namespace blt::uuid
                 cpy[0] = data[i];
                 cpy[1] = data[i + 1];
                 uuid.str[i / 2] = hex2byte(cpy);
-                BLT_INFO("i: %d, %d %d, %d, %d", i/2, cpy[0], cpy[1], uuid.str[i/2], hex2byte(cpy));
             }
         } else
             throw malformed_uuid_exception("UUID is expected as a string of bytes xxxxxxxx or in uuid format 8-4-4-4-12");
