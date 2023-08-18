@@ -103,7 +103,7 @@ namespace blt::uuid
         unsigned char hash[SHA_DIGEST_LENGTH];
         uuid_t result{};
         
-        SHA1(c_str, sizeof(c_str) - 1, hash);
+        SHA1(c_str, strlen(new_str.c_str()), hash);
         
         memcpy(result.str, hash, 16);
         
