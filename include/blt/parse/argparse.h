@@ -330,6 +330,16 @@ namespace blt
                     return std::holds_alternative<arg_data_internal_t>(v) && std::holds_alternative<T>(std::get<arg_data_internal_t>(v));
             }
             
+            
+            template<typename T>
+            static inline T& get(arg_data_t& v)
+            {
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::get<arg_data_vec_t>(v);
+                else
+                    return std::get<T>(std::get<arg_data_internal_t>(v));
+            }
+            
             /**
              * Attempt to cast the variant stored in the arg results to the requested type
              * if user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
@@ -339,7 +349,7 @@ namespace blt
              * @return
              */
             template<typename T>
-            static inline T& get(arg_data_t& v)
+            static inline T get_cast(arg_data_t& v)
             {
                 if constexpr (std::is_same_v<T, arg_data_vec_t>)
                     return std::get<arg_data_vec_t>(v);
@@ -348,8 +358,11 @@ namespace blt
                     auto t = std::get<arg_data_internal_t>(v);
                     // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
                     // it is up to the user to deal with the variant if they do not want this behaviour!
-                    if constexpr (std::holds_alternative<std::string>(t) && std::is_same_v<int32_t, T>)
-                        return std::stoi(std::get<std::string>(t));
+                    if constexpr (std::is_same_v<int32_t, T>)
+                    {
+                        if (std::holds_alternative<std::string>(t))
+                            return std::stoi(std::get<std::string>(t));
+                    }
                     return std::get<T>(t);
                 }
             }
