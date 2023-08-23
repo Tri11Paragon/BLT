@@ -38,7 +38,10 @@ namespace blt
 #define blt_assert(expr) static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, __FILE__, __LINE__)
 // prints error with stack trace then exits with failure.
 #define BLT_ASSERT(expr) {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, __FILE__, __LINE__); std::exit(EXIT_FAILURE); }
-#define blt_throw(throwable) {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;}
+// prints as error but does not throw the exception.
+#define blt_throw(throwable) {blt::b_throw(throwable.what(), __FILE__, __LINE__);}
+// prints as error with stack trace and throws the exception.
+#define BLT_THROW(throwable) {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;}
 
 
 #endif //BLT_ASSERT_H
