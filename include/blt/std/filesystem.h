@@ -38,7 +38,7 @@ namespace blt::fs
              */
             virtual int read(char* buffer, size_t bytes) = 0;
             
-            virtual int gcount() = 0;
+            virtual size_t gcount() = 0;
             
             virtual char get()
             {
@@ -102,7 +102,7 @@ namespace blt::fs
             
             int read(char* buffer, size_t bytes) override;
             
-            int gcount() final {
+            size_t gcount() final {
                 return m_stream.gcount();
             }
             

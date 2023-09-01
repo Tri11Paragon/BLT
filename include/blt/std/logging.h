@@ -454,7 +454,7 @@ namespace blt::logging {
     }
     
     /**
-     * Checks if the next character in the parser is a tag opening, if not output the chars to the out string
+     * Checks if the next character in the parser is a tag opening, if not output the buffer to the out string
      */
     inline bool tagOpening(string_parser& parser, std::string& out){
         char c = ' ';
