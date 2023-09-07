@@ -7,24 +7,6 @@
 #ifndef BLT_ASSERT_H
 #define BLT_ASSERT_H
 
-#ifdef __GNUC__
-    
-    #include <execinfo.h>
-    #include <cstdlib>
-
-#endif
-
-#ifdef __GNUC__
-    #define BLT_STACK_TRACE(number) void* ptrs[number]; \
-            int size = backtrace(ptrs, number);         \
-            char** messages = backtrace_symbols(ptrs, size);
-    
-    #define BLT_FREE_STACK_TRACE() free(messages);
-#else
-    #define BLT_STACK_TRACE(number) void();
-    #define BLT_FREE_STACK_TRACE() void();
-#endif
-
 namespace blt
 {
     void printStacktrace(char** messages, int size, const char* path, int line);
