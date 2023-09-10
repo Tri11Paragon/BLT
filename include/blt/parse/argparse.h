@@ -77,7 +77,7 @@ namespace blt
             }
             
             // returns the first flag that starts with '--' otherwise return the first '-' flag
-            [[nodiscard]] std::string getFirstFullFlag();
+            [[nodiscard]] std::string getFirstFullFlag() const;
     };
     
     class arg_nargs_t
@@ -127,13 +127,22 @@ namespace blt
             std::string a_version{};
             std::string a_metavar{};
             bool a_required = true;
+            bool a_disable_help = false;
     };
     
     class arg_builder
     {
+        private:
             arg_properties_t properties;
         public:
-            arg_builder(const arg_vector_t& flags): properties(flags)
+            explicit arg_builder(const arg_vector_t& flags): properties(flags)
+            {}
+            
+            arg_builder(const std::initializer_list<std::string>& flags): properties(flags)
+            {}
+            
+            template<typename... string_args>
+            explicit arg_builder(string_args... flags): properties({flags...})
             {}
             
             inline arg_properties_t build()
@@ -171,6 +180,12 @@ namespace blt
                 return *this;
             }
             
+            inline arg_builder& disableHelp()
+            {
+                properties.a_disable_help = true;
+                return *this;
+            }
+            
             inline arg_builder& setHelp(const std::string& help)
             {
                 properties.a_help = help;
@@ -203,7 +218,7 @@ namespace blt
             std::vector<std::string> args;
             size_t currentIndex = 0;
         public:
-            arg_tokenizer(std::vector<std::string> args): args(std::move(args))
+            explicit arg_tokenizer(std::vector<std::string> args): args(std::move(args))
             {}
             
             // returns the current arg
@@ -265,11 +280,11 @@ namespace blt
                     friend arg_parse;
                 private:
                     // stores dest value not the flag/name!
-                    HASHSET<std::string> found_args;
+                    HASHSET <std::string> found_args;
                     std::vector<std::string> unrecognized_args;
                 public:
                     std::string program_name;
-                    HASHMAP<std::string, arg_data_t> data;
+                    HASHMAP <std::string, arg_data_t> data;
                     
                     inline arg_data_t& operator[](const std::string& key)
                     {
@@ -295,9 +310,12 @@ namespace blt
                         return data.find(key) != data.end();
                     }
             } loaded_args;
-        
+            
+            bool help_disabled = false;
+            std::string help_inclusion;
         private:
             static std::string getMetavar(const arg_properties_t* const& arg);
+            
             static std::string getFlagHelp(const arg_properties_t* const& arg);
             
             static bool takesArgs(const arg_properties_t* const& arg);
@@ -311,7 +329,7 @@ namespace blt
             // expects that the current flag has already been consumed (advanced past), leaves tokenizer in a state where the next element is 'current'
             bool consumeArguments(
                     arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out
-            ) const;
+                                 ) const;
             
             void handlePositionalArgument(arg_tokenizer& tokenizer, size_t& last_pos);
             
@@ -319,6 +337,8 @@ namespace blt
             
             void processFlag(arg_tokenizer& tokenizer, const std::string& flag);
             
+            void handleFlag(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t* properties);
+        
         public:
             
             template<typename T>
@@ -396,6 +416,11 @@ namespace blt
             inline void setMaxLineLength(size_t size)
             {
                 user_args.max_line_length = size;
+            }
+            
+            inline void setHelpExtras(std::string str)
+            {
+                help_inclusion = std::move(str);
             }
             
             static std::string filename(const std::string& path);

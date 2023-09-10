@@ -68,7 +68,7 @@ namespace blt
             name = str;
     }
     
-    std::string arg_vector_t::getFirstFullFlag()
+    std::string arg_vector_t::getFirstFullFlag() const
     {
         // assign flag so it always exists, will be first '-' flag if we fail to find a '--' flag
         std::string flag = flags[0];
@@ -156,7 +156,7 @@ namespace blt
     
     bool arg_parse::consumeArguments(
             arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t& properties, std::vector<arg_data_internal_t>& v_out
-    ) const
+                                    ) const
     {
         switch (properties.a_nargs.flags)
         {
@@ -231,8 +231,26 @@ namespace blt
             loaded_args.unrecognized_args.push_back(tokenizer.get());
         else
         {
-            loaded_args.data[user_args.name_associations[index]->a_dest] = tokenizer.get();
-            loaded_args.found_args.insert(user_args.name_associations[index]->a_dest);
+            bool found = false;
+            for (const auto& pos_properties : user_args.name_associations)
+            {
+                const auto& flag = tokenizer.get();
+                if (pos_properties->a_flags.contains(flag))
+                {
+                    tokenizer.advance();
+                    handleFlag(tokenizer, flag, pos_properties);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                const auto& arg_property = user_args.name_associations[index];
+                if (arg_property->a_disable_help)
+                    help_disabled = true;
+                loaded_args.data[arg_property->a_dest] = tokenizer.get();
+                loaded_args.found_args.insert(arg_property->a_dest);
+            }
         }
         tokenizer.advance();
     }
@@ -282,6 +300,11 @@ namespace blt
         
         const auto* const properties = user_args.flag_associations.at(flag);
         
+        handleFlag(tokenizer, flag, properties);
+    }
+    
+    void arg_parse::handleFlag(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t* properties)
+    {
         if (properties->a_dest.empty())
         {
             loaded_args.unrecognized_args.push_back(flag);
@@ -290,6 +313,9 @@ namespace blt
         auto dest = properties->a_dest;
         
         loaded_args.found_args.insert(dest);
+        
+        if (properties->a_disable_help)
+            help_disabled = true;
         
         switch (properties->a_action)
         {
@@ -438,6 +464,8 @@ namespace blt
     
     void arg_parse::printHelp() const
     {
+        if (help_disabled)
+            return;
         if (!user_args.prefix.empty())
         {
             std::cout << "\n";
@@ -452,7 +480,8 @@ namespace blt
         {
             if (!arg->a_flags.isFlag())
                 max_length = std::max(arg->a_flags.name.size(), max_length);
-            else {
+            else
+            {
                 auto tmp = getFlagHelp(arg);
                 max_length = std::max(tmp.size(), max_length);
             }
@@ -495,7 +524,9 @@ namespace blt
     
     void arg_parse::printUsage() const
     {
-        std::string usage = "Usage: " + filename(loaded_args.program_name) + " ";
+        if (help_disabled)
+            return;
+        std::string usage = "Usage: " + filename(loaded_args.program_name) + " " + help_inclusion + " ";
         std::cout << usage;
         size_t current_line_length = 0;
         
@@ -566,7 +597,7 @@ namespace blt
             }
             tmp += ", ";
         }
-        tmp = tmp.substr(0, tmp.size()-2);
+        tmp = tmp.substr(0, tmp.size() - 2);
         return tmp;
     }
 }
