@@ -420,6 +420,7 @@ namespace blt
             
             inline void setHelpExtras(std::string str)
             {
+                addArgument(blt::arg_builder(str).setAction(blt::arg_action_t::STORE_TRUE).build());
                 help_inclusion = std::move(str);
             }
             
