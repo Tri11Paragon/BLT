@@ -13,13 +13,6 @@
 
 namespace blt::fs
 {
-    class path
-    {
-        private:
-            std::vector<std::string> paths;
-        public:
-            
-    };
     
     /**
      * A simple interface which provides a way of reading the next block of data from a resource.
