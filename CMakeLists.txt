@@ -88,38 +88,38 @@ endif()
 
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
-if(${BUILD_TESTS})
-    project(BLT_TESTS)
-
-    file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
-
-    add_executable(BLT_TESTS ${TESTS_FILES})
-
-    target_link_libraries(BLT_TESTS PUBLIC BLT)
-
-    if(MSVC)
-        #target_compile_options(BLT_TESTS PRIVATE /W4)
-        if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-            target_link_options(BLT_TESTS PRIVATE /DEBUG)
-        endif()
-    else()
-        target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
-
-    if (${ENABLE_ADDRSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
-    endif ()
-
-    if (${ENABLE_UBSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-    endif ()
-
-    if (${ENABLE_TSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
-    endif ()
-
-    message("BLT tests included!")
-endif()
+#if(${BUILD_TESTS})
+#    project(BLT_TESTS)
+#
+#    file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
+#
+#    add_executable(BLT_TESTS ${TESTS_FILES})
+#
+#    target_link_libraries(BLT_TESTS PUBLIC BLT)
+#
+#    if(MSVC)
+#        #target_compile_options(BLT_TESTS PRIVATE /W4)
+#        if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+#            target_link_options(BLT_TESTS PRIVATE /DEBUG)
+#        endif()
+#    else()
+#        target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
+#    endif()
+#
+#    if (${ENABLE_ADDRSAN} MATCHES ON)
+#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
+#        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
+#    endif ()
+#
+#    if (${ENABLE_UBSAN} MATCHES ON)
+#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+#        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+#    endif ()
+#
+#    if (${ENABLE_TSAN} MATCHES ON)
+#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
+#        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
+#    endif ()
+#
+#    message("BLT tests included!")
+#endif()

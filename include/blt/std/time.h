@@ -11,30 +11,69 @@
 #ifndef BLT_TIME_H
 #define BLT_TIME_H
 
-namespace blt::system {
-    static inline std::string ensureHasDigits(int current, int digits) {
+namespace blt::system
+{
+    static inline std::string ensureHasDigits(int current, int digits)
+    {
         std::string asString = std::to_string(current);
         auto length = digits - asString.length();
         if (length <= 0)
             return asString;
         std::string zeros;
         zeros.reserve(length);
-        for (unsigned int i = 0; i < length; i++){
+        for (unsigned int i = 0; i < length; i++)
+        {
             zeros += '0';
         }
         return zeros + asString;
     }
     
-    static inline auto getCurrentTimeNanoseconds() {
+    static inline auto getCurrentTimeNanoseconds()
+    {
         return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
     
-    static inline auto nanoTime() {
+    static inline auto nanoTime()
+    {
         return getCurrentTimeNanoseconds();
     }
     
-    static inline auto getCurrentTimeMilliseconds(){
+    static inline auto getCurrentTimeMilliseconds()
+    {
         return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+    
+    static inline auto getCPUThreadTime()
+    {
+#ifdef unix
+        timespec time{};
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
+        return time.tv_nsec;
+#else
+        return std::clock();
+#endif
+    }
+    
+    static inline auto getCPUTime()
+    {
+#ifdef unix
+        timespec time{};
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
+        return time.tv_nsec;
+#else
+        return std::clock();
+#endif
+    }
+    
+    static inline auto getCPUTimerResolution()
+    {
+#ifdef unix
+        timespec res{};
+        clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res);
+        return res.tv_nsec;
+#else
+        return CLOCKS_PER_SECOND;
+#endif
     }
     
     /**
@@ -43,7 +82,8 @@ namespace blt::system {
      * If you do not want a space in the string use getTimeStringFS(); (Time String for easy filesystem)
      * @return the BLT standard string of time.now
      */
-    static inline std::string getTimeString() {
+    static inline std::string getTimeString()
+    {
         auto t = std::time(nullptr);
         auto now = std::localtime(&t);
         std::stringstream timeString;
@@ -66,7 +106,8 @@ namespace blt::system {
      * Hour:Min:Second
      * @return the BLT standard logging string of time.now
      */
-    static inline std::string getTimeStringLog() {
+    static inline std::string getTimeStringLog()
+    {
         auto t = std::time(nullptr);
         auto now = std::localtime(&t);
         std::string timeString = "[";
@@ -82,7 +123,8 @@ namespace blt::system {
     /**
      * @return the BLT standard string of time.now (See getTimeString()) that is filesystem friendly (FAT compatible).
      */
-    static inline std::string getTimeStringFS() {
+    static inline std::string getTimeStringFS()
+    {
         auto t = std::time(nullptr);
         auto now = std::localtime(&t);
         std::stringstream timeString;

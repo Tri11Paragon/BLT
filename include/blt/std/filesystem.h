@@ -13,6 +13,13 @@
 
 namespace blt::fs
 {
+    class path
+    {
+        private:
+            std::vector<std::string> paths;
+        public:
+            
+    };
     
     /**
      * A simple interface which provides a way of reading the next block of data from a resource.
@@ -102,7 +109,8 @@ namespace blt::fs
             
             int read(char* buffer, size_t bytes) override;
             
-            size_t gcount() final {
+            size_t gcount() final
+            {
                 return m_stream.gcount();
             }
             

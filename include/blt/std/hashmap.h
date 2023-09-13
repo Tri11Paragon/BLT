@@ -7,6 +7,20 @@
 #ifndef BLT_HASH_MAP_H
 #define BLT_HASH_MAP_H
 
+namespace blt
+{
+    
+//    template<typename K, typename V, typename Hash = std::hash<K>, typename Eq = std::equal_to<K>>
+//    class hashmap
+//    {
+//        private:
+//
+//        public:
+//
+//    };
+    
+}
+
 #ifndef HASHMAP
     #if defined __has_include && __has_include(<parallel_hashmap/phmap.h>)
         
