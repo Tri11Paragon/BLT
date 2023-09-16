@@ -78,6 +78,8 @@ namespace blt
             
             // returns the first flag that starts with '--' otherwise return the first '-' flag
             [[nodiscard]] std::string getFirstFullFlag() const;
+            
+            [[nodiscard]] std::string getArgName() const;
     };
     
     class arg_nargs_t
@@ -280,11 +282,11 @@ namespace blt
                     friend arg_parse;
                 private:
                     // stores dest value not the flag/name!
-                    HASHSET <std::string> found_args;
+                    HASHSET<std::string> found_args;
                     std::vector<std::string> unrecognized_args;
                 public:
                     std::string program_name;
-                    HASHMAP <std::string, arg_data_t> data;
+                    HASHMAP<std::string, arg_data_t> data;
                     
                     inline arg_data_t& operator[](const std::string& key)
                     {
@@ -312,6 +314,7 @@ namespace blt
             } loaded_args;
             
             bool help_disabled = false;
+            bool use_full_name = false;
             std::string help_inclusion;
         private:
             static std::string getMetavar(const arg_properties_t* const& arg);
@@ -338,6 +341,11 @@ namespace blt
             void processFlag(arg_tokenizer& tokenizer, const std::string& flag);
             
             void handleFlag(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t* properties);
+            
+            std::string getProgramName() const
+            {
+                return use_full_name ? loaded_args.program_name : filename(loaded_args.program_name);
+            }
         
         public:
             
@@ -402,6 +410,14 @@ namespace blt
             void printUsage() const;
             
             void printHelp() const;
+            
+            /**
+             * Sets the parser to use the full file path when printing usage messages
+             */
+            inline void useFullPath()
+            {
+                use_full_name = true;
+            }
             
             inline void setHelpPrefix(const std::string& str)
             {

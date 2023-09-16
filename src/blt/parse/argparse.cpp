@@ -82,6 +82,12 @@ namespace blt
         return flag;
     }
     
+    std::string arg_vector_t::getArgName() const {
+        if (name.empty())
+            return getFirstFullFlag();
+        return name;
+    }
+    
     std::string to_string(const arg_data_t& v)
     {
         if (holds_alternative<arg_data_internal_t>(v))
@@ -168,7 +174,7 @@ namespace blt
                     {
                         // TODO: S
                         printUsage();
-                        std::cout << filename(loaded_args.program_name) << ": error: flag '" << flag << "' expected " << properties.a_nargs.args
+                        std::cout << getProgramName() << ": error: flag '" << flag << "' expected " << properties.a_nargs.args
                                   << " argument(s) got " << i << " argument(s) instead!\n";
                         return false;
                     }
@@ -176,7 +182,7 @@ namespace blt
                     if (tokenizer.isFlag())
                     {
                         printUsage();
-                        std::cout << filename(loaded_args.program_name) << ": error: flag '" << flag << "' expected " << properties.a_nargs.args
+                        std::cout << getProgramName() << ": error: flag '" << flag << "' expected " << properties.a_nargs.args
                                   << " argument(s) but found '" << tokenizer.get() << "' instead!\n";
                         //BLT_WARN("Expected %d arguments, found flag instead!", properties.a_nargs.args);
                         return false;
@@ -211,7 +217,7 @@ namespace blt
                 if (tokenizer.hasCurrent() && tokenizer.isFlag())
                 {
                     printUsage();
-                    std::cout << loaded_args.program_name << ": at least one argument is required for '" << flag << "'\n";
+                    std::cout << getProgramName() << ": at least one argument is required for '" << flag << "'\n";
                     return false;
                 }
                 while (tokenizer.hasCurrent() && !tokenizer.isFlag())
@@ -364,7 +370,7 @@ namespace blt
             }
             case arg_action_t::VERSION:
             {
-                auto file = filename(loaded_args.program_name);
+                auto file = getProgramName();
                 std::cout << file.c_str() << " " << properties->a_version << "\n";
                 break;
             }
@@ -435,24 +441,37 @@ namespace blt
                 loaded_args.data[arg->a_dest] = arg->a_default;
         }
         
-        // if there was no problems processing then return the loaded args
-        if (loaded_args.unrecognized_args.empty())
-            return loaded_args;
-        
-        // otherwise construct a string detailing the unrecognized args
-        std::string unrec;
-        for (const auto& r : loaded_args.unrecognized_args)
+        if (!loaded_args.unrecognized_args.empty())
         {
-            unrec += '\'';
-            unrec += r;
-            unrec += '\'';
-            unrec += ' ';
+            // otherwise construct a string detailing the unrecognized args
+            std::string unrec;
+            for (const auto& r : loaded_args.unrecognized_args)
+            {
+                unrec += '\'';
+                unrec += r;
+                unrec += '\'';
+                unrec += ' ';
+            }
+            // remove the last space caused by the for loop
+            unrec = unrec.substr(0, unrec.size() - 1);
+            printUsage();
+            std::cout << getProgramName() << ": error: unrecognized args: " << unrec << "\n";
+            std::exit(0);
         }
-        // remove the last space caused by the for loop
-        unrec = unrec.substr(0, unrec.size() - 1);
-        printUsage();
-        std::cout << loaded_args.program_name << ": error: unrecognized args: " << unrec << "\n";
-        std::exit(0);
+        
+        for (const auto& named_arg : user_args.name_associations)
+        {
+            if (takesArgs(named_arg) && !loaded_args.contains(named_arg->a_dest))
+            {
+                printUsage();
+                std::cout << "postional argument '" << named_arg->a_flags.name << "' expected " << named_arg->a_nargs.args << " argument"
+                          << (named_arg->a_nargs.args > 1 ? "s!" : "!") << std::endl;
+                std::exit(0);
+            }
+        }
+        
+        // if there was no problems processing then return the loaded args
+        return loaded_args;
     }
     
     bool arg_parse::takesArgs(const arg_properties_t* const& arg)
@@ -539,7 +558,7 @@ namespace blt
     {
         if (help_disabled)
             return;
-        std::string usage = "Usage: " + filename(loaded_args.program_name) + " " + help_inclusion + " ";
+        std::string usage = "Usage: " + getProgramName() + " " + help_inclusion + " ";
         std::cout << usage;
         size_t current_line_length = 0;
         
