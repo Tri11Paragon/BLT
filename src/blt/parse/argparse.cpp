@@ -361,6 +361,7 @@ namespace blt
             }
             case arg_action_t::SUBCOMMAND:
             {
+                loaded_args[flag] = true;
                 help_disabled = true;
                 break;
             }
@@ -425,7 +426,6 @@ namespace blt
         while (tokenizer.hasCurrent())
         {
             // if we find an arg which disables help (basically a grouping flag) then we should stop processing args
-            // TODO: rename this to be more descriptive
             if (help_disabled)
                 break;
             
