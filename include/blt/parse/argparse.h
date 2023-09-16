@@ -307,9 +307,9 @@ namespace blt
                     }
             } loaded_args;
             
-            bool help_disabled = false;
+            bool subcommand_found = false;
             bool use_full_name = false;
-            std::string help_inclusion;
+            std::string subcommand_name;
         private:
             static std::string getMetavar(const arg_properties_t* const& arg);
             
@@ -430,7 +430,7 @@ namespace blt
             
             inline void setHelpExtras(std::string str)
             {
-                help_inclusion = std::move(str);
+                subcommand_name = std::move(str);
             }
             
             static std::string filename(const std::string& path);

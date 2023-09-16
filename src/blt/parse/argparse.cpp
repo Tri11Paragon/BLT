@@ -362,7 +362,7 @@ namespace blt
             case arg_action_t::SUBCOMMAND:
             {
                 loaded_args[flag] = true;
-                help_disabled = true;
+                subcommand_found = true;
                 break;
             }
             case arg_action_t::EXTEND:
@@ -414,10 +414,10 @@ namespace blt
         loaded_args.program_name = tokenizer.get();
         tokenizer.advance();
         
-        if (!help_inclusion.empty())
+        if (!subcommand_name.empty())
         {
             // advance the tokenizer to post grouped args allowing for flags
-            while (tokenizer.hasCurrent() && tokenizer.get() != help_inclusion)
+            while (tokenizer.hasCurrent() && tokenizer.get() != subcommand_name)
                 tokenizer.advance();
             tokenizer.advance();
         }
@@ -426,7 +426,7 @@ namespace blt
         while (tokenizer.hasCurrent())
         {
             // if we find an arg which disables help (basically a grouping flag) then we should stop processing args
-            if (help_disabled)
+            if (subcommand_found)
                 break;
             
             if (tokenizer.isFlag())
@@ -498,7 +498,7 @@ namespace blt
     
     void arg_parse::printHelp() const
     {
-        if (help_disabled)
+        if (subcommand_found)
             return;
         if (!user_args.prefix.empty())
         {
@@ -558,9 +558,9 @@ namespace blt
     
     void arg_parse::printUsage() const
     {
-        if (help_disabled)
+        if (subcommand_found)
             return;
-        std::string usage = "Usage: " + getProgramName() + " " + help_inclusion + " ";
+        std::string usage = "Usage: " + getProgramName() + " " + subcommand_name + " ";
         std::cout << usage;
         size_t current_line_length = 0;
         
