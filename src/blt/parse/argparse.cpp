@@ -82,7 +82,8 @@ namespace blt
         return flag;
     }
     
-    std::string arg_vector_t::getArgName() const {
+    std::string arg_vector_t::getArgName() const
+    {
         if (name.empty())
             return getFirstFullFlag();
         return name;
@@ -252,8 +253,6 @@ namespace blt
             if (!found)
             {
                 const auto& arg_property = user_args.name_associations[index];
-                if (arg_property->a_disable_help)
-                    help_disabled = true;
                 loaded_args.data[arg_property->a_dest] = tokenizer.get();
                 loaded_args.found_args.insert(arg_property->a_dest);
             }
@@ -320,9 +319,6 @@ namespace blt
         
         loaded_args.found_args.insert(dest);
         
-        if (properties->a_disable_help)
-            help_disabled = true;
-        
         switch (properties->a_action)
         {
             case arg_action_t::HELP:
@@ -361,6 +357,11 @@ namespace blt
                 if (!holds_alternative<int32_t>(data))
                     data = 0;
                 data = get<int32_t>(data) + 1;
+                break;
+            }
+            case arg_action_t::SUBCOMMAND:
+            {
+                help_disabled = true;
                 break;
             }
             case arg_action_t::EXTEND:
@@ -464,7 +465,7 @@ namespace blt
             if (takesArgs(named_arg) && !loaded_args.contains(named_arg->a_dest))
             {
                 printUsage();
-                std::cout << "postional argument '" << named_arg->a_flags.name << "' expected " << named_arg->a_nargs.args << " argument"
+                std::cout << "positional argument '" << named_arg->a_flags.name << "' expected " << named_arg->a_nargs.args << " argument"
                           << (named_arg->a_nargs.args > 1 ? "s!" : "!") << std::endl;
                 std::exit(0);
             }
@@ -485,6 +486,7 @@ namespace blt
             case arg_action_t::COUNT:
             case arg_action_t::HELP:
             case arg_action_t::VERSION:
+            case arg_action_t::SUBCOMMAND:
                 return false;
             case arg_action_t::STORE:
             case arg_action_t::APPEND:

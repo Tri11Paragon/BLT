@@ -34,7 +34,8 @@ namespace blt
         COUNT,
         HELP,
         VERSION,
-        EXTEND
+        EXTEND,
+        SUBCOMMAND
     };
     
     class arg_vector_t
@@ -129,7 +130,6 @@ namespace blt
             std::string a_version{};
             std::string a_metavar{};
             bool a_required = true;
-            bool a_disable_help = false;
     };
     
     class arg_builder
@@ -179,12 +179,6 @@ namespace blt
             inline arg_builder& setDest(const std::string& dest)
             {
                 properties.a_dest = dest;
-                return *this;
-            }
-            
-            inline arg_builder& disableHelp()
-            {
-                properties.a_disable_help = true;
                 return *this;
             }
             
@@ -342,7 +336,7 @@ namespace blt
             
             void handleFlag(arg_tokenizer& tokenizer, const std::string& flag, const arg_properties_t* properties);
             
-            std::string getProgramName() const
+            [[nodiscard]] std::string getProgramName() const
             {
                 return use_full_name ? loaded_args.program_name : filename(loaded_args.program_name);
             }
