@@ -406,9 +406,22 @@ namespace blt
         loaded_args.program_name = tokenizer.get();
         tokenizer.advance();
         
+        if (!help_inclusion.empty())
+        {
+            // advance the tokenizer to post grouped args allowing for flags
+            while (tokenizer.hasCurrent() && tokenizer.get() != help_inclusion)
+                tokenizer.advance();
+            tokenizer.advance();
+        }
+        
         size_t last_positional = 0;
         while (tokenizer.hasCurrent())
         {
+            // if we find an arg which disables help (basically a grouping flag) then we should stop processing args
+            // TODO: rename this to be more descriptive
+            if (help_disabled)
+                break;
+            
             if (tokenizer.isFlag())
                 handleFlagArgument(tokenizer);
             else
