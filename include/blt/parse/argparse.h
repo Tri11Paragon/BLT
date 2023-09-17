@@ -375,18 +375,22 @@ namespace blt
             {
                 if constexpr (std::is_same_v<T, arg_data_vec_t>)
                     return std::get<arg_data_vec_t>(v);
-                else
-                {
-                    auto t = std::get<arg_data_internal_t>(v);
-                    // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
-                    // it is up to the user to deal with the variant if they do not want this behaviour!
-                    if constexpr (std::is_same_v<int32_t, T>)
-                    {
-                        if (std::holds_alternative<std::string>(t))
-                            return std::stoi(std::get<std::string>(t));
-                    }
+                auto t = std::get<arg_data_internal_t>(v);
+                // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
+                // it is up to the user to deal with the variant if they do not want this behaviour!
+                if constexpr (!std::is_arithmetic_v<T>)
                     return std::get<T>(t);
-                }
+                // ugly!
+                if (std::holds_alternative<int32_t>(t))
+                    return static_cast<T>(std::get<int32_t>(t));
+                if (std::holds_alternative<bool>(t))
+                    return static_cast<T>(std::get<bool>(t));
+                auto s = std::get<std::string>(t);
+                if constexpr (std::is_floating_point_v<T>)
+                    return static_cast<T>(std::stod(s));
+                if constexpr (std::is_signed_v<T>)
+                    return static_cast<T>(std::stoll(s));
+                return static_cast<T>(std::stoull(s));
             }
         
         public:
