@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <blt/std/format.h>
 
+#define TIME_FUNCTION blt::system::getCPUThreadTime()
+
 namespace blt::profiling {
     
     // TODO: a better way
@@ -148,7 +150,7 @@ namespace blt::profiling {
     void startInterval(const std::string& profileName, const std::string& intervalName) {
         std::scoped_lock lock(profileLock);
         capture_interval interval{};
-        interval.start = system::getCPUThreadTime();
+        interval.start = TIME_FUNCTION;
         profiles[profileName].intervals[intervalName] = interval;
     }
     
@@ -157,9 +159,10 @@ namespace blt::profiling {
         auto& prof = profiles[profileName];
         auto& ref = prof.intervals[intervalName];
         
-        ref.end = system::getCPUThreadTime();
+        ref.end = TIME_FUNCTION;
         
         auto difference = ref.end - ref.start;
+        
         auto& href = prof.intervals_total[intervalName];
         
         href.total += difference;
@@ -169,7 +172,7 @@ namespace blt::profiling {
     void point(const std::string& profileName, const std::string& pointName) {
         std::scoped_lock lock(profileLock);
         capture_point point{};
-        point.point = system::getCPUThreadTime();
+        point.point = TIME_FUNCTION;
         point.name = pointName;
         profiles[profileName].points.push(point);
     }

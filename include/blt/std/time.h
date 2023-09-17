@@ -43,23 +43,23 @@ namespace blt::system
         return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
     
-    static inline auto getCPUThreadTime()
+    static inline int64_t getCPUThreadTime()
     {
 #ifdef unix
         timespec time{};
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &time);
-        return time.tv_nsec;
+        return time.tv_sec * static_cast<int64_t>(1e9) + time.tv_nsec;
 #else
         return std::clock();
 #endif
     }
     
-    static inline auto getCPUTime()
+    static inline int64_t getCPUTime()
     {
 #ifdef unix
         timespec time{};
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time);
-        return time.tv_nsec;
+        return time.tv_sec * static_cast<int64_t>(1e9) + time.tv_nsec;
 #else
         return std::clock();
 #endif
@@ -70,7 +70,7 @@ namespace blt::system
 #ifdef unix
         timespec res{};
         clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res);
-        return res.tv_nsec;
+        return res.tv_sec * static_cast<int64_t>(1e9) + res.tv_nsec;
 #else
         return CLOCKS_PER_SECOND;
 #endif
