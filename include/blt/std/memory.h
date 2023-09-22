@@ -9,51 +9,72 @@
 
 #include <initializer_list>
 #include <iterator>
+#include <cstring>
+#include <type_traits>
+#include "queue.h"
 
-namespace blt {
+namespace blt
+{
     
     template<typename V>
-    struct ptr_iterator {
+    struct ptr_iterator
+    {
         public:
             using iterator_category = std::random_access_iterator_tag;
-            using difference_type   = std::ptrdiff_t;
-            using value_type        = V;
-            using pointer           = value_type*;
-            using reference         = value_type&;
+            using difference_type = std::ptrdiff_t;
+            using value_type = V;
+            using pointer = value_type*;
+            using reference = value_type&;
             
-            explicit ptr_iterator(V* v): _v(v) {}
+            explicit ptr_iterator(V* v): _v(v)
+            {}
             
-            reference operator*() const { return *_v; }
-            pointer operator->() { return _v; }
-            ptr_iterator& operator++() {
+            reference operator*() const
+            { return *_v; }
+            
+            pointer operator->()
+            { return _v; }
+            
+            ptr_iterator& operator++()
+            {
                 _v++;
                 return *this;
             }
-            ptr_iterator& operator--() {
+            
+            ptr_iterator& operator--()
+            {
                 _v--;
                 return *this;
             }
-            ptr_iterator operator++(int){
+            
+            ptr_iterator operator++(int)
+            {
                 auto tmp = *this;
                 ++(*this);
                 return tmp;
             }
-            ptr_iterator operator--(int){
+            
+            ptr_iterator operator--(int)
+            {
                 auto tmp = *this;
                 --(*this);
                 return tmp;
             }
-            friend bool operator==(const ptr_iterator& a, const ptr_iterator& b) {
+            
+            friend bool operator==(const ptr_iterator& a, const ptr_iterator& b)
+            {
                 return a._v == b._v;
             }
-            friend bool operator!=(const ptr_iterator& a, const ptr_iterator& b) {
+            
+            friend bool operator!=(const ptr_iterator& a, const ptr_iterator& b)
+            {
                 return a._v != b._v;
             }
         
         private:
             V* _v;
     };
-    
+
 /**
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
      * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
@@ -62,18 +83,21 @@ namespace blt {
      * @tparam T type that is stored in buffer eg char
      */
     template<typename T>
-    struct scoped_buffer {
+    struct scoped_buffer
+    {
         private:
             T* _buffer;
             size_t _size;
         public:
-            explicit scoped_buffer(size_t size): _size(size) {
+            explicit scoped_buffer(size_t size): _size(size)
+            {
                 _buffer = new T[size];
             }
             
             scoped_buffer(const scoped_buffer& copy) = delete;
             
-            scoped_buffer(scoped_buffer&& move) noexcept {
+            scoped_buffer(scoped_buffer&& move) noexcept
+            {
                 _buffer = move._buffer;
                 _size = move.size();
                 move._buffer = nullptr;
@@ -81,7 +105,8 @@ namespace blt {
             
             scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
             
-            scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept {
+            scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
+            {
                 _buffer = moveAssignment._buffer;
                 _size = moveAssignment.size();
                 moveAssignment._buffer = nullptr;
@@ -89,64 +114,82 @@ namespace blt {
                 return *this;
             }
             
-            inline T& operator[](unsigned long index) {
+            inline T& operator[](unsigned long index)
+            {
                 return _buffer[index];
             }
             
-            inline const T& operator[](unsigned long index) const {
+            inline const T& operator[](unsigned long index) const
+            {
                 return _buffer[index];
             }
             
-            inline T* operator*(){
+            inline T* operator*()
+            {
                 return _buffer;
             }
             
-            [[nodiscard]] inline size_t size() const {
+            [[nodiscard]] inline size_t size() const
+            {
                 return _size;
             }
             
-            inline T* ptr(){
+            inline T* ptr()
+            {
                 return _buffer;
             }
             
-            ptr_iterator<T> begin(){
+            ptr_iterator<T> begin()
+            {
                 return ptr_iterator{_buffer};
             }
             
-            ptr_iterator<T> end(){
+            ptr_iterator<T> end()
+            {
                 return ptr_iterator{&_buffer[_size]};
             }
             
-            ~scoped_buffer() {
+            ~scoped_buffer()
+            {
                 delete[] _buffer;
             }
     };
     
     template<typename T>
-    struct nullptr_initializer {
+    struct nullptr_initializer
+    {
         private:
             T* m_ptr = nullptr;
         public:
             nullptr_initializer() = default;
-            explicit nullptr_initializer(T* ptr): m_ptr(ptr) {}
-            nullptr_initializer(const nullptr_initializer<T>& ptr): m_ptr(ptr.m_ptr) {}
-            nullptr_initializer(nullptr_initializer<T>&& ptr) noexcept : m_ptr(ptr.m_ptr) {}
             
-            nullptr_initializer<T>& operator=(const nullptr_initializer<T>& ptr){
+            explicit nullptr_initializer(T* ptr): m_ptr(ptr)
+            {}
+            
+            nullptr_initializer(const nullptr_initializer<T>& ptr): m_ptr(ptr.m_ptr)
+            {}
+            
+            nullptr_initializer(nullptr_initializer<T>&& ptr) noexcept: m_ptr(ptr.m_ptr)
+            {}
+            
+            nullptr_initializer<T>& operator=(const nullptr_initializer<T>& ptr)
+            {
                 if (&ptr == this)
                     return *this;
                 this->m_ptr = ptr.m_ptr;
                 return *this;
             }
             
-            nullptr_initializer<T>& operator=(nullptr_initializer<T>&& ptr) noexcept {
+            nullptr_initializer<T>& operator=(nullptr_initializer<T>&& ptr) noexcept
+            {
                 if (&ptr == this)
                     return *this;
                 this->m_ptr = ptr.m_ptr;
                 return *this;
             }
             
-            inline T* operator->(){
+            inline T* operator->()
+            {
                 return m_ptr;
             }
             
@@ -160,42 +203,139 @@ namespace blt {
      * @tparam V associated value
      */
     template<typename K, typename V>
-    class enum_storage {
+    class enum_storage
+    {
         private:
-            V* _values;
-            size_t _size = 0;
+            V* m_values;
+            size_t m_size = 0;
         public:
-            enum_storage(std::initializer_list<std::pair<K, V>> init){
+            enum_storage(std::initializer_list<std::pair<K, V>> init)
+            {
                 for (auto& i : init)
-                    _size = std::max((size_t)i.first, _size);
-                _values = new V[_size];
+                    m_size = std::max((size_t) i.first, m_size);
+                m_values = new V[m_size];
                 for (auto& v : init)
-                    _values[(size_t)v.first] = v.second;
+                    m_values[(size_t) v.first] = v.second;
             }
             
-            inline V& operator[](size_t index){
-                return _values[index];
+            inline V& operator[](size_t index)
+            {
+                return m_values[index];
             }
             
-            inline const V& operator[](size_t index) const {
-                return _values[index];
+            inline const V& operator[](size_t index) const
+            {
+                return m_values[index];
             }
             
-            [[nodiscard]] inline size_t size() const {
-                return _size;
+            [[nodiscard]] inline size_t size() const
+            {
+                return m_size;
             }
             
-            ptr_iterator<V> begin(){
-                return ptr_iterator{_values};
+            ptr_iterator<V> begin()
+            {
+                return ptr_iterator{m_values};
             }
             
-            ptr_iterator<V> end(){
-                return ptr_iterator{&_values[_size]};
+            ptr_iterator<V> end()
+            {
+                return ptr_iterator{&m_values[m_size]};
             }
             
-            ~enum_storage(){
-                delete[] _values;
+            ~enum_storage()
+            {
+                delete[] m_values;
             }
+    };
+    
+    template<typename T>
+    class area_allocator
+    {
+        public:
+            typedef T value_type;
+            typedef T* pointer;
+            typedef const T* const_pointer;
+            typedef void* void_pointer;
+            typedef const void* const_void_pointer;
+        private:
+            struct pointer_view
+            {
+                const_pointer p;
+                size_t n;
+            };
+            
+            void expand()
+            {
+                size_t new_size = m_size * 2;
+                T* data = new T[new_size];
+                if constexpr (std::is_trivially_copyable_v<T>)
+                    std::memcpy(data, m_data, m_size);
+                else if constexpr (std::is_move_assignable_v<T>)
+                {
+                    for (size_t i = 0; i < m_size; i++)
+                        data[i] = std::move(m_data[i]);
+                } else if constexpr (std::is_move_constructible_v<T>)
+                {
+                    // is this bad? probably
+                    for (size_t i = 0; i < m_size; i++)
+                        data[i] = T(std::move(m_data));
+                } else if constexpr (std::is_copy_assignable_v<T>)
+                {
+                    for (size_t i = 0; i < m_size; i++)
+                        data[i] = m_data[i];
+                } else
+                {
+                    static_assert("Unable to use this type with this allocator!");
+                }
+                delete[] m_data;
+                m_data = data;
+                m_size = new_size;
+            }
+            
+            void realign()
+            {
+            
+            }
+        
+        public:
+            area_allocator()
+            {
+                m_data = new T[m_size];
+            }
+            
+            [[nodiscard]] pointer* allocate(size_t n)
+            {
+                if (m_last + n > m_size)
+                    expand();
+                pointer loc = &m_data[m_last];
+                m_last += n;
+                return loc;
+            }
+            
+            void deallocate(pointer* p, size_t n) noexcept
+            {
+                deallocated_blocks.push({p, n});
+                m_deallocated += n;
+                // TODO: magic number
+                if (static_cast<double>(m_deallocated) / static_cast<double>(m_last) > 0.25)
+                    realign();
+            }
+            
+            ~area_allocator()
+            {
+                delete[] m_data;
+            }
+        
+        private:
+            // current size of the data
+            size_t m_size = 1;
+            // last allocated location
+            size_t m_last = 0;
+            // how many values have been deallocated
+            size_t m_deallocated = 0;
+            T* m_data = nullptr;
+            blt::flat_queue<pointer_view> deallocated_blocks;
     };
     
 }
