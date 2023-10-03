@@ -255,6 +255,57 @@ namespace blt
     
     class arg_parse
     {
+        public:
+            
+            template<typename T>
+            static inline bool holds_alternative(const arg_data_t& v)
+            {
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::holds_alternative<T>(v);
+                else
+                    return std::holds_alternative<arg_data_internal_t>(v) && std::holds_alternative<T>(std::get<arg_data_internal_t>(v));
+            }
+            
+            
+            template<typename T>
+            static inline T& get(arg_data_t& v)
+            {
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::get<arg_data_vec_t>(v);
+                else
+                    return std::get<T>(std::get<arg_data_internal_t>(v));
+            }
+            
+            /**
+             * Attempt to cast the variant stored in the arg results to the requested type
+             * if user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
+             * it is up to the user to deal with the variant if they do not want this behaviour!
+             * @tparam T type to convert to
+             * @param v
+             * @return
+             */
+            template<typename T>
+            static inline T get_cast(arg_data_t& v)
+            {
+                if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                    return std::get<arg_data_vec_t>(v);
+                auto t = std::get<arg_data_internal_t>(v);
+                // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
+                // it is up to the user to deal with the variant if they do not want this behaviour!
+                if constexpr (!std::is_arithmetic_v<T>)
+                    return std::get<T>(t);
+                // ugly!
+                if (std::holds_alternative<int32_t>(t))
+                    return static_cast<T>(std::get<int32_t>(t));
+                if (std::holds_alternative<bool>(t))
+                    return static_cast<T>(std::get<bool>(t));
+                auto s = std::get<std::string>(t);
+                if constexpr (std::is_floating_point_v<T>)
+                    return static_cast<T>(std::stod(s));
+                if constexpr (std::is_signed_v<T>)
+                    return static_cast<T>(std::stoll(s));
+                return static_cast<T>(std::stoull(s));
+            }
         private:
             struct
             {
@@ -285,6 +336,12 @@ namespace blt
                     inline arg_data_t& operator[](const std::string& key)
                     {
                         return data[key];
+                    }
+                    
+                    template<typename T>
+                    inline T get(const std::string& key)
+                    {
+                        return blt::arg_parse::get_cast<T>(data[key]);
                     }
                     
                     inline auto begin()
@@ -339,58 +396,6 @@ namespace blt
             [[nodiscard]] std::string getProgramName() const
             {
                 return use_full_name ? loaded_args.program_name : filename(loaded_args.program_name);
-            }
-        
-        public:
-            
-            template<typename T>
-            static inline bool holds_alternative(const arg_data_t& v)
-            {
-                if constexpr (std::is_same_v<T, arg_data_vec_t>)
-                    return std::holds_alternative<T>(v);
-                else
-                    return std::holds_alternative<arg_data_internal_t>(v) && std::holds_alternative<T>(std::get<arg_data_internal_t>(v));
-            }
-            
-            
-            template<typename T>
-            static inline T& get(arg_data_t& v)
-            {
-                if constexpr (std::is_same_v<T, arg_data_vec_t>)
-                    return std::get<arg_data_vec_t>(v);
-                else
-                    return std::get<T>(std::get<arg_data_internal_t>(v));
-            }
-            
-            /**
-             * Attempt to cast the variant stored in the arg results to the requested type
-             * if user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
-             * it is up to the user to deal with the variant if they do not want this behaviour!
-             * @tparam T type to convert to
-             * @param v
-             * @return
-             */
-            template<typename T>
-            static inline T get_cast(arg_data_t& v)
-            {
-                if constexpr (std::is_same_v<T, arg_data_vec_t>)
-                    return std::get<arg_data_vec_t>(v);
-                auto t = std::get<arg_data_internal_t>(v);
-                // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
-                // it is up to the user to deal with the variant if they do not want this behaviour!
-                if constexpr (!std::is_arithmetic_v<T>)
-                    return std::get<T>(t);
-                // ugly!
-                if (std::holds_alternative<int32_t>(t))
-                    return static_cast<T>(std::get<int32_t>(t));
-                if (std::holds_alternative<bool>(t))
-                    return static_cast<T>(std::get<bool>(t));
-                auto s = std::get<std::string>(t);
-                if constexpr (std::is_floating_point_v<T>)
-                    return static_cast<T>(std::stod(s));
-                if constexpr (std::is_signed_v<T>)
-                    return static_cast<T>(std::stoll(s));
-                return static_cast<T>(std::stoull(s));
             }
         
         public:
