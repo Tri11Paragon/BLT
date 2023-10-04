@@ -4,8 +4,204 @@
  * See LICENSE file for license detail
  */
 #include <blt/profiling/profiler_v2.h>
+#include <blt/std/time.h>
+#include <blt/std/system.h>
+#include <blt/std/format.h>
+#include <functional>
 
 namespace blt
 {
 
+#define SORT_INTERVALS_FUNC_MACRO(use_history, TYPE_END, TYPE_START, TYPE_TOTAL)                            \
+    [&use_history](const interval_t* a, const interval_t* b) -> bool {                                      \
+        if (use_history){                                                                                   \
+            auto a_diff = a->TYPE_END - a->TYPE_START;                                                      \
+            auto b_diff = b->TYPE_END - b->TYPE_START;                                                      \
+            return a_diff > b_diff;                                                                         \
+        } else {                                                                                            \
+            return a->TYPE_TOTAL > b->TYPE_TOTAL;                                                           \
+        }                                                                                                   \
+    }
+
+#define INTERVAL_DIFFERENCE_MACRO(printHistory, interval)                                                   \
+    auto wall = printHistory                                                                                \
+                ? (static_cast<double>(interval->wall_total) / static_cast<double>(interval->count))        \
+                : static_cast<double>(interval->wall_end - interval->wall_start);                           \
+                                                                                                            \
+    auto thread = printHistory                                                                              \
+                  ? (static_cast<double>(interval->thread_total) / static_cast<double>(interval->count))    \
+                  : static_cast<double>(interval->thread_end - interval->thread_start);                     \
+                                                                                                            \
+    auto cycles = printHistory                                                                              \
+                  ? (static_cast<double>(interval->cycles_total) / static_cast<double>(interval->count))    \
+                  : static_cast<double>(interval->cycles_end - interval->cycles_start);
+    
+    enum class unit
+    {
+        MS, NS, S
+    };
+    
+    struct unit_container
+    {
+        unit thread;
+        unit wall;
+    };
+    
+    interval_t* createInterval(profile_t& profiler, std::string interval_name)
+    {
+        auto interval = new interval_t(
+                blt::system::getCurrentTimeNanoseconds(), 0, 0,
+                blt::system::getCPUThreadTime(), 0, 0,
+                blt::system::rdtsc(), 0, 0,
+                0, std::move(interval_name));
+        profiler.intervals.push_back(interval);
+        return interval;
+    }
+    
+    void startInterval(interval_t* interval)
+    {
+        interval->wall_start = blt::system::getCurrentTimeNanoseconds();
+        interval->thread_start = blt::system::getCPUThreadTime();
+        interval->cycles_start = blt::system::rdtsc();
+    }
+    
+    void endInterval(interval_t* interval)
+    {
+        interval->cycles_end = blt::system::rdtsc();
+        interval->wall_end = blt::system::getCurrentTimeNanoseconds();
+        interval->thread_end = blt::system::getCPUThreadTime();
+        
+        interval->cycles_total += interval->cycles_end - interval->cycles_start;
+        interval->wall_total += interval->wall_end - interval->wall_start;
+        interval->thread_total += interval->thread_end - interval->thread_start;
+        
+        interval->count++;
+    }
+    
+    void clearProfile(profile_t& profiler)
+    {
+        for (auto* p : profiler.intervals)
+            delete p;
+        for (auto* p : profiler.cycle_intervals)
+            delete p;
+        profiler.intervals.clear();
+        profiler.cycle_intervals.clear();
+    }
+    
+    void writeProfile(std::ifstream&, const profile_t&)
+    {
+        BLT_WARN("Write profile for V2 is currently a TODO");
+    }
+    
+    void sort_intervals(std::vector<interval_t*>& intervals, sort_by sort, bool use_history)
+    {
+        std::function<bool(const interval_t* a, const interval_t* b)> sort_func;
+        switch (sort)
+        {
+            case sort_by::CYCLES:
+                BLT_DEBUG("Cycles");
+                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, cycles_start, cycles_end, cycles_total);
+                break;
+            case sort_by::WALL:
+                BLT_TRACE("WaLL");
+                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, wall_start, wall_end, wall_total);
+                break;
+            case sort_by::THREAD:
+                BLT_INFO("Thread!");
+                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, thread_start, thread_end, thread_total);
+                break;
+        }
+        std::sort(intervals.begin(), intervals.end(), sort_func);
+    }
+    
+    unit_container determine_max_unit(const std::vector<interval_t*>& intervals, bool use_history)
+    {
+        // start at lowest unit
+        unit_container container{unit::NS, unit::NS};
+        // last one will always be the longest, at least according to the sort order
+        // which should at least be close.
+        auto interval = intervals[intervals.size() - 1];
+        INTERVAL_DIFFERENCE_MACRO(use_history, interval);
+        (void)(cycles);
+        // make sure is in range + that we don't convert Seconds back to MS
+        // we want to use the largest unit possible to keep the numbers small
+        // we might run into a case where something took 1000ns but other thing took 100s
+        // which would be hard to deal with either way. So TODO
+        if (wall > 1e5 && wall <= 1e8 && container.wall == unit::NS)
+            container.wall = unit::MS;
+        else if (wall > 1e8)
+            container.wall = unit::S;
+        
+        if (thread > 1e5 && thread <= 1e8 && container.thread == unit::NS)
+            container.thread = unit::MS;
+        else if (thread > 1e8)
+            container.thread = unit::S;
+        return container;
+    }
+    
+    inline void println(const std::vector<std::string>&& lines, logging::log_level level) {
+        for (const auto& line : lines)
+            BLT_LOG_STREAM(level) << line << "\n";
+    }
+    
+    void printProfile(profile_t& profiler, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
+    {
+        bool printHistory = flags & PRINT_HISTORY;
+        bool printCycles = flags & PRINT_CYCLES;
+        bool printThread = flags & PRINT_THREAD;
+        bool printWall = flags & PRINT_WALL;
+        
+        sort_intervals(profiler.intervals, sort, printHistory);
+        
+        auto units = determine_max_unit(profiler.intervals, printHistory);
+        std::string thread_unit_string = units.thread == unit::MS ? "ms" : units.thread == unit::NS ? "ns" : "s";
+        std::string wall_unit_string = units.wall == unit::MS ? "ms" : units.wall == unit::NS ? "ns" : "s";
+        auto thread_unit_divide = units.thread == unit::MS ? 1e6 : units.thread == unit::NS ? 1 : 1e9;
+        auto wall_unit_divide = units.wall == unit::MS ? 1e6 : units.wall == unit::NS ? 1 : 1e9;
+        
+        string::TableFormatter formatter{profiler.name};
+        formatter.addColumn({"Order"});
+        if (printHistory)
+            formatter.addColumn({"Count"});
+        formatter.addColumn({"Interval"});
+        if (printCycles)
+            formatter.addColumn({"Cycles"});
+        if (printThread)
+            formatter.addColumn({"CPU Time (" + thread_unit_string += ")"});
+        if (printWall)
+            formatter.addColumn({"Wall Time (" + wall_unit_string += ")"});
+        
+        for (size_t i = 0; i < profiler.intervals.size(); i++)
+        {
+            blt::string::TableRow row;
+            auto interval = profiler.intervals[i];
+            
+            if (interval->count == 0)
+                continue;
+            
+            INTERVAL_DIFFERENCE_MACRO(printHistory, interval);
+            
+            row.rowValues.push_back(std::to_string(i + 1));
+            if (printHistory)
+                row.rowValues.push_back(std::to_string(interval->count));
+            row.rowValues.push_back(interval->interval_name);
+            if (printCycles)
+                row.rowValues.push_back(std::to_string(cycles));
+            if (printThread)
+                row.rowValues.push_back(std::to_string(thread / static_cast<double>(thread_unit_divide)));
+            if (printWall)
+                row.rowValues.push_back(std::to_string(wall / static_cast<double>(wall_unit_divide)));
+            formatter.addRow(row);
+        }
+        
+        println(formatter.createTable(true, true), log_level);
+    }
+    
+    profile_t::~profile_t()
+    {
+        for (auto* p : intervals)
+            delete p;
+        for (auto* p : cycle_intervals)
+            delete p;
+    }
 }
