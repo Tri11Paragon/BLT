@@ -105,15 +105,12 @@ namespace blt
         switch (sort)
         {
             case sort_by::CYCLES:
-                BLT_DEBUG("Cycles");
                 sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, cycles_start, cycles_end, cycles_total);
                 break;
             case sort_by::WALL:
-                BLT_TRACE("WaLL");
                 sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, wall_start, wall_end, wall_total);
                 break;
             case sort_by::THREAD:
-                BLT_INFO("Thread!");
                 sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, thread_start, thread_end, thread_total);
                 break;
         }

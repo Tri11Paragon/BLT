@@ -137,4 +137,31 @@ namespace blt
     
 }
 
+#ifdef BLT_DISABLE_PROFILING
+    #define BLT_START_INTERVAL(profileName, intervalName)
+    #define BLT_END_INTERVAL(profileName, intervalName)
+    #define BLT_PRINT_PROFILE(profileName, ...)
+    #define BLT_WRITE_PROFILE(stream, profileName)
+#else
+/**
+ * Starts an interval to be measured, when ended the row will be added to the specified profile.
+ */
+    #define BLT_START_INTERVAL(profileName, intervalName) blt::_internal::startInterval(profileName, intervalName)
+/**
+ * Ends an interval, adds the interval to the profile.
+ */
+    #define BLT_END_INTERVAL(profileName, intervalName) blt::_internal::endInterval(profileName, intervalName)
+/**
+ * Prints the profile order from least time to most time.
+ * @param profileName the profile to print
+ * @param loggingLevel blt::logging::LOG_LEVEL to log with (default: BLT_NONE)
+ * @param averageHistory use the historical collection of interval rows in an average or just the latest? (default: false)
+ */
+    #define BLT_PRINT_PROFILE(profileName, ...) blt::_internal::printProfile(profileName, ##__VA_ARGS__)
+/**
+ * writes the profile to an output stream, ordered from least time to most time, in CSV format.
+ */
+    #define BLT_WRITE_PROFILE(stream, profileName) blt::_internal::writeProfile(stream, profileName)
+#endif
+
 #endif //BLT_PROFILER_V2_H
