@@ -202,10 +202,7 @@ namespace blt
     
     profile_t::~profile_t()
     {
-        for (auto* p : intervals)
-            delete p;
-        for (auto* p : cycle_intervals)
-            delete p;
+        blt::clearProfile(*this);
     }
     
     /**
@@ -238,6 +235,7 @@ namespace blt
         profile_t profile{profile_name};
         for (const auto& i : pref)
             profile.intervals.push_back(i.second);
+        blt::writeProfile(stream, profile);
         profiles.erase(profile_name);
     }
     
