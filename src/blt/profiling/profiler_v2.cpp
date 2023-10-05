@@ -127,14 +127,14 @@ namespace blt
         // we want to use the largest unit possible to keep the numbers small
         // we might run into a case where something took 1000ns but other thing took 100s
         // which would be hard to deal with either way. So TODO
-        if (wall > 1e5 && wall <= 1e8 && container.wall == unit::NS)
+        if (wall > 1e6 && wall < 1e9 && container.wall == unit::NS)
             container.wall = unit::MS;
-        else if (wall > 1e8)
+        else if (wall > 1e9)
             container.wall = unit::S;
         
-        if (thread > 1e5 && thread <= 1e8 && container.thread == unit::NS)
+        if (thread > 1e6 && thread < 1e9 && container.thread == unit::NS)
             container.thread = unit::MS;
-        else if (thread > 1e8)
+        else if (thread > 1e9)
             container.thread = unit::S;
         return container;
     }

@@ -80,6 +80,7 @@ namespace blt
     };
     
     interval_t* createInterval(profile_t& profiler, std::string interval_name);
+    
     void startInterval(interval_t* interval);
     
     void endInterval(interval_t* interval);
@@ -110,6 +111,11 @@ namespace blt
             auto_interval(std::string interval_name, profile_t& profiler)
             {
                 iv = blt::createInterval(profiler, std::move(interval_name));
+                blt::startInterval(iv);
+            }
+            
+            explicit auto_interval(interval_t* iv): iv(iv)
+            {
                 blt::startInterval(iv);
             }
             
