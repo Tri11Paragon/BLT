@@ -103,9 +103,10 @@ namespace blt
         
         void endInterval(const std::string& profile_name, const std::string& interval_name);
         
-        void printProfile(const std::string& profile_name);
+        void printProfile(const std::string& profile_name, std::uint32_t flags = PRINT_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
+                          sort_by sort = sort_by::CYCLES, blt::logging::log_level log_level = blt::logging::log_level::NONE);
         
-        void writeProfile(const std::string& profile_name);
+        void writeProfile(std::ifstream& stream, const std::string& profile_name);
     }
     
     class auto_interval

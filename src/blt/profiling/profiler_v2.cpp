@@ -212,28 +212,45 @@ namespace blt
     }
     
     /**
-     * profiler V1 backwards compat
+     * profiler V1 partial backwards compat
+     * ----------------------------
      */
      
-    
+    HASHMAP<std::string, HASHMAP<std::string, interval_t*>> profiles;
     
     void _internal::startInterval(const std::string& profile_name, const std::string& interval_name)
     {
-    
+        auto& profile = profiles[profile_name];
+        if (!profile.contains(interval_name))
+        {
+            auto interval = new interval_t();
+            interval->interval_name = interval_name;
+            profile[interval_name] = interval;
+        }
+        blt::startInterval(profile[interval_name]);
     }
     
     void _internal::endInterval(const std::string& profile_name, const std::string& interval_name)
     {
-    
+        blt::endInterval(profiles[profile_name].at(interval_name));
     }
     
-    void _internal::printProfile(const std::string& profile_name)
+    void _internal::writeProfile(std::ifstream& stream, const std::string& profile_name)
     {
-    
+        auto& pref = profiles[profile_name];
+        profile_t profile{profile_name};
+        for (const auto& i : pref)
+            profile.intervals.push_back(i.second);
+        profiles.erase(profile_name);
     }
     
-    void _internal::writeProfile(const std::string& profile_name)
+    void _internal::printProfile(const std::string& profile_name, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
     {
-    
+        auto& pref = profiles[profile_name];
+        profile_t profile{profile_name};
+        for (const auto& i : pref)
+            profile.intervals.push_back(i.second);
+        blt::printProfile(profile, flags, sort, log_level);
+        profiles.erase(profile_name);
     }
 }
