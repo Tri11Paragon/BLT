@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <blt/std/hashmap.h>
 #include <blt/std/logging.h>
 
 namespace blt
@@ -82,6 +81,12 @@ namespace blt
     interval_t* createInterval(profile_t& profiler, std::string interval_name);
     
     void startInterval(interval_t* interval);
+    
+    inline interval_t* startInterval(profile_t& profiler, std::string interval_name){
+        auto* p = createInterval(profiler, std::move(interval_name));
+        startInterval(p);
+        return p;
+    }
     
     void endInterval(interval_t* interval);
     

@@ -88,8 +88,8 @@ namespace blt::profiling {
     #define BLT_START_INTERVAL(profileName, intervalName)
     #define BLT_END_INTERVAL(profileName, intervalName)
     #define BLT_POINT(profileName, pointName)
-    #define BLT_PRINT_ORDERED(profileName, ...)
-    #define BLT_WRITE_ORDERED(profileName, ...)
+    #define BLT_PRINT_PROFILE(profileName, ...)
+    #define BLT_WRITE_PROFILE(stream, profileName)
 #else
 /**
  * Starts an interval to be measured, when ended the row will be added to the specified profile.

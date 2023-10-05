@@ -8,10 +8,16 @@
 #include <blt/std/system.h>
 #include <blt/std/format.h>
 #include <functional>
+#include <blt/std/hashmap.h>
 
 namespace blt
 {
 
+    /**
+     * General profiler functions
+     * --------------------------
+     */
+    
 #define SORT_INTERVALS_FUNC_MACRO(use_history, TYPE_END, TYPE_START, TYPE_TOTAL)                            \
     [&use_history](const interval_t* a, const interval_t* b) -> bool {                                      \
         if (use_history){                                                                                   \
@@ -203,5 +209,31 @@ namespace blt
             delete p;
         for (auto* p : cycle_intervals)
             delete p;
+    }
+    
+    /**
+     * profiler V1 backwards compat
+     */
+     
+    
+    
+    void _internal::startInterval(const std::string& profile_name, const std::string& interval_name)
+    {
+    
+    }
+    
+    void _internal::endInterval(const std::string& profile_name, const std::string& interval_name)
+    {
+    
+    }
+    
+    void _internal::printProfile(const std::string& profile_name)
+    {
+    
+    }
+    
+    void _internal::writeProfile(const std::string& profile_name)
+    {
+    
     }
 }
