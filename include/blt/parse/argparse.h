@@ -341,7 +341,10 @@ namespace blt
                     template<typename T>
                     inline T get(const std::string& key)
                     {
-                        return blt::arg_parse::get_cast<T>(data[key]);
+                        if constexpr (std::is_same_v<T, std::string>)
+                            return blt::arg_parse::get<T>(data[key]);
+                        else
+                            return blt::arg_parse::get_cast<T>(data[key]);
                     }
                     
                     inline auto begin()
