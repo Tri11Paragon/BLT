@@ -91,7 +91,7 @@ namespace blt::string
     
     static inline bool contains(const std::string& string, const char search)
     {
-        std::ranges::any_of(string, [search](const char c) -> bool {
+        return std::ranges::any_of(string, [search](const char c) -> bool {
             return c == search;
         });
     }
