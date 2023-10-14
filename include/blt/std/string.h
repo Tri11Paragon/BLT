@@ -241,7 +241,7 @@ namespace blt::string
         return s;
     }
     
-    static inline bool isNumeric(const std::string& s)
+    static inline bool is_numeric(const std::string& s)
     {
         return std::ranges::all_of(s, [](char c) -> bool {
             return std::isdigit(c);
