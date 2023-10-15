@@ -170,6 +170,20 @@ namespace blt::string
         return tokens;
     }
     
+    static inline std::vector<std::string> split(std::string s, char delim)
+    {
+        size_t pos = 0;
+        std::vector<std::string> tokens;
+        while ((pos = s.find(delim)) != std::string::npos)
+        {
+            auto token = s.substr(0, pos);
+            tokens.push_back(token);
+            s.erase(0, pos + 1);
+        }
+        tokens.push_back(s);
+        return tokens;
+    }
+    
     // https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
     static inline bool replace(std::string& str, const std::string& from, const std::string& to)
     {
