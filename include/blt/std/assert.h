@@ -19,7 +19,12 @@ namespace blt
 // prints error with stack trace if assertion fails. Does not stop execution.
 #define blt_assert(expr) do {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, __FILE__, __LINE__) } while (0)
 // prints error with stack trace then exits with failure.
-#define BLT_ASSERT(expr) do {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, __FILE__, __LINE__); std::exit(EXIT_FAILURE); } while (0)
+#define BLT_ASSERT(expr) do {                                   \
+        if (!static_cast<bool>(expr)) {                          \
+            blt::b_assert_failed(#expr, __FILE__, __LINE__);    \
+            std::exit(EXIT_FAILURE);                            \
+        }                                                       \
+    } while (0)
 // prints as error but does not throw the exception.
 #define blt_throw(throwable) do {blt::b_throw(throwable.what(), __FILE__, __LINE__);} while (0)
 // prints as error with stack trace and throws the exception.
