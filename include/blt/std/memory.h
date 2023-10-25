@@ -87,6 +87,12 @@ namespace blt
             
             return 0;
         }
+        
+        template<bool little_endian = false, typename BYTE_TYPE, typename T>
+        inline static int fromBytes(const BYTE_TYPE* in, T* out)
+        {
+            return fromBytes(in, *out);
+        }
     }
     
     template<typename V>
