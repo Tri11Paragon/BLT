@@ -14,6 +14,10 @@
 #include <vector>
 #include <cctype>
 
+#if __cplusplus >= 202002L
+#define BLT_CPP20_CONSTEXPR constexpr
+#endif
+
 namespace blt::string
 {
     
@@ -60,7 +64,7 @@ namespace blt::string
             }
     };
     
-    static inline bool starts_with(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool starts_with(const std::string& string, const std::string& search)
     {
         if (search.length() > string.length())
             return false;
@@ -74,7 +78,7 @@ namespace blt::string
         return true;
     }
     
-    static inline bool ends_with(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool ends_with(const std::string& string, const std::string& search)
     {
         if (search.length() > string.length())
             return false;
@@ -89,14 +93,14 @@ namespace blt::string
         return true;
     }
     
-    static inline bool contains(const std::string& string, const char search)
+    static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const char search)
     {
         return std::ranges::any_of(string, [search](const char c) -> bool {
             return c == search;
         });
     }
     
-    static inline bool contains(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const std::string& search)
     {
         if (search.length() > string.length())
             return false;
@@ -127,15 +131,15 @@ namespace blt::string
      * @param s string to lower case
      * @return a string copy that is all lower case
      */
-    static inline std::string toLowerCase(const std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string toLowerCase(const std::string& s)
     {
-        std::stringstream str;
+        std::string str;
         std::for_each(
                 s.begin(), s.end(), [&str](unsigned char ch) {
-                    str << (char) std::tolower(ch);
+                    str += (char) std::tolower(ch);
                 }
         );
-        return str.str();
+        return str;
     }
     
     /**
@@ -143,20 +147,20 @@ namespace blt::string
      * @param s string to upper case
      * @return a string copy that is all upper case
      */
-    static inline std::string toUpperCase(const std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string toUpperCase(const std::string& s)
     {
-        std::stringstream str;
+        std::string str;
         std::for_each(
                 s.begin(), s.end(), [&str](unsigned char ch) {
-                    str << (char) std::toupper(ch);
+                    str += (char) std::toupper(ch);
                 }
         );
-        return str.str();
+        return str;
     }
     
     // taken from https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
     // extended to return a vector
-    static inline std::vector<std::string> split(std::string s, const std::string& delim)
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, const std::string& delim)
     {
         size_t pos = 0;
         std::vector<std::string> tokens;
@@ -170,7 +174,7 @@ namespace blt::string
         return tokens;
     }
     
-    static inline std::vector<std::string> split(std::string s, char delim)
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, char delim)
     {
         size_t pos = 0;
         std::vector<std::string> tokens;
@@ -185,7 +189,7 @@ namespace blt::string
     }
     
     // https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
-    static inline bool replace(std::string& str, const std::string& from, const std::string& to)
+    static inline BLT_CPP20_CONSTEXPR bool replace(std::string& str, const std::string& from, const std::string& to)
     {
         size_t start_pos = str.find(from);
         if (start_pos == std::string::npos)
@@ -194,7 +198,7 @@ namespace blt::string
         return true;
     }
     
-    static inline void replaceAll(std::string& str, const std::string& from, const std::string& to)
+    static inline BLT_CPP20_CONSTEXPR void replaceAll(std::string& str, const std::string& from, const std::string& to)
     {
         if (from.empty())
             return;
@@ -210,7 +214,7 @@ namespace blt::string
     // taken from https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
     // would've preferred to use boost lib but instructions said to avoid external libs
     // trim from start (in place)
-    static inline std::string& ltrim(std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string& ltrim(std::string& s)
     {
         s.erase(
                 s.begin(), std::find_if(
@@ -222,7 +226,7 @@ namespace blt::string
     }
     
     // trim from end (in place)
-    static inline std::string& rtrim(std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string& rtrim(std::string& s)
     {
         s.erase(
                 std::find_if(
@@ -234,7 +238,7 @@ namespace blt::string
     }
     
     // trim from both ends (in place)
-    static inline std::string& trim(std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string& trim(std::string& s)
     {
         ltrim(s);
         rtrim(s);
@@ -242,27 +246,27 @@ namespace blt::string
     }
     
     // trim from start (copying)
-    static inline std::string ltrim_copy(std::string s)
+    static inline BLT_CPP20_CONSTEXPR std::string ltrim_copy(std::string s)
     {
         ltrim(s);
         return s;
     }
     
     // trim from end (copying)
-    static inline std::string rtrim_copy(std::string s)
+    static inline BLT_CPP20_CONSTEXPR std::string rtrim_copy(std::string s)
     {
         rtrim(s);
         return s;
     }
     
     // trim from both ends (copying)
-    static inline std::string trim_copy(std::string s)
+    static inline BLT_CPP20_CONSTEXPR std::string trim_copy(std::string s)
     {
         trim(s);
         return s;
     }
     
-    static inline bool is_numeric(const std::string& s)
+    static inline BLT_CPP20_CONSTEXPR bool is_numeric(const std::string& s)
     {
         return std::ranges::all_of(s, [](char c) -> bool {
             return std::isdigit(c);
