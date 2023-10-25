@@ -218,6 +218,11 @@ namespace blt
                 return _buffer;
             }
             
+            inline T* ptr() const
+            {
+                return _buffer;
+            }
+            
             ptr_iterator<T> begin()
             {
                 return ptr_iterator{_buffer};
