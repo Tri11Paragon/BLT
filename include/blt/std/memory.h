@@ -223,17 +223,17 @@ namespace blt
                 return _buffer;
             }
             
-            ptr_iterator<T> begin()
-            {
-                return ptr_iterator{_buffer};
-            }
-            
             inline T* data() const
             {
                 return _buffer;
             }
             
             inline T* data()
+            {
+                return ptr_iterator{_buffer};
+            }
+            
+            ptr_iterator<T> begin()
             {
                 return ptr_iterator{_buffer};
             }
