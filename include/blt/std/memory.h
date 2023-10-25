@@ -228,6 +228,16 @@ namespace blt
                 return ptr_iterator{_buffer};
             }
             
+            inline T* data() const
+            {
+                return _buffer;
+            }
+            
+            ptr_iterator<T> data()
+            {
+                return ptr_iterator{_buffer};
+            }
+            
             ptr_iterator<T> end()
             {
                 return ptr_iterator{&_buffer[_size]};
