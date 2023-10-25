@@ -10,11 +10,84 @@
 #include <initializer_list>
 #include <iterator>
 #include <cstring>
-#include <type_traits>
 #include "queue.h"
+#include <cstdint>
+#include <bit>
+#include <type_traits>
+#include <algorithm>
+#include <utility>
+#include <cstring>
+#include <array>
+
+#if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
+    
+    #include <byteswap.h>
+    
+    #define SWAP16(val) bswap_16(val)
+    #define SWAP32(val) bswap_32(val)
+    #define SWAP64(val) bswap_64(val)
+    #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
+                                         (std::endian::native == std::endian::big && little_endian)
+#elif defined(_MSC_VER)
+    #include <intrin.h>
+    #define SWAP16(val) _byteswap_ushort(val)
+    #define SWAP32(val) _byteswap_ulong(val)
+    #define SWAP64(val) _byteswap_uint64(val)
+    #define ENDIAN_LOOKUP(little_endian) !little_endian
+#endif
 
 namespace blt
 {
+    
+    namespace mem
+    {
+        // Used to grab the byte-data of any T element. Defaults to Big Endian, however can be configured to use little endian
+        template<bool little_endian = false, typename BYTE_TYPE, typename T>
+        inline static int toBytes(const T& in, BYTE_TYPE* out)
+        {
+            if constexpr (!(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>))
+                static_assert("Must provide a signed/unsigned int8 type");
+            std::memcpy(out, (void*) &in, sizeof(T));
+            
+            if constexpr (ENDIAN_LOOKUP(little_endian))
+            {
+                // TODO: this but better.
+                for (size_t i = 0; i < sizeof(T) / 2; i++)
+                    std::swap(out[i], out[sizeof(T) - 1 - i]);
+            }
+            
+            return 0;
+        }
+        
+        // Used to cast the binary data of any T object, into a T object. Assumes data is in big ending (configurable)
+        template<bool little_endian = false, typename BYTE_TYPE, typename T>
+        inline static int fromBytes(const BYTE_TYPE* in, T& out)
+        {
+            if constexpr (!(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>))
+                static_assert("Must provide a signed/unsigned int8 type");
+            
+            std::array<BYTE_TYPE, sizeof(T)> data;
+            std::memcpy(data.data(), in, sizeof(T));
+            
+            if constexpr (ENDIAN_LOOKUP(little_endian))
+            {
+                // if we need to swap find the best way to do so
+                if constexpr (std::is_same_v<T, int16_t> || std::is_same_v<T, uint16_t>)
+                    out = SWAP16(*reinterpret_cast<T*>(data.data()));
+                else if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t>)
+                    out = SWAP32(*reinterpret_cast<T*>(data.data()));
+                else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>)
+                    out = SWAP64(*reinterpret_cast<T*>(data.data()));
+                else
+                {
+                    std::reverse(data.begin(), data.end());
+                    out = *reinterpret_cast<T*>(data.data());
+                }
+            }
+            
+            return 0;
+        }
+    }
     
     template<typename V>
     struct ptr_iterator

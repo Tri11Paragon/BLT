@@ -12,10 +12,12 @@
 #include <cstring>
 #include <type_traits>
 #include <unordered_map>
+#include <algorithm>
 
 #include "blt/std/format.h"
 #include "blt/std/filesystem.h"
 #include "blt/std/logging.h"
+#include "blt/std/memory.h"
 
 #include <blt/std/hashmap.h>
 
@@ -25,36 +27,10 @@ namespace blt::nbt {
     
     std::string readUTF8String(blt::fs::block_reader& stream);
     
-    // Used to grab the byte-data of any T element. Defaults to Big Endian, however can be configured to use little endian
-    template <typename T>
-    inline static int toBytes(const T& in, char* out) {
-        std::memcpy(out, (void*) &in, sizeof(T));
-        
-        if constexpr (std::endian::native == std::endian::little) {
-            for (size_t i = 0; i < sizeof(T) / 2; i++)
-                std::swap(out[i], out[sizeof(T) - 1 - i]);
-        }
-        
-        return 0;
-    }
-    
-    // Used to cast the binary data of any T object, into a T object.
-    template <typename T>
-    inline static int fromBytes(const char* in, T* out) {
-        memcpy(out, in, sizeof(T));
-        
-        if constexpr (std::endian::native == std::endian::little) {
-            for (size_t i = 0; i < sizeof(T) / 2; i++)
-                std::swap(((char*) (out))[i], ((char*) (out))[sizeof(T) - 1 - i]);
-        }
-        
-        return 0;
-    }
-    
     template<typename T>
     inline static void writeData(blt::fs::block_writer& out, const T& d){
         char data[sizeof(T)];
-        toBytes(d, data);
+        mem::toBytes(d, data);
         out.write(data, sizeof(T));
     }
     
@@ -62,7 +38,7 @@ namespace blt::nbt {
     inline static void readData(blt::fs::block_reader& in, T& d) {
         char data[sizeof(T)];
         in.read(data, sizeof(T));
-        fromBytes(data, &d);
+        mem::fromBytes(data, &d);
     }
     
     enum class nbt_tag : char {
