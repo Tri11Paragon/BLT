@@ -233,7 +233,7 @@ namespace blt
                 return _buffer;
             }
             
-            ptr_iterator<T> data()
+            inline T* data()
             {
                 return ptr_iterator{_buffer};
             }
