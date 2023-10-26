@@ -12,12 +12,15 @@
 #include <cstring>
 #include "queue.h"
 #include <cstdint>
-#include <bit>
 #include <type_traits>
 #include <algorithm>
 #include <utility>
 #include <cstring>
 #include <array>
+
+#if __cplusplus >= 202002L
+    #include <bit>
+#endif
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
@@ -26,8 +29,12 @@
     #define SWAP16(val) bswap_16(val)
     #define SWAP32(val) bswap_32(val)
     #define SWAP64(val) bswap_64(val)
+#if __cplusplus >= 202002L
     #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                          (std::endian::native == std::endian::big && little_endian)
+#else
+    #define ENDIAN_LOOKUP(little_endian)
+#endif
 #elif defined(_MSC_VER)
     #include <intrin.h>
     #define SWAP16(val) _byteswap_ushort(val)
