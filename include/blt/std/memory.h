@@ -33,7 +33,7 @@
     #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                          (std::endian::native == std::endian::big && little_endian)
 #else
-    #define ENDIAN_LOOKUP(little_endian)
+    #define ENDIAN_LOOKUP(little_endian) !little_endian
 #endif
 #elif defined(_MSC_VER)
     #include <intrin.h>
