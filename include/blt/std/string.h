@@ -97,9 +97,17 @@ namespace blt::string
     
     static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const char search)
     {
+#if __cplusplus >= 202002L
         return std::ranges::any_of(string, [search](const char c) -> bool {
             return c == search;
         });
+#else
+        for (const char c : string){
+            if (c == search)
+                return true;
+        }
+        return false;
+#endif
     }
     
     static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const std::string& search)
@@ -270,9 +278,17 @@ namespace blt::string
     
     static inline BLT_CPP20_CONSTEXPR bool is_numeric(const std::string& s)
     {
+#if __cplusplus >= 202002L
         return std::ranges::all_of(s, [](char c) -> bool {
             return std::isdigit(c);
         });
+#else
+        for (const char c : s){
+            if (!std::isdigit(c))
+                return false;
+        }
+        return true;
+#endif
     }
     
 }
