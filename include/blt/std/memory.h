@@ -18,10 +18,6 @@
 #include <cstring>
 #include <array>
 
-#if __cplusplus >= 202002L
-    #include <bit>
-#endif
-
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
     #include <byteswap.h>
@@ -30,6 +26,7 @@
     #define SWAP32(val) bswap_32(val)
     #define SWAP64(val) bswap_64(val)
 #if __cplusplus >= 202002L
+    #include <bit>
     #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                          (std::endian::native == std::endian::big && little_endian)
 #else
