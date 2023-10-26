@@ -15,7 +15,9 @@
 #include <cctype>
 
 #if __cplusplus >= 202002L
-#define BLT_CPP20_CONSTEXPR constexpr
+    #define BLT_CPP20_CONSTEXPR constexpr
+#else
+    #define BLT_CPP20_CONSTEXPR
 #endif
 
 namespace blt::string
