@@ -13,12 +13,7 @@
 #include <algorithm>
 #include <vector>
 #include <cctype>
-
-#if __cplusplus >= 202002L
-    #define BLT_CPP20_CONSTEXPR constexpr
-#else
-    #define BLT_CPP20_CONSTEXPR
-#endif
+#include <blt/compatibility.h>
 
 namespace blt::string
 {

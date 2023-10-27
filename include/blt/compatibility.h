@@ -21,9 +21,11 @@
 
 #if __cplusplus >= 202002L
     #define BLT_CONTAINS(container, value) container.contains(value)
+    #define BLT_CPP20_CONSTEXPR constexpr
 #else
     #include <algorithm>
     #define BLT_CONTAINS(container, value) std::find(container.begin(), container.end(), value) != container.end()
+    #define BLT_CPP20_CONSTEXPR
 #endif
 
 #define INCLUDE_FS \
