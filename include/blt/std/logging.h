@@ -168,7 +168,7 @@ namespace blt::logging {
     #elif defined(CXX11_EXP_FILESYSTEM) || defined (CXX11_EXP_FILESYSTEM_LIBFS)
         #include <experimental/filesystem>
     #else
-        #error Filesystem ops not supported!
+        #include <filesystem>
     #endif
     #include <ios>
     #include <fstream>
