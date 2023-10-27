@@ -26,7 +26,9 @@
     #define SWAP32(val) bswap_32(val)
     #define SWAP64(val) bswap_64(val)
 #if __cplusplus >= 202002L
+    
     #include <bit>
+    
     #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                          (std::endian::native == std::endian::big && little_endian)
 #else
@@ -160,7 +162,7 @@ namespace blt
 
 /**
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
-     * This is a simple buffer meant to be used only inside of a function and not moved around, with a few minor exceptions.
+     * This is a simple buffer meant to be used only inside of a function and not copied around.
      * The internal buffer is allocated on the heap.
      * The operator * has been overloaded to return the internal buffer.
      * @tparam T type that is stored in buffer eg char
@@ -172,6 +174,9 @@ namespace blt
             T* _buffer;
             size_t _size;
         public:
+            scoped_buffer(): _size(0), _buffer(nullptr)
+            {}
+            
             explicit scoped_buffer(size_t size): _size(size)
             {
                 _buffer = new T[size];
