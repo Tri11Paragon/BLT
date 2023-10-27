@@ -227,12 +227,12 @@ namespace blt
                 return _buffer;
             }
             
-            inline T*& ptr() const
+            inline const T* const& ptr() const
             {
                 return _buffer;
             }
             
-            inline T*& data() const
+            inline const T* const& data() const
             {
                 return _buffer;
             }
