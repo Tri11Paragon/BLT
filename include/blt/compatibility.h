@@ -26,4 +26,13 @@
     #define BLT_CONTAINS(container, value) std::find(container.begin(), container.end(), value) != container.end()
 #endif
 
+#define INCLUDE_FS \
+    #if defined(CXX17_FILESYSTEM) || defined (CXX17_FILESYSTEM_LIBFS) \
+        #include <filesystem>\
+    #elif defined(CXX11_EXP_FILESYSTEM) || defined (CXX11_EXP_FILESYSTEM_LIBFS)\
+        #include <experimental/filesystem>\
+    #else\
+            #error Filesystem ops not supported!\
+    #endif
+
 #endif //INSANE_DNS_COMPATIBILITY_H
