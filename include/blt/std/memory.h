@@ -222,22 +222,22 @@ namespace blt
                 return _size;
             }
             
-            inline T* ptr()
+            inline T*& ptr()
             {
                 return _buffer;
             }
             
-            inline T* ptr() const
+            inline T*& ptr() const
             {
                 return _buffer;
             }
             
-            inline T* data() const
+            inline T*& data() const
             {
                 return _buffer;
             }
             
-            inline T* data()
+            inline T*& data()
             {
                 return _buffer;
             }
