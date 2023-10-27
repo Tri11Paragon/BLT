@@ -234,7 +234,7 @@ namespace blt
             
             inline T* data()
             {
-                return ptr_iterator{_buffer};
+                return _buffer;
             }
             
             ptr_iterator<T> begin()
