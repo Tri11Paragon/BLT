@@ -174,7 +174,7 @@ namespace blt
             T* _buffer;
             size_t _size;
         public:
-            scoped_buffer(): _size(0), _buffer(nullptr)
+            scoped_buffer(): _buffer(nullptr), _size(0)
             {}
             
             explicit scoped_buffer(size_t size): _size(size)
