@@ -186,6 +186,7 @@ namespace blt
             
             scoped_buffer(scoped_buffer&& move) noexcept
             {
+                delete[] _buffer;
                 _buffer = move._buffer;
                 _size = move.size();
                 move._buffer = nullptr;
@@ -195,6 +196,7 @@ namespace blt
             
             scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
             {
+                delete[] _buffer;
                 _buffer = moveAssignment._buffer;
                 _size = moveAssignment.size();
                 moveAssignment._buffer = nullptr;
