@@ -13,6 +13,7 @@
 #include <initializer_list>
 #include <optional>
 #include <blt/std/hashmap.h>
+#include <blt/std/string.h>
 #include <variant>
 #include <algorithm>
 #include <type_traits>
@@ -118,7 +119,6 @@ namespace blt
     
     struct arg_properties_t
     {
-        private:
         public:
             arg_vector_t a_flags;
             arg_action_t a_action = arg_action_t::STORE;
@@ -130,6 +130,11 @@ namespace blt
             std::string a_version{};
             std::string a_metavar{};
             bool a_required = true;
+            
+            arg_properties_t() = delete;
+            
+            explicit arg_properties_t(arg_vector_t flags): a_flags(std::move(flags))
+            {}
     };
     
     class arg_builder
@@ -237,13 +242,13 @@ namespace blt
             // returns true if the current arg is a flag
             inline bool isFlag()
             {
-                return args[currentIndex].starts_with('-');
+                return blt::string::starts_with(args[currentIndex], '-');
             }
             
             // returns true if we have next and the next arg is a flag
             inline bool isNextFlag()
             {
-                return hasNext() && args[currentIndex + 1].starts_with('-');
+                return hasNext() && blt::string::starts_with(args[currentIndex + 1], '-');
             }
             
             // advances to the next flag
@@ -306,6 +311,7 @@ namespace blt
                     return static_cast<T>(std::stoll(s));
                 return static_cast<T>(std::stoull(s));
             }
+        
         private:
             struct
             {
@@ -359,9 +365,9 @@ namespace blt
                     
                     inline bool contains(const std::string& key)
                     {
-                        if (key.starts_with("--"))
+                        if (blt::string::starts_with(key, "--"))
                             return data.find(key.substr(2)) != data.end();
-                        if (key.starts_with('-'))
+                        if (blt::string::starts_with(key, '-'))
                             return data.find(key.substr(1)) != data.end();
                         return data.find(key) != data.end();
                     }

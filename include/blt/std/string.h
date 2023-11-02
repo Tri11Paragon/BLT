@@ -63,6 +63,9 @@ namespace blt::string
     
     static inline BLT_CPP20_CONSTEXPR bool starts_with(const std::string& string, const std::string& search)
     {
+#ifdef BLT_USE_CPP20
+        return string.starts_with(search);
+#else
         if (search.length() > string.length())
             return false;
         auto chars = string.c_str();
@@ -73,10 +76,25 @@ namespace blt::string
                 return false;
         }
         return true;
+#endif
+    }
+    
+    static inline BLT_CPP20_CONSTEXPR bool starts_with(const std::string& string, char search)
+    {
+#ifdef BLT_USE_CPP20
+        return string.starts_with(search);
+#else
+        if (string.empty())
+            return false;
+        return string[0] == search;
+#endif
     }
     
     static inline BLT_CPP20_CONSTEXPR bool ends_with(const std::string& string, const std::string& search)
     {
+#ifdef BLT_USE_CPP20
+        return string.ends_with(search);
+#else
         if (search.length() > string.length())
             return false;
         auto chars = string.c_str();
@@ -88,6 +106,18 @@ namespace blt::string
                 return false;
         }
         return true;
+#endif
+    }
+    
+    static inline BLT_CPP20_CONSTEXPR bool ends_with(const std::string& string, char search)
+    {
+#ifdef BLT_USE_CPP20
+        return string.ends_with(search);
+#else
+        if (string.empty())
+            return false;
+        return string[string.size() - 1] == search;
+#endif
     }
     
     static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const char search)
@@ -97,7 +127,8 @@ namespace blt::string
             return c == search;
         });
 #else
-        for (const char c : string){
+        for (const char c : string)
+        {
             if (c == search)
                 return true;
         }
@@ -278,7 +309,8 @@ namespace blt::string
             return std::isdigit(c);
         });
 #else
-        for (const char c : s){
+        for (const char c : s)
+        {
             if (!std::isdigit(c))
                 return false;
         }
