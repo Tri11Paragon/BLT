@@ -11,6 +11,7 @@
 #include <iterator>
 #include <cstring>
 #include "queue.h"
+#include <blt/std/assert.h>
 #include <cstdint>
 #include <type_traits>
 #include <algorithm>
@@ -179,7 +180,11 @@ namespace blt
             
             explicit scoped_buffer(size_t size): _size(size)
             {
-                _buffer = new T[size];
+                BLT_ASSERT(size >= 0);
+                if (size > 0)
+                    _buffer = new T[size];
+                else
+                    _buffer = nullptr;
             }
             
             scoped_buffer(const scoped_buffer& copy)
