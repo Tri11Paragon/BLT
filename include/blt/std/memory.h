@@ -171,7 +171,7 @@ namespace blt
     class scoped_buffer
     {
         private:
-            T* _buffer;
+            T* _buffer = nullptr;
             size_t _size;
         public:
             scoped_buffer(): _buffer(nullptr), _size(0)
