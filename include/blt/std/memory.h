@@ -28,7 +28,7 @@
 #if __cplusplus >= 202002L
     
     #include <bit>
-    
+
     #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                          (std::endian::native == std::endian::big && little_endian)
 #else
@@ -167,8 +167,8 @@ namespace blt
      * The operator * has been overloaded to return the internal buffer.
      * @tparam T type that is stored in buffer eg char
      */
-    template<typename T>
-    struct scoped_buffer
+    template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
+    class scoped_buffer
     {
         private:
             T* _buffer;
@@ -182,7 +182,50 @@ namespace blt
                 _buffer = new T[size];
             }
             
-            scoped_buffer(const scoped_buffer& copy) = delete;
+            scoped_buffer(const scoped_buffer& copy)
+            {
+                _buffer = new T[copy.size()];
+                _size = copy._size;
+                
+                if constexpr (std::is_trivially_copyable_v<T>)
+                {
+                    std::memcpy(_buffer, copy._buffer, copy.size());
+                } else
+                {
+                    if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
+                    {
+                        for (size_t i = 0; i < this->_size; i++)
+                            _buffer[i] = T(copy[i]);
+                    } else
+                        for (size_t i = 0; i < this->_size; i++)
+                            _buffer[i] = copy[i];
+                }
+            }
+            
+            scoped_buffer& operator=(const scoped_buffer& copy)
+            {
+                if (&copy == this)
+                    return *this;
+                
+                delete[] this->_buffer;
+                _buffer = new T[copy.size()];
+                _size = copy._size;
+                
+                if constexpr (std::is_trivially_copyable_v<T>)
+                {
+                    std::memcpy(_buffer, copy._buffer, copy.size());
+                } else
+                {
+                    if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
+                    {
+                        for (size_t i = 0; i < this->_size; i++)
+                            _buffer[i] = T(copy[i]);
+                    } else
+                        for (size_t i = 0; i < this->_size; i++)
+                            _buffer[i] = copy[i];
+                }
+                return *this;
+            }
             
             scoped_buffer(scoped_buffer&& move) noexcept
             {
@@ -191,8 +234,6 @@ namespace blt
                 _size = move.size();
                 move._buffer = nullptr;
             }
-            
-            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
             
             scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
             {
@@ -258,6 +299,16 @@ namespace blt
             {
                 delete[] _buffer;
             }
+    };
+    
+    template<typename T>
+    class scoped_buffer<T, false> : scoped_buffer<T, true>
+    {
+            using scoped_buffer<T, true>::scoped_buffer;
+        public:
+            scoped_buffer(const scoped_buffer& copy) = delete;
+            
+            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
     };
     
     template<typename T>
