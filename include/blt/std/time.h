@@ -13,6 +13,7 @@
 
 namespace blt::system
 {
+    
     static inline std::string ensureHasDigits(int current, int digits)
     {
         std::string asString = std::to_string(current);

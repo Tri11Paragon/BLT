@@ -180,7 +180,6 @@ namespace blt
             
             explicit scoped_buffer(size_t size): _size(size)
             {
-                BLT_ASSERT(size >= 0);
                 if (size > 0)
                     _buffer = new T[size];
                 else
