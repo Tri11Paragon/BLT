@@ -198,7 +198,7 @@ namespace blt
                 
                 if constexpr (std::is_trivially_copyable_v<T>)
                 {
-                    std::memcpy(_buffer, copy._buffer, copy.size());
+                    std::memcpy(_buffer, copy._buffer, copy.size() * sizeof(T));
                 } else
                 {
                     if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
@@ -228,7 +228,7 @@ namespace blt
                 
                 if constexpr (std::is_trivially_copyable_v<T>)
                 {
-                    std::memcpy(_buffer, copy._buffer, copy.size());
+                    std::memcpy(_buffer, copy._buffer, copy.size() * sizeof(T));
                 } else
                 {
                     if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)

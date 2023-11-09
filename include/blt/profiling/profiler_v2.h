@@ -51,6 +51,11 @@ namespace blt
         
         std::uint64_t count = 0;
         std::string interval_name;
+        
+        interval_t() = default;
+        
+        interval_t(pf_time_t wallStart, pf_time_t wallEnd, pf_time_t wallTotal, pf_time_t threadStart, pf_time_t threadEnd, pf_time_t threadTotal,
+                   pf_cycle_t cyclesStart, pf_cycle_t cyclesEnd, pf_cycle_t cyclesTotal, uint64_t count, std::string intervalName);
     };
     
     struct cycle_interval_t
@@ -82,7 +87,8 @@ namespace blt
     
     void startInterval(interval_t* interval);
     
-    inline interval_t* startInterval(profile_t& profiler, std::string interval_name){
+    inline interval_t* startInterval(profile_t& profiler, std::string interval_name)
+    {
         auto* p = createInterval(profiler, std::move(interval_name));
         startInterval(p);
         return p;

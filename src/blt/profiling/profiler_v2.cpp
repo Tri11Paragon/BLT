@@ -248,4 +248,12 @@ namespace blt
         blt::printProfile(profile, flags, sort, log_level);
         profiles.erase(profile_name);
     }
+    
+    interval_t::interval_t(pf_time_t wallStart, pf_time_t wallEnd, pf_time_t wallTotal, pf_time_t threadStart, pf_time_t threadEnd,
+                           pf_time_t threadTotal, pf_cycle_t cyclesStart, pf_cycle_t cyclesEnd, pf_cycle_t cyclesTotal, uint64_t count,
+                           std::string intervalName):
+            wall_start(wallStart), wall_end(wallEnd), wall_total(wallTotal), thread_start(threadStart), thread_end(threadEnd),
+            thread_total(threadTotal), cycles_start(cyclesStart), cycles_end(cyclesEnd), cycles_total(cyclesTotal), count(count),
+            interval_name(std::move(intervalName))
+    {}
 }
