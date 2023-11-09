@@ -188,6 +188,11 @@ namespace blt
             
             scoped_buffer(const scoped_buffer& copy)
             {
+                if (copy.size() == 0) {
+                    _buffer = nullptr;
+                    _size = 0;
+                    return;
+                }
                 _buffer = new T[copy.size()];
                 _size = copy._size;
                 
@@ -210,6 +215,12 @@ namespace blt
             {
                 if (&copy == this)
                     return *this;
+                
+                if (copy.size() == 0) {
+                    _buffer = nullptr;
+                    _size = 0;
+                    return *this;
+                }
                 
                 delete[] this->_buffer;
                 _buffer = new T[copy.size()];
