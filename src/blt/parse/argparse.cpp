@@ -54,7 +54,7 @@ namespace blt
     arg_vector_t::arg_vector_t(const char* str)
     {
         std::string as_string(str);
-        if (as_string.starts_with('-'))
+        if (blt::string::starts_with(str, '-'))
             flags.emplace_back(as_string);
         else
             name = as_string;
@@ -62,7 +62,7 @@ namespace blt
     
     arg_vector_t::arg_vector_t(const std::string& str)
     {
-        if (str.starts_with('-'))
+        if (blt::string::starts_with(str, '-'))
             flags.emplace_back(str);
         else
             name = str;

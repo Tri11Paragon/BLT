@@ -50,19 +50,27 @@ namespace blt
             void validateFlags();
         
         public:
-            arg_vector_t(std::vector<std::string> flags): flags(std::move(flags))
+            explicit arg_vector_t(std::vector<std::string> flags): flags(std::move(flags))
             {
                 validateFlags();
             }
             
-            arg_vector_t(std::initializer_list<std::string> flags): flags(flags)
+            arg_vector_t(std::initializer_list<std::string> f): flags(f)
             {
+                if (flags.size() == 1) {
+                    if (!blt::string::starts_with(flags[0], '-'))
+                    {
+                        name = flags[0];
+                        flags.clear();
+                        return;
+                    }
+                }
                 validateFlags();
             }
             
-            arg_vector_t(const char* str);
+            explicit arg_vector_t(const char* str);
             
-            arg_vector_t(const std::string& str);
+            explicit arg_vector_t(const std::string& str);
             
             [[nodiscard]] inline bool isFlag() const
             {
@@ -135,6 +143,9 @@ namespace blt
             
             explicit arg_properties_t(arg_vector_t flags): a_flags(std::move(flags))
             {}
+            
+            explicit arg_properties_t(const std::string& pos_arg): a_flags(pos_arg)
+            {}
     };
     
     class arg_builder
@@ -143,6 +154,9 @@ namespace blt
             arg_properties_t properties;
         public:
             explicit arg_builder(const arg_vector_t& flags): properties(flags)
+            {}
+            
+            explicit arg_builder(const std::string& pos_arg): properties(pos_arg)
             {}
             
             arg_builder(const std::initializer_list<std::string>& flags): properties(flags)
