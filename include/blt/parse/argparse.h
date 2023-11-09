@@ -149,7 +149,7 @@ namespace blt
             {}
             
             template<typename... string_args>
-            explicit arg_builder(string_args... flags): properties({flags...})
+            explicit arg_builder(string_args... flags): properties(arg_vector_t{flags...})
             {}
             
             inline arg_properties_t build()
