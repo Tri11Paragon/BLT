@@ -13,6 +13,7 @@
 #include <sstream>
 #include <blt/config.h>
 #include <iostream>
+#include <cstdarg>
 
 namespace blt::logging
 {
@@ -116,7 +117,7 @@ namespace blt::logging
     
     };
     
-    void log_internal(const std::string& format, log_level level, const char* file, int line, ...);
+    void log_internal(const std::string& format, log_level level, const char* file, int line, std::va_list& args);
     
     void log_stream_internal(const std::string& str, const logger& logger);
     
@@ -138,20 +139,25 @@ namespace blt::logging
     }
     
     template<typename T>
-    inline void log(T t, log_level level, const char* file, int line)
+    inline void log(T t, log_level level, const char* file, int line, ...)
     {
+        std::va_list args;
+        va_start(args, line);
         if constexpr (std::is_arithmetic_v<T>)
         {
-            log_internal(std::to_string(t), level, file, line);
-        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>)
+            log_internal(std::to_string(t), level, file, line, args);
+        } else if constexpr (std::is_same_v<T, std::string>)
         {
-            log_internal(t, level, file, line);
+            log_internal(t, level, file, line, args);
+        } else if constexpr (std::is_same_v<T, const char*>){
+            log_internal(std::string(t), level, file, line, args);
         } else
         {
             std::stringstream stream;
             stream << t;
-            log_internal(stream.str(), level, file, line);
+            log_internal(stream.str(), level, file, line, args);
         }
+        va_end(args);
     }
     
     template<typename T>
@@ -480,7 +486,7 @@ namespace blt::logging {
         return out;
     }
     
-    void applyCFormatting(const std::string& format, std::string& output, va_list& args){
+    void applyCFormatting(const std::string& format, std::string& output, std::va_list& args){
         // args must be copied because they will be consumed by the first vsnprintf
         va_list args_copy;
         va_copy(args_copy, args);
@@ -560,10 +566,7 @@ namespace blt::logging {
         return out;
     }
     
-    void log_internal(const std::string& format, log_level level, const char* file, int line, ...) {
-        va_list args;
-        va_start(args, line);
-        
+    void log_internal(const std::string& format, log_level level, const char* file, int line, std::va_list& args) {
         std::string withoutLn = format;
         auto len = withoutLn.length();
         
@@ -616,8 +619,6 @@ namespace blt::logging {
             writer.writeLine(path, stripANSI(finalFormattedOutput));
         }
         //std::cout.flush();
-        
-        va_end(args);
     }
     
     void log_stream_internal(const std::string& str, const logger& logger) {
@@ -692,7 +693,7 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #define BLT_LOG(format, level, ...) blt::logging::log_internal(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define BLT_LOG(format, level, ...) blt::logging::log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
     #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
     #ifdef BLT_DISABLE_TRACE
         #define BLT_TRACE(format, ...)
