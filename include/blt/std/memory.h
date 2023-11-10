@@ -106,7 +106,7 @@ namespace blt
     struct range_itr
     {
         private:
-            const T current;
+            T current;
         public:
             using iterator_category = std::bidirectional_iterator_tag;
             using difference_type = T;
@@ -163,7 +163,22 @@ namespace blt
     template<typename T>
     struct range
     {
-    
+        private:
+            T _begin;
+            T _end;
+        public:
+            range(T begin, T end): _begin(begin), _end(end)
+            {}
+            
+            range_itr<T> begin()
+            {
+                return range_itr{_begin};
+            }
+            
+            range_itr<T> end()
+            {
+                return range_itr{_end};
+            }
     };
     
     template<typename V>
