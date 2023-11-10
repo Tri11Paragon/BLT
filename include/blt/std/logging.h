@@ -10,14 +10,18 @@
 #include <string>
 #include <type_traits>
 #include <functional>
+#include <sstream>
 #include <blt/config.h>
+#include <iostream>
 
-namespace blt::logging {
+namespace blt::logging
+{
     
     template<typename K, typename V>
     using hashmap = std::unordered_map<K, V>;
     
-    enum class log_level {
+    enum class log_level
+    {
         // default
         NONE,
         // low level
@@ -28,19 +32,22 @@ namespace blt::logging {
         WARN, ERROR, FATAL,
     };
     
-    struct tag_func_param {
+    struct tag_func_param
+    {
         blt::logging::log_level level;
         const std::string& file, line, raw_string, formatted_string;
     };
     
-    struct tag {
+    struct tag
+    {
         // tag without the ${{ or }}
         std::string tag;
         // function to run: log level, file, line, and raw user input string are provided
         std::function<std::string(const tag_func_param&)> func;
     };
     
-    struct log_format {
+    struct log_format
+    {
         /**
          * the log output format is the string which will be used to create the log output string
          *
@@ -69,7 +76,8 @@ namespace blt::logging {
          */
         std::string logOutputFormat = "\033[94m[${{TIME}}]${{RC}} ${{LF}}[${{LOG_LEVEL}}]${{RC}} \033[35m(${{FILE}}:${{LINE}})${{RC}} ${{CNR}}${{STR}}${{RC}}\n";
         std::string levelNames[11] = {"STDOUT", "TRACE0", "TRACE1", "TRACE2", "TRACE3", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"};
-        std::string levelColors[11] = {"\033[0m", "\033[22;97m", "\033[97m", "\033[97m", "\033[97m", "\033[97m", "\033[36m", "\033[92m", "\033[93m", "\033[91m", "\033[97;41m"};
+        std::string levelColors[11] = {"\033[0m", "\033[22;97m", "\033[97m", "\033[97m", "\033[97m", "\033[97m", "\033[36m", "\033[92m", "\033[93m",
+                                       "\033[91m", "\033[97;41m"};
         // if true prints the whole path to the file (eg /home/user/.../.../project/src/source.cpp:line#)
         bool printFullFileName = false;
         // the logging lib will keep track of the largest line found so far and try to keep the spacing accordingly
@@ -96,66 +104,95 @@ namespace blt::logging {
         std::string lastFile;
     };
     
-    struct logger {
+    struct logger
+    {
         log_level level;
         const char* file;
         int line;
     };
     
-    struct empty_logger {
+    struct empty_logger
+    {
     
     };
     
-    void log(const std::string& format, log_level level, const char* file, int line, ...);
-    void log_stream(const std::string& str, const logger& logger);
+    void log_internal(const std::string& format, log_level level, const char* file, int line, ...);
     
-    template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    inline void log(T t, log_level level, const char* file, int line) {
-        log(std::to_string(t), level, file, line);
+    void log_stream_internal(const std::string& str, const logger& logger);
+    
+    template<typename T>
+    inline static void log_stream(const T& t, const logger& logger)
+    {
+        if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, char>)
+        {
+            log_stream_internal(std::to_string(t), logger);
+        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>)
+        {
+            log_stream_internal(t, logger);
+        } else
+        {
+            std::stringstream stream;
+            stream << t;
+            log_stream_internal(stream.str(), logger);
+        }
     }
     
-    template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    inline void log_stream(T t, const logger& logger) {
-        log_stream(std::to_string(t), logger);
+    template<typename T>
+    inline void log(T t, log_level level, const char* file, int line)
+    {
+        if constexpr (std::is_arithmetic_v<T>)
+        {
+            log_internal(std::to_string(t), level, file, line);
+        } else if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>)
+        {
+            log_internal(t, level, file, line);
+        } else
+        {
+            std::stringstream stream;
+            stream << t;
+            log_internal(stream.str(), level, file, line);
+        }
     }
     
-    static inline const blt::logging::logger& operator<<(const blt::logging::logger& out, const std::string& str) {
-        log_stream(str, out);
+    template<typename T>
+    static inline const blt::logging::logger& operator<<(const blt::logging::logger& out, const T& t)
+    {
+        log_stream(t, out);
         return out;
     }
     
-    template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    static inline const blt::logging::logger& operator<<(const blt::logging::logger& out, T t) {
-        log_stream(std::to_string(t), out);
-        return out;
-    }
-
-    static inline const blt::logging::empty_logger& operator<<(const blt::logging::empty_logger& out, const std::string&) {
-        return out;
-    }
-    
-    template<typename T, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr>
-    static inline const blt::logging::empty_logger& operator<<(const blt::logging::empty_logger& out, T) {
+    template<typename T>
+    static inline const blt::logging::empty_logger& operator<<(const blt::logging::empty_logger& out, const T&)
+    {
         return out;
     }
     
     void flush();
     
     void setThreadName(const std::string& name);
+    
     void setLogFormat(const log_format& format);
+    
     void setLogColor(log_level level, const std::string& newFormat);
+    
     void setLogName(log_level level, const std::string& newFormat);
+    
     void setLogOutputFormat(const std::string& newFormat);
+    
     void setLogToFile(bool shouldLogToFile);
+    
     void setLogToConsole(bool shouldLogToConsole);
+    
     void setLogPath(const std::string& path);
+    
     void setLogFileName(const std::string& fileName);
+    
     void setMaxFileSize(size_t fileSize);
 }
 
 //#define BLT_LOGGING_IMPLEMENTATION
 #ifdef BLT_LOGGING_IMPLEMENTATION
-
+    
     #include <iostream>
     #include <chrono>
     #include <ctime>
@@ -275,7 +312,7 @@ namespace blt::logging {
             }
     };
     
-    #define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
+#define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
     #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year + 1900); \
         S += '-'; \
         S += ensureHasDigits(now->tm_mon+1, 2); \
@@ -523,7 +560,7 @@ namespace blt::logging {
         return out;
     }
     
-    void log(const std::string& format, log_level level, const char* file, int line, ...) {
+    void log_internal(const std::string& format, log_level level, const char* file, int line, ...) {
         va_list args;
         va_start(args, line);
         
@@ -583,7 +620,7 @@ namespace blt::logging {
         va_end(args);
     }
     
-    void log_stream(const std::string& str, const logger& logger) {
+    void log_stream_internal(const std::string& str, const logger& logger) {
         auto& s = loggingStreamLines[std::this_thread::get_id()][logger.level];
         s += str;
         for (char c : str){
@@ -655,7 +692,7 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
-    #define BLT_LOG(format, level, ...) blt::logging::log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
+    #define BLT_LOG(format, level, ...) blt::logging::log_internal(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
     #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
     #ifdef BLT_DISABLE_TRACE
         #define BLT_TRACE(format, ...)
