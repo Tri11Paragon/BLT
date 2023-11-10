@@ -102,6 +102,70 @@ namespace blt
         }
     }
     
+    template<typename T>
+    struct range_itr
+    {
+        private:
+            const T current;
+        public:
+            using iterator_category = std::bidirectional_iterator_tag;
+            using difference_type = T;
+            using value_type = T;
+            using pointer = T*;
+            using reference = T&;
+            
+            explicit range_itr(T current): current(current)
+            {}
+            
+            value_type operator*() const
+            { return current; }
+            
+            value_type operator->()
+            { return current; }
+            
+            range_itr& operator++()
+            {
+                current++;
+                return *this;
+            }
+            
+            range_itr& operator--()
+            {
+                current--;
+                return *this;
+            }
+            
+            range_itr operator++(int)
+            {
+                auto tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+            
+            range_itr operator--(int)
+            {
+                auto tmp = *this;
+                --(*this);
+                return tmp;
+            }
+            
+            friend bool operator==(const range_itr& a, const range_itr& b)
+            {
+                return a.current == b.current;
+            }
+            
+            friend bool operator!=(const range_itr& a, const range_itr& b)
+            {
+                return a.current != b.current;
+            }
+    };
+    
+    template<typename T>
+    struct range
+    {
+    
+    };
+    
     template<typename V>
     struct ptr_iterator
     {
@@ -188,7 +252,8 @@ namespace blt
             
             scoped_buffer(const scoped_buffer& copy)
             {
-                if (copy.size() == 0) {
+                if (copy.size() == 0)
+                {
                     _buffer = nullptr;
                     _size = 0;
                     return;
@@ -216,7 +281,8 @@ namespace blt
                 if (&copy == this)
                     return *this;
                 
-                if (copy.size() == 0) {
+                if (copy.size() == 0)
+                {
                     _buffer = nullptr;
                     _size = 0;
                     return *this;
