@@ -32,7 +32,7 @@ std::vector<std::string> blt::fs::getLinesFromFile(const std::string& path) {
     return string::split(shaderSource, "\n");
 }
 
-std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path) {
+std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path, const std::string& include_header) {
     std::string pathOnly = path.substr(0, path.find_last_of('/'));
     
     auto mainLines = getLinesFromFile(path);
@@ -41,7 +41,7 @@ std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path
     for (unsigned int i = 0; i < mainLines.size(); i++) {
         auto& line = mainLines[i];
         // if the line is an include statement then we want to add lines recursively.
-        if (string::starts_with(line, "#include")) {
+        if (string::starts_with(line, include_header)) {
             std::vector<std::string> include_statement = string::split(line, "<");
             
             if (include_statement.size() <= 1)
@@ -61,7 +61,7 @@ std::vector<std::string> blt::fs::recursiveShaderInclude(const std::string& path
                 
                 BLT_TRACE("Recusing into %s/%s\n", pathOnly.c_str(), file.c_str());
                 
-                includes.insert({i, recursiveShaderInclude((pathOnly + "/" + file))});
+                includes.insert({i, recursiveShaderInclude(pathOnly + "/" + file, include_header)});
             } catch (std::exception& e) {
                 BLT_FATAL("Shader file contains an invalid #include statement. (Missing < or \")\n");
                 BLT_FATAL("Exception: %s", e.what());
