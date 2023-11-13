@@ -14,18 +14,45 @@
 #include <string>
 #include <blt/std/string.h>
 #include <blt/std/logging.h>
+#include <unordered_set>
 
-namespace blt::fs {
+namespace blt::fs
+{
+    struct include_guard
+    {
+        char open = '<';
+        char close = '>';
+    };
+    
     std::vector<std::string> getLinesFromFile(const std::string& path);
     
-    std::vector<std::string> recursiveShaderInclude(const std::string& path, const std::string& include_header = "#include");
+    /**
+     * Recursively include files
+     * @param path initial file to load
+     * @param include_header the beginning of the line that should be used to recognize when a line is to be treated as an include
+     * @param guards characters used to identify the parts that specify the file path. if empty it will assume everything after the include header
+     * @return a list of lines in all files. added together in order.
+     */
+    std::vector<std::string> recursiveInclude(const std::string& path, const std::string& include_header = "#include",
+                                              const std::vector<include_guard>& guards = {{'<',  '>'}, {'"', '"'}});
     
-    static inline std::string loadShaderFile(const std::string& path) {
+    static inline std::string loadBrainFuckFile(const std::string& path)
+    {
+        std::string buffer;
+        
+        auto lines = recursiveInclude(path, "~");
+        
+        return buffer;
+    }
+    
+    static inline std::string loadShaderFile(const std::string& path)
+    {
         std::stringstream stringStream;
         
-        auto lines = recursiveShaderInclude(path);
+        auto lines = recursiveInclude(path);
         
-        for (const auto& line : lines) {
+        for (const auto& line : lines)
+        {
             // now process the defines, if they exist
 //            if (line.starts_with("#define")) {
 //                auto defineParts = String::split(line, " ");

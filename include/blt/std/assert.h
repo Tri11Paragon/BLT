@@ -20,7 +20,7 @@ namespace blt
 #define blt_assert(expr) do {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, __FILE__, __LINE__) } while (0)
 // prints error with stack trace then exits with failure.
 #define BLT_ASSERT(expr) do {                                   \
-        if (!static_cast<bool>(expr)) {                          \
+        if (!static_cast<bool>(expr)) {                         \
             blt::b_assert_failed(#expr, __FILE__, __LINE__);    \
             std::exit(EXIT_FAILURE);                            \
         }                                                       \
