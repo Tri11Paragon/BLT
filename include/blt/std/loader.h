@@ -24,6 +24,8 @@ namespace blt::fs
         char close = '>';
     };
     
+    std::string getFile(const std::string& path);
+    
     std::vector<std::string> getLinesFromFile(const std::string& path);
     
     /**
@@ -40,7 +42,13 @@ namespace blt::fs
     {
         std::string buffer;
         
-        auto lines = recursiveInclude(path, "~");
+        auto lines = recursiveInclude(path, "~", {});
+        
+        for (auto& line : lines)
+        {
+            buffer += line;
+            buffer += '\n';
+        }
         
         return buffer;
     }

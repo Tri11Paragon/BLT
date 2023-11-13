@@ -8,32 +8,9 @@
 
 std::vector<std::string> blt::fs::getLinesFromFile(const std::string& path)
 {
-    std::string shaderSource;
-    std::ifstream shaderFile;
-    if (!shaderFile.good())
-        BLT_ERROR("Input stream not good!\n");
-    // ensure ifstream objects can throw exceptions:
-    shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try
-    {
-        // open file
-        shaderFile.open(path);
-        std::stringstream shaderStream;
-        // read file's buffer contents into streams
-        shaderStream << shaderFile.rdbuf();
-        // close file handlers
-        shaderFile.close();
-        // convert stream into std::string
-        shaderSource = shaderStream.str();
-    } catch (std::ifstream::failure& e)
-    {
-        BLT_WARN("Unable to read file '%s'!\n", path.c_str());
-        BLT_WARN("Exception: %s", e.what());
-        throw std::runtime_error("Failed to read file!\n");
-    }
-    
-    // split the shader into the lines, this way we can get out the #include statements.
-    return string::split(shaderSource, "\n");
+    std::string file = getFile(path);
+    // split the file into the lines, this way we can get out the #include statements.
+    return string::split(file, "\n");
 }
 
 std::vector<std::string> blt::fs::recursiveInclude(const std::string& path, const std::string& include_header,
@@ -51,59 +28,63 @@ std::vector<std::string> blt::fs::recursiveInclude(const std::string& path, cons
         if (include_pos != std::string::npos)
         {
             auto past_include = include_pos + include_header.size();
-            BLT_TRACE(past_include);
-            BLT_TRACE("%c", (char)line[past_include]);
             std::string file_to_include;
             
             if (guards.empty())
             {
-                file_to_include = line.substr(line.find(include_header));
+                file_to_include = line.substr(past_include);
             } else
             {
                 size_t index = past_include;
                 while (std::find_if(guards.begin(), guards.end(), [&](const include_guard& item) {
-                    return line[index] == item.open;
+                    return index < line.size() && line[index] == item.open;
                 }) == guards.end())
                     index++;
                 index++;
                 BLT_ASSERT(index < line.size() && "Include found but no file was provided!");
                 
-                std::cout << line.substr(index) << std::endl;
+                while (std::find_if(guards.begin(), guards.end(), [&](const include_guard& item) {
+                    return index < line.size() && line[index] == item.close;
+                }) == guards.end())
+                    file_to_include += line[index++];
             }
-
-//            size_t index = 0;
-//
-//                std::vector<std::string> include_statement = string::split(line, "<");
-//
-//            if (include_statement.size() <= 1)
-//                include_statement = string::split(line, "\"");
-//
-//            string::trim(line);
-//            if (!(string::ends_with(line, ">") || string::ends_with(line, "\"")))
-//            {
-//                BLT_FATAL("Shader file contains an invalid #include statement. (Missing terminator)\n");
-//                std::abort();
-//            }
-//            try
-//            {
-//                // filter out the > or " at the end of the include statement.
-//                std::string file;
-//                file = include_statement[1];
-//                if (string::ends_with(include_statement[1], ">"))
-//                    file = file.substr(0, file.size() - 1);
-//
-//                BLT_TRACE("Recusing into %s/%s\n", pathOnly.c_str(), file.c_str());
-//
-//                includes.insert({i, recursiveInclude(pathOnly + "/" + file, include_header, guards)});
-//            } catch (std::exception& e)
-//            {
-//                BLT_FATAL("Shader file contains an invalid #include statement. (Missing < or \")\n");
-//                BLT_FATAL("Exception: %s", e.what());
-//                std::abort();
-//            }
+            // ignore absolute paths TODO: path lib
+            //if (!blt::string::starts_with(blt::string::trim(file_to_include), '/'))
+            
+            auto lines = recursiveInclude(file_to_include, include_header, guards);
+            for (const auto& i_line : lines)
+                return_lines.push_back(i_line);
         } else
             return_lines.push_back(line);
     }
     
     return return_lines;
+}
+
+std::string blt::fs::getFile(const std::string& path)
+{
+    std::string file_contents;
+    std::ifstream the_file;
+    if (!the_file.good())
+        BLT_ERROR("Input stream not good!\n");
+    // ensure ifstream objects can throw exceptions:
+    the_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try
+    {
+        // open file
+        the_file.open(path);
+        std::stringstream file_stream;
+        // read file's buffer contents into streams
+        file_stream << the_file.rdbuf();
+        // close file handlers
+        the_file.close();
+        // convert stream into std::string
+        file_contents = file_stream.str();
+    } catch (std::ifstream::failure& e)
+    {
+        BLT_WARN("Unable to read file '%s'!\n", path.c_str());
+        BLT_WARN("Exception: %s", e.what());
+        throw std::runtime_error("Failed to read file!\n");
+    }
+    return file_contents;
 }
