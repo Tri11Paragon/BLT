@@ -12,6 +12,7 @@
 #include <blt/std/string.h>
 #include <iomanip>
 #include <sstream>
+#include <cstring>
 
 namespace blt::uuid
 {
@@ -84,7 +85,7 @@ namespace blt::uuid
         std::stringstream ss;
         ss << std::hex;
         
-        const char dash[] = { 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0 };
+        const char dash[] = {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0};
         
         for (int i = 0; i < len; ++i)
         {
@@ -155,7 +156,7 @@ namespace blt::uuid
     static uuid_t genV4()
     {
         std::random_device rd;
-        std::seed_seq seed{ rd(), rd(), rd(), rd() };
+        std::seed_seq seed{rd(), rd(), rd(), rd()};
         std::mt19937_64 gen(seed);
         std::uniform_int_distribution<int> dis(0, 15);
         std::uniform_int_distribution<> dis2(8, 11);
@@ -163,30 +164,34 @@ namespace blt::uuid
         std::stringstream ss;
         int i;
         ss << std::hex;
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < 8; i++)
+        {
             ss << dis(gen);
         }
         ss << "-";
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
+        {
             ss << dis(gen);
         }
         ss << "-4";
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < 3; i++)
+        {
             ss << dis(gen);
         }
         ss << "-";
         ss << dis2(gen);
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < 3; i++)
+        {
             ss << dis(gen);
         }
         ss << "-";
-        for (i = 0; i < 12; i++) {
+        for (i = 0; i < 12; i++)
+        {
             ss << dis(gen);
         };
         
         return toUUID(ss.str());
     }
-    
     
     
 }
