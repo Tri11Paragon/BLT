@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 project(BLT_TESTS)
 
-option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
-option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
+option(ENABLE_ADDRSAN "Enable the address sanitizer" ON)
+option(ENABLE_UBSAN "Enable the ub sanitizer" ON)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -14,7 +14,9 @@ file(GLOB_RECURSE PROJECT_BUILD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${PROJECT_BUILD_FILES})
 
-target_link_libraries(${PROJECT_NAME} )
+message("Created Tests, Linking BLT")
+
+target_link_libraries(${PROJECT_NAME} BLT)
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
 target_link_options(${PROJECT_NAME} PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
