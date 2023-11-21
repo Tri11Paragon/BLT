@@ -11,6 +11,8 @@
 //#include <bitset>
 //#include "hashmap_tests.h"
 //#include <functional>
+#include <memory_test.h>
+#include <blt/parse/argparse.h>
 
 std::function<int(int i)> test{
         [](int i) -> int {
@@ -80,6 +82,16 @@ int (* func_func_in)(int) = &test_as_func;
 
 int main(int argc, const char** argv)
 {
+    blt::arg_parse parser;
+    
+    parser.addArgument(
+            blt::arg_builder("--memory").setAction(blt::arg_action_t::STORE_TRUE).setNArgs(0).setHelp("Test the blt/std/memory.h file").build());
+    
+    auto args = parser.parse_args(argc, argv);
+    
+    if (args.contains("--memory"))
+        blt::test::memory::run();
+    
     blt::arg_parse parser;
     parser.addArgument(blt::arg_builder({"-c", "--no-color"}).setAction(blt::arg_action_t::STORE_TRUE).build());
     parser.addArgument(
