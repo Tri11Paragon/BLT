@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(BLT VERSION 0.8.1)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
 option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)

@@ -9,6 +9,7 @@
 #include <blt/std/format.h>
 #include <functional>
 #include <blt/std/hashmap.h>
+#include <blt/compatibility.h>
 
 namespace blt
 {
@@ -215,7 +216,7 @@ namespace blt
     void _internal::startInterval(const std::string& profile_name, const std::string& interval_name)
     {
         auto& profile = profiles[profile_name];
-        if (!profile.contains(interval_name))
+        if (profile.find(interval_name) == profile.end())
         {
             auto interval = new interval_t();
             interval->interval_name = interval_name;

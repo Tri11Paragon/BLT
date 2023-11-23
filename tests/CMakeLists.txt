@@ -5,9 +5,7 @@ option(ENABLE_ADDRSAN "Enable the address sanitizer" ON)
 option(ENABLE_UBSAN "Enable the ub sanitizer" ON)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
-set(CMAKE_CXX_STANDARD 20)
-
-add_subdirectory(../)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include/)
 file(GLOB_RECURSE PROJECT_BUILD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")

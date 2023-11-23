@@ -47,7 +47,7 @@ namespace blt
     void arg_vector_t::validateFlags()
     {
         for (const auto& flag : flags)
-            if (!flag.starts_with('-'))
+            if (!blt::string::starts_with(flag, '-'))
                 throw invalid_argument_exception("Flag '" + flag + "' must start with - or --");
     }
     
@@ -74,7 +74,7 @@ namespace blt
         std::string flag = flags[0];
         // search for first '--' flag
         for (const auto& f : flags)
-            if (f.starts_with("--"))
+            if (blt::string::starts_with(f, "--"))
             {
                 flag = f;
                 break;
@@ -91,7 +91,7 @@ namespace blt
     
     std::string to_string(const arg_data_t& v)
     {
-        if (holds_alternative<arg_data_internal_t>(v))
+        if (std::holds_alternative<arg_data_internal_t>(v))
             return to_string(std::get<arg_data_internal_t>(v));
         else if (std::holds_alternative<arg_data_vec_t>(v))
         {
@@ -145,9 +145,9 @@ namespace blt
                 properties->a_dest = properties->a_flags.name;
         }
         
-        if (properties->a_dest.starts_with("--"))
+        if (blt::string::starts_with(properties->a_dest, "--"))
             properties->a_dest = properties->a_dest.substr(2);
-        else if (properties->a_dest.starts_with('-'))
+        else if (blt::string::starts_with(properties->a_dest, '-'))
             properties->a_dest = properties->a_dest.substr(1);
         
         // associate flags with their properties
@@ -266,12 +266,12 @@ namespace blt
         tokenizer.advance();
         
         // token is a flag, figure out how to handle it
-        if (flag.starts_with("--"))
+        if (blt::string::starts_with(flag, "--"))
             processFlag(tokenizer, flag);
         else
         {
             // handle special args like -vvv
-            if (!flag.starts_with('-'))
+            if (!blt::string::starts_with(flag, '-'))
                 std::cerr << "Flag processed but does not start with '-' (this is a serious error!)\n";
             // make sure the flag only contains the same character
             auto type = flag[1];
