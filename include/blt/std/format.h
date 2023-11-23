@@ -11,8 +11,26 @@
 #include <utility>
 #include <vector>
 #include <blt/math/math.h>
+#include <algorithm>
 
 namespace blt::string {
+    
+    template<typename T>
+    static inline std::string withGrouping(T t, size_t group = 3){
+        // TODO: all this + make it faster
+        static_assert(std::is_integral_v<T>, "Must be integer type! (Floats currently not supported!)");
+        auto str = std::to_string(t);
+        std::string ret;
+        ret.reserve(str.size());
+        size_t count = 0;
+        for (int64_t i = str.size() - 1; i >= 0; i--){
+            ret += str[i];
+            if (count++ % (group) == group-1 && i != 0)
+                ret += ',';
+        }
+        std::reverse(ret.begin(), ret.end());
+        return ret;
+    }
     
     static inline std::string fromBytes(unsigned long bytes){
         if (bytes > 1073741824) {

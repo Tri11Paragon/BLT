@@ -39,8 +39,8 @@ namespace blt
                   : static_cast<double>(interval->thread_end - interval->thread_start);                     \
                                                                                                             \
     auto cycles = printHistory                                                                              \
-                  ? (static_cast<double>(interval->cycles_total) / static_cast<double>(interval->count))    \
-                  : static_cast<double>(interval->cycles_end - interval->cycles_start);
+                  ? ((interval->cycles_total) / (interval->count))                                          \
+                  : (interval->cycles_end - interval->cycles_start);
     
     enum class unit
     {
@@ -189,7 +189,7 @@ namespace blt
                 row.rowValues.push_back(std::to_string(interval->count));
             row.rowValues.push_back(interval->interval_name);
             if (printCycles)
-                row.rowValues.push_back(std::to_string(cycles));
+                row.rowValues.push_back(blt::string::withGrouping(cycles));
             if (printThread)
                 row.rowValues.push_back(std::to_string(thread / static_cast<double>(thread_unit_divide)));
             if (printWall)
