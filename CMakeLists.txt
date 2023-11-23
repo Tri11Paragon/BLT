@@ -1,16 +1,23 @@
 cmake_minimum_required(VERSION 3.5)
-project(BLT VERSION 0.8.1)
+
+set(BLT_VERSION 0.8.1)
+set(BLT_TEST_VERSION 0.0.1)
+
+project(BLT VERSION ${BLT_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
 
 option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
 option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
+
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
 option(BUILD_PARSE "Build the BLT parsers" ON)
+
 option(BUILD_TESTS "Build the BLT test set" OFF)
+
 option(BLT_DISABLE_LOGGING "Disable blt::logging (all macros and will safely disable logging function!)" OFF)
 option(BLT_DISABLE_TRACE "Disable blt::logging BLT_TRACE macro" OFF)
 option(BLT_DISABLE_DEBUG "Disable blt::logging BLT_DEBUG macro" OFF)
@@ -93,38 +100,38 @@ endif()
 
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
 
-#if(${BUILD_TESTS})
-#    project(BLT_TESTS)
-#
-#    file(GLOB_RECURSE TESTS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/tests/*.cpp")
-#
-#    add_executable(BLT_TESTS ${TESTS_FILES})
-#
-#    target_link_libraries(BLT_TESTS PUBLIC BLT)
-#
-#    if(MSVC)
-#        #target_compile_options(BLT_TESTS PRIVATE /W4)
-#        if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-#            target_link_options(BLT_TESTS PRIVATE /DEBUG)
-#        endif()
-#    else()
-#        target_compile_options(BLT_TESTS PRIVATE -Wall -Wextra -Wpedantic)
-#    endif()
-#
-#    if (${ENABLE_ADDRSAN} MATCHES ON)
-#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
-#        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
-#    endif ()
-#
-#    if (${ENABLE_UBSAN} MATCHES ON)
-#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-#        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-#    endif ()
-#
-#    if (${ENABLE_TSAN} MATCHES ON)
-#        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
-#        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
-#    endif ()
-#
-#    message("BLT tests included!")
-#endif()
+if(${BUILD_TESTS})
+    message("Building test")
+    project(BLT_TESTS VERSION ${BLT_TEST_VERSION})
+
+    include_directories(tests/include)
+
+    file(GLOB_RECURSE TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tests/src/*.cpp")
+
+    message("Using files ${TEST_FILES}")
+
+    add_executable(BLT_TESTS ${TEST_FILES})
+
+    target_link_libraries(BLT_TESTS BLT)
+
+    target_compile_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
+    target_link_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
+
+    if (${ENABLE_ADDRSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
+    endif ()
+
+    if (${ENABLE_UBSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
+    endif ()
+
+    if (${ENABLE_TSAN} MATCHES ON)
+        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
+        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
+    endif ()
+    message("Built tests")
+endif()
+
+project(BLT)

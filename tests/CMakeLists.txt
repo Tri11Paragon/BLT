@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(BLT_TESTS)
+include(CTest)
 
 option(ENABLE_ADDRSAN "Enable the address sanitizer" ON)
 option(ENABLE_UBSAN "Enable the ub sanitizer" ON)

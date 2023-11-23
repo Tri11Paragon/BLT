@@ -86,13 +86,6 @@ int main(int argc, const char** argv)
     
     parser.addArgument(
             blt::arg_builder("--memory").setAction(blt::arg_action_t::STORE_TRUE).setNArgs(0).setHelp("Test the blt/std/memory.h file").build());
-    
-    auto args = parser.parse_args(argc, argv);
-    
-    if (args.contains("--memory"))
-        blt::test::memory::run();
-    
-    blt::arg_parse parser;
     parser.addArgument(blt::arg_builder({"-c", "--no-color"}).setAction(blt::arg_action_t::STORE_TRUE).build());
     parser.addArgument(
             blt::arg_builder("--nbt")
@@ -110,6 +103,9 @@ int main(int argc, const char** argv)
         blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
     }
     
+    if (args.contains("--memory"))
+        blt::test::memory::run();
+    
     if (args.contains("--nbt"))
     {
         auto v = blt::arg_parse::get<std::string>(args["nbt"]);
@@ -119,6 +115,8 @@ int main(int argc, const char** argv)
         blt::tests::nbtWrite();
         blt::tests::nbtRead();
     }
+    
+    runProfilingAndTableTests();
 
 //
 //    auto* funy = new class_func;
