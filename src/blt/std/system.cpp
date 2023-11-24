@@ -5,5 +5,4 @@
  */
 #include <blt/std/system.h>
 #include <blt/std/binary_tree.h>
-#include <blt/std/map.h>
 #include <blt/math/math.h>
