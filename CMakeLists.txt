@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(BLT_VERSION 0.8.1)
+set(BLT_VERSION 0.9.0)
 set(BLT_TEST_VERSION 0.0.1)
 
 project(BLT VERSION ${BLT_VERSION})

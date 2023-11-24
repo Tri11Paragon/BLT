@@ -13,6 +13,7 @@
 //#include <functional>
 #include <memory_test.h>
 #include <blt/parse/argparse.h>
+#include <utility_test.h>
 
 std::function<int(int i)> test{
         [](int i) -> int {
@@ -93,6 +94,7 @@ int main(int argc, const char** argv)
                     .setMetavar("bytes")
                     .setAction(blt::arg_action_t::STORE)
                     .setNArgs('?').build());
+    parser.addArgument(blt::arg_builder("--utility").setHelp("Run tests on utility functions").setAction(blt::arg_action_t::STORE_TRUE).build());
     
     auto args = parser.parse_args(argc, argv);
     
@@ -102,6 +104,9 @@ int main(int argc, const char** argv)
             blt::logging::setLogColor((blt::logging::log_level) i, "");
         blt::logging::setLogOutputFormat("[${{TIME}}] [${{LOG_LEVEL}}] (${{FILE}}:${{LINE}}) ${{STR}}\n");
     }
+    
+    if (args.contains("--utility"))
+        blt::test::utility::run();
     
     if (args.contains("--memory"))
         blt::test::memory::run();
