@@ -14,6 +14,7 @@
 #include <memory_test.h>
 #include <blt/parse/argparse.h>
 #include <utility_test.h>
+#include <blt/std/system.h>
 
 std::function<int(int i)> test{
         [](int i) -> int {
