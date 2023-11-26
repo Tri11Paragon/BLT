@@ -7,7 +7,7 @@
 #ifndef BLT_TESTS_PROFILING_TESTS_H
 #define BLT_TESTS_PROFILING_TESTS_H
 
-#include "blt/profiling/profiler.h"
+#include "blt/profiling/profiler_v2.h"
 #include "blt/std/logging.h"
 #include "blt/std/time.h"
 #include "blt/std/format.h"
@@ -17,7 +17,7 @@ void print(const std::vector<std::string>& vtr) {
         BLT_TRACE(line);
 }
 
-static void runProfilingAndTableTests() {
+[[maybe_unused]] static void runProfilingAndTableTests() {
     BLT_START_INTERVAL("Help", "SuperSet");
     
     BLT_END_INTERVAL("Help", "SuperSet");
@@ -38,7 +38,7 @@ static void runProfilingAndTableTests() {
         BLT_END_INTERVAL("Help", "UnderSet" + std::to_string(i));
     }
     
-    BLT_PRINT_PROFILE("Help", blt::logging::log_level::TRACE);
+    BLT_PRINT_PROFILE("Help");
     BLT_TRACE("");
     
     blt::string::TableFormatter formatter;

@@ -21,12 +21,12 @@ namespace blt
     
 #define SORT_INTERVALS_FUNC_MACRO(use_history, TYPE_END, TYPE_START, TYPE_TOTAL)                            \
     [&use_history](const interval_t* a, const interval_t* b) -> bool {                                      \
-        if (use_history){                                                                                   \
+        if (!use_history){                                                                                   \
             auto a_diff = a->TYPE_END - a->TYPE_START;                                                      \
             auto b_diff = b->TYPE_END - b->TYPE_START;                                                      \
             return a_diff > b_diff;                                                                         \
         } else {                                                                                            \
-            return a->TYPE_TOTAL > b->TYPE_TOTAL;                                                           \
+            return a->TYPE_TOTAL < b->TYPE_TOTAL;                                                           \
         }                                                                                                   \
     }
 

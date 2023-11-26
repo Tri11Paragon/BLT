@@ -46,6 +46,7 @@ namespace blt
     {
         volatile void* hell;
         hell = (void*) &val;
+        (void) hell;
     }
     
     template<typename T>
@@ -53,6 +54,7 @@ namespace blt
     {
         volatile void* hell2;
         hell2 = (void*) &val;
+        (void) hell2;
     }
     
     template<typename T>
@@ -60,6 +62,7 @@ namespace blt
     {
         volatile void* hell;
         hell = (void*) &val;
+        (void) hell;
         return val;
     }
     
@@ -68,6 +71,7 @@ namespace blt
     {
         volatile void* hell2;
         hell2 = (void*) &val;
+        (void) hell2;
         return val;
     }
     
