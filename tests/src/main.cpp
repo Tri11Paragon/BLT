@@ -97,6 +97,8 @@ int main(int argc, const char** argv)
         blt::tests::nbtRead();
     }
     
+    return 0;
+    
     //runProfilingAndTableTests();
 
 

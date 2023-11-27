@@ -16,8 +16,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/std/utility.h>
+#include <blt/std/logging.h>
 #include <utility_test.h>
 #include <vector>
+#include <cstring>
+#include <iostream>
+#include <limits>
+
 
 std::optional<int> get()
 {
@@ -26,7 +31,7 @@ std::optional<int> get()
 
 void blt::test::utility::run()
 {
-    std::vector<int> temp;
+    //std::vector<int> temp;
     std::optional<int> hi(10);
     if (auto test = get())
     {
