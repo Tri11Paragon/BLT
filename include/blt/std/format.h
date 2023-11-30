@@ -13,39 +13,65 @@
 #include <blt/math/math.h>
 #include <algorithm>
 
-namespace blt::string {
+namespace blt::string
+{
     
     template<typename T>
-    static inline std::string withGrouping(T t, size_t group = 3){
+    static inline std::string withGrouping(T t, size_t group = 3)
+    {
         // TODO: all this + make it faster
         static_assert(std::is_integral_v<T>, "Must be integer type! (Floats currently not supported!)");
         auto str = std::to_string(t);
         std::string ret;
         ret.reserve(str.size());
         size_t count = 0;
-        for (int64_t i = str.size() - 1; i >= 0; i--){
+        for (int64_t i = str.size() - 1; i >= 0; i--)
+        {
             ret += str[i];
-            if (count++ % (group) == group-1 && i != 0)
+            if (count++ % (group) == group - 1 && i != 0)
                 ret += ',';
         }
         std::reverse(ret.begin(), ret.end());
         return ret;
     }
     
-    static inline std::string fromBytes(unsigned long bytes){
-        if (bytes > 1073741824) {
+    static inline std::string fromBytes(unsigned long bytes)
+    {
+        if (bytes > 1073741824)
+        {
             // gigabyte
             return std::to_string(round_up<3>((double) bytes / 1024.0 / 1024.0 / 1024.0)) += "gb";
-        } else if (bytes > 1048576) {
+        } else if (bytes > 1048576)
+        {
             // megabyte
-            return std::to_string(round_up<3>((double)bytes / 1024.0 / 1024.0)) += "mb";
-        } else if (bytes > 1024) {
+            return std::to_string(round_up<3>((double) bytes / 1024.0 / 1024.0)) += "mb";
+        } else if (bytes > 1024)
+        {
             // kilobyte
-            return std::to_string(round_up<3>((double)bytes / 1024.0)) += "kb";
-        } else {
+            return std::to_string(round_up<3>((double) bytes / 1024.0)) += "kb";
+        } else
+        {
             return std::to_string(bytes) += "b";
         }
     }
+    
+    // TODO: update table formatter to use these!
+    /**
+     * creates a line starting/ending with ending char filled between with spacing char
+     * @param totalLength total length to generate
+     * @param endingChar beginning and ending char to use
+     * @param spacingChar char to use for spacing
+     * @return a generated line string eg: +--------+
+     */
+    std::string createLine(size_t totalLength, char endingChar, char spacingChar);
+    
+    /**
+     * Create a padding string using length and spacing char
+     * @param length length of string to generate
+     * @param spacing char to use to generate padding
+     * @return a padding string
+     */
+    std::string createPadding(size_t length, char spacing = ' ');
     
     // TODO template the padding functions:
     
@@ -55,13 +81,13 @@ namespace blt::string {
      * @param expectedLength expected length of the string.
      * @return a space padded string
      */
-    static inline std::string postPadWithSpaces(const std::string& str, size_t expectedLength) {
+    static inline std::string postPadWithSpaces(const std::string& str, size_t expectedLength)
+    {
         auto currentSize = (int) (str.length() - 1);
         if ((int) expectedLength - currentSize <= 0)
             return str;
         auto paddedString = str;
-        for (size_t i = 0; i < expectedLength - currentSize; i++)
-            paddedString += " ";
+        paddedString += createPadding(expectedLength - currentSize);
         return paddedString;
     }
     
@@ -71,26 +97,29 @@ namespace blt::string {
      * @param expectedLength expected length of the string.
      * @return a space padded string
      */
-    static inline std::string prePadWithSpaces(const std::string& str, size_t expectedLength) {
+    static inline std::string prePadWithSpaces(const std::string& str, size_t expectedLength)
+    {
         auto currentSize = str.length() - 1;
         auto paddedString = std::string();
-        for (unsigned int i = 0; i < expectedLength - currentSize; i++)
-            paddedString += " ";
+        paddedString += createPadding(expectedLength - currentSize);
         paddedString += str;
         return paddedString;
     }
     
-    struct utf8_string {
+    struct utf8_string
+    {
         char* characters;
         unsigned int size;
     };
     
     // taken from java, adapted for c++.
-    static inline utf8_string createUTFString(const std::string& str) {
+    static inline utf8_string createUTFString(const std::string& str)
+    {
         const auto strlen = (unsigned int) str.size();
         unsigned int utflen = strlen;
         
-        for (unsigned int i = 0; i < strlen; i++) {
+        for (unsigned int i = 0; i < strlen; i++)
+        {
             unsigned char c = str[i];
             if (c >= 0x80 || c == 0)
                 utflen += 1;
@@ -108,21 +137,26 @@ namespace blt::string {
         chars.characters[count++] = (char) ((utflen >> 0) & 0xFF);
         
         unsigned int i = 0;
-        for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
+        for (i = 0; i < strlen; i++)
+        { // optimized for initial run of ASCII
             int c = (unsigned char) str[i];
             if (c >= 0x80 || c == 0) break;
             chars.characters[count++] = (char) c;
         }
         
-        for (; i < strlen; i++) {
+        for (; i < strlen; i++)
+        {
             int c = (unsigned char) str[i];
-            if (c < 0x80 && c != 0) {
+            if (c < 0x80 && c != 0)
+            {
                 chars.characters[count++] = (char) c;
-            } else if (c >= 0x800) {
+            } else if (c >= 0x800)
+            {
                 chars.characters[count++] = (char) (0xE0 | ((c >> 12) & 0x0F));
                 chars.characters[count++] = (char) (0x80 | ((c >> 6) & 0x3F));
                 chars.characters[count++] = (char) (0x80 | ((c >> 0) & 0x3F));
-            } else {
+            } else
+            {
                 chars.characters[count++] = (char) (0xC0 | ((c >> 6) & 0x1F));
                 chars.characters[count++] = (char) (0x80 | ((c >> 0) & 0x3F));
             }
@@ -130,7 +164,8 @@ namespace blt::string {
         return chars;
     }
     
-    static inline std::string getStringFromUTF8(const utf8_string& str) {
+    static inline std::string getStringFromUTF8(const utf8_string& str)
+    {
         int utflen = (int) str.size;
         int c, char2, char3;
         int count = 0;
@@ -138,16 +173,19 @@ namespace blt::string {
         
         auto chararr = new char[utflen + 1];
         
-        while (count < utflen) {
+        while (count < utflen)
+        {
             c = (int) str.characters[count] & 0xff;
             if (c > 127) break;
             count++;
             chararr[chararr_count++] = (char) c;
         }
         
-        while (count < utflen) {
+        while (count < utflen)
+        {
             c = (int) str.characters[count] & 0xff;
-            switch (c >> 4) {
+            switch (c >> 4)
+            {
                 case 0:
                 case 1:
                 case 2:
@@ -192,23 +230,27 @@ namespace blt::string {
             }
         }
         chararr[utflen] = '\0';
-        std::string strs {chararr};
+        std::string strs{chararr};
         delete[] chararr;
         return strs;
     }
     
-    struct TableColumn {
+    struct TableColumn
+    {
         std::string columnName;
         size_t maxColumnLength = 0;
         
-        TableColumn(std::string columnName): columnName(std::move(columnName)) {}
+        TableColumn(std::string columnName): columnName(std::move(columnName))
+        {}
     };
     
-    struct TableRow {
+    struct TableRow
+    {
         std::vector<std::string> rowValues;
     };
     
-    class TableFormatter {
+    class TableFormatter
+    {
         private:
             std::string m_tableName;
             int m_columnPadding;
@@ -224,19 +266,23 @@ namespace blt::string {
             
             void updateMaxColumnLengths();
             
-            [[nodiscard]] inline size_t columnSize(const TableColumn& column) const {
+            [[nodiscard]] inline size_t columnSize(const TableColumn& column) const
+            {
                 return column.columnName.size() + m_columnPadding * 2;
             }
         
         public:
             explicit TableFormatter(std::string tableName = "", int columnPadding = 2, int maxColumnWidth = 500):
-                    m_tableName(std::move(tableName)), m_columnPadding(columnPadding), m_maxColumnWidth(maxColumnWidth) {}
+                    m_tableName(std::move(tableName)), m_columnPadding(columnPadding), m_maxColumnWidth(maxColumnWidth)
+            {}
             
-            inline void addColumn(const TableColumn& column) {
+            inline void addColumn(const TableColumn& column)
+            {
                 columns.push_back(column);
             }
             
-            inline void addRow(TableRow row) {
+            inline void addRow(TableRow row)
+            {
                 if (row.rowValues.size() > columns.size())
                     throw "Cannot insert more rows than columns!\n";
                 // ensure every row populates every column. This is important as the table generator assumes that all rows are complete!
@@ -246,7 +292,8 @@ namespace blt::string {
                 rows.push_back(std::move(row));
             }
             
-            inline void addRow(const std::initializer_list<std::string>& values) {
+            inline void addRow(const std::initializer_list<std::string>& values)
+            {
                 TableRow row;
                 for (const auto& value : values)
                     row.rowValues.push_back(value);
@@ -254,6 +301,66 @@ namespace blt::string {
             }
             
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
+    };
+    
+    class TreeFormatter
+    {
+        public:
+            struct Node
+            {
+                std::string data;
+                Node* left = nullptr;
+                Node* right = nullptr;
+                
+                explicit Node(std::string data): data(std::move(data))
+                {}
+                
+                Node* with(Node* l, Node* r = nullptr)
+                {
+                    left = l;
+                    right = r;
+                    return this;
+                }
+                
+                ~Node()
+                {
+                    delete left;
+                    delete right;
+                }
+            };
+        
+        private:
+            // data classes
+            struct TreeFormat
+            {
+                int verticalSpacing;
+                int horizontalSpacing;
+                
+                int verticalPadding;
+                int horizontalPadding;
+                
+                TreeFormat(): verticalSpacing(2), horizontalSpacing(4), verticalPadding(1), horizontalPadding(4)
+                {}
+            } format;
+            
+            Node* root;
+        public:
+            explicit TreeFormatter(std::string rootData, TreeFormat format = {}): format(format), root(new Node(std::move(rootData)))
+            {}
+            
+            std::vector<std::string> generateBox(Node* node) const;
+            
+            inline Node* getRoot()
+            {
+                return root;
+            }
+            
+            std::vector<std::string> construct();
+            
+            ~TreeFormatter()
+            {
+                delete root;
+            }
     };
     
 }

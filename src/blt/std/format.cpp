@@ -6,15 +6,19 @@
 #include <blt/std/format.h>
 #include <cmath>
 #include "blt/std/logging.h"
+#include <stack>
+#include <queue>
 
-std::string createPadding(int padAmount) {
+std::string createPadding(int padAmount)
+{
     std::string padStr;
     for (int i = 0; i < padAmount; i++)
         padStr += " ";
     return padStr;
 }
 
-std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom) {
+std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom)
+{
     std::vector<std::string> table;
     const auto& tableHeader = generateColumnHeader();
     const auto& topSeparator = generateTopSeparator(tableHeader.size());
@@ -26,16 +30,18 @@ std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool
     table.push_back(tableHeader);
     table.push_back(lineSeparator);
     
-    for (const auto& row : rows) {
+    for (const auto& row : rows)
+    {
         std::string rowString = "|";
-        for (unsigned int i = 0; i < row.rowValues.size(); i++) {
+        for (unsigned int i = 0; i < row.rowValues.size(); i++)
+        {
             const auto& rowValue = row.rowValues[i];
             const auto& column = columns[i];
             const int spaceLeft = int(column.maxColumnLength) - int(rowValue.size());
             // we want to prefer putting the space on the right size, flooring left and ceiling right ensures this.
-            rowString += createPadding((int)std::floor(spaceLeft/2.0) + m_columnPadding);
+            rowString += createPadding((int) std::floor(spaceLeft / 2.0) + m_columnPadding);
             rowString += rowValue;
-            rowString += createPadding((int)std::ceil(spaceLeft/2.0) + m_columnPadding);
+            rowString += createPadding((int) std::ceil(spaceLeft / 2.0) + m_columnPadding);
             rowString += "|";
         }
         table.push_back(rowString);
@@ -47,19 +53,21 @@ std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool
     return table;
 }
 
-std::string blt::string::TableFormatter::generateColumnHeader() {
+std::string blt::string::TableFormatter::generateColumnHeader()
+{
     updateMaxColumnLengths();
     std::string header = "|";
     
-    for (unsigned int i = 0; i < columns.size(); i++) {
+    for (unsigned int i = 0; i < columns.size(); i++)
+    {
         const auto& column = columns[i];
-        auto columnPaddingLength = (int(column.maxColumnLength) - int(column.columnName.size()))/2.0;
-        header += createPadding(int(m_columnPadding + (int)std::floor(columnPaddingLength)));
+        auto columnPaddingLength = (int(column.maxColumnLength) - int(column.columnName.size())) / 2.0;
+        header += createPadding(int(m_columnPadding + (int) std::floor(columnPaddingLength)));
         
         header += column.columnName;
         
-        header += createPadding(int(m_columnPadding + (int)std::ceil(columnPaddingLength)));
-        if (i < columns.size()-1)
+        header += createPadding(int(m_columnPadding + (int) std::ceil(columnPaddingLength)));
+        if (i < columns.size() - 1)
             header += "|";
     }
     
@@ -67,15 +75,16 @@ std::string blt::string::TableFormatter::generateColumnHeader() {
     return header;
 }
 
-std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
+std::string blt::string::TableFormatter::generateTopSeparator(size_t size)
+{
     auto sizeOfName = m_tableName.empty() ? 0 : m_tableName.size() + 4;
     auto sizeNameRemoved = size - sizeOfName;
     
     std::string halfWidthLeftSeparator;
     std::string halfWidthRightSeparator;
     
-    auto sizeNameFloor = (size_t) std::floor((double)sizeNameRemoved/2.0);
-    auto sizeNameCeil = (size_t) std::ceil((double)sizeNameRemoved/2.0);
+    auto sizeNameFloor = (size_t) std::floor((double) sizeNameRemoved / 2.0);
+    auto sizeNameCeil = (size_t) std::ceil((double) sizeNameRemoved / 2.0);
     
     halfWidthLeftSeparator.reserve(sizeNameCeil);
     halfWidthRightSeparator.reserve(sizeNameFloor);
@@ -92,7 +101,8 @@ std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
     
     std::string separator;
     separator += halfWidthLeftSeparator;
-    if (sizeOfName != 0) {
+    if (sizeOfName != 0)
+    {
         separator += "{ ";
         separator += m_tableName;
         separator += " }";
@@ -101,13 +111,16 @@ std::string blt::string::TableFormatter::generateTopSeparator(size_t size) {
     return separator;
 }
 
-std::string blt::string::TableFormatter::generateSeparator(size_t size) {
+std::string blt::string::TableFormatter::generateSeparator(size_t size)
+{
     size_t nextIndex = 0;
     size_t currentColumnIndex = 0;
     std::string wholeWidthSeparator;
-    for (unsigned int i = 0; i < size; i++) {
-        if (i == nextIndex) {
-            auto currentColumnSize = columns[currentColumnIndex++].maxColumnLength + m_columnPadding*2;
+    for (unsigned int i = 0; i < size; i++)
+    {
+        if (i == nextIndex)
+        {
+            auto currentColumnSize = columns[currentColumnIndex++].maxColumnLength + m_columnPadding * 2;
             nextIndex += currentColumnSize + 1;
             wholeWidthSeparator += "+";
         } else
@@ -117,13 +130,113 @@ std::string blt::string::TableFormatter::generateSeparator(size_t size) {
     return wholeWidthSeparator;
 }
 
-void blt::string::TableFormatter::updateMaxColumnLengths() {
-    for (unsigned int i = 0; i < columns.size(); i++) {
+void blt::string::TableFormatter::updateMaxColumnLengths()
+{
+    for (unsigned int i = 0; i < columns.size(); i++)
+    {
         auto& column = columns[i];
         column.maxColumnLength = column.columnName.size();
-        for (const auto& row : rows) {
+        for (const auto& row : rows)
+        {
             column.maxColumnLength = std::max(column.maxColumnLength, row.rowValues[i].size());
         }
     }
 }
 
+/*
+ * -----------------------
+ *     Tree Formatter
+ * -----------------------
+ */
+
+struct node_data
+{
+    blt::string::TreeFormatter::Node* node;
+    size_t level;
+    
+    node_data(blt::string::TreeFormatter::Node* node, size_t level): node(node), level(level)
+    {}
+};
+
+std::vector<std::string> blt::string::TreeFormatter::construct()
+{
+    std::vector<std::string> lines;
+    
+    std::stack<node_data> nodes;
+    
+    std::queue<node_data> bfs;
+    bfs.emplace(root, 0);
+    while (!bfs.empty())
+    {
+        auto n = bfs.front();
+        nodes.push(n);
+        std::cout << "Node at level " << n.level << " " << bfs.size() << "\n";
+        if (n.node->left != nullptr)
+            bfs.emplace(n.node->left, n.level + 1);
+        if (n.node->right != nullptr)
+            bfs.emplace(n.node->right, n.level + 1);
+        bfs.pop();
+    }
+    
+    return lines;
+}
+
+std::vector<std::string> blt::string::TreeFormatter::generateBox(blt::string::TreeFormatter::Node* node) const
+{
+    if (node == nullptr)
+        return {};
+    std::vector<std::string> lines;
+    
+    auto& data = node->data;
+    auto dataLength = data.length();
+    auto paddingLeft = format.horizontalPadding;
+    auto paddingRight = format.horizontalPadding;
+    auto totalLength = paddingLeft + paddingRight + dataLength;
+    
+    if (totalLength % 2 != 0)
+    {
+        paddingRight += 1;
+        totalLength += 1;
+    }
+    
+    // create horizontal line based on the calculated length
+    std::string hline = createLine(totalLength, '+', '-');
+    std::string paddedLine = createLine(totalLength, '|', ' ');
+    std::string dataStr;
+    dataStr.reserve(totalLength);
+    dataStr += '|';
+    dataStr += createPadding(paddingLeft - 1);
+    dataStr += data;
+    dataStr += createPadding(paddingRight - 1);
+    dataStr += '|';
+    
+    lines.push_back(hline);
+    for (int i = 0; i < format.verticalPadding; i++)
+        lines.push_back(paddedLine);
+    lines.push_back(std::move(dataStr));
+    for (int i = 0; i < format.verticalPadding; i++)
+        lines.push_back(paddedLine);
+    
+    lines.push_back(std::move(hline));
+    
+    return lines;
+}
+
+std::string blt::string::createLine(size_t totalLength, char endingChar, char spacingChar)
+{
+    std::string line;
+    line.reserve(totalLength);
+    line += endingChar;
+    line += createPadding(totalLength - 2, spacingChar);
+    line += endingChar;
+    return line;
+}
+
+std::string blt::string::createPadding(size_t length, char spacing)
+{
+    std::string padding;
+    padding.reserve(length);
+    for (size_t i = 0; i < length; i++)
+        padding += spacing;
+    return padding;
+}

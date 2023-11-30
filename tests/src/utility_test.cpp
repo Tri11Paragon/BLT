@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/std/utility.h>
+#include <blt/std/format.h>
 #include <blt/std/logging.h>
 #include <utility_test.h>
 #include <vector>
@@ -23,10 +24,15 @@
 #include <iostream>
 #include <limits>
 
-
 std::optional<int> get()
 {
     return 10;
+}
+
+void printLines(const std::vector<std::string>& lines)
+{
+    for (const auto& v : lines)
+        std::cout << v << "\n";
 }
 
 void blt::test::utility::run()
@@ -37,4 +43,54 @@ void blt::test::utility::run()
     {
     
     }
+    
+    blt::string::TableFormatter parkerLove("Intrinsic Action Value Table");
+    parkerLove.addColumn({"Thing"});
+    parkerLove.addColumn({"Value"});
+    
+    parkerLove.addRow({"Cuddles", "1 / minute"});
+    parkerLove.addRow({"Hand Job", "10"});
+    parkerLove.addRow({"Head", "100"});
+    parkerLove.addRow({"Sleeping Together (Non-Sexual)", "1,000"});
+    parkerLove.addRow({"Actual Sex", "5,000"});
+    parkerLove.addRow({"Sleeping Together (Sexual)", "10,000"});
+    parkerLove.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
+    
+    
+    printLines(parkerLove.createTable(true, true));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    blt::string::TreeFormatter treeFormatter("I love Men");
+    treeFormatter.getRoot()->with(
+            new string::TreeFormatter::Node("Guys"),
+            new string::TreeFormatter::Node("Femboys"));
+    printLines(treeFormatter.construct());
+    
+    
 }
