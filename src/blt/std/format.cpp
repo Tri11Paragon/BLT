@@ -6,16 +6,10 @@
 #include <blt/std/format.h>
 #include <cmath>
 #include "blt/std/logging.h"
+#include "blt/std/assert.h"
 #include <stack>
 #include <queue>
-
-std::string createPadding(int padAmount)
-{
-    std::string padStr;
-    for (int i = 0; i < padAmount; i++)
-        padStr += " ";
-    return padStr;
-}
+#include <algorithm>
 
 std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom)
 {
@@ -152,32 +146,149 @@ void blt::string::TableFormatter::updateMaxColumnLengths()
 struct node_data
 {
     blt::string::TreeFormatter::Node* node;
+    std::vector<std::string> box;
     size_t level;
     
     node_data(blt::string::TreeFormatter::Node* node, size_t level): node(node), level(level)
     {}
 };
 
+struct level_data
+{
+    std::vector<node_data> level;
+    size_t count = 0;
+    size_t depth = 0;
+    size_t max_horizontal_length = 0;
+};
+
 std::vector<std::string> blt::string::TreeFormatter::construct()
 {
-    std::vector<std::string> lines;
-    
-    std::stack<node_data> nodes;
-    
+    std::stack<level_data> levels;
     std::queue<node_data> bfs;
     bfs.emplace(root, 0);
+    // construct a stack of the highest node -> the lowest node.
+    level_data currentLevel;
+    currentLevel.depth = 0;
     while (!bfs.empty())
     {
         auto n = bfs.front();
-        nodes.push(n);
-        std::cout << "Node at level " << n.level << " " << bfs.size() << "\n";
+        if (currentLevel.depth != n.level)
+        {
+            levels.push(currentLevel);
+            currentLevel = {};
+        }
+        currentLevel.count++;
+        if (n.node != nullptr)
+        {
+            auto box = generateBox(n.node);
+            currentLevel.max_horizontal_length = std::max(currentLevel.max_horizontal_length, box[0].size());
+            n.box = std::move(box);
+        }
+        currentLevel.level.push_back(n);
+        currentLevel.depth = n.level;
+        bfs.pop();
+        //std::cout << "Node at level " << n.level << " " << n.node << "\n";
+        if (n.node == nullptr)
+            continue;
         if (n.node->left != nullptr)
             bfs.emplace(n.node->left, n.level + 1);
+        else
+            bfs.emplace(nullptr, n.level + 1);
+        
         if (n.node->right != nullptr)
             bfs.emplace(n.node->right, n.level + 1);
-        bfs.pop();
+        else
+            bfs.emplace(nullptr, n.level + 1);
+    }
+    std::vector<std::string> lines;
+    size_t lineLength = 0;
+    const size_t lineHeight = format.verticalPadding * 2 + 3;
+    //std::cout << levels.size() << "\n";
+    while (!levels.empty())
+    {
+        std::vector<std::string> currentLines;
+        const auto& n = levels.top();
+        
+        for (const auto& b : n.level)
+        {
+            std::vector<std::string> box = b.box;
+            if (b.node == nullptr || box.empty())
+            {
+                for (size_t i = 0; i < lineHeight; i++)
+                    box.push_back(createPadding(n.max_horizontal_length));
+            }
+            if (currentLines.empty())
+            {
+                for (const auto& v : box)
+                    currentLines.push_back(v);
+            } else
+            {
+                BLT_ASSERT(currentLines.size() == box.size() && "Box lines should match current lines!");
+                for (size_t i = 0; i < currentLines.size(); i++)
+                {
+                    currentLines[i] += createPadding(format.horizontalSpacing);
+                    currentLines[i] += box[i];
+                }
+            }
+        }
+        std::int64_t padLength = (static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(currentLines[0].length())) / 2;
+        if (padLength < 0)
+            padLength = 0;
+        for (const auto& v : currentLines)
+        {
+            lineLength = std::max(lineLength, v.length());
+            lines.push_back(createPadding(padLength) + v);
+        }
+        levels.pop();
+        //if (!levels.empty())
+        //    for (int i = 0; i < format.verticalSpacing; i++)
+        //        lines.emplace_back("&");
     }
     
+    size_t index = 1;
+    size_t startLine = 0;
+    size_t endLine = 0;
+    while (index < lines.size() - 1)
+    {
+        auto& line = lines[index];
+        size_t beginMarkerIndex = 0;
+        size_t endMarkerIndex = 0;
+        startLine = index++;
+        beginMarkerIndex = line.find('%');
+        if (beginMarkerIndex != std::string::npos)
+        {
+            // find endLine we need to connect with
+            while (index < lines.size())
+            {
+                auto& line2 = lines[index];
+                endMarkerIndex = line2.find('%');
+                if (endMarkerIndex != std::string::npos)
+                {
+                    endLine = index;
+                    break;
+                }
+                index++;
+            }
+            
+            while (true)
+            {
+                if (beginMarkerIndex == std::string::npos || endMarkerIndex == std::string::npos)
+                    break;
+                
+                BLT_TRACE(std::abs(static_cast<std::int64_t>(endMarkerIndex) - static_cast<std::int64_t>(beginMarkerIndex)));
+                auto connector = createPadding(std::abs(static_cast<std::int64_t>(endMarkerIndex) - static_cast<std::int64_t>(beginMarkerIndex)), '-');
+                auto frontPad = createPadding(std::min(beginMarkerIndex, endMarkerIndex));
+                lines.insert(lines.begin() + static_cast<std::int64_t>(startLine) + 1, frontPad += connector);
+                index++;
+                
+                beginMarkerIndex = line.find('%', beginMarkerIndex + 1);
+                endMarkerIndex = line.find('%', endMarkerIndex + 1);
+            }
+            index++;
+        }
+    }
+    
+    std::reverse(lines.begin(), lines.end());
     return lines;
 }
 
@@ -201,6 +312,7 @@ std::vector<std::string> blt::string::TreeFormatter::generateBox(blt::string::Tr
     
     // create horizontal line based on the calculated length
     std::string hline = createLine(totalLength, '+', '-');
+    hline[(hline.size() - 1) / 2] = '%';
     std::string paddedLine = createLine(totalLength, '|', ' ');
     std::string dataStr;
     dataStr.reserve(totalLength);

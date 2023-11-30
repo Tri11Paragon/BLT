@@ -44,52 +44,28 @@ void blt::test::utility::run()
     
     }
     
-    blt::string::TableFormatter parkerLove("Intrinsic Action Value Table");
-    parkerLove.addColumn({"Thing"});
-    parkerLove.addColumn({"Value"});
+    blt::string::TableFormatter tableTest("Intrinsic Action Value Table");
+    tableTest.addColumn({"Thing"});
+    tableTest.addColumn({"Value"});
     
-    parkerLove.addRow({"Cuddles", "1 / minute"});
-    parkerLove.addRow({"Hand Job", "10"});
-    parkerLove.addRow({"Head", "100"});
-    parkerLove.addRow({"Sleeping Together (Non-Sexual)", "1,000"});
-    parkerLove.addRow({"Actual Sex", "5,000"});
-    parkerLove.addRow({"Sleeping Together (Sexual)", "10,000"});
-    parkerLove.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
-    
-    
-    printLines(parkerLove.createTable(true, true));
+    tableTest.addRow({"Cuddles", "1 / minute"});
+    tableTest.addRow({"Hand Job", "10"});
+    tableTest.addRow({"Head", "100"});
+    tableTest.addRow({"Sleeping Together (Non-Sexual)", "1,000"});
+    tableTest.addRow({"Actual Sex", "5,000"});
+    tableTest.addRow({"Sleeping Together (Sexual)", "10,000"});
+    tableTest.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    printLines(tableTest.createTable(true, true));
     
     
     blt::string::TreeFormatter treeFormatter("I love Men");
     treeFormatter.getRoot()->with(
-            new string::TreeFormatter::Node("Guys"),
-            new string::TreeFormatter::Node("Femboys"));
+            (new string::TreeFormatter::Node("Guys"))
+                    ->with(new string::TreeFormatter::Node("Child1"), nullptr),
+            (new string::TreeFormatter::Node("Femboys"))
+                    ->with(nullptr, new string::TreeFormatter::Node("Child2")));
     printLines(treeFormatter.construct());
     
     
