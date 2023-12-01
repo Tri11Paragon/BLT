@@ -277,7 +277,6 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
                 char type = lines[index][p];
                 for (size_t n = 0; n < verticalSpacing / 2; n++)
                     lines[index + n + 1][p] = '|';
-                lines[index + (verticalSpacing / 2) + 1][p] = '+';
                 auto start = index + (verticalSpacing / 2) + 1;
                 switch (type)
                 {
@@ -297,7 +296,6 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
                         for (size_t i = poses2[consume] + 1; i < p; i++)
                             lines[start][i] = '-';
                         lines[start][poses2[consume]] = '+';
-                        lines[start][p] = '+';
                         for (size_t n = 0; n < verticalSpacing / 2; n++)
                             lines[start + n + 1][poses2[consume]] = '|';
                         consume++;
@@ -306,7 +304,6 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
                         for (size_t i = p; i < poses2[consume]; i++)
                             lines[start][i] = '-';
                         lines[start][poses2[consume]] = '+';
-                        lines[start][p] = '+';
                         for (size_t n = 0; n < verticalSpacing / 2; n++)
                             lines[start + n + 1][poses2[consume]] = '|';
                         consume++;
@@ -314,6 +311,7 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
                     default:
                         break;
                 }
+                lines[start][p] = '+';
             }
         }
         blt::string::replaceAll(lines[index], "%", "+");

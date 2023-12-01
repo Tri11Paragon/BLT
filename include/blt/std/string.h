@@ -271,7 +271,6 @@ namespace blt::string
         }
     }
     
-    
     // taken from https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
     // would've preferred to use boost lib but instructions said to avoid external libs
     // trim from start (in place)

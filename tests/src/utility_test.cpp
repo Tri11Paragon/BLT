@@ -62,10 +62,9 @@ void blt::test::utility::run()
     
     blt::string::TreeFormatter treeFormatter("I love Men");
     treeFormatter.getRoot()->with(
-            (new string::TreeFormatter::Node("Guys"))
-                    ->with(new string::TreeFormatter::Node("Child1"), nullptr),
+            (new string::TreeFormatter::Node("Guys"))->with(nullptr, new string::TreeFormatter::Node("Child2")),
             (new string::TreeFormatter::Node("Femboys"))
-                    ->with(nullptr, new string::TreeFormatter::Node("Child2")));
+                    ->with(nullptr, new string::TreeFormatter::Node("Child1")));
     printLines(treeFormatter.construct());
     
     
