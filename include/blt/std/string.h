@@ -12,7 +12,9 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
+#include <optional>
 #include <cctype>
+#include <unordered_set>
 #include <blt/compatibility.h>
 
 namespace blt::string
@@ -118,6 +120,29 @@ namespace blt::string
             return false;
         return string[string.size() - 1] == search;
 #endif
+    }
+    
+    static inline std::optional<std::vector<size_t>> containsAll(const std::string& string, const std::unordered_set<char>& search)
+    {
+        std::vector<size_t> pos;
+        for (size_t i = 0; i < string.length(); i++)
+        {
+            if (BLT_CONTAINS(search, string[i]))
+                pos.push_back(i);
+        }
+        if (!pos.empty())
+            return pos;
+        return {};
+    }
+    
+    static inline size_t contains(const std::string& string, const std::unordered_set<char>& search)
+    {
+        for (size_t i = 0; i < string.length(); i++)
+        {
+            if (BLT_CONTAINS(search, string[i]))
+                return i;
+        }
+        return false;
     }
     
     static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const char search)

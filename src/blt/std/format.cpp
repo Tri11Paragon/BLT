@@ -4,6 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/format.h>
+#include <blt/std/string.h>
 #include <cmath>
 #include "blt/std/logging.h"
 #include "blt/std/assert.h"
@@ -169,6 +170,7 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
     // construct a stack of the highest node -> the lowest node.
     level_data currentLevel;
     currentLevel.depth = 0;
+    size_t maxLineLength = 0;
     while (!bfs.empty())
     {
         auto n = bfs.front();
@@ -182,6 +184,15 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
         {
             auto box = generateBox(n.node);
             currentLevel.max_horizontal_length = std::max(currentLevel.max_horizontal_length, box[0].size());
+            std::string replacement = "-";
+            // UGLY TODO: fix this
+            if (n.node->left != nullptr)
+                replacement = "$";
+            else if (n.node->right != nullptr)
+                replacement = "#";
+            if (replacement[0] == '$' && n.node->right != nullptr)
+                replacement = "@";
+            blt::string::replaceAll(box.front(), "%", replacement);
             n.box = std::move(box);
         }
         currentLevel.level.push_back(n);
@@ -204,6 +215,7 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
     size_t lineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
+    const size_t verticalSpacing = format.verticalSpacing % 2 == 0 ? format.verticalSpacing + 1 : format.verticalSpacing;
     while (!levels.empty())
     {
         std::vector<std::string> currentLines;
@@ -238,57 +250,79 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
         {
             lineLength = std::max(lineLength, v.length());
             lines.push_back(createPadding(padLength) + v);
+            maxLineLength = std::max(maxLineLength, lines.back().length());
         }
         levels.pop();
-        //if (!levels.empty())
-        //    for (int i = 0; i < format.verticalSpacing; i++)
-        //        lines.emplace_back("&");
+        if (!levels.empty())
+            for (size_t i = 0; i < verticalSpacing; i++)
+                lines.emplace_back(" ");
     }
     
-    size_t index = 1;
-    size_t startLine = 0;
-    size_t endLine = 0;
-    while (index < lines.size() - 1)
-    {
-        auto& line = lines[index];
-        size_t beginMarkerIndex = 0;
-        size_t endMarkerIndex = 0;
-        startLine = index++;
-        beginMarkerIndex = line.find('%');
-        if (beginMarkerIndex != std::string::npos)
-        {
-            // find endLine we need to connect with
-            while (index < lines.size())
-            {
-                auto& line2 = lines[index];
-                endMarkerIndex = line2.find('%');
-                if (endMarkerIndex != std::string::npos)
-                {
-                    endLine = index;
-                    break;
-                }
-                index++;
-            }
-            
-            while (true)
-            {
-                if (beginMarkerIndex == std::string::npos || endMarkerIndex == std::string::npos)
-                    break;
-                
-                BLT_TRACE(std::abs(static_cast<std::int64_t>(endMarkerIndex) - static_cast<std::int64_t>(beginMarkerIndex)));
-                auto connector = createPadding(std::abs(static_cast<std::int64_t>(endMarkerIndex) - static_cast<std::int64_t>(beginMarkerIndex)), '-');
-                auto frontPad = createPadding(std::min(beginMarkerIndex, endMarkerIndex));
-                lines.insert(lines.begin() + static_cast<std::int64_t>(startLine) + 1, frontPad += connector);
-                index++;
-                
-                beginMarkerIndex = line.find('%', beginMarkerIndex + 1);
-                endMarkerIndex = line.find('%', endMarkerIndex + 1);
-            }
-            index++;
-        }
-    }
+    for (auto& line : lines)
+        if (line.length() < maxLineLength)
+            line += createPadding(maxLineLength - line.length());
     
     std::reverse(lines.begin(), lines.end());
+    
+    size_t index = 1;
+    while (index < lines.size())
+    {
+        if (auto poses = blt::string::containsAll(lines[index], std::unordered_set{'$', '#', '@'}))
+        {
+            const auto& nextLine = lines[index + verticalSpacing + 1];
+            auto poses2 = blt::string::containsAll(nextLine, std::unordered_set{'%'}).value();
+            size_t consume = 0;
+            for (auto p : poses.value())
+            {
+                char type = lines[index][p];
+                for (size_t n = 0; n < verticalSpacing / 2; n++)
+                    lines[index + n + 1][p] = '|';
+                lines[index + (verticalSpacing / 2) + 1][p] = '+';
+                auto start = index + (verticalSpacing / 2) + 1;
+                switch (type)
+                {
+                    case '@':
+                        for (size_t i = poses2[consume] + 1; i < poses2[consume + 1]; i++)
+                            lines[start][i] = '-';
+                        lines[start][poses2[consume]] = '+';
+                        lines[start][poses2[consume + 1]] = '+';
+                        for (size_t n = 0; n < verticalSpacing / 2; n++)
+                        {
+                            lines[start + n + 1][poses2[consume]] = '|';
+                            lines[start + n + 1][poses2[consume + 1]] = '|';
+                        }
+                        consume += 2;
+                        break;
+                    case '$':
+                        for (size_t i = poses2[consume] + 1; i < p; i++)
+                            lines[start][i] = '-';
+                        lines[start][poses2[consume]] = '+';
+                        lines[start][p] = '+';
+                        for (size_t n = 0; n < verticalSpacing / 2; n++)
+                            lines[start + n + 1][poses2[consume]] = '|';
+                        consume++;
+                        break;
+                    case '#':
+                        for (size_t i = p; i < poses2[consume]; i++)
+                            lines[start][i] = '-';
+                        lines[start][poses2[consume]] = '+';
+                        lines[start][p] = '+';
+                        for (size_t n = 0; n < verticalSpacing / 2; n++)
+                            lines[start + n + 1][poses2[consume]] = '|';
+                        consume++;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        blt::string::replaceAll(lines[index], "%", "+");
+        blt::string::replaceAll(lines[index], "#", "+");
+        blt::string::replaceAll(lines[index], "@", "+");
+        blt::string::replaceAll(lines[index], "$", "+");
+        index++;
+    }
+    blt::string::replaceAll(lines.front(), "%", "-");
     return lines;
 }
 
