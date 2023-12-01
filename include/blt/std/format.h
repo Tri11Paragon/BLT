@@ -348,9 +348,9 @@ namespace blt::string
         private:
             TreeFormat format;
             
-            Node* root;
+            Node* root = nullptr;
         public:
-            explicit BinaryTreeFormatter(std::string rootData, TreeFormat format = {}): format(format), root(new Node(std::move(rootData)))
+            explicit BinaryTreeFormatter(std::string rootData, TreeFormat format = {}): format(std::move(format)), root(new Node(std::move(rootData)))
             {}
             
             std::vector<std::string> generateBox(Node* node) const;

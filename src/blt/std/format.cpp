@@ -149,8 +149,9 @@ struct node_data
     blt::string::BinaryTreeFormatter::Node* node;
     std::vector<std::string> box;
     size_t level;
+    bool hasHomosexuality = true;
     
-    node_data(blt::string::BinaryTreeFormatter::Node* node, size_t level): node(node), level(level)
+    node_data(blt::string::BinaryTreeFormatter::Node* node, size_t level, bool homoness): node(node), level(level), hasHomosexuality(homoness)
     {}
 };
 
@@ -166,7 +167,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
 {
     std::stack<level_data> levels;
     std::queue<node_data> bfs;
-    bfs.emplace(root, 0);
+    bfs.emplace(root, 0, false);
     // construct a stack of the highest node -> the lowest node.
     level_data currentLevel;
     currentLevel.depth = 0;
@@ -179,6 +180,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
             levels.push(currentLevel);
             currentLevel = {};
         }
+        bool isAHomo = false;
         currentLevel.count++;
         if (n.node != nullptr)
         {
@@ -192,6 +194,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
                 replacement = "#";
             if (replacement[0] == '$' && n.node->right != nullptr)
                 replacement = "@";
+            isAHomo = n.node->left && !n.node->right;
             blt::string::replaceAll(box.front(), "%", replacement);
             n.box = std::move(box);
         }
@@ -202,17 +205,18 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
         if (n.node == nullptr)
             continue;
         if (n.node->left != nullptr)
-            bfs.emplace(n.node->left, n.level + 1);
+            bfs.emplace(n.node->left, n.level + 1, isAHomo);
         else
-            bfs.emplace(nullptr, n.level + 1);
+            bfs.emplace(nullptr, n.level + 1, isAHomo);
         
         if (n.node->right != nullptr)
-            bfs.emplace(n.node->right, n.level + 1);
+            bfs.emplace(n.node->right, n.level + 1, isAHomo);
         else
-            bfs.emplace(nullptr, n.level + 1);
+            bfs.emplace(nullptr, n.level + 1, isAHomo);
     }
     std::vector<std::string> lines;
     size_t lineLength = 0;
+    size_t lastLineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
     const size_t verticalSpacing = format.verticalSpacing % 2 == 0 ? format.verticalSpacing + 1 : format.verticalSpacing;
@@ -239,11 +243,19 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
                 for (size_t i = 0; i < currentLines.size(); i++)
                 {
                     currentLines[i] += createPadding(format.horizontalSpacing);
+                    //currentLines[i] += createPadding(format.horizontalSpacing + static_cast<std::int64_t>(lineLength / (n.level.size() + 1)));
                     currentLines[i] += box[i];
                 }
             }
         }
-        std::int64_t padLength = (static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(currentLines[0].length())) / 2;
+        // TODO:
+        //std::int64_t padLength = 0;
+        //if (n.level.size() == 1)
+        //    padLength = ((static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(currentLines[0].length())) / 2);
+        //else
+        //    padLength = ((static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(lineLength / (n.level.size()))) / 2);
+        std::int64_t padLength = ((static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(currentLines[0].length())) / 2);
+        //std::int64_t padLength = ((static_cast<std::int64_t>(lineLength) - static_cast<std::int64_t>(lineLength / (n.level.size()))) / 2);
         if (padLength < 0)
             padLength = 0;
         for (const auto& v : currentLines)
@@ -251,6 +263,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
             lineLength = std::max(lineLength, v.length());
             lines.push_back(createPadding(padLength) + v);
             maxLineLength = std::max(maxLineLength, lines.back().length());
+            lastLineLength = lines.back().length();
         }
         levels.pop();
         if (!levels.empty())
