@@ -146,11 +146,11 @@ void blt::string::TableFormatter::updateMaxColumnLengths()
 
 struct node_data
 {
-    blt::string::TreeFormatter::Node* node;
+    blt::string::BinaryTreeFormatter::Node* node;
     std::vector<std::string> box;
     size_t level;
     
-    node_data(blt::string::TreeFormatter::Node* node, size_t level): node(node), level(level)
+    node_data(blt::string::BinaryTreeFormatter::Node* node, size_t level): node(node), level(level)
     {}
 };
 
@@ -162,7 +162,7 @@ struct level_data
     size_t max_horizontal_length = 0;
 };
 
-std::vector<std::string> blt::string::TreeFormatter::construct()
+std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
 {
     std::stack<level_data> levels;
     std::queue<node_data> bfs;
@@ -265,6 +265,7 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
     std::reverse(lines.begin(), lines.end());
     
     size_t index = 1;
+    size_t minimal = std::numeric_limits<size_t>::max();
     while (index < lines.size())
     {
         if (auto poses = blt::string::containsAll(lines[index], std::unordered_set{'$', '#', '@'}))
@@ -318,13 +319,29 @@ std::vector<std::string> blt::string::TreeFormatter::construct()
         blt::string::replaceAll(lines[index], "#", "+");
         blt::string::replaceAll(lines[index], "@", "+");
         blt::string::replaceAll(lines[index], "$", "+");
+        if (format.collapse)
+        {
+            for (size_t i = 0; i < lines[index].size(); i++)
+            {
+                if (lines[index][i] != ' ')
+                {
+                    minimal = std::min(minimal, i);
+                    break;
+                }
+            }
+        }
         index++;
     }
     blt::string::replaceAll(lines.front(), "%", "-");
+    if (format.collapse)
+    {
+        for (auto& line : lines)
+            line = line.substr(minimal);
+    }
     return lines;
 }
 
-std::vector<std::string> blt::string::TreeFormatter::generateBox(blt::string::TreeFormatter::Node* node) const
+std::vector<std::string> blt::string::BinaryTreeFormatter::generateBox(blt::string::BinaryTreeFormatter::Node* node) const
 {
     if (node == nullptr)
         return {};
@@ -349,9 +366,9 @@ std::vector<std::string> blt::string::TreeFormatter::generateBox(blt::string::Tr
     std::string dataStr;
     dataStr.reserve(totalLength);
     dataStr += '|';
-    dataStr += createPadding(paddingLeft - 1);
+    dataStr += createPadding(std::max(paddingLeft, 1) - 1);
     dataStr += data;
-    dataStr += createPadding(paddingRight - 1);
+    dataStr += createPadding(std::max(paddingRight, 1) - 1);
     dataStr += '|';
     
     lines.push_back(hline);

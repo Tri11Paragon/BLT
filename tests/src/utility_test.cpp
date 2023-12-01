@@ -59,12 +59,16 @@ void blt::test::utility::run()
     
     printLines(tableTest.createTable(true, true));
     
-    
-    blt::string::TreeFormatter treeFormatter("I love Men");
+    blt::string::BinaryTreeFormatter::TreeFormat format;
+    format.horizontalPadding = 3;
+    format.verticalPadding = 0;
+    format.horizontalSpacing = 3;
+    format.collapse = true;
+    blt::string::BinaryTreeFormatter treeFormatter("I love Men", format);
     treeFormatter.getRoot()->with(
-            (new string::TreeFormatter::Node("Guys"))->with(nullptr, new string::TreeFormatter::Node("Child2")),
-            (new string::TreeFormatter::Node("Femboys"))
-                    ->with(nullptr, new string::TreeFormatter::Node("Child1")));
+            (new string::BinaryTreeFormatter::Node("Guys"))->with(nullptr, new string::BinaryTreeFormatter::Node("Child2")),
+            (new string::BinaryTreeFormatter::Node("Femboys"))
+                    ->with(nullptr, new string::BinaryTreeFormatter::Node("Child1")));
     printLines(treeFormatter.construct());
     
     

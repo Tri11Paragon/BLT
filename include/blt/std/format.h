@@ -303,9 +303,25 @@ namespace blt::string
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
     };
     
-    class TreeFormatter
+    class BinaryTreeFormatter
     {
         public:
+            // data classes
+            struct TreeFormat
+            {
+                int verticalSpacing;
+                int horizontalSpacing;
+                
+                int verticalPadding;
+                int horizontalPadding;
+                
+                // should we remove preceding spaces?
+                bool collapse = false;
+                
+                TreeFormat(): verticalSpacing(2), horizontalSpacing(4), verticalPadding(1), horizontalPadding(4)
+                {}
+            };
+            
             struct Node
             {
                 std::string data;
@@ -330,22 +346,11 @@ namespace blt::string
             };
         
         private:
-            // data classes
-            struct TreeFormat
-            {
-                int verticalSpacing;
-                int horizontalSpacing;
-                
-                int verticalPadding;
-                int horizontalPadding;
-                
-                TreeFormat(): verticalSpacing(2), horizontalSpacing(4), verticalPadding(1), horizontalPadding(4)
-                {}
-            } format;
+            TreeFormat format;
             
             Node* root;
         public:
-            explicit TreeFormatter(std::string rootData, TreeFormat format = {}): format(format), root(new Node(std::move(rootData)))
+            explicit BinaryTreeFormatter(std::string rootData, TreeFormat format = {}): format(format), root(new Node(std::move(rootData)))
             {}
             
             std::vector<std::string> generateBox(Node* node) const;
@@ -357,7 +362,7 @@ namespace blt::string
             
             std::vector<std::string> construct();
             
-            ~TreeFormatter()
+            BinaryTreeFormatter()
             {
                 delete root;
             }
