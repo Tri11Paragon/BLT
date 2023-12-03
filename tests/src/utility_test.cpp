@@ -45,8 +45,8 @@ void blt::test::utility::run()
     }
     
     blt::string::TableFormatter tableTest("Intrinsic Action Value Table");
-    tableTest.addColumn({"Thing"});
-    tableTest.addColumn({"Value"});
+    tableTest.addColumn("Thing");
+    tableTest.addColumn("Value");
     
     tableTest.addRow({"Cuddles", "1 / minute"});
     tableTest.addRow({"Hand Job", "10"});
@@ -85,9 +85,17 @@ void blt::test::utility::run()
             );
     printLines(assign1.construct());
     
-    blt::string::TableFormatter tableQ2i1("Iteration 1");
+    blt::string::TableFormatter tableQ2i1("Iteration 0");
     tableQ2i1.addColumn("Statement");
-    tableQ2i1.addColumn("Statement");
+    tableQ2i1.addColumn("IN");
+    tableQ2i1.addColumn("OUT");
+    tableQ2i1.addRow({"Entry (0)", "{}", "{}"});
+    tableQ2i1.addRow({"(1)", "{}", "{}"});
+    tableQ2i1.addRow({"(2)", "{}", "{}"});
+    tableQ2i1.addRow({"(3)", "{}", "{}"});
+    tableQ2i1.addRow({"(4)", "{}", "{}"});
+    tableQ2i1.addRow({"(5)", "{}", "{}"});
+    tableQ2i1.addRow({"Exit (6)", "{}", "{}"});
     
     printLines(tableQ2i1.createTable(true, true));
 }

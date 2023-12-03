@@ -123,12 +123,12 @@ namespace blt::profiling {
         orderIntervals(averageHistory ? averaged_intervals : intervals, ordered_rows, averageHistory);
         
         string::TableFormatter formatter{profileName};
-        formatter.addColumn({"Order"});
-        formatter.addColumn({"Count"});
-        formatter.addColumn({"Interval"});
-        formatter.addColumn({"Time (ms)"});
-        formatter.addColumn({"Time (ns)"});
-        formatter.addColumn({"Total (ms)"});
+        formatter.addColumn("Order");
+        formatter.addColumn("Count");
+        formatter.addColumn("Interval");
+        formatter.addColumn("Time (ms)");
+        formatter.addColumn("Time (ns)");
+        formatter.addColumn("Total (ms)");
         
         int index = 1;
         for (const auto& row : ordered_rows) {

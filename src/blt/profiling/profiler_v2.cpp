@@ -164,16 +164,16 @@ namespace blt
         auto wall_unit_divide = units.wall == unit::MS ? 1e6 : units.wall == unit::NS ? 1 : 1e9;
         
         string::TableFormatter formatter{profiler.name};
-        formatter.addColumn({"Order"});
+        formatter.addColumn("Order");
         if (printHistory)
-            formatter.addColumn({"Count"});
-        formatter.addColumn({"Interval"});
+            formatter.addColumn("Count");
+        formatter.addColumn("Interval");
         if (printCycles)
-            formatter.addColumn({"Cycles"});
+            formatter.addColumn("Cycles");
         if (printThread)
-            formatter.addColumn({"CPU Time (" + thread_unit_string += ")"});
+            formatter.addColumn("CPU Time (" + thread_unit_string += ")");
         if (printWall)
-            formatter.addColumn({"Wall Time (" + wall_unit_string += ")"});
+            formatter.addColumn("Wall Time (" + wall_unit_string += ")");
         
         for (size_t i = 0; i < profiler.intervals.size(); i++)
         {
