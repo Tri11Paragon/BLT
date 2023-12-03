@@ -281,6 +281,11 @@ namespace blt::string
                 columns.push_back(column);
             }
             
+            inline void addColumn(std::string column)
+            {
+                columns.emplace_back(std::move(column));
+            }
+            
             inline void addRow(TableRow row)
             {
                 if (row.rowValues.size() > columns.size())

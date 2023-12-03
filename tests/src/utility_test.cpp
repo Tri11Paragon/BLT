@@ -71,5 +71,9 @@ void blt::test::utility::run()
                     ->with(nullptr, new string::BinaryTreeFormatter::Node("Child1")));
     printLines(treeFormatter.construct());
     
+    blt::string::TableFormatter tableQ2i1("Iteration 1");
+    tableQ2i1.addColumn({"Statement"});
+    tableQ2i1.addColumn({"Statement"});
+    
     
 }
