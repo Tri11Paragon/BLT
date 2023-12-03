@@ -71,9 +71,23 @@ void blt::test::utility::run()
                     ->with(nullptr, new string::BinaryTreeFormatter::Node("Child1")));
     printLines(treeFormatter.construct());
     
+    blt::string::BinaryTreeFormatter assign1("price > 50", format);
+    assign1.getRoot()->with(
+            // left
+            (new string::BinaryTreeFormatter::Node("member"))
+                ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.15"))
+                        ->with((new string::BinaryTreeFormatter::Node("total > 500"))->with(new string::BinaryTreeFormatter::Node("total -= 25"))),
+                       (new string::BinaryTreeFormatter::Node("total -= total * 0.05"))),
+            // right
+            (new string::BinaryTreeFormatter::Node("quality"))
+                ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.02")),
+                       (new string::BinaryTreeFormatter::Node("total -= total * 0.05")))
+            );
+    printLines(assign1.construct());
+    
     blt::string::TableFormatter tableQ2i1("Iteration 1");
-    tableQ2i1.addColumn({"Statement"});
-    tableQ2i1.addColumn({"Statement"});
+    tableQ2i1.addColumn("Statement");
+    tableQ2i1.addColumn("Statement");
     
-    
+    printLines(tableQ2i1.createTable(true, true));
 }
