@@ -89,13 +89,56 @@ void blt::test::utility::run()
     tableQ2i1.addColumn("Statement");
     tableQ2i1.addColumn("IN");
     tableQ2i1.addColumn("OUT");
-    tableQ2i1.addRow({"Entry (0)", "{}", "{}"});
-    tableQ2i1.addRow({"(1)", "{}", "{}"});
-    tableQ2i1.addRow({"(2)", "{}", "{}"});
-    tableQ2i1.addRow({"(3)", "{}", "{}"});
+    tableQ2i1.addRow({"Entry (0)", " -- ", "{<factor, ?>, <factorial, ?>}"});
+    tableQ2i1.addRow({"(1)", "{<factor, ?>, <factorial, ?>}", "{<factor, 2>, <factorial, ?>}"});
+    tableQ2i1.addRow({"(2)", "{<factor, 2>, <factorial, ?>}", "{<factor, 2>, <factorial, 1>}"});
+    tableQ2i1.addRow({"(3)", "{<factor, 2>, <factorial, 1>}", "{}"});
     tableQ2i1.addRow({"(4)", "{}", "{}"});
     tableQ2i1.addRow({"(5)", "{}", "{}"});
-    tableQ2i1.addRow({"Exit (6)", "{}", "{}"});
+    tableQ2i1.addRow({"Exit (6)", "{}", " -- "});
     
     printLines(tableQ2i1.createTable(true, true));
+    
+    blt::string::TableFormatter tableQ2i2("Iteration 1");
+    tableQ2i2.addColumn("Statement");
+    tableQ2i2.addColumn("IN");
+    tableQ2i2.addColumn("OUT");
+    tableQ2i2.addRow({"Entry (0)", " -- ", "{<factor, ?>, <factorial, ?>}"});
+    tableQ2i2.addRow({"(1)", "{<factor, ?>, <factorial, ?>}", "{<factor, 2>, <factorial, ?>}"});
+    tableQ2i2.addRow({"(2)", "{<factor, 2>, <factorial, ?>}", "{<factor, 2>, <factorial, 1>}"});
+    tableQ2i2.addRow({"(3)", "{<factor, 2>, <factorial, 1>}", "{<factor, 2>, <factorial, 1>}"});
+    tableQ2i2.addRow({"(4)", "{<factor, 2>, <factorial, 1>}", "{<factor, 2>, <factorial, 2>}"});
+    tableQ2i2.addRow({"(5)", "{<factor, 2>, <factorial, 2>}", "{<factor, 1>, <factorial, 2>}"});
+    tableQ2i2.addRow({"Exit (6)", "{<factor, 1>, <factorial, 2>}", " -- "});
+    
+    printLines(tableQ2i2.createTable(true, true));
+    
+    blt::string::TableFormatter tableQ2i3("Iteration 2");
+    tableQ2i3.addColumn("Statement");
+    tableQ2i3.addColumn("IN");
+    tableQ2i3.addColumn("OUT");
+    tableQ2i3.addRow({"Entry (0)", " -- ", "{<factor, ?>, <factorial, ?>}"});
+    tableQ2i3.addRow({"(1)", "{<factor, ?>, <factorial, ?>}", "{<factor, 2>, <factorial, ?>}"});
+    tableQ2i3.addRow({"(2)", "{<factor, 2>, <factorial, ?>}", "{<factor, 2>, <factorial, 1>}"});
+    tableQ2i3.addRow({"(3)", "{<factor, 1>, <factorial, 2>}", "{<factor, 1>, <factorial, 2>}"});
+    tableQ2i3.addRow({"(4)", "{<factor, 2>, <factorial, 1>}", "{<factor, 2>, <factorial, 2>}"});
+    tableQ2i3.addRow({"(5)", "{<factor, 2>, <factorial, 2>}", "{<factor, 1>, <factorial, 2>}"});
+    tableQ2i3.addRow({"Exit (6)", "{<factor, 1>, <factorial, 2>}", " -- "});
+    
+    printLines(tableQ2i3.createTable(true, true));
+    
+    blt::string::TableFormatter tableQ4i0("Q4 Iteration 1");
+    tableQ4i0.addColumn("Statement");
+    tableQ4i0.addColumn("IN");
+    tableQ4i0.addColumn("OUT");
+    tableQ4i0.addRow({"Entry (1)", " -- ", " {} "});
+    tableQ4i0.addRow({"(2)", "{}", "{}"});
+    tableQ4i0.addRow({"(3)", "{}", "{}"});
+    tableQ4i0.addRow({"(4)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
+    tableQ4i0.addRow({"(5)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
+    tableQ4i0.addRow({"(6)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
+    tableQ4i0.addRow({"(7)", "{}", "{}"});
+    tableQ4i0.addRow({"(8)", "{}", "{}"});
+    tableQ4i0.addRow({"(9)", "{}", "{}"});
+    tableQ4i0.addRow({"Exit (10)", "{<factor, 1>, <factorial, 2>}", " -- "});
 }
