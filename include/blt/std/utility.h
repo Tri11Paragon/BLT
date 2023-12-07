@@ -26,21 +26,27 @@
     #include <blt/compatibility.h>
     #include <string>
 
-    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    namespace blt
     {
-        int status;
-        // only defined for GNU C++11?
-        char *demangled_name = abi::__cxa_demangle(str.c_str(), nullptr, nullptr, &status);
-        if (demangled_name == nullptr)
-            return str;
-        std::string ret_name = demangled_name;
-        std::free(demangled_name);
-        return ret_name;
+        static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+        {
+            int status;
+            // only defined for GNU C++11?
+            char* demangled_name = abi::__cxa_demangle(str.c_str(), nullptr, nullptr, &status);
+            if (demangled_name == nullptr)
+                return str;
+            std::string ret_name = demangled_name;
+            std::free(demangled_name);
+            return ret_name;
+        }
     }
 #else
-    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    namespace blt
     {
-        return str;
+        static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+        {
+            return str;
+        }
     }
 #endif
 
