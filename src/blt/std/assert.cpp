@@ -4,6 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/assert.h>
+#include <blt/std/utility.h>
 #include <blt/std/logging.h>
 #include <blt/std/string.h>
 #include <iostream>
@@ -14,7 +15,6 @@
     
     #include <execinfo.h>
     #include <cstdlib>
-
 #endif
 
 #ifdef __GNUC__
@@ -23,6 +23,7 @@
             char** messages = backtrace_symbols(ptrs, size);
     
     #define BLT_FREE_STACK_TRACE() free(messages);
+
 #else
 #define BLT_STACK_TRACE(number) void();
     #define BLT_FREE_STACK_TRACE() void();
@@ -59,8 +60,6 @@ namespace blt {
         BLT_ERROR("The assertion '%s' has failed in file '%s:%d'", expression, path, line);
         BLT_ERROR("Stack Trace:");
         
-        backtrace_symbols(ptrs, size);
-        
         printStacktrace(messages, size, path, line);
         
         BLT_FREE_STACK_TRACE();
@@ -69,6 +68,8 @@ namespace blt {
     
     void printStacktrace(char** messages, int size, const char* path, int line)
     {
+        if (messages == nullptr)
+            return;
 #ifdef __GNUC__
         for (int i = 1; i < size; i++){
             int tabs = i - 1;
@@ -94,7 +95,7 @@ namespace blt {
                 loc += std::to_string(line);
                 loc += '\'';
             } else
-                loc = mes.substr(0, mes.find('+'));
+                loc = demangle(mes.substr(0, mes.find('+')));
             
             if (!loc.empty())
                 buffer += " in ";

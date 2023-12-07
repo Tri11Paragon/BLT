@@ -23,6 +23,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include "blt/std/assert.h"
 
 std::optional<int> get()
 {
@@ -33,6 +34,14 @@ void printLines(const std::vector<std::string>& lines)
 {
     for (const auto& v : lines)
         std::cout << v << "\n";
+}
+
+void getfucked(){
+    BLT_ASSERT(false);
+}
+
+void fuckered(){
+    getfucked();
 }
 
 void blt::test::utility::run()
@@ -127,18 +136,20 @@ void blt::test::utility::run()
     
     printLines(tableQ2i3.createTable(true, true));
     
-    blt::string::TableFormatter tableQ4i0("Q4 Iteration 1");
+    blt::string::TableFormatter tableQ4i0("Q4 Iteration 0");
     tableQ4i0.addColumn("Statement");
     tableQ4i0.addColumn("IN");
     tableQ4i0.addColumn("OUT");
     tableQ4i0.addRow({"Entry (1)", " -- ", " {} "});
-    tableQ4i0.addRow({"(2)", "{}", "{}"});
-    tableQ4i0.addRow({"(3)", "{}", "{}"});
-    tableQ4i0.addRow({"(4)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
-    tableQ4i0.addRow({"(5)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
-    tableQ4i0.addRow({"(6)", "{x = a + b, y = a * b}", "{x = a + b, y = a * b}"});
-    tableQ4i0.addRow({"(7)", "{}", "{}"});
-    tableQ4i0.addRow({"(8)", "{}", "{}"});
-    tableQ4i0.addRow({"(9)", "{}", "{}"});
-    tableQ4i0.addRow({"Exit (10)", "{<factor, 1>, <factorial, 2>}", " -- "});
+    tableQ4i0.addRow({"(2)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(3)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(4)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(5)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(6)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(7)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(8)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"(9)", "{a + b, a * b, a - b, b + 1}", "{a + b, a * b, a - b, b + 1}"});
+    tableQ4i0.addRow({"Exit (10)", "{a + b, a * b, a - b, b + 1}", " -- "});
+    
+    fuckered();
 }
