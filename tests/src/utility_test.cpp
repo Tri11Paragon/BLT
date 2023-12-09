@@ -36,15 +36,21 @@ void printLines(const std::vector<std::string>& lines)
         std::cout << v << "\n";
 }
 
-void testEnumerate(const std::vector<std::string>& test){
-
+void testEnumerate(const std::vector<std::string>& test)
+{
+    for (auto pair : blt::enumerate(test))
+    {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+    }
 }
 
-void getfucked(){
+void getfucked()
+{
     BLT_ASSERT(false);
 }
 
-void fuckered(){
+void fuckered()
+{
     getfucked();
 }
 
@@ -89,14 +95,15 @@ void blt::test::utility::run()
     assign1.getRoot()->with(
             // left
             (new string::BinaryTreeFormatter::Node("member"))
-                ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.15"))
-                        ->with((new string::BinaryTreeFormatter::Node("total > 500"))->with(new string::BinaryTreeFormatter::Node("total -= 25"))),
-                       (new string::BinaryTreeFormatter::Node("total -= total * 0.05"))),
+                    ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.15"))
+                                   ->with((new string::BinaryTreeFormatter::Node("total > 500"))
+                                                  ->with(new string::BinaryTreeFormatter::Node("total -= 25"))),
+                           (new string::BinaryTreeFormatter::Node("total -= total * 0.05"))),
             // right
             (new string::BinaryTreeFormatter::Node("quality"))
-                ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.02")),
-                       (new string::BinaryTreeFormatter::Node("total -= total * 0.05")))
-            );
+                    ->with((new string::BinaryTreeFormatter::Node("total -= total * 0.02")),
+                           (new string::BinaryTreeFormatter::Node("total -= total * 0.05")))
+    );
     printLines(assign1.construct());
     
     blt::string::TableFormatter tableQ2i1("Iteration 0");

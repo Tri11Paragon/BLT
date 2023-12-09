@@ -54,14 +54,10 @@ namespace blt
 namespace blt
 {
     template<typename TYPE_ITR>
-    class enumerate
+    class enumerator
     {
-        private:
-            size_t index = 0;
-            TYPE_ITR begin;
-            TYPE_ITR end;
         public:
-            class enumerate_itr
+            class iterator
             {
                 public:
                     using iterator_category = std::input_iterator_tag;
@@ -71,9 +67,61 @@ namespace blt
                     using reference = typename TYPE_ITR::reference;
                 private:
                     size_t index = 0;
+                    TYPE_ITR current;
                 public:
+                    explicit iterator(TYPE_ITR current): current(current)
+                    {};
+                    
+                    iterator& operator++()
+                    {
+                        index++;
+                        ++current;
+                        return *this;
+                    }
+                    
+                    iterator operator++(int)
+                    {
+                        iterator retval = *this;
+                        ++(*this);
+                        return retval;
+                    }
+                    
+                    bool operator==(iterator other) const
+                    { return current == other.current; }
+                    
+                    bool operator!=(iterator other) const
+                    { return !(*this == other); }
+                    
+                    std::pair<size_t, const reference> operator*() const
+                    {
+                        return {index, *current};
+                    };
             };
+            
+            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(begin), end_(end)
+            {}
+            
+            iterator begin()
+            {
+                return begin_;
+            }
+            
+            iterator end()
+            {
+                return end_;
+            }
+        
+        private:
+            iterator begin_;
+            iterator end_;
     };
+    
+    template<typename T>
+    static inline enumerator<typename T::iterator> enumerate(T container)
+    {
+        return enumerator{container.begin(), container.end()};
+    }
+
 
 #if defined(__GNUC__) || defined(__llvm__)
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))
