@@ -36,6 +36,10 @@ void printLines(const std::vector<std::string>& lines)
         std::cout << v << "\n";
 }
 
+void testEnumerate(const std::vector<std::string>& test){
+
+}
+
 void getfucked(){
     BLT_ASSERT(false);
 }
@@ -65,6 +69,7 @@ void blt::test::utility::run()
     tableTest.addRow({"Sleeping Together (Sexual)", "10,000"});
     tableTest.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
     
+    testEnumerate(tableTest.createTable(true, true));
     
     printLines(tableTest.createTable(true, true));
     

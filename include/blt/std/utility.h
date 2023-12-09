@@ -22,42 +22,57 @@
 #include <optional>
 
 #if defined(__GNUC__)
+    
     #include <cxxabi.h>
     #include <blt/compatibility.h>
     #include <string>
 
-    namespace blt
+namespace blt
+{
+    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
     {
-        static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
-        {
-            int status;
-            // only defined for GNU C++11?
-            char* demangled_name = abi::__cxa_demangle(str.c_str(), nullptr, nullptr, &status);
-            if (demangled_name == nullptr)
-                return str;
-            std::string ret_name = demangled_name;
-            std::free(demangled_name);
-            return ret_name;
-        }
-    }
-#else
-    namespace blt
-    {
-        static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
-        {
+        int status;
+        // only defined for GNU C++11?
+        char* demangled_name = abi::__cxa_demangle(str.c_str(), nullptr, nullptr, &status);
+        if (demangled_name == nullptr)
             return str;
-        }
+        std::string ret_name = demangled_name;
+        std::free(demangled_name);
+        return ret_name;
     }
+}
+#else
+namespace blt
+{
+    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    {
+        return str;
+    }
+}
 #endif
 
 namespace blt
 {
-    
-    template<typename BEGIN, typename END>
+    template<typename TYPE_ITR>
     class enumerate
     {
         private:
-        
+            size_t index = 0;
+            TYPE_ITR begin;
+            TYPE_ITR end;
+        public:
+            class enumerate_itr
+            {
+                public:
+                    using iterator_category = std::input_iterator_tag;
+                    using value_type = typename TYPE_ITR::value_type;
+                    using difference_type = typename TYPE_ITR::difference_type;
+                    using pointer = typename TYPE_ITR::pointer;
+                    using reference = typename TYPE_ITR::reference;
+                private:
+                    size_t index = 0;
+                public:
+            };
     };
 
 #if defined(__GNUC__) || defined(__llvm__)
