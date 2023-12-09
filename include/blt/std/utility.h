@@ -21,7 +21,6 @@
 
 #include <optional>
 #include <blt/std/string.h>
-#include <regex>
 
 #if defined(__GNUC__)
     
@@ -59,16 +58,6 @@ namespace blt
     static BLT_CPP20_CONSTEXPR inline std::string type_string()
     {
         return demangle(typeid(T).name());
-    }
-    
-    template<typename T>
-    static BLT_CPP20_CONSTEXPR inline std::string extract_types()
-    {
-        auto name = demangle(typeid(T).name());
-        
-        std::regex replace("(__cxx[0-9]*)::");
-        
-        return std::regex_replace(name, replace, "");
     }
     
     template<typename TYPE_ITR>

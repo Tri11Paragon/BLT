@@ -49,6 +49,11 @@ int testFunc(int a, int b)
     return a;
 }
 
+//#undef BLT_START_INTERVAL
+//#undef BLT_END_INTERVAL
+//#define BLT_START_INTERVAL(profile, iteration)
+//#define BLT_END_INTERVAL(profile, iteration)
+
 template<typename T>
 void e1(const T& test)
 {
@@ -67,7 +72,7 @@ void e2(const T& test)
     for (size_t i = 0; i < test.size(); i++)
     {
         const auto& v = test[i];
-        blt::black_box(std::pair{i, v});
+        blt::black_box(std::pair<size_t, const std::string&>{i, v});
     }
     BLT_END_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for index");
 }
@@ -79,7 +84,7 @@ void e3(const T& test)
     size_t counter = 0;
     for (const auto& s : test)
     {
-        blt::black_box(std::pair{counter, s});
+        blt::black_box(std::pair<size_t, const std::string&>{counter, s});
         ++counter;
     }
     BLT_END_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for range");
@@ -92,8 +97,6 @@ void testEnumerate(const T& test)
     e2(test);
     e3(test);
     BLT_PRINT_PROFILE("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")");
-    BLT_TRACE(blt::type_string<T>());
-    BLT_TRACE(blt::extract_types<T>());
 }
 
 void getfucked()
@@ -263,7 +266,8 @@ void blt::test::utility::run()
     
     printLines(tableQ4i2.createTable(true, true));
     
-    for (int gensize = 1; gensize < 8; gensize++){
+    for (int gensize = 1; gensize < 8; gensize++)
+    {
         size_t size = static_cast<size_t>(std::pow(10, gensize));
         
         std::vector<std::string> str;
