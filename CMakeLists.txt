@@ -96,6 +96,7 @@ if(MSVC)
 else()
     # perhaps we should warn on unused variables, but BLT will have lots of them.
     target_compile_options(BLT PRIVATE -Wall -Wextra -Wpedantic)
+    target_link_options(BLT PUBLIC -rdynamic)
 endif()
 
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")

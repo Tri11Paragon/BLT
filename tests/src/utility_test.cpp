@@ -23,6 +23,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include "blt/std/assert.h"
 
 std::optional<int> get()
 {
@@ -47,6 +48,24 @@ int testFunc(int a, int b)
     return a;
 }
 
+void testEnumerate(const std::vector<std::string>& test)
+{
+    for (auto pair : blt::enumerate(test))
+    {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+    }
+}
+
+void getfucked()
+{
+    BLT_ASSERT(false);
+}
+
+void fuckered()
+{
+    getfucked();
+}
+
 void blt::test::utility::run()
 {
     //std::vector<int> temp;
@@ -68,6 +87,7 @@ void blt::test::utility::run()
     tableTest.addRow({"Sleeping Together (Sexual)", "10,000"});
     tableTest.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
     
+    testEnumerate(tableTest.createTable(true, true));
     
     printLines(tableTest.createTable(true, true));
     
@@ -204,4 +224,6 @@ void blt::test::utility::run()
     tableQ4i2.addRow({"Exit (10)", "{a + b, a * b, a - b}", " -- "});
     
     printLines(tableQ4i2.createTable(true, true));
+
+    fuckered();
 }

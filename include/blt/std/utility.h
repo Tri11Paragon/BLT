@@ -21,15 +21,107 @@
 
 #include <optional>
 
+#if defined(__GNUC__)
+    
+    #include <cxxabi.h>
+    #include <blt/compatibility.h>
+    #include <string>
+
 namespace blt
 {
-    
-    template<typename BEGIN, typename END>
-    class enumerate
+    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
     {
-        private:
+        int status;
+        // only defined for GNU C++11?
+        char* demangled_name = abi::__cxa_demangle(str.c_str(), nullptr, nullptr, &status);
+        if (demangled_name == nullptr)
+            return str;
+        std::string ret_name = demangled_name;
+        std::free(demangled_name);
+        return ret_name;
+    }
+}
+#else
+namespace blt
+{
+    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    {
+        return str;
+    }
+}
+#endif
+
+namespace blt
+{
+    template<typename TYPE_ITR>
+    class enumerator
+    {
+        public:
+            class iterator
+            {
+                public:
+                    using iterator_category = std::input_iterator_tag;
+                    using value_type = typename TYPE_ITR::value_type;
+                    using difference_type = typename TYPE_ITR::difference_type;
+                    using pointer = typename TYPE_ITR::pointer;
+                    using reference = typename TYPE_ITR::reference;
+                private:
+                    size_t index = 0;
+                    TYPE_ITR current;
+                public:
+                    explicit iterator(TYPE_ITR current): current(current)
+                    {};
+                    
+                    iterator& operator++()
+                    {
+                        index++;
+                        ++current;
+                        return *this;
+                    }
+                    
+                    iterator operator++(int)
+                    {
+                        iterator retval = *this;
+                        ++(*this);
+                        return retval;
+                    }
+                    
+                    bool operator==(iterator other) const
+                    { return current == other.current; }
+                    
+                    bool operator!=(iterator other) const
+                    { return !(*this == other); }
+                    
+                    std::pair<size_t, const reference> operator*() const
+                    {
+                        return {index, *current};
+                    };
+            };
+            
+            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(begin), end_(end)
+            {}
+            
+            iterator begin()
+            {
+                return begin_;
+            }
+            
+            iterator end()
+            {
+                return end_;
+            }
         
+        private:
+            iterator begin_;
+            iterator end_;
     };
+    
+    template<typename T>
+    static inline enumerator<typename T::iterator> enumerate(T container)
+    {
+        return enumerator{container.begin(), container.end()};
+    }
+
 
 #if defined(__GNUC__) || defined(__llvm__)
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))
