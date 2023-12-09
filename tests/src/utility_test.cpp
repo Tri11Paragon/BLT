@@ -18,6 +18,7 @@
 #include <blt/std/utility.h>
 #include <blt/std/format.h>
 #include <blt/std/logging.h>
+#include <blt/profiling/profiler_v2.h>
 #include <utility_test.h>
 #include <vector>
 #include <cstring>
@@ -48,17 +49,56 @@ int testFunc(int a, int b)
     return a;
 }
 
-void testEnumerate(const std::vector<std::string>& test)
+template<typename T>
+void e1(const T& test)
 {
+    BLT_START_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "blt::enumerate");
     for (auto pair : blt::enumerate(test))
     {
-        std::cout << pair.first << ": " << pair.second << std::endl;
+        blt::black_box(pair);
     }
+    BLT_END_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "blt::enumerate");
+}
+
+template<typename T>
+void e2(const T& test)
+{
+    BLT_START_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for index");
+    for (size_t i = 0; i < test.size(); i++)
+    {
+        const auto& v = test[i];
+        blt::black_box(std::pair{i, v});
+    }
+    BLT_END_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for index");
+}
+
+template<typename T>
+void e3(const T& test)
+{
+    BLT_START_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for range");
+    size_t counter = 0;
+    for (const auto& s : test)
+    {
+        blt::black_box(std::pair{counter, s});
+        ++counter;
+    }
+    BLT_END_INTERVAL("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")", "for range");
+}
+
+template<typename T>
+void testEnumerate(const T& test)
+{
+    e1(test);
+    e2(test);
+    e3(test);
+    BLT_PRINT_PROFILE("Enumeration (" + blt::type_string<T>().substr(0, 30) + ":" + std::to_string(test.size()) + ")");
+    BLT_TRACE(blt::type_string<T>());
+    BLT_TRACE(blt::extract_types<T>());
 }
 
 void getfucked()
 {
-    BLT_ASSERT(false);
+    //BLT_ASSERT(false);
 }
 
 void fuckered()
@@ -86,8 +126,6 @@ void blt::test::utility::run()
     tableTest.addRow({"Actual Sex", "5,000"});
     tableTest.addRow({"Sleeping Together (Sexual)", "10,000"});
     tableTest.addRow({"Relationship (I would do anything for you)", "1,000,000,000,000"});
-    
-    testEnumerate(tableTest.createTable(true, true));
     
     printLines(tableTest.createTable(true, true));
     
@@ -224,6 +262,16 @@ void blt::test::utility::run()
     tableQ4i2.addRow({"Exit (10)", "{a + b, a * b, a - b}", " -- "});
     
     printLines(tableQ4i2.createTable(true, true));
-
+    
+    for (int gensize = 1; gensize < 8; gensize++){
+        size_t size = static_cast<size_t>(std::pow(10, gensize));
+        
+        std::vector<std::string> str;
+        for (size_t i = 0; i < size; i++)
+            str.push_back(std::to_string(i));
+        
+        testEnumerate(str);
+    }
+    
     fuckered();
 }

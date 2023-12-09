@@ -20,6 +20,8 @@
 #define BLT_UTILITY_H
 
 #include <optional>
+#include <blt/std/string.h>
+#include <regex>
 
 #if defined(__GNUC__)
     
@@ -53,6 +55,22 @@ namespace blt
 
 namespace blt
 {
+    template<typename T>
+    static BLT_CPP20_CONSTEXPR inline std::string type_string()
+    {
+        return demangle(typeid(T).name());
+    }
+    
+    template<typename T>
+    static BLT_CPP20_CONSTEXPR inline std::string extract_types()
+    {
+        auto name = demangle(typeid(T).name());
+        
+        std::regex replace("(__cxx[0-9]*)::");
+        
+        return std::regex_replace(name, replace, "");
+    }
+    
     template<typename TYPE_ITR>
     class enumerator
     {
@@ -69,36 +87,38 @@ namespace blt
                     size_t index = 0;
                     TYPE_ITR current;
                 public:
-                    explicit iterator(TYPE_ITR current): current(current)
-                    {};
+                    explicit iterator(TYPE_ITR current): current(std::move(current))
+                    {}
                     
                     iterator& operator++()
                     {
-                        index++;
+                        ++index;
                         ++current;
                         return *this;
                     }
                     
-                    iterator operator++(int)
+                    bool operator==(iterator other) const
                     {
-                        iterator retval = *this;
-                        ++(*this);
-                        return retval;
+                        return current == other.current;
                     }
                     
-                    bool operator==(iterator other) const
-                    { return current == other.current; }
-                    
                     bool operator!=(iterator other) const
-                    { return !(*this == other); }
+                    {
+                        return current != other.current;
+                    }
                     
                     std::pair<size_t, const reference> operator*() const
                     {
                         return {index, *current};
                     };
+                    
+                    std::pair<size_t, reference> operator*()
+                    {
+                        return {index, *current};
+                    };
             };
             
-            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(begin), end_(end)
+            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(std::move(begin)), end_(std::move(end))
             {}
             
             iterator begin()
@@ -117,7 +137,13 @@ namespace blt
     };
     
     template<typename T>
-    static inline enumerator<typename T::iterator> enumerate(T container)
+    static inline auto enumerate(const T& container)
+    {
+        return enumerator{container.begin(), container.end()};
+    }
+    
+    template<typename T>
+    static inline auto enumerate(T& container)
     {
         return enumerator{container.begin(), container.end()};
     }
@@ -134,36 +160,19 @@ namespace blt
 #endif
     
     template<typename T>
-    void BLT_ATTRIB_NO_INLINE black_box_ref(const T& val)
+    void BLT_ATTRIB_NO_INLINE black_box(const T& val)
     {
-        volatile void* hell;
+        static volatile void* hell;
         hell = (void*) &val;
         (void) hell;
     }
     
     template<typename T>
-    void BLT_ATTRIB_NO_INLINE black_box(T val)
+    const T& BLT_ATTRIB_NO_INLINE black_box_ret(const T& val)
     {
-        volatile void* hell2;
-        hell2 = (void*) &val;
-        (void) hell2;
-    }
-    
-    template<typename T>
-    const T& BLT_ATTRIB_NO_INLINE black_box_ref_ret(const T& val)
-    {
-        volatile void* hell;
+        static volatile void* hell;
         hell = (void*) &val;
         (void) hell;
-        return val;
-    }
-    
-    template<typename T>
-    T BLT_ATTRIB_NO_INLINE black_box_ret(T val)
-    {
-        volatile void* hell2;
-        hell2 = (void*) &val;
-        (void) hell2;
         return val;
     }
     
