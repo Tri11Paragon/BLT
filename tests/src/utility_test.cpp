@@ -26,11 +26,6 @@
 #include <limits>
 #include "blt/std/assert.h"
 
-std::optional<int> get()
-{
-    return 10;
-}
-
 void printLines(const std::vector<std::string>& lines)
 {
     for (const auto& v : lines)
@@ -38,21 +33,6 @@ void printLines(const std::vector<std::string>& lines)
     std::cout << std::endl;
 }
 
-int testFunc(int a, int b)
-{
-    if (a == b)
-    {
-        a = 2 * b;
-        b = 3 * a;
-    }
-    
-    return a;
-}
-
-//#undef BLT_START_INTERVAL
-//#undef BLT_END_INTERVAL
-//#define BLT_START_INTERVAL(profile, iteration)
-//#define BLT_END_INTERVAL(profile, iteration)
 
 template<typename T>
 void e1(const T& test)
@@ -111,13 +91,6 @@ void fuckered()
 
 void blt::test::utility::run()
 {
-    //std::vector<int> temp;
-    std::optional<int> hi(10);
-    if (auto test = get())
-    {
-    
-    }
-    
     blt::string::TableFormatter tableTest("Intrinsic Action Value Table");
     tableTest.addColumn("Thing");
     tableTest.addColumn("Value");

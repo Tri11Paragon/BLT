@@ -19,14 +19,12 @@
 #ifndef BLT_UTILITY_H
 #define BLT_UTILITY_H
 
-#include <optional>
-#include <blt/std/string.h>
+#include <string>
 
 #if defined(__GNUC__)
     
     #include <cxxabi.h>
     #include <blt/compatibility.h>
-    #include <string>
 
 namespace blt
 {
