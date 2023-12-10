@@ -309,6 +309,8 @@ namespace blt::string
     };
     
     struct tree_node {
+        std::string data;
+        std::string title;
         std::vector<tree_node*> children;
     };
     

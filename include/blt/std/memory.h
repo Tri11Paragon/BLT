@@ -172,43 +172,43 @@ namespace blt
     class scoped_buffer
     {
         private:
-            T* _buffer = nullptr;
-            size_t _size;
+            T* buffer_ = nullptr;
+            size_t size_;
         public:
-            scoped_buffer(): _buffer(nullptr), _size(0)
+            scoped_buffer(): buffer_(nullptr), size_(0)
             {}
             
-            explicit scoped_buffer(size_t size): _size(size)
+            explicit scoped_buffer(size_t size): size_(size)
             {
                 if (size > 0)
-                    _buffer = new T[size];
+                    buffer_ = new T[size];
                 else
-                    _buffer = nullptr;
+                    buffer_ = nullptr;
             }
             
             scoped_buffer(const scoped_buffer& copy)
             {
                 if (copy.size() == 0)
                 {
-                    _buffer = nullptr;
-                    _size = 0;
+                    buffer_ = nullptr;
+                    size_ = 0;
                     return;
                 }
-                _buffer = new T[copy.size()];
-                _size = copy._size;
+                buffer_ = new T[copy.size()];
+                size_ = copy.size_;
                 
                 if constexpr (std::is_trivially_copyable_v<T>)
                 {
-                    std::memcpy(_buffer, copy._buffer, copy.size() * sizeof(T));
+                    std::memcpy(buffer_, copy.buffer_, copy.size() * sizeof(T));
                 } else
                 {
                     if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
                     {
-                        for (size_t i = 0; i < this->_size; i++)
-                            _buffer[i] = T(copy[i]);
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = T(copy[i]);
                     } else
-                        for (size_t i = 0; i < this->_size; i++)
-                            _buffer[i] = copy[i];
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = copy[i];
                 }
             }
             
@@ -219,102 +219,168 @@ namespace blt
                 
                 if (copy.size() == 0)
                 {
-                    _buffer = nullptr;
-                    _size = 0;
+                    buffer_ = nullptr;
+                    size_ = 0;
                     return *this;
                 }
                 
-                delete[] this->_buffer;
-                _buffer = new T[copy.size()];
-                _size = copy._size;
+                delete[] this->buffer_;
+                buffer_ = new T[copy.size()];
+                size_ = copy.size_;
                 
                 if constexpr (std::is_trivially_copyable_v<T>)
                 {
-                    std::memcpy(_buffer, copy._buffer, copy.size() * sizeof(T));
+                    std::memcpy(buffer_, copy.buffer_, copy.size() * sizeof(T));
                 } else
                 {
                     if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
                     {
-                        for (size_t i = 0; i < this->_size; i++)
-                            _buffer[i] = T(copy[i]);
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = T(copy[i]);
                     } else
-                        for (size_t i = 0; i < this->_size; i++)
-                            _buffer[i] = copy[i];
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = copy[i];
                 }
                 return *this;
             }
             
             scoped_buffer(scoped_buffer&& move) noexcept
             {
-                delete[] _buffer;
-                _buffer = move._buffer;
-                _size = move.size();
-                move._buffer = nullptr;
+                delete[] buffer_;
+                buffer_ = move.buffer_;
+                size_ = move.size();
+                move.buffer_ = nullptr;
             }
             
             scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
             {
-                delete[] _buffer;
-                _buffer = moveAssignment._buffer;
-                _size = moveAssignment.size();
-                moveAssignment._buffer = nullptr;
+                delete[] buffer_;
+                buffer_ = moveAssignment.buffer_;
+                size_ = moveAssignment.size();
+                moveAssignment.buffer_ = nullptr;
                 
                 return *this;
             }
             
-            inline T& operator[](unsigned long index)
+            inline T& operator[](size_t index)
             {
-                return _buffer[index];
+                return buffer_[index];
             }
             
-            inline const T& operator[](unsigned long index) const
+            inline const T& operator[](size_t index) const
             {
-                return _buffer[index];
+                return buffer_[index];
             }
             
             inline T* operator*()
             {
-                return _buffer;
+                return buffer_;
             }
             
             [[nodiscard]] inline size_t size() const
             {
-                return _size;
+                return size_;
             }
             
             inline T*& ptr()
             {
-                return _buffer;
+                return buffer_;
             }
             
             inline const T* const& ptr() const
             {
-                return _buffer;
+                return buffer_;
             }
             
             inline const T* const& data() const
             {
-                return _buffer;
+                return buffer_;
             }
             
             inline T*& data()
             {
-                return _buffer;
+                return buffer_;
             }
             
-            ptr_iterator<T> begin()
+            inline ptr_iterator<T> begin()
             {
-                return ptr_iterator{_buffer};
+                return ptr_iterator{buffer_};
             }
             
-            ptr_iterator<T> end()
+            inline ptr_iterator<T> end()
             {
-                return ptr_iterator{&_buffer[_size]};
+                return ptr_iterator{&buffer_[size_]};
             }
             
             ~scoped_buffer()
             {
-                delete[] _buffer;
+                delete[] buffer_;
+            }
+    };
+    
+    template<typename T, size_t MAX_SIZE>
+    class static_vector
+    {
+        private:
+            T buffer_[MAX_SIZE];
+            size_t size_ = 0;
+        public:
+            static_vector() = default;
+            
+            inline bool push_back(T copy)
+            {
+                if (size_ >= MAX_SIZE)
+                    return false;
+                buffer_[size_++] = std::move(copy);
+                return true;
+            }
+            
+            inline bool push_back(T&& move)
+            {
+                if (size_ >= MAX_SIZE)
+                    return false;
+                buffer_[size_++] = std::forward(move);
+                return true;
+            }
+            
+            inline T& operator[](size_t index)
+            {
+                return buffer_[index];
+            }
+            
+            inline const T& operator[](size_t index) const
+            {
+                return buffer_[index];
+            }
+            
+            [[nodiscard]] inline size_t size() const
+            {
+                return size_;
+            }
+            
+            inline T* data()
+            {
+                return buffer_;
+            }
+            
+            inline T* operator*()
+            {
+                return buffer_;
+            }
+            
+            inline T* data() const
+            {
+                return buffer_;
+            }
+            
+            inline ptr_iterator<T> begin()
+            {
+                return ptr_iterator<T>{buffer_};
+            }
+            
+            inline ptr_iterator<T> end()
+            {
+                return ptr_iterator<T>{&buffer_[size_]};
             }
     };
     
