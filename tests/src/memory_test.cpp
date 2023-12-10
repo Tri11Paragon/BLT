@@ -99,7 +99,38 @@ void blt::test::memory::access()
     
 }
 
-void blt::test::memory::ranges()
+void blt::test::memory::static_vector_test()
 {
-    BLT_TRACE_STREAM << '\n';
+    blt::static_vector<int, 16> vec;
+    
+    for (size_t i = 0; i < 16; i++)
+        vec[i] = static_cast<int>(i * 2);
+    
+    for (size_t i = 0; i < 16; i++)
+        BLT_DEBUG_STREAM << vec[i] << ' ';
+    BLT_DEBUG_STREAM << '\n';
+    
+    vec[3] = 120;
+    vec[7] = 230;
+    
+    vec.reserve(vec.capacity());
+    
+    for (auto v : vec)
+        BLT_DEBUG_STREAM << v << ' ';
+    BLT_DEBUG_STREAM << '\n';
+    
+    vec.reserve(0);
+    
+    for (size_t i = 0; i < vec.capacity(); i++)
+    {
+        if (!vec.push_back(static_cast<int>(i)))
+            BLT_INFO("Failed to insert on %d", i);
+    }
+    
+    if (!vec.push_back(10))
+        BLT_INFO("Vector unable to push, current size vs capacity: %d vs %d", vec.size(), vec.capacity());
+    
+    for (auto v : vec)
+        BLT_DEBUG_STREAM << v << ' ';
+    BLT_DEBUG_STREAM << '\n';
 }

@@ -327,11 +327,11 @@ namespace blt
         public:
             static_vector() = default;
             
-            inline bool push_back(T copy)
+            inline bool push_back(const T& copy)
             {
                 if (size_ >= MAX_SIZE)
                     return false;
-                buffer_[size_++] = std::move(copy);
+                buffer_[size_++] = copy;
                 return true;
             }
             
@@ -339,8 +339,14 @@ namespace blt
             {
                 if (size_ >= MAX_SIZE)
                     return false;
-                buffer_[size_++] = std::forward(move);
+                buffer_[size_++] = std::move(move);
                 return true;
+            }
+            
+            inline T& at(size_t index)
+            {
+                if (index >= MAX_SIZE)
+                    throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
             }
             
             inline T& operator[](size_t index)
@@ -353,9 +359,21 @@ namespace blt
                 return buffer_[index];
             }
             
+            inline void reserve(size_t size)
+            {
+                if (size > MAX_SIZE)
+                    size = MAX_SIZE;
+                size_ = size;
+            }
+            
             [[nodiscard]] inline size_t size() const
             {
                 return size_;
+            }
+            
+            [[nodiscard]] inline size_t capacity() const
+            {
+                return MAX_SIZE;
             }
             
             inline T* data()
@@ -373,14 +391,14 @@ namespace blt
                 return buffer_;
             }
             
-            inline ptr_iterator<T> begin()
+            inline T* begin()
             {
-                return ptr_iterator<T>{buffer_};
+                return buffer_;
             }
             
-            inline ptr_iterator<T> end()
+            inline T* end()
             {
-                return ptr_iterator<T>{&buffer_[size_]};
+                return &buffer_[size_];
             }
     };
     
