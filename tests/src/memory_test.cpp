@@ -101,8 +101,5 @@ void blt::test::memory::access()
 
 void blt::test::memory::ranges()
 {
-    blt::range range(0, 10);
-    for (auto r : range)
-        BLT_TRACE_STREAM << r;
     BLT_TRACE_STREAM << '\n';
 }

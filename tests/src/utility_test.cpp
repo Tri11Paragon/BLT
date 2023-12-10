@@ -148,5 +148,14 @@ void blt::test::utility::run()
         testEnumerate(in);
     }
     
+    for (auto r : blt::range(0, 10))
+        BLT_TRACE_STREAM << r << " ";
+    BLT_TRACE_STREAM << "\n";
+    
+    for (auto r : blt::range(10, 0))
+        BLT_TRACE_STREAM << r << " ";
+    BLT_TRACE_STREAM << "\n";
+    
+    
     fuckered();
 }

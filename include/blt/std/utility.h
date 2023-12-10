@@ -134,6 +134,80 @@ namespace blt
     {
         return enumerator{container.begin(), container.end()};
     }
+    
+    template<typename T>
+    struct range
+    {
+        public:
+            struct range_itr
+            {
+                public:
+                    using iterator_category = std::bidirectional_iterator_tag;
+                    using difference_type = T;
+                    using value_type = T;
+                    using pointer = T*;
+                    using reference = T&;
+                private:
+                    T current;
+                    bool forward;
+                public:
+                    
+                    explicit range_itr(T current, bool forward): current(current), forward(forward)
+                    {}
+                    
+                    value_type operator*() const
+                    { return current; }
+                    
+                    value_type operator->()
+                    { return current; }
+                    
+                    range_itr& operator++()
+                    {
+                        if (forward)
+                            current++;
+                        else
+                            current--;
+                        return *this;
+                    }
+                    
+                    range_itr& operator--()
+                    {
+                        if (forward)
+                            current--;
+                        else
+                            current++;
+                        return *this;
+                    }
+                    
+                    friend bool operator==(const range_itr& a, const range_itr& b)
+                    {
+                        return a.current == b.current;
+                    }
+                    
+                    friend bool operator!=(const range_itr& a, const range_itr& b)
+                    {
+                        return a.current != b.current;
+                    }
+            };
+        private:
+            T _begin;
+            T _end;
+            T offset = 0;
+        public:
+            range(T begin, T end): _begin(begin), _end(end), offset(end < begin ? 1 : 0)
+            {}
+            
+            range_itr begin()
+            {
+                return range_itr(_begin - offset, offset == 0);
+            }
+            
+            range_itr end()
+            {
+                // not sure if i like this
+                return range_itr(_end - offset, offset == 0);
+            }
+    };
 
 
 #if defined(__GNUC__) || defined(__llvm__)

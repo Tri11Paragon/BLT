@@ -308,6 +308,10 @@ namespace blt::string
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
     };
     
+    struct tree_node {
+        std::vector<tree_node*> children;
+    };
+    
     class BinaryTreeFormatter
     {
         public:
