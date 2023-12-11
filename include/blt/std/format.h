@@ -12,6 +12,9 @@
 #include <vector>
 #include <blt/math/math.h>
 #include <algorithm>
+#include <string_view>
+#include "memory.h"
+#include <variant>
 
 namespace blt::string
 {
@@ -308,30 +311,186 @@ namespace blt::string
             std::vector<std::string> createTable(bool top = false, bool bottom = false);
     };
     
-    struct tree_node {
+    static inline constexpr size_t MAX_CHILDREN = 16;
+    
+    struct box_format
+    {
+        size_t boxHPadding = 4;
+        size_t boxVPadding = 2;
+    };
+    
+    struct tree_format
+    {
+        box_format boxFormat;
+        
+        int verticalPadding;
+        int horizontalPadding;
+        
+        // should we remove preceding spaces?
+        bool collapse = true;
+        
+        tree_format(): boxFormat{}, verticalPadding(1), horizontalPadding(4)
+        {}
+    };
+    
+    struct tree_node
+    {
         std::string data;
         std::string title;
-        std::vector<tree_node*> children;
+        tree_node* parent;
+        blt::static_vector<tree_node*, 16> children;
     };
+    
+    class ascii_data
+    {
+        private:
+            char* data_;
+            size_t width_ = 0;
+            size_t height_ = 0;
+            size_t size_ = 0;
+        public:
+            ascii_data(size_t width, size_t height): data_(new char[width * height]), width_(width), height_(height), size_(width * height)
+            {
+                // he he he
+                memset(data_, ' ', width * height);
+            }
+            
+            ascii_data(const ascii_data& copy) = delete;
+            
+            ascii_data(ascii_data&& move) noexcept
+            {
+                data_ = move.data_;
+                width_ = move.width_;
+                height_ = move.height_;
+                size_ = move.size_;
+            }
+            
+            ascii_data& operator=(const ascii_data& copy) = delete;
+            
+            ascii_data& operator=(ascii_data&& move) noexcept
+            {
+                delete[] data_;
+                data_ = move.data_;
+                width_ = move.width_;
+                height_ = move.height_;
+                size_ = move.size_;
+                return *this;
+            };
+            
+            char at(size_t x, size_t y)
+            {
+                return data_[x * width_ + y];
+            }
+            
+            char* data()
+            {
+                return data_;
+            }
+            
+            std::vector<std::string> toVec()
+            {
+                std::vector<std::string> vec;
+                for (size_t j = 0; j < height(); j++)
+                {
+                    std::string line;
+                    line.reserve(width());
+                    for (int i = 0; i < width(); i++)
+                    {
+                        line += at(i, j);
+                    }
+                    vec.push_back(std::move(line));
+                }
+                return vec;
+            }
+            
+            [[nodiscard]] char* data() const
+            {
+                return data_;
+            }
+            
+            [[nodiscard]] inline size_t width() const
+            {
+                return width_;
+            }
+            
+            [[nodiscard]] inline size_t height() const
+            {
+                return height_;
+            }
+            
+            [[nodiscard]] inline size_t size() const
+            {
+                return size_;
+            }
+            
+            ~ascii_data()
+            {
+                delete[] data_;
+            }
+    };
+    
+    class ascii_box
+    {
+        private:
+            std::string_view title;
+            std::string_view data;
+            size_t width_;
+            size_t height_;
+        public:
+            ascii_box(std::string_view title, std::string_view data, const box_format& format): title(title), data(data)
+            {
+                width_ = std::max(data.length(), title.length()) + (format.boxHPadding * 2);
+                height_ = 5 + (format.boxVPadding * 2);
+            }
+            
+            [[nodiscard]] inline size_t width() const
+            {
+                return width_ + 2;
+            }
+            
+            [[nodiscard]] inline size_t height() const
+            {
+                return height_;
+            }
+            
+            [[nodiscard]] inline size_t raw_width() const
+            {
+                return width_;
+            }
+    };
+    
+    class ascii_boxes
+    {
+        private:
+            std::vector<ascii_box> boxes_;
+            size_t width = 1;
+            size_t height = 0;
+        public:
+            ascii_boxes() = default;
+            
+            inline void push_back(ascii_box&& box)
+            {
+                width += box.raw_width() + 1;
+                // should all be the same
+                height = std::max(box.height(), height);
+                boxes_.push_back(box);
+            }
+            
+            inline std::vector<ascii_box>& boxes()
+            {
+                return boxes_;
+            }
+    };
+    
+    typedef std::variant<ascii_box, ascii_boxes> box_type;
+    
+    ascii_data constructBox(const box_type& box);
     
     class BinaryTreeFormatter
     {
         public:
             // data classes
-            struct TreeFormat
-            {
-                int verticalSpacing;
-                int horizontalSpacing;
-                
-                int verticalPadding;
-                int horizontalPadding;
-                
-                // should we remove preceding spaces?
-                bool collapse = false;
-                
-                TreeFormat(): verticalSpacing(2), horizontalSpacing(4), verticalPadding(1), horizontalPadding(4)
-                {}
-            };
+            
             
             struct Node
             {
@@ -357,11 +516,12 @@ namespace blt::string
             };
         
         private:
-            TreeFormat format;
+            tree_format format;
             
             Node* root = nullptr;
         public:
-            explicit BinaryTreeFormatter(std::string rootData, TreeFormat format = {}): format(std::move(format)), root(new Node(std::move(rootData)))
+            explicit BinaryTreeFormatter(std::string rootData, tree_format format = {}):
+                    format(std::move(format)), root(new Node(std::move(rootData)))
             {}
             
             std::vector<std::string> generateBox(Node* node) const;

@@ -219,7 +219,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
     size_t lastLineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
-    const size_t verticalSpacing = format.verticalSpacing % 2 == 0 ? format.verticalSpacing + 1 : format.verticalSpacing;
+    const size_t verticalSpacing = format.boxHPadding % 2 == 0 ? format.boxHPadding + 1 : format.boxHPadding;
     while (!levels.empty())
     {
         std::vector<std::string> currentLines;
@@ -242,7 +242,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
                 BLT_ASSERT(currentLines.size() == box.size() && "Box lines should match current lines!");
                 for (size_t i = 0; i < currentLines.size(); i++)
                 {
-                    currentLines[i] += createPadding(format.horizontalSpacing);
+                    currentLines[i] += createPadding(format.boxVPadding);
                     //currentLines[i] += createPadding(format.horizontalSpacing + static_cast<std::int64_t>(lineLength / (n.level.size() + 1)));
                     currentLines[i] += box[i];
                 }
@@ -413,4 +413,10 @@ std::string blt::string::createPadding(size_t length, char spacing)
     for (size_t i = 0; i < length; i++)
         padding += spacing;
     return padding;
+}
+
+blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
+{
+    
+    return blt::string::ascii_data(0, 0);
 }

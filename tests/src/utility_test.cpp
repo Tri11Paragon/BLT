@@ -108,7 +108,7 @@ void blt::test::utility::run()
     blt::string::BinaryTreeFormatter::TreeFormat format;
     format.horizontalPadding = 3;
     format.verticalPadding = 0;
-    format.horizontalSpacing = 3;
+    format.boxVPadding = 3;
     format.collapse = true;
     blt::string::BinaryTreeFormatter treeFormatter("I love Men", format);
     treeFormatter.getRoot()->with(

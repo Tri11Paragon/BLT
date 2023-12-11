@@ -32,9 +32,9 @@ class window {
         KEY_MAP mouseDown{};
     public:
         window() = default;
-        window(int width, int height) {
-            m_width = width;
-            m_height = height;
+        window(int width_, int height_) {
+            m_width = width_;
+            m_height = height_;
         }
         virtual void createWindow() = 0;
         virtual void startMainLoop() = 0;
@@ -42,7 +42,7 @@ class window {
         virtual ~window() = 0;
 
         virtual inline bool setResizeable(bool resizeEnabled) = 0;
-        virtual inline bool setWindowSize(int width, int height) = 0;
+        virtual inline bool setWindowSize(int width_, int height_) = 0;
         [[nodiscard]] inline int getWidth() const {return m_width;};
         [[nodiscard]] inline int getHeight() const {return m_height;};
 
