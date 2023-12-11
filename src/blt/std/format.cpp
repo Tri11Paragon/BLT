@@ -451,9 +451,9 @@ namespace blt
         // if one of the strings are larger than there will be a misalignment as the width of the box is based on the largest string
         // so we need to add an offset to the smallest string for centering.
         if (box.data.length() > box.title.length())
-            titlePad += (box.data.length() - box.title.length())/2;
+            titlePad += (box.data.length() - box.title.length()) / 2;
         else
-            dataPad += (box.title.length() - box.data.length())/2;
+            dataPad += (box.title.length() - box.data.length()) / 2;
         
         // copy in the title and data string
         for (size_t i = 0; i < box.title.size(); i++)
@@ -467,13 +467,13 @@ namespace blt
     blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
     {
         auto width = std::visit(blt::lambda_visitor{
-                [](const blt::string::ascii_box& box) -> size_t {return box.width();},
-                [](const blt::string::ascii_boxes& boxes) -> size_t {return boxes.width();}
-            }, box);
+                [](const blt::string::ascii_box& box) -> size_t { return box.width(); },
+                [](const blt::string::ascii_boxes& boxes) -> size_t { return boxes.width(); }
+        }, box);
         auto height = std::visit(blt::lambda_visitor{
-                [](const blt::string::ascii_box& box) -> size_t {return box.height();},
-                [](const blt::string::ascii_boxes& boxes) -> size_t {return boxes.height();}
-            }, box);
+                [](const blt::string::ascii_box& box) -> size_t { return box.height(); },
+                [](const blt::string::ascii_boxes& boxes) -> size_t { return boxes.height(); }
+        }, box);
         
         string::ascii_data data(width, height);
         

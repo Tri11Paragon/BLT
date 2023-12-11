@@ -208,7 +208,11 @@ namespace blt
                 return range_itr(_end - offset, offset == 0);
             }
     };
-    
+
+//#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
+//#define BLT_LAMBDA(var, code) [](var) -> auto { return code; }
+
+// TODO: WTF
     template<class... TLambdas>
     struct lambda_visitor : TLambdas... {
         using TLambdas::operator()...;
