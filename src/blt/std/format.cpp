@@ -12,6 +12,10 @@
 #include <queue>
 #include <algorithm>
 
+inline constexpr char SEPARATOR = '-';
+inline constexpr char CONNECTOR = '+';
+inline constexpr char BAR = '|';
+
 std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom)
 {
     std::vector<std::string> table;
@@ -219,7 +223,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
     size_t lastLineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
-    const size_t verticalSpacing = format.boxHPadding % 2 == 0 ? format.boxHPadding + 1 : format.boxHPadding;
+    const size_t verticalSpacing = format.boxFormat.boxHPadding % 2 == 0 ? format.boxFormat.boxHPadding + 1 : format.boxFormat.boxHPadding;
     while (!levels.empty())
     {
         std::vector<std::string> currentLines;
@@ -242,7 +246,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
                 BLT_ASSERT(currentLines.size() == box.size() && "Box lines should match current lines!");
                 for (size_t i = 0; i < currentLines.size(); i++)
                 {
-                    currentLines[i] += createPadding(format.boxVPadding);
+                    currentLines[i] += createPadding(format.boxFormat.boxVPadding);
                     //currentLines[i] += createPadding(format.horizontalSpacing + static_cast<std::int64_t>(lineLength / (n.level.size() + 1)));
                     currentLines[i] += box[i];
                 }
@@ -415,8 +419,101 @@ std::string blt::string::createPadding(size_t length, char spacing)
     return padding;
 }
 
-blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
+namespace blt
 {
     
-    return blt::string::ascii_data(0, 0);
+    struct getHeight
+    {
+        inline size_t operator()(const blt::string::ascii_box& box)
+        {
+            return box.height();
+        }
+        
+        inline size_t operator()(const blt::string::ascii_boxes& boxes)
+        {
+            return boxes.height();
+        }
+    };
+    
+    struct getWidth
+    {
+        inline size_t operator()(const blt::string::ascii_box& box)
+        {
+            return box.width();
+        }
+        
+        inline size_t operator()(const blt::string::ascii_boxes& boxes)
+        {
+            return boxes.width();
+        }
+    };
+    
+    void constructVerticalSeparator(blt::string::ascii_data& data, size_t offset, size_t height)
+    {
+        for (size_t i = 0; i < height; i++)
+        {
+            if (!(i == 0 || i == height - 1 || i == 2))
+                data.at(offset, i) = BAR;
+        }
+    }
+    
+    void addBox(blt::string::ascii_data& data, const blt::string::ascii_box& box, size_t offset)
+    {
+        // create the horizontal separators
+        for (size_t i = 0; i < box.width(); i++)
+        {
+            char c = SEPARATOR;
+            if (i == 0 || i == box.width() - 1)
+                c = CONNECTOR;
+            data.at(offset + i, 0) = c;
+            data.at(offset + i, 2) = c;
+            data.at(offset + i, box.height() - 1) = c;
+        }
+        
+        size_t titlePad = box.format.boxHPadding + 1;
+        size_t dataPad = box.format.boxHPadding + 1;
+        
+        // if one of the strings are larger than there will be a misalignment as the width of the box is based on the largest string
+        // so we need to add an offset to the smallest string for centering.
+        if (box.data.length() > box.title.length())
+            titlePad += (box.data.length() - box.title.length())/2;
+        else
+            dataPad += (box.title.length() - box.data.length())/2;
+        
+        // copy in the title and data string
+        for (size_t i = 0; i < box.title.size(); i++)
+            data.at(offset + titlePad + i, 1) = box.title[i];
+        for (size_t i = 0; i < box.data.size(); i++)
+            data.at(offset + dataPad + i, 3 + box.format.boxVPadding) = box.data[i];
+        // add the vertical separator
+        constructVerticalSeparator(data, offset + box.raw_width() + 1, box.height());
+    }
+    
+    blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
+    {
+        auto width = std::visit(getWidth(), box);
+        auto height = std::visit(getHeight(), box);
+        
+        string::ascii_data data(width, height);
+        
+        constructVerticalSeparator(data, 0, height);
+        
+        if (std::holds_alternative<blt::string::ascii_box>(box))
+        {
+            auto b = std::get<blt::string::ascii_box>(box);
+            addBox(data, b, 0);
+        } else
+        {
+            auto bv = std::get<blt::string::ascii_boxes>(box);
+            size_t offset = 0;
+            for (const auto& b : bv.boxes())
+            {
+                addBox(data, b, offset);
+                offset += b.raw_width() + 1;
+            }
+        }
+        
+        return data;
+    }
+    
 }

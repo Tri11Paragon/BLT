@@ -105,10 +105,10 @@ void blt::test::utility::run()
     
     printLines(tableTest.createTable(true, true));
     
-    blt::string::BinaryTreeFormatter::TreeFormat format;
+    blt::string::tree_format format;
     format.horizontalPadding = 3;
     format.verticalPadding = 0;
-    format.boxVPadding = 3;
+    format.boxFormat.boxVPadding = 3;
     format.collapse = true;
     blt::string::BinaryTreeFormatter treeFormatter("I love Men", format);
     treeFormatter.getRoot()->with(
@@ -147,6 +147,25 @@ void blt::test::utility::run()
         testEnumerate(str);
         testEnumerate(in);
     }
+    
+    blt::string::box_format bf;
+    bf.boxHPadding = 1;
+    bf.boxVPadding = 1;
+    blt::string::ascii_box b1{"", "I sold your child", bf};
+    blt::string::ascii_box b2{"", "Your my whole world", bf};
+    
+    auto bd = blt::string::constructBox(b1);
+    auto bd1 = blt::string::constructBox(b2);
+    
+    blt::string::ascii_boxes boxes;
+    boxes.push_back(std::move(b1));
+    boxes.push_back(std::move(b2));
+    
+    auto bd2 = blt::string::constructBox(boxes);
+    
+    printLines(bd.toVec());
+    printLines(bd1.toVec());
+    printLines(bd2.toVec());
     
     for (auto r : blt::range(0, 10))
         BLT_TRACE_STREAM << r << " ";

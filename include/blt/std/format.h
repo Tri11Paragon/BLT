@@ -377,12 +377,12 @@ namespace blt::string
                 return *this;
             };
             
-            char at(size_t x, size_t y)
+            inline char& at(size_t x, size_t y)
             {
-                return data_[x * width_ + y];
+                return data_[x * height_ + y];
             }
             
-            char* data()
+            inline char* data()
             {
                 return data_;
             }
@@ -394,7 +394,7 @@ namespace blt::string
                 {
                     std::string line;
                     line.reserve(width());
-                    for (int i = 0; i < width(); i++)
+                    for (size_t i = 0; i < width(); i++)
                     {
                         line += at(i, j);
                     }
@@ -431,13 +431,15 @@ namespace blt::string
     
     class ascii_box
     {
-        private:
+        public:
             std::string_view title;
             std::string_view data;
+            const box_format& format;
+        private:
             size_t width_;
             size_t height_;
         public:
-            ascii_box(std::string_view title, std::string_view data, const box_format& format): title(title), data(data)
+            ascii_box(std::string_view title, std::string_view data, const box_format& format): title(title), data(data), format(format)
             {
                 width_ = std::max(data.length(), title.length()) + (format.boxHPadding * 2);
                 height_ = 5 + (format.boxVPadding * 2);
@@ -463,22 +465,32 @@ namespace blt::string
     {
         private:
             std::vector<ascii_box> boxes_;
-            size_t width = 1;
-            size_t height = 0;
+            size_t width_ = 1;
+            size_t height_ = 0;
         public:
             ascii_boxes() = default;
             
             inline void push_back(ascii_box&& box)
             {
-                width += box.raw_width() + 1;
+                width_ += box.raw_width() + 1;
                 // should all be the same
-                height = std::max(box.height(), height);
+                height_ = std::max(box.height(), height_);
                 boxes_.push_back(box);
             }
             
             inline std::vector<ascii_box>& boxes()
             {
                 return boxes_;
+            }
+            
+            [[nodiscard]] inline size_t width() const
+            {
+                return width_;
+            }
+            
+            [[nodiscard]] inline size_t height() const
+            {
+                return height_;
             }
     };
     
