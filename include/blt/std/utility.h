@@ -208,6 +208,19 @@ namespace blt
                 return range_itr(_end - offset, offset == 0);
             }
     };
+    
+    template<class... TLambdas>
+    struct lambda_visitor : TLambdas... {
+        using TLambdas::operator()...;
+    };
+    
+#if __cplusplus < 202002L
+    
+    // explicit deduction guide (not needed as of C++20)
+    template<class... TLambdas>
+    lambda_visitor(TLambdas...) -> lambda_visitor<TLambdas...>;
+
+#endif
 
 
 #if defined(__GNUC__) || defined(__llvm__)

@@ -8,6 +8,7 @@
 #include <cmath>
 #include "blt/std/logging.h"
 #include "blt/std/assert.h"
+#include "blt/std/utility.h"
 #include <stack>
 #include <queue>
 #include <algorithm>
@@ -422,32 +423,6 @@ std::string blt::string::createPadding(size_t length, char spacing)
 namespace blt
 {
     
-    struct getHeight
-    {
-        inline size_t operator()(const blt::string::ascii_box& box)
-        {
-            return box.height();
-        }
-        
-        inline size_t operator()(const blt::string::ascii_boxes& boxes)
-        {
-            return boxes.height();
-        }
-    };
-    
-    struct getWidth
-    {
-        inline size_t operator()(const blt::string::ascii_box& box)
-        {
-            return box.width();
-        }
-        
-        inline size_t operator()(const blt::string::ascii_boxes& boxes)
-        {
-            return boxes.width();
-        }
-    };
-    
     void constructVerticalSeparator(blt::string::ascii_data& data, size_t offset, size_t height)
     {
         for (size_t i = 0; i < height; i++)
@@ -491,8 +466,14 @@ namespace blt
     
     blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
     {
-        auto width = std::visit(getWidth(), box);
-        auto height = std::visit(getHeight(), box);
+        auto width = std::visit(blt::lambda_visitor{
+                [](const blt::string::ascii_box& box) -> size_t {return box.width();},
+                [](const blt::string::ascii_boxes& boxes) -> size_t {return boxes.width();}
+            }, box);
+        auto height = std::visit(blt::lambda_visitor{
+                [](const blt::string::ascii_box& box) -> size_t {return box.height();},
+                [](const blt::string::ascii_boxes& boxes) -> size_t {return boxes.height();}
+            }, box);
         
         string::ascii_data data(width, height);
         
