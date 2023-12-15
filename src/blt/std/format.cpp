@@ -445,11 +445,9 @@ namespace blt::string
     void addBox(blt::string::ascii_data& data, const blt::string::box_type& box, size_t width_offset, bool has_titled_friends = false,
                 size_t height_offset = 1)
     {
-        size_t vertical_offset = 0;
         // get box data
         auto width = getBoxData(box, width());
         auto full_width = getBoxData(box, full_width());
-        auto height = getBoxData(box, height());
         auto full_height = getBoxData(box, full_height());
         const auto& box_format = getBoxData(box, format);
         const auto& box_data = getBoxData(box, data);
@@ -468,7 +466,8 @@ namespace blt::string
                 data.at(width_offset + i, 2) = c;
             }
             // TODO: this is ugly
-            if (std::holds_alternative<ascii_titled_box>(box)){
+            if (std::holds_alternative<ascii_titled_box>(box))
+            {
                 const auto& box_title = std::get<ascii_titled_box>(box).title;
                 
                 // if one of the strings are larger than there will be a misalignment as the width of the box is based on the largest string,
@@ -482,7 +481,7 @@ namespace blt::string
                 for (size_t i = 0; i < box_title.size(); i++)
                     data.at(width_offset + titlePad + i, 1) = box_title[i];
             } else
-                full_height += 3;
+                full_height += 2;
             height_offset = 3;
         }
         
@@ -502,7 +501,7 @@ namespace blt::string
         constructVerticalSeparator(data, width_offset + width + 1, full_height);
     }
     
-    blt::string::ascii_data constructBox(const blt::string::box_container& box)
+    blt::string::ascii_data constructBox(const blt::string::box_container& box, bool normalize_mixed_types)
     {
         auto width = std::visit(blt::lambda_visitor{
                 [](const blt::string::box_type& box) -> size_t { return getBoxData(box, full_width()); },
@@ -525,7 +524,7 @@ namespace blt::string
             size_t offset = 0;
             for (const auto& b : bv.boxes())
             {
-                addBox(data, b, offset);
+                addBox(data, b, offset, bv.is_mixed() && normalize_mixed_types);
                 offset += getBoxData(b, width()) + 1;
             }
         }
@@ -535,6 +534,26 @@ namespace blt::string
     
     void string::ascii_boxes::push_back(string::box_type&& box)
     {
+        // I don't like this.
+        switch (type)
+        {
+            case STORED_TYPE::NONE:
+                if (std::holds_alternative<ascii_box>(box))
+                    type = STORED_TYPE::BOX;
+                if (std::holds_alternative<ascii_titled_box>(box))
+                    type = STORED_TYPE::BOX_WITH_TITLE;
+                break;
+            case STORED_TYPE::BOX:
+                if (std::holds_alternative<ascii_titled_box>(box))
+                    type = STORED_TYPE::BOTH;
+                break;
+            case STORED_TYPE::BOX_WITH_TITLE:
+                if (std::holds_alternative<ascii_box>(box))
+                    type = STORED_TYPE::BOTH;
+                break;
+            case STORED_TYPE::BOTH:
+                break;
+        }
         width_ += getBoxData(box, width()) + 1;
         // should all be the same
         height_ = std::max(getBoxData(box, full_height()), height_);

@@ -151,9 +151,9 @@ void blt::test::utility::run()
     blt::string::ascii_padding_format bf;
     bf.horizontalPadding = 1;
     bf.verticalPadding = 1;
-    blt::string::ascii_titled_box bt1{"I have sex", "I sold your child", bf};
+    blt::string::ascii_titled_box bt1{"Pants are inside my lungs", "I sold your child", bf};
     blt::string::ascii_titled_box bt2{"With your child", "Your my whole world", bf};
-    blt::string::ascii_box b1{"Single Love", bf};
+    blt::string::ascii_box b1{"Single Word", bf};
     blt::string::ascii_box b2{"Never Was Never Will", bf};
     
     auto btd = blt::string::constructBox(bt1);
@@ -162,10 +162,13 @@ void blt::test::utility::run()
     auto bd = blt::string::constructBox(b1);
     auto bd1 = blt::string::constructBox(b2);
     
-    blt::string::ascii_boxes boxes;
-    boxes.push_back(std::move(bt1));
-    boxes.push_back(std::move(bt2));
+//    blt::string::ascii_boxes boxes;
+//    boxes.push_back(bt1);
+//    boxes.push_back(b1);
+//    boxes.push_back(bt2);
+//    boxes.push_back(b2);
     
+    blt::string::ascii_boxes boxes{bt1, b1, bt2, b2};
     auto bd2 = blt::string::constructBox(boxes);
     
     printLines(btd.toVec());

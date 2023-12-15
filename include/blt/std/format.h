@@ -508,8 +508,19 @@ namespace blt::string
             std::vector<box_type> boxes_;
             size_t width_ = 1;
             size_t height_ = 0;
+            enum class STORED_TYPE
+            {
+                NONE, BOX, BOX_WITH_TITLE, BOTH
+            };
+            STORED_TYPE type = STORED_TYPE::NONE;
         public:
             ascii_boxes() = default;
+            
+            ascii_boxes(std::initializer_list<box_type> boxes)
+            {
+                for (const auto& b : boxes)
+                    push_back(b);
+            }
             
             void push_back(box_type&& box);
             
@@ -532,11 +543,16 @@ namespace blt::string
             {
                 return height_;
             }
+            
+            [[nodiscard]] inline bool is_mixed() const
+            {
+                return type == STORED_TYPE::BOTH;
+            }
     };
     
     typedef std::variant<box_type, ascii_boxes> box_container;
     
-    ascii_data constructBox(const box_container& box);
+    ascii_data constructBox(const box_container& box, bool normalize_mixed_types = true);
     
     class BinaryTreeFormatter
     {
