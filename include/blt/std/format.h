@@ -318,8 +318,8 @@ namespace blt::string
      */
     struct ascii_padding_format
     {
-        size_t horizontalPadding = 4;
-        size_t verticalPadding = 2;
+        size_t horizontalPadding = 1;
+        size_t verticalPadding = 1;
     };
     
     struct tree_format
@@ -340,7 +340,6 @@ namespace blt::string
     {
         std::string data;
         std::string title;
-        tree_node* parent;
         blt::static_vector<tree_node*, 16> children;
     };
     

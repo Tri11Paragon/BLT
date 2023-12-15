@@ -149,8 +149,6 @@ void blt::test::utility::run()
     }
     
     blt::string::ascii_padding_format bf;
-    bf.horizontalPadding = 1;
-    bf.verticalPadding = 1;
     blt::string::ascii_titled_box bt1{"Pants are inside my lungs", "I sold your child", bf};
     blt::string::ascii_titled_box bt2{"With your child", "Your my whole world", bf};
     blt::string::ascii_box b1{"Single Word", bf};
