@@ -108,7 +108,7 @@ void blt::test::utility::run()
     blt::string::tree_format format;
     format.horizontalPadding = 3;
     format.verticalPadding = 0;
-    format.boxFormat.boxVPadding = 3;
+    format.boxFormat.verticalPadding = 3;
     format.collapse = true;
     blt::string::BinaryTreeFormatter treeFormatter("I love Men", format);
     treeFormatter.getRoot()->with(
@@ -148,22 +148,29 @@ void blt::test::utility::run()
         testEnumerate(in);
     }
     
-    blt::string::box_format bf;
-    bf.boxHPadding = 1;
-    bf.boxVPadding = 1;
-    blt::string::ascii_box b1{"", "I sold your child", bf};
-    blt::string::ascii_box b2{"", "Your my whole world", bf};
+    blt::string::ascii_padding_format bf;
+    bf.horizontalPadding = 1;
+    bf.verticalPadding = 1;
+    blt::string::ascii_titled_box bt1{"I have sex", "I sold your child", bf};
+    blt::string::ascii_titled_box bt2{"With your child", "Your my whole world", bf};
+    blt::string::ascii_box b1{"Single Love", bf};
+    blt::string::ascii_box b2{"Never Was Never Will", bf};
+    
+    auto btd = blt::string::constructBox(bt1);
+    auto btd1 = blt::string::constructBox(bt2);
     
     auto bd = blt::string::constructBox(b1);
     auto bd1 = blt::string::constructBox(b2);
     
     blt::string::ascii_boxes boxes;
-    boxes.push_back(std::move(b1));
-    boxes.push_back(std::move(b2));
+    boxes.push_back(std::move(bt1));
+    boxes.push_back(std::move(bt2));
     
     auto bd2 = blt::string::constructBox(boxes);
     
+    printLines(btd.toVec());
     printLines(bd.toVec());
+    printLines(btd1.toVec());
     printLines(bd1.toVec());
     printLines(bd2.toVec());
     

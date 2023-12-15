@@ -525,19 +525,14 @@ namespace blt
             void expand()
             {
                 size_t new_size = m_size * 2;
-                T* data = new T[new_size];
+                T* data = static_cast<T*>(malloc(sizeof(T) * new_size));
                 if constexpr (std::is_trivially_copyable_v<T>)
                     std::memcpy(data, m_data, m_size);
-                else if constexpr (std::is_move_assignable_v<T>)
+                else if constexpr (std::is_move_assignable_v<T> || std::is_move_constructible_v<T>)
                 {
                     for (size_t i = 0; i < m_size; i++)
                         data[i] = std::move(m_data[i]);
-                } else if constexpr (std::is_move_constructible_v<T>)
-                {
-                    // is this bad? probably
-                    for (size_t i = 0; i < m_size; i++)
-                        data[i] = T(std::move(m_data));
-                } else if constexpr (std::is_copy_assignable_v<T>)
+                } else if constexpr (std::is_copy_assignable_v<T> || std::is_copy_constructible_v<T>)
                 {
                     for (size_t i = 0; i < m_size; i++)
                         data[i] = m_data[i];
@@ -545,7 +540,7 @@ namespace blt
                 {
                     static_assert("Unable to use this type with this allocator!");
                 }
-                delete[] m_data;
+                free(m_data);
                 m_data = data;
                 m_size = new_size;
             }

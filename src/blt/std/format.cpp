@@ -17,6 +17,15 @@ inline constexpr char SEPARATOR = '-';
 inline constexpr char CONNECTOR = '+';
 inline constexpr char BAR = '|';
 
+/**
+ * Returns information from a box_type variant, useful for getting width()/height()
+ */
+#define getBoxData(variant, getter)                                                             \
+    std::visit(blt::lambda_visitor{                                                             \
+        [](const blt::string::ascii_box& box) -> auto { return box.getter; },                   \
+        [](const blt::string::ascii_titled_box& box) -> auto { return box.getter; }             \
+    }, variant)
+
 std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom)
 {
     std::vector<std::string> table;
@@ -224,7 +233,8 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
     size_t lastLineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
-    const size_t verticalSpacing = format.boxFormat.boxHPadding % 2 == 0 ? format.boxFormat.boxHPadding + 1 : format.boxFormat.boxHPadding;
+    const size_t verticalSpacing =
+            format.boxFormat.horizontalPadding % 2 == 0 ? format.boxFormat.horizontalPadding + 1 : format.boxFormat.horizontalPadding;
     while (!levels.empty())
     {
         std::vector<std::string> currentLines;
@@ -247,7 +257,7 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
                 BLT_ASSERT(currentLines.size() == box.size() && "Box lines should match current lines!");
                 for (size_t i = 0; i < currentLines.size(); i++)
                 {
-                    currentLines[i] += createPadding(format.boxFormat.boxVPadding);
+                    currentLines[i] += createPadding(format.boxFormat.verticalPadding);
                     //currentLines[i] += createPadding(format.horizontalSpacing + static_cast<std::int64_t>(lineLength / (n.level.size() + 1)));
                     currentLines[i] += box[i];
                 }
@@ -420,58 +430,86 @@ std::string blt::string::createPadding(size_t length, char spacing)
     return padding;
 }
 
-namespace blt
+namespace blt::string
 {
     
     void constructVerticalSeparator(blt::string::ascii_data& data, size_t offset, size_t height)
     {
         for (size_t i = 0; i < height; i++)
         {
-            if (!(i == 0 || i == height - 1 || i == 2))
+            if (data.at(offset, i) != '+')
                 data.at(offset, i) = BAR;
         }
     }
     
-    void addBox(blt::string::ascii_data& data, const blt::string::ascii_box& box, size_t offset)
+    void addBox(blt::string::ascii_data& data, const blt::string::box_type& box, size_t width_offset, bool has_titled_friends = false,
+                size_t height_offset = 1)
     {
-        // create the horizontal separators
-        for (size_t i = 0; i < box.width(); i++)
+        size_t vertical_offset = 0;
+        // get box data
+        auto width = getBoxData(box, width());
+        auto full_width = getBoxData(box, full_width());
+        auto height = getBoxData(box, height());
+        auto full_height = getBoxData(box, full_height());
+        const auto& box_format = getBoxData(box, format);
+        const auto& box_data = getBoxData(box, data);
+        
+        size_t titlePad = box_format.horizontalPadding + 1;
+        size_t dataPad = box_format.horizontalPadding + 1;
+        
+        // construct titled box's title
+        if (has_titled_friends || std::holds_alternative<ascii_titled_box>(box))
         {
-            char c = SEPARATOR;
-            if (i == 0 || i == box.width() - 1)
-                c = CONNECTOR;
-            data.at(offset + i, 0) = c;
-            data.at(offset + i, 2) = c;
-            data.at(offset + i, box.height() - 1) = c;
+            for (size_t i = 0; i < full_width; i++)
+            {
+                char c = SEPARATOR;
+                if (i == 0 || i == full_width - 1)
+                    c = CONNECTOR;
+                data.at(width_offset + i, 2) = c;
+            }
+            // TODO: this is ugly
+            if (std::holds_alternative<ascii_titled_box>(box)){
+                const auto& box_title = std::get<ascii_titled_box>(box).title;
+                
+                // if one of the strings are larger than there will be a misalignment as the width of the box is based on the largest string,
+                // so we need to add an offset to the smallest string for centering.
+                if (box_data.length() > box_title.length())
+                    titlePad += (box_data.length() - box_title.length()) / 2;
+                else
+                    dataPad += (box_title.length() - box_data.length()) / 2;
+                
+                // copy in the title and data string
+                for (size_t i = 0; i < box_title.size(); i++)
+                    data.at(width_offset + titlePad + i, 1) = box_title[i];
+            } else
+                full_height += 3;
+            height_offset = 3;
         }
         
-        size_t titlePad = box.format.boxHPadding + 1;
-        size_t dataPad = box.format.boxHPadding + 1;
+        // create the horizontal separators
+        for (size_t i = 0; i < full_width; i++)
+        {
+            char c = SEPARATOR;
+            if (i == 0 || i == full_width - 1)
+                c = CONNECTOR;
+            data.at(width_offset + i, 0) = c;
+            data.at(width_offset + i, full_height - 1) = c;
+        }
         
-        // if one of the strings are larger than there will be a misalignment as the width of the box is based on the largest string
-        // so we need to add an offset to the smallest string for centering.
-        if (box.data.length() > box.title.length())
-            titlePad += (box.data.length() - box.title.length()) / 2;
-        else
-            dataPad += (box.title.length() - box.data.length()) / 2;
-        
-        // copy in the title and data string
-        for (size_t i = 0; i < box.title.size(); i++)
-            data.at(offset + titlePad + i, 1) = box.title[i];
-        for (size_t i = 0; i < box.data.size(); i++)
-            data.at(offset + dataPad + i, 3 + box.format.boxVPadding) = box.data[i];
+        for (size_t i = 0; i < box_data.size(); i++)
+            data.at(width_offset + dataPad + i, height_offset + box_format.verticalPadding) = box_data[i];
         // add the vertical separator
-        constructVerticalSeparator(data, offset + box.raw_width() + 1, box.height());
+        constructVerticalSeparator(data, width_offset + width + 1, full_height);
     }
     
-    blt::string::ascii_data blt::string::constructBox(const blt::string::box_type& box)
+    blt::string::ascii_data constructBox(const blt::string::box_container& box)
     {
         auto width = std::visit(blt::lambda_visitor{
-                [](const blt::string::ascii_box& box) -> size_t { return box.width(); },
+                [](const blt::string::box_type& box) -> size_t { return getBoxData(box, full_width()); },
                 [](const blt::string::ascii_boxes& boxes) -> size_t { return boxes.width(); }
         }, box);
         auto height = std::visit(blt::lambda_visitor{
-                [](const blt::string::ascii_box& box) -> size_t { return box.height(); },
+                [](const blt::string::box_type& box) -> size_t { return getBoxData(box, full_height()); },
                 [](const blt::string::ascii_boxes& boxes) -> size_t { return boxes.height(); }
         }, box);
         
@@ -479,22 +517,27 @@ namespace blt
         
         constructVerticalSeparator(data, 0, height);
         
-        if (std::holds_alternative<blt::string::ascii_box>(box))
-        {
-            auto b = std::get<blt::string::ascii_box>(box);
-            addBox(data, b, 0);
-        } else
+        if (std::holds_alternative<blt::string::box_type>(box))
+            addBox(data, std::get<blt::string::box_type>(box), 0);
+        else
         {
             auto bv = std::get<blt::string::ascii_boxes>(box);
             size_t offset = 0;
             for (const auto& b : bv.boxes())
             {
                 addBox(data, b, offset);
-                offset += b.raw_width() + 1;
+                offset += getBoxData(b, width()) + 1;
             }
         }
         
         return data;
     }
     
+    void string::ascii_boxes::push_back(string::box_type&& box)
+    {
+        width_ += getBoxData(box, width()) + 1;
+        // should all be the same
+        height_ = std::max(getBoxData(box, full_height()), height_);
+        boxes_.push_back(box);
+    }
 }

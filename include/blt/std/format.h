@@ -313,15 +313,18 @@ namespace blt::string
     
     static inline constexpr size_t MAX_CHILDREN = 16;
     
-    struct box_format
+    /**
+     * Structure which provides variables for the internal spacing of ASCII objects
+     */
+    struct ascii_padding_format
     {
-        size_t boxHPadding = 4;
-        size_t boxVPadding = 2;
+        size_t horizontalPadding = 4;
+        size_t verticalPadding = 2;
     };
     
     struct tree_format
     {
-        box_format boxFormat;
+        ascii_padding_format boxFormat;
         
         int verticalPadding;
         int horizontalPadding;
@@ -429,56 +432,93 @@ namespace blt::string
             }
     };
     
-    class ascii_box
+    class ascii_object
     {
-        public:
-            std::string_view title;
-            std::string_view data;
-            const box_format& format;
-        private:
+        protected:
             size_t width_;
             size_t height_;
         public:
-            ascii_box(std::string_view title, std::string_view data, const box_format& format): title(title), data(data), format(format)
-            {
-                width_ = std::max(data.length(), title.length()) + (format.boxHPadding * 2);
-                height_ = 5 + (format.boxVPadding * 2);
-            }
+            ascii_object(size_t width, size_t height): width_(width), height_(height)
+            {}
             
+            /**
+             * @return Internal width of the ascii object. This does not include the bordering box
+             */
             [[nodiscard]] inline size_t width() const
             {
-                return width_ + 2;
+                return width_;
             }
             
+            /**
+             * @return Internal height of the ascii object. This does not include the border.
+             */
             [[nodiscard]] inline size_t height() const
             {
                 return height_;
             }
             
-            [[nodiscard]] inline size_t raw_width() const
+            /**
+             * @return full height of the ascii box, includes the expected border around the box
+             */
+            [[nodiscard]] inline size_t full_height() const
             {
-                return width_;
+                return height_ + 2;
+            }
+            
+            /**
+             * @return full width of the ascii box, includes the expected border around the box.
+             */
+            [[nodiscard]] inline size_t full_width() const
+            {
+                return width_ + 2;
             }
     };
+    
+    class ascii_box : public ascii_object
+    {
+        public:
+            std::string_view data;
+            const ascii_padding_format& format;
+        public:
+            explicit ascii_box(std::string_view data,
+                               const ascii_padding_format& format = {}): ascii_object(data.length() + (format.horizontalPadding * 2),
+                                                                                      1 + (format.verticalPadding * 2)), data(data), format(format)
+            {}
+    };
+    
+    class ascii_titled_box : public ascii_object
+    {
+        public:
+            std::string_view title;
+            std::string_view data;
+            const ascii_padding_format& format;
+        public:
+            ascii_titled_box(std::string_view title, std::string_view data,
+                             const ascii_padding_format& format = {}):
+                    ascii_object(std::max(data.length(), title.length()) + (format.horizontalPadding * 2),
+                                 3 + (format.verticalPadding * 2)), title(title), data(data), format(format)
+            {}
+    };
+    
+    typedef std::variant<ascii_box, ascii_titled_box> box_type;
     
     class ascii_boxes
     {
         private:
-            std::vector<ascii_box> boxes_;
+            std::vector<box_type> boxes_;
             size_t width_ = 1;
             size_t height_ = 0;
         public:
             ascii_boxes() = default;
             
-            inline void push_back(ascii_box&& box)
+            void push_back(box_type&& box);
+            
+            inline void push_back(const box_type& box)
             {
-                width_ += box.raw_width() + 1;
-                // should all be the same
-                height_ = std::max(box.height(), height_);
-                boxes_.push_back(box);
+                push_back(box_type(box));
             }
             
-            inline std::vector<ascii_box>& boxes()
+            inline std::vector<box_type>& boxes()
             {
                 return boxes_;
             }
@@ -494,9 +534,9 @@ namespace blt::string
             }
     };
     
-    typedef std::variant<ascii_box, ascii_boxes> box_type;
+    typedef std::variant<box_type, ascii_boxes> box_container;
     
-    ascii_data constructBox(const box_type& box);
+    ascii_data constructBox(const box_container& box);
     
     class BinaryTreeFormatter
     {
@@ -532,8 +572,8 @@ namespace blt::string
             
             Node* root = nullptr;
         public:
-            explicit BinaryTreeFormatter(std::string rootData, tree_format format = {}):
-                    format(std::move(format)), root(new Node(std::move(rootData)))
+            explicit BinaryTreeFormatter(std::string rootData, const tree_format& format = {}):
+                    format(format), root(new Node(std::move(rootData)))
             {}
             
             std::vector<std::string> generateBox(Node* node) const;
