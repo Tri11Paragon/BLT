@@ -541,7 +541,7 @@ namespace blt
             {
                 const auto& name = getFlagHelp(arg);
                 std::cout << name;
-                auto size = std::max(static_cast<int64_t>(max_length) - static_cast<int64_t>(name.size()), 0l);
+                auto size = std::max(static_cast<int64_t>(max_length) - static_cast<int64_t>(name.size()), static_cast<int64_t>(0));
                 size += tab_size;
                 for (int64_t i = 0; i < size; i++)
                     std::cout << " ";
