@@ -10,14 +10,16 @@
 /**
  *
  */
-namespace blt {
+namespace blt
+{
     
     /**
      * Standard array backed first in first out queue
      * @tparam T type stored in the queue
      */
     template<typename T>
-    class flat_stack {
+    class flat_stack
+    {
         private:
             int m_size = 16;
             int m_insertIndex = 0;
@@ -28,7 +30,8 @@ namespace blt {
              * and deletes the old array from memory.
              * @param newSize new size of the internal array
              */
-            void expand() {
+            void expand()
+            {
                 int new_size = m_size * 2;
                 auto tempData = new T[new_size];
                 for (int i = 0; i < m_insertIndex; i++)
@@ -40,8 +43,10 @@ namespace blt {
         
         public:
             
-            void push(const T& t) {
-                if (m_insertIndex >= m_size) {
+            void push(const T& t)
+            {
+                if (m_insertIndex >= m_size)
+                {
                     expand();
                 }
                 m_data[m_insertIndex++] = t;
@@ -51,25 +56,30 @@ namespace blt {
              * Warning does not contain runtime error checking!
              * @return the element at the "front" of the queue.
              */
-            [[nodiscard]] const T& top() const {
+            [[nodiscard]] const T& top() const
+            {
                 return m_data[m_insertIndex - 1];
             }
             
-            void pop() {
+            void pop()
+            {
                 if (empty())
                     return;
                 m_insertIndex--;
             }
-        
-            [[nodiscard]] inline bool empty() const {
+            
+            [[nodiscard]] inline bool empty() const
+            {
                 return m_insertIndex <= 0;
             }
-        
-            [[nodiscard]] inline int size() const {
+            
+            [[nodiscard]] inline int size() const
+            {
                 return m_insertIndex;
             }
             
-            ~flat_stack() {
+            ~flat_stack()
+            {
                 delete[](m_data);
             }
     };
@@ -79,16 +89,19 @@ namespace blt {
      * @tparam T type stored in the queue
      */
     template<typename T>
-    class flat_queue {
+    class flat_queue
+    {
         private:
             int m_size = 16;
             int m_headIndex = 0;
             int m_insertIndex = 0;
             T* m_data;
+            
             /**
              * Expands the internal array to allow for more storage of elements
              */
-            void expand() {
+            void expand()
+            {
                 int new_size = m_size * 2;
                 int removed_size = m_size - m_headIndex;
                 auto tempData = new T[new_size];
@@ -103,12 +116,15 @@ namespace blt {
             }
         
         public:
-            flat_queue(): m_data(new T[m_size]) {
+            flat_queue(): m_data(new T[m_size])
+            {
             
             }
-        
-            inline void push(const T& t) {
-                if (m_insertIndex+1 >= m_size) {
+            
+            inline void push(const T& t)
+            {
+                if (m_insertIndex + 1 >= m_size)
+                {
                     expand();
                 }
                 m_data[m_insertIndex++] = t;
@@ -118,34 +134,104 @@ namespace blt {
              * Warning does not contain runtime error checking!
              * @return the element at the "front" of the queue.
              */
-            [[nodiscard]] const T& front() const {
+            [[nodiscard]] const T& front() const
+            {
                 return m_data[m_headIndex];
             }
-        
-            inline void pop() {
+            
+            [[nodiscard]] T& front()
+            {
+                return m_data[m_headIndex];
+            }
+            
+            inline void pop()
+            {
                 if (empty())
                     return;
                 m_headIndex++;
             }
             
-            [[nodiscard]] inline bool empty() const {
+            [[nodiscard]] inline bool empty() const
+            {
                 return m_headIndex >= m_size;
             }
             
-            [[nodiscard]] inline int size() const {
+            [[nodiscard]] inline int size() const
+            {
                 return m_insertIndex - m_headIndex;
             }
-        
-            inline T* begin(){
+            
+            inline T* begin()
+            {
                 return m_data[m_headIndex];
             }
-        
-            inline T* end(){
+            
+            inline T* end()
+            {
                 return m_data[m_insertIndex];
             }
             
-            ~flat_queue() {
+            ~flat_queue()
+            {
                 delete[](m_data);
+            }
+    };
+    
+    template<typename T>
+    class linked_stack
+    {
+        private:
+            struct node
+            {
+                T t;
+                node* next;
+                
+                node(const T& t, node* node): t(t), next(node)
+                {}
+                
+                node(T&& t, node* node): t(std::move(t)), next(node)
+                {}
+            };
+            
+            node* head = nullptr;
+        public:
+            inline void push(const T& t)
+            {
+                head = new node(t, head);
+            }
+            
+            inline void push(T&& t)
+            {
+                head = new node(std::move(t), head);
+            }
+            
+            inline T& top()
+            {
+                return head->t;
+            }
+            
+            
+            inline const T& top() const
+            {
+                return head->t;
+            }
+            
+            inline void pop()
+            {
+                auto* h = head;
+                head = head->next;
+                delete h;
+            }
+            
+            ~linked_stack()
+            {
+                auto* h = head;
+                while (h != nullptr)
+                {
+                    auto* hc = h;
+                    h = h->next;
+                    delete hc;
+                }
             }
     };
 }

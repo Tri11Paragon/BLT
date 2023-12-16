@@ -11,10 +11,7 @@
 //#include <bitset>
 //#include "hashmap_tests.h"
 //#include <functional>
-#include <memory_test.h>
-#include <blt/parse/argparse.h>
-#include <utility_test.h>
-#include <blt/std/utility.h>
+#include <blt_tests.h>
 
 std::function<int(int i)> test{
         [](int i) -> int {
@@ -71,6 +68,7 @@ int main(int argc, const char** argv)
                     .setAction(blt::arg_action_t::STORE)
                     .setNArgs('?').build());
     parser.addArgument(blt::arg_builder("--utility").setHelp("Run tests on utility functions").setAction(blt::arg_action_t::STORE_TRUE).build());
+    parser.addArgument(blt::arg_builder("--data").setHelp("Run tests on data functions").setAction(blt::arg_action_t::STORE_TRUE).build());
     
     auto args = parser.parse_args(argc, argv);
     
@@ -86,6 +84,9 @@ int main(int argc, const char** argv)
     
     if (args.contains("--memory"))
         blt::test::memory::run();
+    
+    if (args.contains("--data"))
+        blt::test::data::run();
     
     if (args.contains("--nbt"))
     {
