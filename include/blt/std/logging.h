@@ -18,9 +18,6 @@
 namespace blt::logging
 {
     
-    template<typename K, typename V>
-    using hashmap = std::unordered_map<K, V>;
-    
     enum class log_level
     {
         // default
@@ -215,6 +212,9 @@ namespace blt::logging
     #endif
     #include <ios>
     #include <fstream>
+    
+    template<typename K, typename V>
+    using hashmap = std::unordered_map<K, V>;
 
 namespace blt::logging {
     
