@@ -203,6 +203,7 @@ namespace blt::logging
     #include <thread>
     #include <cstdarg>
     #include <iostream>
+    #include <vector>
     #if defined(CXX17_FILESYSTEM) || defined (CXX17_FILESYSTEM_LIBFS)
         #include <filesystem>
     #elif defined(CXX11_EXP_FILESYSTEM) || defined (CXX11_EXP_FILESYSTEM_LIBFS)
