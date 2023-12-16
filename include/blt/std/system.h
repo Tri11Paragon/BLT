@@ -7,10 +7,14 @@
 #ifndef BLT_SYSTEM_H
 #define BLT_SYSTEM_H
 
-#ifdef _WIN32
-#include <intrin.h>
+#ifndef __EMSCRIPTEN__
+    #ifdef _WIN32
+    #include <intrin.h>
+    #else
+    #include <x86intrin.h>
+    #endif
 #else
-#include <x86intrin.h>
+    #include <chrono>
 #endif
 #include <cstdint>
 
@@ -21,7 +25,11 @@ namespace blt::system {
 //    #define GNU_INLINE
 //#endif
     inline std::uint64_t rdtsc(){
+#ifdef __EMSCRIPTEN__
+        return std::chrono::high_resolution_clock::now().time_since_epoch().count();
+#else
         return __rdtsc();
+#endif
     }
     // TODO: system memory and current CPU usage. (Linux Only currently)
     
