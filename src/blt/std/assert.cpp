@@ -11,13 +11,13 @@
 #include <iomanip>
 #include <sstream>
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
     
     #include <execinfo.h>
     #include <cstdlib>
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
     #define BLT_STACK_TRACE(number) void* ptrs[number]; \
             int size = backtrace(ptrs, number);         \
             char** messages = backtrace_symbols(ptrs, size);
@@ -25,7 +25,7 @@
     #define BLT_FREE_STACK_TRACE() free(messages);
 
 #else
-#define BLT_STACK_TRACE(number) void();
+    #define BLT_STACK_TRACE(number) void();
     #define BLT_FREE_STACK_TRACE() void();
 #endif
 
@@ -41,7 +41,7 @@ namespace blt {
     
     void b_throw(const char* what, const char* path, int line)
     {
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
         BLT_STACK_TRACE(50);
         
         BLT_ERROR("An exception '%s' has occurred in file '%s:%d'", what, path, line);
@@ -54,7 +54,7 @@ namespace blt {
     
     void b_assert_failed(const char* expression, const char* path, int line)
     {
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
         BLT_STACK_TRACE(50);
         
         BLT_ERROR("The assertion '%s' has failed in file '%s:%d'", expression, path, line);
@@ -70,7 +70,7 @@ namespace blt {
     {
         if (messages == nullptr)
             return;
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
         for (int i = 1; i < size; i++){
             int tabs = i - 1;
             std::string buffer;
