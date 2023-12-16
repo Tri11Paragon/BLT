@@ -6,6 +6,7 @@
 #include <blt/parse/argparse.h>
 #include <iostream>
 #include <blt/std/string.h>
+#include <algorithm>
 
 namespace blt
 {
