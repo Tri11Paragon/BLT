@@ -28,12 +28,15 @@ namespace blt::test::memory
     
     void static_vector_test();
     
+    void test();
+    
     static inline void run()
     {
         copy();
         move();
         access();
         static_vector_test();
+        test();
     }
 }
 

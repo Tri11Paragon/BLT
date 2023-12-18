@@ -12,6 +12,7 @@
 #include <cstring>
 #include "queue.h"
 #include <blt/std/assert.h>
+#include <blt/std/logging.h>
 #include <cstdint>
 #include <type_traits>
 #include <algorithm>
@@ -506,7 +507,7 @@ namespace blt
             }
     };
     
-    template<typename T>
+    template<typename T, size_t BLOCK_SIZE = 8192>
     class area_allocator
     {
         public:
@@ -522,72 +523,94 @@ namespace blt
                 size_t n;
             };
             
-            void expand()
+            struct block_storage
             {
-                size_t new_size = m_size * 2;
-                T* data = static_cast<T*>(malloc(sizeof(T) * new_size));
-                if constexpr (std::is_trivially_copyable_v<T>)
-                    std::memcpy(data, m_data, m_size);
-                else if constexpr (std::is_move_assignable_v<T> || std::is_move_constructible_v<T>)
-                {
-                    for (size_t i = 0; i < m_size; i++)
-                        data[i] = std::move(m_data[i]);
-                } else if constexpr (std::is_copy_assignable_v<T> || std::is_copy_constructible_v<T>)
-                {
-                    for (size_t i = 0; i < m_size; i++)
-                        data[i] = m_data[i];
-                } else
-                {
-                    static_assert("Unable to use this type with this allocator!");
-                }
-                free(m_data);
-                m_data = data;
-                m_size = new_size;
-            }
+                pointer data;
+                size_t used = 0;
+                // TODO: b-tree?
+                std::vector<pointer_view> unallocated_blocks;
+            };
             
-            void realign()
+            void allocate_block()
             {
-            
+                BLT_INFO("Allocating a new block of size %d", BLOCK_SIZE);
+                block_storage blk;
+                blk.data = static_cast<pointer>(malloc(sizeof(T) * BLOCK_SIZE));
+                blocks.push_back(blk);
             }
         
         public:
             area_allocator()
             {
-                m_data = new T[m_size];
+                allocate_block();
             }
             
-            [[nodiscard]] pointer* allocate(size_t n)
+            [[nodiscard]] pointer allocate(size_t n)
             {
-                if (m_last + n > m_size)
-                    expand();
-                pointer loc = &m_data[m_last];
-                m_last += n;
-                return loc;
+                if (n > BLOCK_SIZE)
+                {
+                    // handle cases where they want to allocate one large huge block
+                    // in this case we do not care about it since the allocator is meant for small object allocations
+                    throw std::runtime_error("Requested allocation is too large!");
+                }
+                // TODO: something better
+                if (blocks.back().used + n > BLOCK_SIZE)
+                {
+                    BLT_TRACE("Moving to a new block");
+                    allocate_block();
+                }
+                auto& current_block = blocks.back();
+                
+                auto* ptr = &blocks.back().data[current_block.used];
+                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
+                {
+                    for (size_t i = 0; i < n; i++)
+                        new(&ptr[i]) T();
+                }
+                current_block.used += n;
+                return ptr;
             }
             
-            void deallocate(pointer* p, size_t n) noexcept
+            void deallocate(pointer p, size_t n) noexcept
             {
-                deallocated_blocks.push({p, n});
-                m_deallocated += n;
-                // TODO: magic number
-                if (static_cast<double>(m_deallocated) / static_cast<double>(m_last) > 0.25)
-                    realign();
+                for (size_t i = 0; i < n; i++)
+                    p[i].~T();
+                for (auto& blk : blocks)
+                {
+                    if (p >= blk.data && p <= (blk.data + BLOCK_SIZE))
+                    {
+                        blk.unallocated_blocks.push_back({p, n});
+                        break;
+                    }
+                }
             }
             
             ~area_allocator()
             {
-                delete[] m_data;
+                for (auto& blk : blocks)
+                {
+//                    for (size_t i = 0; i < blk.used; i++)
+//                    {
+//                        bool alreadyDeallocated = false;
+//                        for (const auto& dealoc : blk.unallocated_blocks)
+//                        {
+//                            auto pos = (blk.data + i);
+//                            if (pos >= dealoc.p && pos <= (dealoc.p + dealoc.n))
+//                            {
+//                                alreadyDeallocated = true;
+//                                break;
+//                            }
+//                        }
+//                        if (!alreadyDeallocated)
+//                            blk.data[i].~T();
+//                    }
+                    // it is UB to not deallocate allocated memory. Get fucked.
+                    free(blk.data);
+                }
             }
         
         private:
-            // current size of the data
-            size_t m_size = 1;
-            // last allocated location
-            size_t m_last = 0;
-            // how many values have been deallocated
-            size_t m_deallocated = 0;
-            T* m_data = nullptr;
-            blt::flat_queue<pointer_view> deallocated_blocks;
+            std::vector<block_storage> blocks;
     };
     
 }

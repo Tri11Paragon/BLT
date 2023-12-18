@@ -21,6 +21,7 @@
 #include <blt/std/assert.h>
 #include <blt/std/random.h>
 #include <type_traits>
+#include "blt/std/utility.h"
 
 template<typename T>
 blt::scoped_buffer<T> create_scoped_buffer(size_t size)
@@ -133,4 +134,69 @@ void blt::test::memory::static_vector_test()
     for (auto v : vec)
         BLT_DEBUG_STREAM << v << ' ';
     BLT_DEBUG_STREAM << '\n';
+}
+
+struct fucked_type1
+{
+    private:
+        int T = 0;
+    public:
+        fucked_type1() = default;
+};
+
+struct fucked_type2
+{
+    public:
+        int T = 0;
+    public:
+        fucked_type2()
+        {
+            T = 50;
+            BLT_DEBUG("I HAVE BEEN CONSTRUCTED");
+        }
+        
+        ~fucked_type2()
+        {
+            BLT_DEBUG("I HAVE BEEN DESTRUCTED!");
+        }
+};
+
+void blt::test::memory::test()
+{
+    area_allocator<fucked_type2, 20> int_test{};
+    //auto arr = int_test.allocate(10);
+    auto arr2 = int_test.allocate(15);
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    blt::black_box(int_test.allocate(1));
+    //blt::black_box(arr4);
+    BLT_INFO("CUM");
+//    arr3 = int_test.allocate(2);
+//    blt::black_box(arr3);
+//    arr3 = int_test.allocate(5);
+//    blt::black_box(arr3);
+//    arr3 = int_test.allocate(10);
+//    blt::black_box(arr3);
+    //auto arr3 = int_test.allocate(20);
+    
+    //std::memset(arr, 0, 10);
+    //std::memset(arr2, 0, 15);
+    //std::memset(arr3, 0, 20);
+    
+    for (int i = 0; i < 15; i++)
+    {
+        BLT_TRACE_STREAM << arr2[i].T << ' ';
+    }
+    BLT_TRACE_STREAM << "\n";
+    
+    int_test.deallocate(arr2, 15);
+    BLT_INFO("-----------------");
 }

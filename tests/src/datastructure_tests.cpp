@@ -69,6 +69,12 @@ namespace blt
             blt_linked_stack.push(random_data[i]);
         BLT_END_INTERVAL(insertProfile, "blt::linked_stack");
         
+        std::vector<int> vector_stack;
+        BLT_START_INTERVAL(insertProfile, "std::vector");
+        for (size_t i = 0; i < size; i++)
+            vector_stack.push_back(random_data[i]);
+        BLT_END_INTERVAL(insertProfile, "std::vector");
+        
         BLT_START_INTERVAL(readProfile, "std::stack");
         for (size_t i = 0; i < size; i++)
         {
@@ -92,6 +98,14 @@ namespace blt
             blt_linked_stack.pop();
         }
         BLT_END_INTERVAL(readProfile, "blt::linked_stack");
+        
+        BLT_START_INTERVAL(readProfile, "std::vector");
+        for (size_t i = 0; i < size; i++)
+        {
+            blt::black_box(vector_stack.back());
+            vector_stack.pop_back();
+        }
+        BLT_END_INTERVAL(readProfile, "std::vector");
         
         BLT_PRINT_PROFILE(insertProfile);
         BLT_PRINT_PROFILE(readProfile);
