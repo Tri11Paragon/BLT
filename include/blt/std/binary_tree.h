@@ -35,7 +35,6 @@ namespace blt
                 node* left;
                 node* right;
                 
-                
                 node(const T& t): val(t)
                 {}
                 
@@ -103,6 +102,7 @@ namespace blt
                     return;
                 }
                 node* search = root;
+                node* parent = nullptr;
                 while (true)
                 {
                     if (t < search->val)
@@ -110,7 +110,7 @@ namespace blt
                         if (search->left == nullptr)
                         {
                             search->left = new node(t);
-                            return;
+                            break;
                         }
                         search = search->left;
                     } else
@@ -118,10 +118,11 @@ namespace blt
                         if (search->right == nullptr)
                         {
                             search->right = new node(t);
-                            return;
+                            break;
                         }
                         search = search->right;
                     }
+                    parent = search;
                 }
             }
             
