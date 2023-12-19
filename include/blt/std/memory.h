@@ -11,6 +11,7 @@
 #include <iterator>
 #include <cstring>
 #include "queue.h"
+#include "utility.h"
 #include <blt/std/assert.h>
 #include <blt/std/logging.h>
 #include <cstdint>
@@ -519,7 +520,7 @@ namespace blt
         private:
             struct pointer_view
             {
-                const_pointer p;
+                pointer p;
                 size_t n;
             };
             
@@ -531,12 +532,64 @@ namespace blt
                 std::vector<pointer_view> unallocated_blocks;
             };
             
-            void allocate_block()
+            inline void allocate_block()
             {
                 BLT_INFO("Allocating a new block of size %d", BLOCK_SIZE);
-                block_storage blk;
-                blk.data = static_cast<pointer>(malloc(sizeof(T) * BLOCK_SIZE));
+                auto* blk = new block_storage();
+                blk->data = static_cast<pointer>(malloc(sizeof(T) * BLOCK_SIZE));
                 blocks.push_back(blk);
+            }
+            
+            inline pointer find_available_block(size_t n)
+            {
+                for (auto* blk : blocks)
+                {
+                    size_t index = -1ull;
+                    size_t leftover = 0;
+                    for (auto kv : blt::enumerate(blk->unallocated_blocks))
+                    {
+                        if (kv.second.n >= n)
+                        {
+                            index = kv.first;
+                            leftover = kv.second.n - n;
+                            break;
+                        }
+                    }
+                    if (index != -1ull)
+                    {
+                        pointer_view ptr = blk->unallocated_blocks[index];
+                        std::iter_swap(blk->unallocated_blocks.begin() + index, blk->unallocated_blocks.end() - 1);
+                        blk->unallocated_blocks.pop_back();
+//                        BLT_INFO("Found block! %d, Unallocated leftover %d", index, leftover);
+                        if (leftover > 0)
+                            blk->unallocated_blocks.push_back({ptr.p + n, leftover});
+                        return ptr.p;
+                    }
+                }
+                return nullptr;
+            }
+            
+            inline std::pair<pointer, size_t> getBlock(size_t n)
+            {
+                auto* blk = find_available_block(n);
+                if (blk != nullptr)
+                    return {blk, 0};
+                
+                if (blocks.back()->used + n > BLOCK_SIZE)
+                    allocate_block();
+                
+                auto ptr = std::pair<pointer, size_t>{blocks.back()->data, blocks.back()->used};
+                blocks.back()->used += n;
+                return ptr;
+            }
+            
+            inline void allocate_in_block(pointer begin, size_t n)
+            {
+                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
+                {
+                    for (size_t i = 0; i < n; i++)
+                        new(&begin[i]) T();
+                }
             }
         
         public:
@@ -548,26 +601,14 @@ namespace blt
             [[nodiscard]] pointer allocate(size_t n)
             {
                 if (n > BLOCK_SIZE)
-                {
-                    // handle cases where they want to allocate one large huge block
-                    // in this case we do not care about it since the allocator is meant for small object allocations
                     throw std::runtime_error("Requested allocation is too large!");
-                }
-                // TODO: something better
-                if (blocks.back().used + n > BLOCK_SIZE)
-                {
-                    BLT_TRACE("Moving to a new block");
-                    allocate_block();
-                }
-                auto& current_block = blocks.back();
                 
-                auto* ptr = &blocks.back().data[current_block.used];
-                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
-                {
-                    for (size_t i = 0; i < n; i++)
-                        new(&ptr[i]) T();
-                }
-                current_block.used += n;
+                auto block_info = getBlock(n);
+                
+                auto* ptr = &block_info.first[block_info.second];
+                // call constructors on the objects if they require it
+                allocate_in_block(ptr, n);
+                
                 return ptr;
             }
             
@@ -575,11 +616,11 @@ namespace blt
             {
                 for (size_t i = 0; i < n; i++)
                     p[i].~T();
-                for (auto& blk : blocks)
+                for (auto*& blk : blocks)
                 {
-                    if (p >= blk.data && p <= (blk.data + BLOCK_SIZE))
+                    if (p >= blk->data && p <= (blk->data + BLOCK_SIZE))
                     {
-                        blk.unallocated_blocks.push_back({p, n});
+                        blk->unallocated_blocks.push_back({p, n});
                         break;
                     }
                 }
@@ -587,30 +628,15 @@ namespace blt
             
             ~area_allocator()
             {
-                for (auto& blk : blocks)
+                for (auto*& blk : blocks)
                 {
-//                    for (size_t i = 0; i < blk.used; i++)
-//                    {
-//                        bool alreadyDeallocated = false;
-//                        for (const auto& dealoc : blk.unallocated_blocks)
-//                        {
-//                            auto pos = (blk.data + i);
-//                            if (pos >= dealoc.p && pos <= (dealoc.p + dealoc.n))
-//                            {
-//                                alreadyDeallocated = true;
-//                                break;
-//                            }
-//                        }
-//                        if (!alreadyDeallocated)
-//                            blk.data[i].~T();
-//                    }
-                    // it is UB to not deallocate allocated memory. Get fucked.
-                    free(blk.data);
+                    free(blk->data);
+                    delete blk;
                 }
             }
         
         private:
-            std::vector<block_storage> blocks;
+            std::vector<block_storage*> blocks;
     };
     
 }
