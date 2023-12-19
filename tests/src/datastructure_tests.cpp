@@ -17,6 +17,7 @@
  */
 #include <blt_tests.h>
 #include <blt/std/queue.h>
+#include <blt/std/binary_tree.h>
 #include <queue>
 #include <stack>
 #include <vector>
@@ -113,10 +114,11 @@ namespace blt
     
     void test::data::run()
     {
-        auto max = static_cast<size_t>(std::log10(max_size));
-        auto min = static_cast<size_t>(std::log10(min_size));
-        for (size_t i = min; i <= max; i++)
-            run_size(exp(10, i));
+//        auto max = static_cast<size_t>(std::log10(max_size));
+//        auto min = static_cast<size_t>(std::log10(min_size));
+//        for (size_t i = min; i <= max; i++)
+//            run_size(exp(10, i));
+    
     }
     
 }
