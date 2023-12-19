@@ -230,11 +230,38 @@ void test_allocations_1()
         BLT_ERROR("Test (1) with size %d failed!", allocator_size);
 }
 
+template<size_t allocator_size = 20>
+void test_allocations_2()
+{
+    std::vector<int, blt::area_allocator<int, allocator_size>> vec;
+    for (size_t i = 0; i < allocator_size * 2; i++)
+    {
+        vec.push_back(10);
+        vec.push_back(42);
+    }
+    bool passed = true;
+    for (size_t i = 0; i < vec.size(); i += 2)
+    {
+        if (vec[i] != 10 && vec[i] != 42)
+            passed = false;
+    }
+    if (passed)
+        BLT_INFO("Test (2) with size %d passed!", allocator_size);
+    else
+        BLT_ERROR("Test (2) with size %d failed!", allocator_size);
+    blt::black_box(vec);
+}
+
 void blt::test::memory::test()
 {
     test_allocations_1();
-    test_allocations_1<50>();
-    test_allocations_1<4096>();
+    test_allocations_1<1024 * 4>();
+    test_allocations_1<1024 * 8>();
+    test_allocations_1<1024 * 16>();
+    test_allocations_2();
+    test_allocations_2<1024 * 4>();
+    test_allocations_2<1024 * 8>();
+    test_allocations_2<1024 * 16>();
     
     std::vector<std::pair<fucked_type2*, size_t>> types;
     area_allocator<fucked_type2, 20> int_test{};

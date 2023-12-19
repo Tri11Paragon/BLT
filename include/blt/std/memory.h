@@ -21,6 +21,7 @@
 #include <cstring>
 #include <array>
 #include <optional>
+#include <limits>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
@@ -513,11 +514,22 @@ namespace blt
     class area_allocator
     {
         public:
-            typedef T value_type;
-            typedef T* pointer;
-            typedef const T* const_pointer;
-            typedef void* void_pointer;
-            typedef const void* const_void_pointer;
+            using type = T;
+            using value_type = type;
+            using pointer = type*;
+            using const_pointer = const type*;
+            using void_pointer = void*;
+            using const_void_pointer = const void*;
+            using reference = value_type&;
+            using const_reference = const value_type&;
+            using size_type = size_t;
+            using difference_type = size_t;
+            using propagate_on_container_move_assignment = std::false_type;
+            template<class U>
+            struct rebind
+            {
+                typedef std::allocator<U> other;
+            };
         private:
             /**
              * Stores a view to a region of memory that has been deallocated
@@ -676,6 +688,33 @@ namespace blt
                         break;
                     }
                 }
+            }
+            
+            template<class U, class... Args>
+            inline void construct(U* p, Args&&... args)
+            {
+                ::new((void*) p) U(std::forward<Args>(args)...);
+            }
+            
+            template<class U>
+            inline void destroy(U* p)
+            {
+                p->~U();
+            }
+            
+            inline size_t max_size() const
+            {
+                return std::numeric_limits<size_t>::max();
+            }
+            
+            inline const_pointer address(const value_type& val)
+            {
+                return std::addressof(val);
+            }
+            
+            inline pointer address(value_type& val)
+            {
+                return std::addressof(val);
             }
             
             ~area_allocator()
