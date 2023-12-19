@@ -7,6 +7,8 @@
 #ifndef BLT_QUEUE_H
 #define BLT_QUEUE_H
 
+#include <blt/std/memory_util.h>
+
 /**
  *
  */
@@ -32,7 +34,7 @@ namespace blt
              */
             void expand()
             {
-                int new_size = m_size * 2;
+                int new_size = blt::mem::next_byte_allocation(m_size);
                 auto tempData = new T[new_size];
                 for (int i = 0; i < m_insertIndex; i++)
                     tempData[i] = m_data[i];
@@ -102,7 +104,7 @@ namespace blt
              */
             void expand()
             {
-                int new_size = m_size * 2;
+                int new_size = blt::mem::next_byte_allocation(m_size);
                 int removed_size = m_size - m_headIndex;
                 auto tempData = new T[new_size];
                 // only copy data from where we've removed onward
