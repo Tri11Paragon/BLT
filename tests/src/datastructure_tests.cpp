@@ -118,7 +118,21 @@ namespace blt
 //        auto min = static_cast<size_t>(std::log10(min_size));
 //        for (size_t i = min; i <= max; i++)
 //            run_size(exp(10, i));
-    
+        
+        double d = -1;
+        char data[sizeof(d)]{};
+        long v = 0;
+        std::memcpy(data, &d, sizeof(d));
+        blt::mem::fromBytes(data, v);
+        for (int i = 0; i < 64; i++)
+        {
+            if (i == 1 || i == 12)
+                std::cout << ' ';
+            std::cout << ((v >> i) & 0x1);
+        }
+        std::cout << std::endl;
+        
+        BLT_TRACE("%s", std::to_string(1.0/27.0).c_str());
     }
     
 }
