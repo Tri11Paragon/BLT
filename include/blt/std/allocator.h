@@ -178,6 +178,20 @@ namespace blt
                 allocate_block();
             }
             
+            area_allocator(const area_allocator& copy) = delete;
+            
+            area_allocator(area_allocator&& move)
+            {
+                blocks = move.blocks;
+            }
+            
+            area_allocator& operator=(const area_allocator& copy) = delete;
+            
+            area_allocator& operator=(area_allocator&& move)
+            {
+                std::swap(move.blocks, blocks);
+            }
+            
             [[nodiscard]] pointer allocate(size_t n)
             {
                 if (n > BLOCK_SIZE)
