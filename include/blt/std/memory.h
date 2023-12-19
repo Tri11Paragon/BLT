@@ -20,6 +20,7 @@
 #include <utility>
 #include <cstring>
 #include <array>
+#include <optional>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
@@ -518,12 +519,29 @@ namespace blt
             typedef void* void_pointer;
             typedef const void* const_void_pointer;
         private:
+            /**
+             * Stores a view to a region of memory that has been deallocated
+             * This is a non-owning reference to the memory block
+             *
+             * pointer p is the pointer to the beginning of the block of memory
+             * size_t n is the number of elements that this block can hold
+             */
             struct pointer_view
             {
                 pointer p;
                 size_t n;
             };
             
+            /**
+             * Stores the actual data for allocated blocks. Since we would like to be able to allocate an arbitrary number of items
+             * we need a way of storing that data. The block storage holds an owning pointer to a region of memory with used elements
+             * Only up to used has to have their destructors called, which should be handled by the deallocate function
+             * it is UB to not deallocate memory allocated by this allocator
+             *
+             * an internal vector is used to store the regions of memory which have been deallocated. the allocate function will search for
+             * free blocks with sufficient size in order to maximize memory usage. In the future more advanced methods should be used
+             * for both faster access to deallocated blocks of sufficient size and to ensure coherent memory.
+             */
             struct block_storage
             {
                 pointer data;
@@ -532,48 +550,79 @@ namespace blt
                 std::vector<pointer_view> unallocated_blocks;
             };
             
+            /**
+             * Stores an index to a pointer_view along with the amount of memory leftover after the allocation
+             * it also stores the block being allocated to in question. The new inserted leftover should start at old_ptr + size
+             */
+            struct block_view
+            {
+                block_storage* blk;
+                size_t index;
+                size_t leftover;
+                
+                block_view(block_storage* blk, size_t index, size_t leftover): blk(blk), index(index), leftover(leftover)
+                {}
+            };
+            
+            /**
+             * Allocate a new block of memory and push it to the back of blocks.
+             */
             inline void allocate_block()
             {
-                BLT_INFO("Allocating a new block of size %d", BLOCK_SIZE);
+                //BLT_INFO("Allocating a new block of size %d", BLOCK_SIZE);
                 auto* blk = new block_storage();
                 blk->data = static_cast<pointer>(malloc(sizeof(T) * BLOCK_SIZE));
                 blocks.push_back(blk);
             }
             
-            inline pointer find_available_block(size_t n)
+            /**
+             * Searches for a free block inside the block storage with sufficient space and returns an optional view to it
+             * The optional will be empty if no open block can be found.
+             */
+            inline std::optional<block_view> search_for_block(block_storage* blk, size_t n)
+            {
+                for (auto kv : blt::enumerate(blk->unallocated_blocks))
+                {
+                    if (kv.second.n >= n)
+                        return block_view{blk, kv.first, kv.second.n - n};
+                }
+                return {};
+            }
+            
+            /**
+             * removes the block of memory from the unallocated_blocks storage in the underlying block, inserting a new unallocated block if
+             * there was any leftover. Returns a pointer to the beginning of the new block.
+             */
+            inline pointer swap_pop_resize_if(const block_view& view, size_t n)
+            {
+                pointer_view ptr = view.blk->unallocated_blocks[view.index];
+                std::iter_swap(view.blk->unallocated_blocks.begin() + view.index, view.blk->unallocated_blocks.end() - 1);
+                view.blk->unallocated_blocks.pop_back();
+                if (view.leftover > 0)
+                    view.blk->unallocated_blocks.push_back({ptr.p + n, view.leftover});
+                return ptr.p;
+            }
+            
+            /**
+             * Finds the next available unallocated block of memory, or empty if there is none which meet size requirements
+             */
+            inline std::optional<pointer> find_available_block(size_t n)
             {
                 for (auto* blk : blocks)
                 {
-                    size_t index = -1ull;
-                    size_t leftover = 0;
-                    for (auto kv : blt::enumerate(blk->unallocated_blocks))
-                    {
-                        if (kv.second.n >= n)
-                        {
-                            index = kv.first;
-                            leftover = kv.second.n - n;
-                            break;
-                        }
-                    }
-                    if (index != -1ull)
-                    {
-                        pointer_view ptr = blk->unallocated_blocks[index];
-                        std::iter_swap(blk->unallocated_blocks.begin() + index, blk->unallocated_blocks.end() - 1);
-                        blk->unallocated_blocks.pop_back();
-//                        BLT_INFO("Found block! %d, Unallocated leftover %d", index, leftover);
-                        if (leftover > 0)
-                            blk->unallocated_blocks.push_back({ptr.p + n, leftover});
-                        return ptr.p;
-                    }
+                    if (auto view = search_for_block(blk, n))
+                        return swap_pop_resize_if(view.value(), n);
                 }
-                return nullptr;
+                return {};
             }
             
+            /**
+             * returns a pointer to a block of memory along with an offset into that pointer that the requested block can be found at
+             */
             inline std::pair<pointer, size_t> getBlock(size_t n)
             {
-                auto* blk = find_available_block(n);
-                if (blk != nullptr)
-                    return {blk, 0};
+                if (auto blk = find_available_block(n))
+                    return {blk.value(), 0};
                 
                 if (blocks.back()->used + n > BLOCK_SIZE)
                     allocate_block();
@@ -583,6 +632,9 @@ namespace blt
                 return ptr;
             }
             
+            /**
+             * Calls the constructor on elements if they require construction, otherwise constructor will not be called and this function is useless
+             */
             inline void allocate_in_block(pointer begin, size_t n)
             {
                 if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
