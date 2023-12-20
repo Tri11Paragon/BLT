@@ -59,9 +59,14 @@ namespace blt
             ALLOC alloc;
             node* root = nullptr;
             
-            node* newNode(const T& t)
+            inline node* newNode(const T& t)
             {
-                return alloc.allocate(1);
+                return alloc.construct(alloc.allocate(1), t);
+            }
+            
+            inline node* newNode(T&& t)
+            {
+                return alloc.construct(alloc.allocate(1), t);
             }
         
         public:
@@ -104,7 +109,7 @@ namespace blt
             {
                 if (root == nullptr)
                 {
-                    root = new node(t);
+                    root = newNode(t);
                     return;
                 }
                 node* search = root;
@@ -115,7 +120,7 @@ namespace blt
                     {
                         if (search->left == nullptr)
                         {
-                            search->left = new node(t);
+                            search->left = newNode(t);
                             break;
                         }
                         search = search->left;
@@ -123,7 +128,7 @@ namespace blt
                     {
                         if (search->right == nullptr)
                         {
-                            search->right = new node(t);
+                            search->right = newNode(t);
                             break;
                         }
                         search = search->right;
