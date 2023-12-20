@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <algorithm>
 #include <vector>
@@ -63,66 +64,62 @@ namespace blt::string
             }
     };
     
-    static inline BLT_CPP20_CONSTEXPR bool starts_with(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool starts_with(std::string_view string, std::string_view search)
     {
 #ifdef BLT_USE_CPP20
         return string.starts_with(search);
 #else
         if (search.length() > string.length())
             return false;
-        auto chars = string.c_str();
-        auto search_chars = search.c_str();
         for (unsigned int i = 0; i < search.length(); i++)
         {
-            if (chars[i] != search_chars[i])
+            if (string[i] != search[i])
                 return false;
         }
         return true;
 #endif
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool starts_with(const std::string& string, char search)
+    static inline BLT_CPP20_CONSTEXPR bool starts_with(std::string_view string, char search)
     {
 #ifdef BLT_USE_CPP20
         return string.starts_with(search);
 #else
         if (string.empty())
             return false;
-        return string[0] == search;
+        return string.front() == search;
 #endif
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool ends_with(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool ends_with(std::string_view string, std::string_view search)
     {
 #ifdef BLT_USE_CPP20
         return string.ends_with(search);
 #else
         if (search.length() > string.length())
             return false;
-        auto chars = string.c_str();
-        auto search_chars = search.c_str();
         auto startPosition = string.length() - search.length();
         for (unsigned int i = 0; i < search.length(); i++)
         {
-            if (chars[startPosition + i] != search_chars[i])
+            if (string[startPosition + i] != search[i])
                 return false;
         }
         return true;
 #endif
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool ends_with(const std::string& string, char search)
+    static inline BLT_CPP20_CONSTEXPR bool ends_with(std::string_view string, char search)
     {
 #ifdef BLT_USE_CPP20
         return string.ends_with(search);
 #else
         if (string.empty())
             return false;
-        return string[string.size() - 1] == search;
+        return string.back() == search;
 #endif
     }
     
-    static inline std::optional<std::vector<size_t>> containsAll(const std::string& string, const std::unordered_set<char>& search)
+    static inline std::optional<std::vector<size_t>> containsAll(std::string_view string, const std::unordered_set<char>& search)
     {
         std::vector<size_t> pos;
         for (size_t i = 0; i < string.length(); i++)
@@ -135,7 +132,7 @@ namespace blt::string
         return {};
     }
     
-    static inline size_t contains(const std::string& string, const std::unordered_set<char>& search)
+    static inline size_t contains(std::string_view string, const std::unordered_set<char>& search)
     {
         for (size_t i = 0; i < string.length(); i++)
         {
@@ -145,7 +142,7 @@ namespace blt::string
         return false;
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const char search)
+    static inline BLT_CPP20_CONSTEXPR bool contains(std::string_view string, const char search)
     {
 #if __cplusplus >= 202002L
         return std::ranges::any_of(string, [search](const char c) -> bool {
@@ -161,20 +158,18 @@ namespace blt::string
 #endif
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool contains(const std::string& string, const std::string& search)
+    static inline BLT_CPP20_CONSTEXPR bool contains(std::string_view string, std::string_view search)
     {
         if (search.length() > string.length())
             return false;
-        auto chars = string.c_str();
-        auto search_chars = search.c_str();
         for (unsigned int i = 0; i < string.length(); i++)
         {
-            if (chars[i] == search_chars[0])
+            if (string[i] == search[0])
             {
                 bool correct = true;
                 for (unsigned int j = 0; j < search.length(); j++)
                 {
-                    if (chars[i + j] != search_chars[j])
+                    if (string[i + j] != search[j])
                     {
                         correct = false;
                         break;
@@ -192,7 +187,7 @@ namespace blt::string
      * @param s string to lower case
      * @return a string copy that is all lower case
      */
-    static inline BLT_CPP20_CONSTEXPR std::string toLowerCase(const std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string toLowerCase(std::string_view s)
     {
         std::string str;
         std::for_each(
@@ -208,7 +203,7 @@ namespace blt::string
      * @param s string to upper case
      * @return a string copy that is all upper case
      */
-    static inline BLT_CPP20_CONSTEXPR std::string toUpperCase(const std::string& s)
+    static inline BLT_CPP20_CONSTEXPR std::string toUpperCase(std::string_view s)
     {
         std::string str;
         std::for_each(
@@ -221,7 +216,7 @@ namespace blt::string
     
     // taken from https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
     // extended to return a vector
-    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, const std::string& delim)
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, std::string_view delim)
     {
         size_t pos = 0;
         std::vector<std::string> tokens;
@@ -231,7 +226,7 @@ namespace blt::string
             tokens.push_back(token);
             s.erase(0, pos + delim.length());
         }
-        tokens.push_back(s);
+        tokens.push_back(std::move(s));
         return tokens;
     }
     
@@ -250,7 +245,7 @@ namespace blt::string
     }
     
     // https://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
-    static inline BLT_CPP20_CONSTEXPR bool replace(std::string& str, const std::string& from, const std::string& to)
+    static inline BLT_CPP20_CONSTEXPR bool replace(std::string& str, std::string_view from, std::string_view to)
     {
         size_t start_pos = str.find(from);
         if (start_pos == std::string::npos)
@@ -259,7 +254,7 @@ namespace blt::string
         return true;
     }
     
-    static inline BLT_CPP20_CONSTEXPR void replaceAll(std::string& str, const std::string& from, const std::string& to)
+    static inline BLT_CPP20_CONSTEXPR void replaceAll(std::string& str, std::string_view from, std::string_view to)
     {
         if (from.empty())
             return;
