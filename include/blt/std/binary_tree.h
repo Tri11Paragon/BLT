@@ -58,6 +58,12 @@ namespace blt
             
             ALLOC alloc;
             node* root = nullptr;
+            
+            node* newNode(const T& t)
+            {
+                return alloc.allocate(1);
+            }
+        
         public:
             AVL_node_tree() = default;
             

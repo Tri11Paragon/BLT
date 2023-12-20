@@ -162,14 +162,16 @@ namespace blt
             
             /**
              * Calls the constructor on elements if they require construction, otherwise constructor will not be called and this function is useless
+             *
+             * ALLOCATORS RETURN UNINIT STORAGE!! THIS HAS BEEN DISABLED.
              */
             inline void allocate_in_block(pointer begin, size_t n)
             {
-                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
-                {
-                    for (size_t i = 0; i < n; i++)
-                        new(&begin[i]) T();
-                }
+//                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
+//                {
+//                    for (size_t i = 0; i < n; i++)
+//                        new(&begin[i]) T();
+//                }
             }
         
         public:
@@ -180,14 +182,14 @@ namespace blt
             
             area_allocator(const area_allocator& copy) = delete;
             
-            area_allocator(area_allocator&& move)
+            area_allocator(area_allocator&& move) noexcept
             {
                 blocks = move.blocks;
             }
             
             area_allocator& operator=(const area_allocator& copy) = delete;
             
-            area_allocator& operator=(area_allocator&& move)
+            area_allocator& operator=(area_allocator&& move) noexcept
             {
                 std::swap(move.blocks, blocks);
             }
@@ -208,8 +210,8 @@ namespace blt
             
             void deallocate(pointer p, size_t n) noexcept
             {
-                for (size_t i = 0; i < n; i++)
-                    p[i].~T();
+//                for (size_t i = 0; i < n; i++)
+//                    p[i].~T();
                 for (auto*& blk : blocks)
                 {
                     if (p >= blk->data && p <= (blk->data + BLOCK_SIZE))
@@ -232,7 +234,7 @@ namespace blt
                 p->~U();
             }
             
-            inline size_t max_size() const
+            [[nodiscard]] inline size_t max_size() const
             {
                 return std::numeric_limits<size_t>::max();
             }
