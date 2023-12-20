@@ -29,16 +29,19 @@ namespace blt
     class AVL_node_tree
     {
         private:
+            ALLOC alloc;
+            
             struct node
             {
                 T val;
                 node* left;
                 node* right;
+                ALLOC& alloc;
                 
-                node(const T& t): val(t)
+                node(const T& t, ALLOC& alloc): val(t), alloc(alloc)
                 {}
                 
-                node(T&& m): val(m)
+                node(T&& m, ALLOC alloc): val(m), alloc(alloc)
                 {}
                 
                 node(const node& copy) = delete;
@@ -51,24 +54,19 @@ namespace blt
                 
                 ~node()
                 {
-                    delete left;
-                    delete right;
+                    left->~node();
+                    alloc.deallocate(left);
+                    right->~node();
+                    alloc.deallocate(right);
                 }
             };
             
-            ALLOC alloc;
-            node* root = nullptr;
-            
-            inline node* newNode(const T& t)
-            {
-                return alloc.construct(alloc.allocate(1), t);
-            }
-            
             inline node* newNode(T&& t)
             {
-                return alloc.construct(alloc.allocate(1), t);
+                return new(alloc.allocate(1)) node(t);
             }
-        
+            
+            node* root = nullptr;
         public:
             AVL_node_tree() = default;
             
@@ -139,7 +137,8 @@ namespace blt
             
             ~AVL_node_tree()
             {
-                delete root;
+                root->~node();
+                alloc.deallocate(root);
             }
     };
     
