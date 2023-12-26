@@ -230,7 +230,6 @@ std::vector<std::string> blt::string::BinaryTreeFormatter::construct()
     }
     std::vector<std::string> lines;
     size_t lineLength = 0;
-    size_t lastLineLength = 0;
     const size_t lineHeight = format.verticalPadding * 2 + 3;
     //std::cout << levels.size() << "\n";
     const size_t verticalSpacing =
