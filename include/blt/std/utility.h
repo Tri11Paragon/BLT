@@ -238,7 +238,7 @@ namespace blt
 #endif
     
     template<typename T>
-    void BLT_ATTRIB_NO_INLINE black_box(const T& val)
+    BLT_ATTRIB_NO_INLINE void black_box(const T& val)
     {
         static volatile void* hell;
         hell = (void*) &val;
@@ -246,7 +246,7 @@ namespace blt
     }
     
     template<typename T>
-    const T& BLT_ATTRIB_NO_INLINE black_box_ret(const T& val)
+    BLT_ATTRIB_NO_INLINE const T& black_box_ret(const T& val)
     {
         static volatile void* hell;
         hell = (void*) &val;
