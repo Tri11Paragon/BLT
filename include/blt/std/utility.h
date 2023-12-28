@@ -20,11 +20,11 @@
 #define BLT_UTILITY_H
 
 #include <string>
+#include <blt/compatibility.h>
 
 #if defined(__GNUC__)
     
     #include <cxxabi.h>
-    #include <blt/compatibility.h>
 
 namespace blt
 {
