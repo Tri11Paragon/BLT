@@ -40,13 +40,16 @@ namespace blt
         private:
             typedef std::function<void()> thread_function;
             volatile std::atomic_bool should_stop = false;
+            volatile std::atomic_uint64_t stopped = 0;
+            std::uint64_t number_of_threads = 0;
             std::vector<std::thread*> threads;
             std::variant<std::queue<thread_function>, thread_function> func_queue;
             std::mutex queue_mutex;
         public:
-            explicit thread_pool(size_t number_of_threads = 8)
+            explicit thread_pool(std::uint64_t number_of_threads = 8)
             {
-                for (size_t i = 0; i < number_of_threads; i++)
+                this->number_of_threads = number_of_threads;
+                for (std::uint64_t i = 0; i < number_of_threads; i++)
                 {
                     threads.push_back(new std::thread([this]() {
                         while (!should_stop)
@@ -81,6 +84,7 @@ namespace blt
                                 func();
                             }
                         }
+                        stopped++;
                     }));
                 }
             }
@@ -96,6 +100,10 @@ namespace blt
                 {
                     func_queue = func;
                 }
+            }
+            
+            [[nodiscard]] inline bool complete() const {
+                return stopped == number_of_threads;
             }
             
             inline void stop()
