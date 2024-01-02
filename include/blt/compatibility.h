@@ -30,6 +30,8 @@
     #undef BLT_USE_CPP20
 #endif
 
+#define BLT_CONTAINS_IF(container, value) std::find_if(container.begin(), container.end(), value) != container.end()
+
 #define INCLUDE_FS \
     #if defined(CXX17_FILESYSTEM) || defined (CXX17_FILESYSTEM_LIBFS) \
         #include <filesystem>\
