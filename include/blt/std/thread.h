@@ -29,6 +29,7 @@
 #include <mutex>
 #include <chrono>
 #include <optional>
+#include <blt/std/logging.h>
 
 namespace blt
 {
