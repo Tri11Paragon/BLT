@@ -28,6 +28,7 @@
 #include <atomic>
 #include <mutex>
 #include <chrono>
+#include <optional>
 
 namespace blt
 {
@@ -46,8 +47,10 @@ namespace blt
             std::variant<std::queue<thread_function>, thread_function> func_queue;
             std::mutex queue_mutex;
         public:
-            explicit thread_pool(std::uint64_t number_of_threads = 8)
+            explicit thread_pool(std::uint64_t number_of_threads = 8, std::optional<thread_function> default_function = {})
             {
+                if (default_function.has_value())
+                    func_queue = default_function.value();
                 this->number_of_threads = number_of_threads;
                 for (std::uint64_t i = 0; i < number_of_threads; i++)
                 {
@@ -77,7 +80,8 @@ namespace blt
                                     if (std::holds_alternative<std::queue<thread_function>>(func_queue))
                                     {
                                         std::this_thread::sleep_for(std::chrono::milliseconds(16));
-                                        continue;
+                                        BLT_WARN("Running non queue variant with a queue inside!");
+                                        break;
                                     }
                                 }
                                 auto& func = std::get<thread_function>(func_queue);
