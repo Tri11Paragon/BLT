@@ -23,6 +23,7 @@
 #include <array>
 #include <cstring>
 #include <algorithm>
+#include <cstdint>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
