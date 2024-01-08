@@ -73,7 +73,7 @@ namespace blt::system
         clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res);
         return res.tv_sec * static_cast<int64_t>(1e9) + res.tv_nsec;
 #else
-        return CLOCKS_PER_SECOND;
+        return 1;
 #endif
     }
     

@@ -117,8 +117,12 @@ if(${BUILD_TESTS})
 
     target_link_libraries(BLT_TESTS BLT)
 
-    target_compile_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
-    target_link_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
+    if(MSVC)
+
+    else()
+        target_compile_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
+        target_link_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
+    endif()
 
     if (${ENABLE_ADDRSAN} MATCHES ON)
         target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)

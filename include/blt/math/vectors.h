@@ -268,6 +268,11 @@ namespace blt {
     }
     
     template<typename T, uint32_t size>
+    inline constexpr bool operator!=(const vec<T, size>& left, const vec<T, size>& right) {
+        return !(left == right);
+    }
+    
+    template<typename T, uint32_t size>
     inline constexpr bool operator&&(const vec<T, size>& left, const vec<T, size>& right) {
         for (uint32_t i = 0; i < size; i++)
             if (!f_equal(left[i], right[i]))

@@ -10,22 +10,35 @@
 #include <blt/math/vectors.h>
 #include <blt/math/matrix.h>
 
-namespace blt {
+namespace blt
+{
+    
+    static inline constexpr double PI = 3.141592653589793238462643383279502884197;
+    
+    template<typename T>
+    static inline T toRadians(T deg)
+    {
+        constexpr double CONV = PI / 180.0;
+        return deg * CONV;
+    }
     
     /**
      * fast number integer
      */
-    static inline unsigned int f_randi(unsigned int seed) {
+    static inline unsigned int f_randi(unsigned int seed)
+    {
         seed = (seed << 13) ^ seed;
         return ((seed * (seed * seed * 15731 + 789221) + 1376312589) & 0x7fffffff);
     }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+    
     /**
      * fast inverse sqrt
      */
-    static inline float fsqrt(float n){
+    static inline float fsqrt(float n)
+    {
         int i;
         float x, y;
         x = n * 0.5f;
@@ -41,7 +54,8 @@ namespace blt {
 #pragma GCC diagnostic pop
     
     
-    static inline constexpr double pow(int b, int p) {
+    static inline constexpr double pow(int b, int p)
+    {
         int collection = 1;
         for (int i = 0; i < p; i++)
             collection *= b;
@@ -55,9 +69,10 @@ namespace blt {
      * @return
      */
     template<int decimal_places>
-    static inline double round_up(double value) {
+    static inline double round_up(double value)
+    {
         constexpr double multiplier = pow(10, decimal_places);
-        return ((int)(value * multiplier) + 1) / multiplier;
+        return ((int) (value * multiplier) + 1) / multiplier;
     }
     
     /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {
@@ -66,7 +81,7 @@ namespace blt {
  << "         {" << v.m20() << ", " << v.m21() << ", " << v.m22() << ", " << v.m23() << "} \n"\
  << "         {" << v.m30() << ", " << v.m31() << ", " << v.m32() << ", " << v.m33() << "} \n";
     }*/
-
+    
 }
 
 #endif //BLT_MATH_H

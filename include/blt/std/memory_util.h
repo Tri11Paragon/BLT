@@ -23,6 +23,7 @@
 #include <array>
 #include <cstring>
 #include <algorithm>
+#include <cstdint>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
@@ -32,9 +33,9 @@
     #define SWAP32(val) bswap_32(val)
     #define SWAP64(val) bswap_64(val)
     #if __cplusplus >= 202002L
-    
+        
         #include <bit>
-    
+
         #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                              (std::endian::native == std::endian::big && little_endian)
     #else
@@ -108,6 +109,15 @@ namespace blt::mem
         if (prev_size < default_allocation_block)
             return prev_size * 2;
         return prev_size + default_allocation_block;
+    }
+    
+    template<typename R, typename T>
+    inline static R type_cast(T type)
+    {
+        static_assert(sizeof(T) == sizeof(R));
+        R r;
+        std::memcpy(&r, &type, sizeof(type));
+        return r;
     }
 }
 
