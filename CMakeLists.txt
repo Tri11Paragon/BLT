@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.5)
 set(BLT_VERSION 0.10.1)
 set(BLT_TEST_VERSION 0.0.1)
 
+set(BLT_TARGET BLT)
+
 project(BLT VERSION ${BLT_VERSION})
 
 set(CMAKE_CXX_STANDARD 17)
@@ -79,24 +81,24 @@ message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(BLT ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
+add_library(${BLT_TARGET} SHARED ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
 
-target_include_directories(BLT PUBLIC include/)
-target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
+target_include_directories(${BLT_TARGET} PUBLIC include/)
+target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
 if(${ZLIB_FOUND})
-     target_link_libraries(BLT PUBLIC ZLIB::ZLIB)
+     target_link_libraries(${BLT_TARGET} PUBLIC ZLIB::ZLIB)
 endif()
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Including phmap")
-    target_include_directories(BLT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
+    target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
 endif()
 
 if(MSVC)
-    #target_compile_options(BLT PRIVATE /W4)
+    #target_compile_options(${BLT_TARGET} PRIVATE /W4)
 else()
     # perhaps we should warn on unused variables, but BLT will have lots of them.
-    target_compile_options(BLT PRIVATE -Wall -Wextra -Wpedantic)
-    target_link_options(BLT PUBLIC -rdynamic)
+    target_compile_options(${BLT_TARGET} PRIVATE -Wall -Wextra -Wpedantic)
+    target_link_options(${BLT_TARGET} PUBLIC -rdynamic)
 endif()
 
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
