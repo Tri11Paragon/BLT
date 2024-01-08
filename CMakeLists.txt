@@ -83,9 +83,6 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(${BLT_TARGET} SHARED ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
 
-set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
 if(${ZLIB_FOUND})
@@ -112,11 +109,23 @@ endif()
 
 message("Installing to ${CMAKE_INSTALL_LIBDIR} with headers at ${CMAKE_INSTALL_INCLUDEDIR}")
 
+file(GLOB_RECURSE BLT_HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+foreach(S ${BLT_HEADER_FILES})
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/include/" "" SO ${S})
+    string(REGEX REPLACE "\/[A-Z|a-z|0-9|_|-]*\\.h" "/" SA ${SO})
+    list(APPEND BLT_F_HEADERS ${SA})
+    install(FILES ${S} DESTINATION /usr/${CMAKE_INSTALL_INCLUDEDIR}/${SA})
+endforeach ()
+
+install(FILES ${CMAKE_BINARY_DIR}/config/blt/config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/blt/)
+
+set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
 install(TARGETS ${BLT_TARGET}
         CONFIGURATIONS RelWithDebInfo
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+        LIBRARY DESTINATION /usr/${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION /usr/${CMAKE_INSTALL_INCLUDEDIR})
 
 if(${BUILD_TESTS})
     message("Building test")
