@@ -81,7 +81,7 @@ message("Profiler Files ${PROFILING_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(${BLT_TARGET} SHARED ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
 
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
