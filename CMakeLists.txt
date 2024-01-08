@@ -83,6 +83,9 @@ message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(${BLT_TARGET} SHARED ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
 
+set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
 if(${ZLIB_FOUND})
@@ -102,6 +105,18 @@ else()
 endif()
 
 message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    include(GNUInstallDirs)
+endif()
+
+message("Installing to ${CMAKE_INSTALL_LIBDIR} with headers at ${CMAKE_INSTALL_INCLUDEDIR}")
+
+install(TARGETS ${BLT_TARGET}
+        CONFIGURATIONS RelWithDebInfo
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(${BUILD_TESTS})
     message("Building test")
