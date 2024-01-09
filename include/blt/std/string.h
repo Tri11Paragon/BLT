@@ -292,6 +292,29 @@ namespace blt::string
         return s;
     }
     
+    static inline BLT_CPP20_CONSTEXPR std::string_view ltrim(std::string_view s)
+    {
+        size_t start_pos = 0;
+        for (auto c = s.begin(); c != s.end() && std::isblank(*c); ++c, start_pos++);
+        return s.substr(start_pos);
+    }
+    
+    static inline BLT_CPP20_CONSTEXPR std::string_view rtrim(std::string_view s)
+    {
+        size_t end_pos = 0;
+        for (auto c = s.rbegin(); c != s.rend() && std::isblank(*c); ++c, end_pos++);
+        return s.substr(0, s.size() - end_pos);
+    }
+    
+    static inline BLT_CPP20_CONSTEXPR std::string_view trim(std::string_view s)
+    {
+        size_t start_pos = 0;
+        for (auto c = s.begin(); c != s.end() && std::isblank(*c); ++c, start_pos++);
+        size_t end_pos = s.size();
+        for (auto c = s.rbegin(); c != s.rend() && std::isblank(*c); ++c, end_pos--);
+        return s.substr(start_pos, end_pos - start_pos);
+    }
+    
     // trim from both ends (in place)
     static inline BLT_CPP20_CONSTEXPR std::string& trim(std::string& s)
     {
