@@ -15,14 +15,18 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#define BLT_DISABLE_TRACE
+#define BLT_DISABLE_DEBUG
+
 #include <blt/parse/obj_loader.h>
 #include <blt/std/loader.h>
 #include <blt/std/string.h>
-#include <blt/std/logging.h>
 #include <cctype>
 #include <charconv>
 #include "blt/std/assert.h"
 #include "blt/std/utility.h"
+#include <blt/std/logging.h>
+
 
 namespace blt::gfx
 {
@@ -86,6 +90,7 @@ namespace blt::gfx
         auto elements = blt::string::split(std::string(tokenizer.read_fully()), " ");
         BLT_ASSERT(elements.size() >= 2 && "Current line doesn't have enough arguments to process!");
         float x = get(elements[0]), y = get(elements[1]);
+        BLT_DEBUG_STREAM << "Loaded value of (" << x << ", " << y << ")";
         if (elements.size() < 3)
         {
             if (type == 't')
@@ -95,9 +100,11 @@ namespace blt::gfx
         } else
         {
             float z = get(elements[2]);
+            BLT_DEBUG_STREAM << " with z: " << z;
             if (!handle_vertex_and_normals(x, y, z, type))
                 BLT_ERROR("Unable to parse line '%s' type '%c' not recognized", std::string(tokenizer.read_fully()).c_str(), type);
         }
+        BLT_DEBUG_STREAM << "\n";
     }
     
     bool obj_loader::handle_vertex_and_normals(float x, float y, float z, char type)
@@ -113,16 +120,18 @@ namespace blt::gfx
         return true;
     }
     
-    obj_objects_t quick_load(std::string_view file)
+    obj_model_t quick_load(std::string_view file)
     {
         return obj_loader().parseFile(file);
     }
     
-    obj_objects_t obj_loader::parseFile(std::string_view file)
+    obj_model_t obj_loader::parseFile(std::string_view file)
     {
         auto lines = blt::fs::getLinesFromFile(std::string(file));
-        for (const auto& line : lines)
+        for (auto line_e : blt::enumerate(lines))
         {
+            auto& line = line_e.second;
+            current_line = line_e.first;
             char_tokenizer token(line);
             if (!token.has_next() || token.read_fully().empty())
                 continue;
@@ -138,29 +147,35 @@ namespace blt::gfx
                     break;
                 case 'o':
                 {
-                    if (!current_object.indices.empty())
-                        data.push_back(current_object);
-                    current_object = {};
-                    current_object.object_name = token.read_fully();
+                    current_object.object_names.emplace_back(token.read_fully());
+                    BLT_TRACE("Setting object '%s'", std::string(current_object.object_name).c_str());
                     break;
                 }
                 case 'm':
                 {
-                    BLT_TRACE("Material '%s' needs to be loaded!", std::string(token.read_fully()).c_str());
+                    while (token.has_next() && token.advance() != ' ')
+                    {}
+                    BLT_WARN("Material '%s' needs to be loaded!", std::string(token.read_fully()).c_str());
                     break;
                 }
                 case 'u':
                 {
-                    BLT_TRACE("Using material '%s'", std::string(token.read_fully()).c_str());
+                    if (!current_object.indices.empty())
+                        data.push_back(current_object);
+                    current_object = {};
+                    while (token.has_next() && token.advance() != ' ')
+                    {}
+                    current_object.material = token.read_fully();
+                    //BLT_WARN("Using material '%s'", std::string(token.read_fully()).c_str());
                     break;
                 }
                 case 's':
-                    BLT_TRACE("Using shading: %s", std::string(token.read_fully()).c_str());
+                    //BLT_WARN("Using shading: %s", std::string(token.read_fully()).c_str());
                     break;
             }
         }
         data.push_back(current_object);
-        return {std::move(vertex_data), std::move(data)};
+        return {std::move(vertex_data), std::move(data), std::move(materials)};
     }
     
     void obj_loader::parse_face(char_tokenizer& tokenizer)
@@ -187,7 +202,7 @@ namespace blt::gfx
             current_object.indices.push_back(t1);
             current_object.indices.push_back(t2);
         } else
-            BLT_WARN("Unsupported vertex count! %d", faces.size());
+            BLT_WARN("Unsupported face vertex count of %d on line %d!", faces.size(), current_line);
     }
     
     void obj_loader::handle_face_vertex(const std::vector<std::string>& face_list, int32_t* arr)
@@ -197,21 +212,30 @@ namespace blt::gfx
             auto indices = blt::string::split(pair.second, '/');
             BLT_ASSERT(indices.size() == 3 && "Must have vertex, uv, and normal indices!!");
             
-            auto vi = get<std::int32_t>(indices[0]);
-            auto ui = get<std::int32_t>(indices[1]);
-            auto ni = get<std::int32_t>(indices[2]);
+            auto vi = get<std::int32_t>(indices[0]) - 1;
+            auto ui = get<std::int32_t>(indices[1]) - 1;
+            auto ni = get<std::int32_t>(indices[2]) - 1;
+            
+            BLT_DEBUG("Found vertex: %d, UV: %d, and normal: %d", vi, ui, ni);
             
             face_t face{vi, ui, ni};
             
             auto loc = vertex_map.find(face);
             if (loc == vertex_map.end())
             {
+                BLT_DEBUG("DID NOT FIND FACE!");
                 auto index = static_cast<std::int32_t>(vertex_data.size());
                 vertex_data.push_back({vertices[vi], uvs[ui], normals[ni]});
+                BLT_DEBUG("Vertex: (%f, %f, %f), UV: (%f, %f), Normal: (%f, %f, %f)", vertices[vi].x(), vertices[vi].y(), vertices[vi].z(),
+                          uvs[ui].x(), uvs[ui].y(), normals[ni].x(), normals[ni].y(), normals[ni].z());
                 vertex_map.insert({face, index});
                 arr[pair.first] = index;
             } else
             {
+                BLT_TRACE("Using cached data; %d; map size: %d", loc->second, vertex_data.size());
+                const auto& d = vertex_data[loc->second];
+                BLT_TRACE("Vertex: (%f, %f, %f), UV: (%f, %f), Normal: (%f, %f, %f)", d.vertex.x(), d.vertex.y(), d.vertex.z(),
+                          d.uv.x(), d.uv.y(), d.normal.x(), d.normal.y(), d.normal.z());
                 arr[pair.first] = loc->second;
             }
         }

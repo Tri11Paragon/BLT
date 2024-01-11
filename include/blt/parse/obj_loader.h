@@ -31,6 +31,7 @@ namespace blt::gfx
     typedef blt::vec3f vertex_t;
     typedef blt::vec2f uv_t;
     typedef blt::vec3f normal_t;
+    typedef blt::vec3f color_t;
     
     class model_data
     {
@@ -85,31 +86,55 @@ namespace blt::gfx
         std::int32_t v[4];
     };
     
+    struct material_t
+    {
+        std::string material_name;
+        color_t ambient;
+        color_t diffuse;
+        color_t specular;
+        float specular_exponent = 0.0f;
+        float transparency = 1.0f;
+        color_t transmission_filter_color{1, 1, 1};
+        std::string texture_ambient;
+        std::string texture_diffuse;
+        std::string map_spec_color;
+        std::string map_spec_highlight;
+        std::string map_bump;
+        std::string map_displacement;
+    };
+    
     struct object_data
     {
-        std::string object_name;
+        std::vector<std::string> object_names;
+        std::string material;
         std::vector<triangle_t> indices;
     };
     
-    class obj_objects_t
+    class obj_model_t
     {
         private:
             std::vector<constructed_vertex_t> vertex_data_;
             std::vector<object_data> objects_;
+            HASHMAP<std::string, material_t> materials_;
         public:
-            obj_objects_t(std::vector<constructed_vertex_t>&& vertex_data, std::vector<object_data>&& objects):
-                    vertex_data_(vertex_data), objects_(objects)
+            obj_model_t(std::vector<constructed_vertex_t>&& vertex_data, std::vector<object_data>&& objects, HASHMAP<std::string, material_t>&& mats):
+                    vertex_data_(vertex_data), objects_(objects), materials_(mats)
             {}
             
-            inline const std::vector<constructed_vertex_t>& vertex_data()
+            inline const auto& vertex_data()
             {
                 return vertex_data_;
             };
             
-            inline const std::vector<object_data>& objects()
+            inline const auto& objects()
             {
                 return objects_;
             };
+            
+            inline const auto& materials()
+            {
+                return materials_;
+            }
     };
     
     class char_tokenizer;
@@ -126,6 +151,9 @@ namespace blt::gfx
             std::vector<constructed_vertex_t> vertex_data;
             object_data current_object;
             std::vector<object_data> data;
+            HASHMAP<std::string, material_t> materials;
+            
+            size_t current_line = 0;
         private:
             bool handle_vertex_and_normals(float x, float y, float z, char type);
             
@@ -136,10 +164,10 @@ namespace blt::gfx
             void handle_face_vertex(const std::vector<std::string>& face_list, std::int32_t* arr);
         
         public:
-            obj_objects_t parseFile(std::string_view file);
+            obj_model_t parseFile(std::string_view file);
     };
     
-    obj_objects_t quick_load(std::string_view file);
+    obj_model_t quick_load(std::string_view file);
     
 }
 
