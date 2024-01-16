@@ -165,7 +165,7 @@ namespace blt
              *
              * ALLOCATORS RETURN UNINIT STORAGE!! THIS HAS BEEN DISABLED.
              */
-            inline void allocate_in_block(pointer begin, size_t n)
+            inline void allocate_in_block(pointer, size_t)
             {
 //                if constexpr (std::is_default_constructible_v<T> && !std::is_trivially_default_constructible_v<T>)
 //                {
