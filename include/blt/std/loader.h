@@ -24,9 +24,9 @@ namespace blt::fs
         char close = '>';
     };
     
-    std::string getFile(const std::string& path);
+    std::string getFile(std::string_view path);
     
-    std::vector<std::string> getLinesFromFile(const std::string& path);
+    std::vector<std::string> getLinesFromFile(std::string_view path);
     
     /**
      * Recursively include files
@@ -35,7 +35,7 @@ namespace blt::fs
      * @param guards characters used to identify the parts that specify the file path. if empty it will assume everything after the include header
      * @return a list of lines in all files. added together in order.
      */
-    std::vector<std::string> recursiveInclude(const std::string& path, const std::string& include_header = "#include",
+    std::vector<std::string> recursiveInclude(std::string_view path, const std::string& include_header = "#include",
                                               const std::vector<include_guard>& guards = {{'<',  '>'}, {'"', '"'}});
     
     static inline std::string loadBrainFuckFile(const std::string& path)
@@ -53,7 +53,7 @@ namespace blt::fs
         return buffer;
     }
     
-    static inline std::string loadShaderFile(const std::string& path)
+    static inline std::string loadShaderFile(std::string_view path)
     {
         std::stringstream stringStream;
         

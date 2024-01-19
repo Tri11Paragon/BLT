@@ -6,18 +6,18 @@
 #include <blt/std/loader.h>
 #include <blt/std/assert.h>
 
-std::vector<std::string> blt::fs::getLinesFromFile(const std::string& path)
+std::vector<std::string> blt::fs::getLinesFromFile(std::string_view path)
 {
     std::string file = getFile(path);
+    // we only use unix line endings here...
+    string::replaceAll(file, "\r", "");
     // split the file into the lines, this way we can get out the #include statements.
     return string::split(file, "\n");
 }
 
-std::vector<std::string> blt::fs::recursiveInclude(const std::string& path, const std::string& include_header,
+std::vector<std::string> blt::fs::recursiveInclude(std::string_view path, const std::string& include_header,
                                                    const std::vector<include_guard>& guards)
 {
-    std::string pathOnly = path.substr(0, path.find_last_of('/'));
-    
     auto mainLines = getLinesFromFile(path);
     std::vector<std::string> return_lines;
     
@@ -61,7 +61,7 @@ std::vector<std::string> blt::fs::recursiveInclude(const std::string& path, cons
     return return_lines;
 }
 
-std::string blt::fs::getFile(const std::string& path)
+std::string blt::fs::getFile(std::string_view path)
 {
     std::string file_contents;
     std::ifstream the_file;
@@ -72,7 +72,7 @@ std::string blt::fs::getFile(const std::string& path)
     try
     {
         // open file
-        the_file.open(path);
+        the_file.open(std::string(path));
         std::stringstream file_stream;
         // read file's buffer contents into streams
         file_stream << the_file.rdbuf();
@@ -82,7 +82,7 @@ std::string blt::fs::getFile(const std::string& path)
         file_contents = file_stream.str();
     } catch (std::ifstream::failure& e)
     {
-        BLT_WARN("Unable to read file '%s'!\n", path.c_str());
+        BLT_WARN("Unable to read file '%s'!\n", std::string(path).c_str());
         BLT_WARN("Exception: %s", e.what());
         throw std::runtime_error("Failed to read file!\n");
     }
