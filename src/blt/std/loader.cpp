@@ -84,7 +84,7 @@ std::string blt::fs::getFile(std::string_view path)
     {
         BLT_WARN("Unable to read file '%s'!\n", std::string(path).c_str());
         BLT_WARN("Exception: %s", e.what());
-        throw std::runtime_error("Failed to read file!\n");
+        BLT_THROW(std::runtime_error("Failed to read file!\n"));
     }
     return file_contents;
 }
