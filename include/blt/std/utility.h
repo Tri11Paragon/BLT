@@ -212,6 +212,12 @@ namespace blt
 //#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
 //#define BLT_LAMBDA(var, code) [](var) -> auto { return code; }
 
+/*
+ * std::visit(blt::lambda_visitor{
+ *      lambdas...
+ * }, data_variant);
+ */
+
 // TODO: WTF
     template<class... TLambdas>
     struct lambda_visitor : TLambdas... {
