@@ -233,7 +233,7 @@ namespace blt
             template<class U>
             inline void destroy(U* p)
             {
-                if (p)
+                if (p != nullptr)
                     p->~U();
             }
             
