@@ -231,7 +231,8 @@ namespace blt
             template<class U>
             inline void destroy(U* p)
             {
-                p->~U();
+                if (p)
+                    p->~U();
             }
             
             [[nodiscard]] inline size_t max_size() const
