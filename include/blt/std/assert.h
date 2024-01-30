@@ -7,6 +7,8 @@
 #ifndef BLT_ASSERT_H
 #define BLT_ASSERT_H
 
+#include <cstdlib>
+
 namespace blt
 {
     void printStacktrace(char** messages, int size, const char* path, int line);
