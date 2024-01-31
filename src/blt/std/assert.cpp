@@ -107,5 +107,11 @@ namespace blt {
 #endif
     }
     
+    bool assert_print(const char* what)
+    {
+        BLT_ERROR(what);
+        return true;
+    }
+    
     
 }

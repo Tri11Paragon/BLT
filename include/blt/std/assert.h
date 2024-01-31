@@ -16,6 +16,8 @@ namespace blt
     void b_assert_failed(const char* expression, const char* path, int line);
     
     void b_throw(const char* what, const char* path, int line);
+    
+    bool assert_print(const char* what);
 }
 
 // prints error with stack trace if assertion fails. Does not stop execution.
