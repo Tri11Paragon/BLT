@@ -189,6 +189,7 @@ namespace blt
                         return a.current != b.current;
                     }
             };
+        
         private:
             T _begin;
             T _end;
@@ -208,6 +209,128 @@ namespace blt
                 return range_itr(_end - offset, offset == 0);
             }
     };
+    
+    template<typename T, typename E>
+    class expected
+    {
+        private:
+            template<typename V>
+            inline static constexpr bool isCopyMovable()
+            {
+                return std::is_move_constructible_v<V> && std::is_copy_constructible_v<V>
+            }
+            
+            std::optional<T> t;
+            std::optional<E> e;
+        public:
+            constexpr expected() noexcept: t(T())
+            {}
+            
+            constexpr explicit expected(const T& t): t(t)
+            {}
+            
+            constexpr explicit expected(T&& t): t(std::forward(t))
+            {}
+            
+            constexpr explicit expected(const E& e): e(e)
+            {}
+            
+            constexpr explicit expected(E&& e): e(std::forward(e))
+            {}
+            
+            
+            [[nodiscard]] constexpr explicit operator bool() const noexcept
+            {
+                return t.has_value();
+            }
+            
+            [[nodiscard]] constexpr inline bool has_value() const noexcept
+            {
+                return t.has_value();
+            }
+            
+            constexpr T& value()&
+            {
+                return t.value();
+            }
+            
+            constexpr const T& value() const&
+            {
+                return t.value();
+            }
+            
+            constexpr T&& value()&&
+            {
+                return t.value();
+            }
+            
+            constexpr const T&& value() const&&
+            {
+                return t.value();
+            }
+            
+            constexpr const E& error() const& noexcept
+            {
+                return e.value();
+            }
+            
+            constexpr E& error()& noexcept
+            {
+                return e.value();
+            }
+            
+            constexpr const E&& error() const&& noexcept
+            {
+                return e.value();
+            }
+            
+            constexpr E&& error()&& noexcept
+            {
+                return e.value();
+            }
+            
+            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_copy_constructible_v<T>, int*> = 0>
+            constexpr T value_or(U&& default_value) const&
+            {
+                return bool(*this) ? **this : static_cast<T>(std::forward<U>(default_value));
+            }
+            
+            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_move_constructible_v<T>, int*> = 0 >
+            constexpr T value_or(U&& default_value)&&
+            {
+                return bool(*this) ? std::move(**this) : static_cast<T>(std::forward<U>(default_value));
+            }
+            
+            constexpr inline const T* operator->() const noexcept
+            {
+                return &t.value();
+            }
+            
+            constexpr inline T* operator->() noexcept
+            {
+                return &t.value();
+            }
+            
+            constexpr inline const T& operator*() const& noexcept
+            {
+                return t.value();
+            }
+            
+            constexpr inline T& operator*()& noexcept
+            {
+                return t.value();
+            }
+            
+            constexpr inline const T&& operator*() const&& noexcept
+            {
+                return t.value();
+            }
+            
+            constexpr inline T&& operator*()&& noexcept
+            {
+                return std::move(t.value());
+            }
+    };
 
 //#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
 //#define BLT_LAMBDA(var, code) [](var) -> auto { return code; }
@@ -220,10 +343,11 @@ namespace blt
 
 // TODO: WTF
     template<class... TLambdas>
-    struct lambda_visitor : TLambdas... {
+    struct lambda_visitor : TLambdas ...
+    {
         using TLambdas::operator()...;
     };
-    
+
 #if __cplusplus < 202002L
     
     // explicit deduction guide (not needed as of C++20)
