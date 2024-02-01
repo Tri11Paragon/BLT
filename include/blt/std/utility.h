@@ -21,6 +21,7 @@
 
 #include <string>
 #include <blt/compatibility.h>
+#include <optional>
 
 #if defined(__GNUC__)
     
@@ -214,30 +215,65 @@ namespace blt
     class expected
     {
         private:
-            template<typename V>
-            inline static constexpr bool isCopyMovable()
-            {
-                return std::is_move_constructible_v<V> && std::is_copy_constructible_v<V>
-            }
-            
             std::optional<T> t;
             std::optional<E> e;
         public:
             constexpr expected() noexcept: t(T())
             {}
             
-            constexpr explicit expected(const T& t): t(t)
+            template<typename U, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
+            constexpr explicit expected(U&& t): t(std::forward<U>(t))
             {}
             
-            constexpr explicit expected(T&& t): t(std::forward(t))
+            template<typename U, std::enable_if_t<std::is_convertible_v<U, E>, bool> = true>
+            constexpr explicit expected(U&& e): e(std::forward<U>(e))
             {}
             
-            constexpr explicit expected(const E& e): e(e)
+//            template<typename U, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
+//            constexpr expected(std::initializer_list<U> t): t(std::move(*t.begin()))
+//            {}
+//
+//            template<typename U, std::enable_if_t<std::is_convertible_v<U, E>, bool> = true>
+//            constexpr expected(std::initializer_list<U> e): e(std::move(*e.begin()))
+//            {}
+            
+            template<class U, class G, std::enable_if_t<std::is_convertible_v<U, T> && std::is_convertible_v<G, E>, bool> = true>
+            constexpr explicit expected(const expected<U, G>& other)
+            {
+                if (other.has_value())
+                    t = other.value();
+                else
+                    e = other.error();
+            }
+            
+            template<class U, class G, std::enable_if_t<std::is_convertible_v<U, T> && std::is_convertible_v<G, E>, bool> = true>
+            constexpr explicit expected(expected<U, G>&& other)
+            {
+                if (other.has_value())
+                    t = other.value();
+                else
+                    e = other.error();
+            }
+            
+            constexpr expected(const T& t): t(t)
             {}
             
-            constexpr explicit expected(E&& e): e(std::forward(e))
+            constexpr expected(T&& t): t(std::move(t))
             {}
             
+            constexpr expected(const E& e): e(e)
+            {}
+            
+            constexpr expected(E&& e): e(std::move(e))
+            {}
+            
+            constexpr expected(const expected& copy) = default;
+            
+            constexpr expected(expected&& move) = default;
+            
+            expected& operator=(const expected& copy) = default;
+            
+            expected& operator=(expected&& move) = default;
             
             [[nodiscard]] constexpr explicit operator bool() const noexcept
             {
@@ -289,13 +325,13 @@ namespace blt
                 return e.value();
             }
             
-            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_copy_constructible_v<T>, int*> = 0>
+            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_copy_constructible_v<T>, bool> = true>
             constexpr T value_or(U&& default_value) const&
             {
                 return bool(*this) ? **this : static_cast<T>(std::forward<U>(default_value));
             }
             
-            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_move_constructible_v<T>, int*> = 0 >
+            template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_move_constructible_v<T>, bool> = true>
             constexpr T value_or(U&& default_value)&&
             {
                 return bool(*this) ? std::move(**this) : static_cast<T>(std::forward<U>(default_value));
