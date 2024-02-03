@@ -21,7 +21,8 @@
 
 #include <string>
 #include <blt/compatibility.h>
-#include <optional>
+#include <variant>
+#include <utility>
 
 #if defined(__GNUC__)
     
@@ -211,118 +212,255 @@ namespace blt
             }
     };
     
-    template<typename T, typename E>
-    class expected
+    struct unexpect_t
+    {
+        explicit unexpect_t() = default;
+    };
+    
+    inline constexpr unexpect_t unexpect{};
+    
+    template<typename T>
+    using remove_cvref_t = std::remove_reference_t<std::remove_cv_t<T>>;
+    
+    template<class E>
+    class unexpected
     {
         private:
-            std::optional<T> t;
-            std::optional<E> e;
+            E e;
         public:
-            constexpr expected() noexcept: t(T())
+            constexpr unexpected(const unexpected&) = default;
+            
+            constexpr unexpected(unexpected&&) = default;
+            
+            template<class Err = E, std::enable_if_t<
+                    !std::is_same_v<remove_cvref_t<Err>, unexpected> && !std::is_same_v<remove_cvref_t<Err>, std::in_place_t> &&
+                    std::is_constructible_v<E, Err>, bool> = true>
+            constexpr explicit unexpected(Err&& e): e(std::forward(e))
             {}
             
-            template<typename U, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
-            constexpr explicit expected(U&& t): t(std::forward<U>(t))
+            template<class... Args, std::enable_if_t<std::is_constructible_v<E, Args...>, bool> = true>
+            constexpr explicit unexpected(std::in_place_t, Args&& ... args): e(std::forward<Args>(args)...)
             {}
             
-            template<typename U, std::enable_if_t<std::is_convertible_v<U, E>, bool> = true>
-            constexpr explicit expected(U&& e): e(std::forward<U>(e))
+            template<class U, class... Args, std::enable_if_t<std::is_constructible_v<E, std::initializer_list<U>&, Args...>, bool> = true>
+            constexpr explicit unexpected(std::in_place_t, std::initializer_list<U> il, Args&& ... args): e(il, std::forward<Args>(args)...)
             {}
             
-//            template<typename U, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
-//            constexpr expected(std::initializer_list<U> t): t(std::move(*t.begin()))
-//            {}
-//
-//            template<typename U, std::enable_if_t<std::is_convertible_v<U, E>, bool> = true>
-//            constexpr expected(std::initializer_list<U> e): e(std::move(*e.begin()))
-//            {}
+            constexpr const E& error() const& noexcept
+            {
+                return e;
+            }
             
-            template<class U, class G, std::enable_if_t<std::is_convertible_v<U, T> && std::is_convertible_v<G, E>, bool> = true>
+            constexpr E& error()& noexcept
+            {
+                return e;
+            }
+            
+            constexpr const E&& error() const&& noexcept
+            {
+                return e;
+            }
+            
+            constexpr E&& error()&& noexcept
+            {
+                return e;
+            }
+            
+            constexpr void swap(unexpected& other) noexcept(std::is_nothrow_swappable_v<E>)
+            {
+                std::swap(error(), other.error());
+            }
+            
+            template<typename E2>
+            inline friend constexpr bool operator==(const unexpected& x, const unexpected <E2>& y)
+            {
+                return x.error() == y.error();
+            }
+            
+            friend constexpr void swap(unexpected& x, unexpected& y) noexcept(noexcept(x.swap(y)))
+            {}
+    };
+    
+    template<class E>
+    unexpected(E) -> unexpected<E>;
+    
+    template<class E>
+    class bad_expected_access : public std::exception
+    {
+        private:
+            E e;
+        public:
+            explicit bad_expected_access(E e): e(std::move(e))
+            {}
+            
+            const E& error() const& noexcept
+            { return e; }
+            
+            E& error()& noexcept
+            { return e; }
+            
+            const E&& error() const&& noexcept
+            { return e; }
+            
+            E&& error()&& noexcept
+            { return e; }
+            
+            [[nodiscard]] const char* what() const noexcept override
+            { return "blt::expected does not contain a value!"; }
+        
+    };
+    
+    template<typename T, typename E, bool = std::is_copy_constructible_v<T>>
+    class expected
+    {
+        protected:
+            std::variant<T, E> v;
+        public:
+            template<typename std::enable_if_t<std::is_default_constructible_v<T>, bool> = true>
+            constexpr expected() noexcept: v(T())
+            {}
+            
+            constexpr expected(const expected& copy) = delete;
+            
+            constexpr expected(expected&& move) noexcept : v(move ? std::move(*move) : std::move(move.error()))
+            {}
+            
+            /*
+             * (4)...(5)
+             */
+            
+            template<class U, class G>
             constexpr explicit expected(const expected<U, G>& other)
-            {
-                if (other.has_value())
-                    t = other.value();
-                else
-                    e = other.error();
-            }
+            {}
             
-            template<class U, class G, std::enable_if_t<std::is_convertible_v<U, T> && std::is_convertible_v<G, E>, bool> = true>
+            template<class U, class G>
             constexpr explicit expected(expected<U, G>&& other)
-            {
-                if (other.has_value())
-                    t = other.value();
-                else
-                    e = other.error();
-            }
-            
-            constexpr expected(const T& t): t(t)
             {}
             
-            constexpr expected(T&& t): t(std::move(t))
+            
+            /*
+             * (6)
+             */
+            
+            template<class U = T, std::enable_if_t<!std::is_convertible_v<U, T>, bool> = true>
+            constexpr explicit expected(U&& v)
             {}
             
-            constexpr expected(const E& e): e(e)
+            template<class U = T, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
+            constexpr expected(U&& v)
             {}
             
-            constexpr expected(E&& e): e(std::move(e))
+            /*
+             * (7)
+             */
+            
+            template<class G, std::enable_if_t<!std::is_convertible_v<const G&, E>, bool> = true>
+            constexpr explicit expected(const unexpected<G>& e)
             {}
             
-            constexpr expected(const expected& copy) = default;
+            template<class G, std::enable_if_t<std::is_convertible_v<const G&, E>, bool> = true>
+            constexpr expected(const unexpected<G>& e)
+            {}
             
-            constexpr expected(expected&& move) = default;
+            /*
+             * (8)
+             */
             
-            expected& operator=(const expected& copy) = default;
+            template<class G, std::enable_if_t<!std::is_convertible_v<G, E>, bool> = true>
+            constexpr explicit expected(const unexpected<G>& e)
+            {}
+            
+            template<class G, std::enable_if_t<std::is_convertible_v<G, E>, bool> = true>
+            constexpr expected(const unexpected<G>& e)
+            {}
+            
+            /*
+             * (9)...(13)
+             */
+            template<class... Args>
+            constexpr explicit expected(std::in_place_t, Args&& ... args)
+            {}
+            
+            template<class U, class... Args>
+            constexpr explicit expected(std::in_place_t, std::initializer_list<U> il, Args&& ... args)
+            {}
+            
+            template<class... Args>
+            constexpr explicit expected(std::in_place_t) noexcept
+            {}
+            
+            template<class... Args>
+            constexpr explicit expected(unexpect_t, Args&& ... args)
+            {}
+            
+            template<class U, class... Args>
+            constexpr explicit expected(unexpect_t, std::initializer_list<U> il, Args&& ... args)
+            {}
+            
+            expected& operator=(const expected& copy) = delete;
             
             expected& operator=(expected&& move) = default;
             
             [[nodiscard]] constexpr explicit operator bool() const noexcept
             {
-                return t.has_value();
+                return std::holds_alternative<T>(v);
             }
             
             [[nodiscard]] constexpr inline bool has_value() const noexcept
             {
-                return t.has_value();
+                return std::holds_alternative<T>(v);
             }
             
             constexpr T& value()&
             {
-                return t.value();
+                if (*this)
+                    return std::get<T>(v);
+                else
+                    throw bad_expected_access(std::as_const(error()));
             }
             
             constexpr const T& value() const&
             {
-                return t.value();
+                if (*this)
+                    return std::get<T>(v);
+                else
+                    throw bad_expected_access(std::as_const(error()));
             }
             
             constexpr T&& value()&&
             {
-                return t.value();
+                if (*this)
+                    return std::get<T>(v);
+                else
+                    throw bad_expected_access(std::move(error()));
             }
             
             constexpr const T&& value() const&&
             {
-                return t.value();
+                if (*this)
+                    return std::get<T>(v);
+                else
+                    throw bad_expected_access(std::move(error()));
             }
             
             constexpr const E& error() const& noexcept
             {
-                return e.value();
+                return std::get<E>(v);
             }
             
             constexpr E& error()& noexcept
             {
-                return e.value();
+                return std::get<E>(v);
             }
             
             constexpr const E&& error() const&& noexcept
             {
-                return e.value();
+                return std::get<E>(v);
             }
             
             constexpr E&& error()&& noexcept
             {
-                return e.value();
+                return std::get<E>(v);
             }
             
             template<class U, std::enable_if_t<std::is_convertible_v<U, T> && std::is_copy_constructible_v<T>, bool> = true>
@@ -339,33 +477,45 @@ namespace blt
             
             constexpr inline const T* operator->() const noexcept
             {
-                return &t.value();
+                return &std::get<T>(v);
             }
             
             constexpr inline T* operator->() noexcept
             {
-                return &t.value();
+                return &std::get<T>(v);
             }
             
             constexpr inline const T& operator*() const& noexcept
             {
-                return t.value();
+                return std::get<T>(v);
             }
             
             constexpr inline T& operator*()& noexcept
             {
-                return t.value();
+                return std::get<T>(v);
             }
             
             constexpr inline const T&& operator*() const&& noexcept
             {
-                return t.value();
+                return std::move(std::get<T>(v));
             }
             
             constexpr inline T&& operator*()&& noexcept
             {
-                return std::move(t.value());
+                return std::move(std::get<T>(v));
             }
+    };
+    
+    template<typename T, typename E>
+    class expected<T, E, true> : expected<T, E, false>
+    {
+        public:
+            using expected<T, E, false>::expected;
+            
+            constexpr expected(const expected& copy): expected<T, E, false>::v(copy ? *copy : copy.error())
+            {}
+            
+            expected& operator=(const expected& copy) = default;
     };
 
 //#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
