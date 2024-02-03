@@ -235,7 +235,7 @@ namespace blt
             template<class Err = E, std::enable_if_t<
                     !std::is_same_v<remove_cvref_t<Err>, unexpected> && !std::is_same_v<remove_cvref_t<Err>, std::in_place_t> &&
                     std::is_constructible_v<E, Err>, bool> = true>
-            constexpr explicit unexpected(Err&& e): e(std::forward(e))
+            constexpr explicit unexpected(Err&& e): e(std::forward<Err>(e))
             {}
             
             template<class... Args, std::enable_if_t<std::is_constructible_v<E, Args...>, bool> = true>
@@ -315,6 +315,19 @@ namespace blt
     {
         protected:
             std::variant<T, E> v;
+            
+            template<typename U, typename G>
+            inline static constexpr bool eight_insanity_v =
+                    std::is_constructible_v<T, expected<U, G>&> || std::is_constructible_v<T, expected<U, G>> ||
+                    std::is_constructible_v<T, const expected<U, G>&> || std::is_constructible_v<T, const expected<U, G>> ||
+                    std::is_convertible_v<expected<U, G>&, T> || std::is_convertible_v<expected<U, G>, T> ||
+                    std::is_convertible_v<const expected<U, G>&, T> || std::is_convertible_v<const expected<U, G>, T>;
+            
+            template<typename U, typename G>
+            inline static constexpr bool four_insanity_v =
+                    std::is_constructible_v<unexpected<E>, expected<U, G>&> || std::is_constructible_v<unexpected<E>, expected<U, G>> ||
+                    std::is_constructible_v<unexpected<E>, const expected<U, G>&> || std::is_constructible_v<unexpected<E>, const expected<U, G>>;
+        
         public:
             template<typename std::enable_if_t<std::is_default_constructible_v<T>, bool> = true>
             constexpr expected() noexcept: v(T())
@@ -322,19 +335,42 @@ namespace blt
             
             constexpr expected(const expected& copy) = delete;
             
-            constexpr expected(expected&& move) noexcept : v(move ? std::move(*move) : std::move(move.error()))
+            constexpr expected(expected&& move) noexcept: v(move ? std::move(*move) : std::move(move.error()))
             {}
             
             /*
              * (4)...(5)
              */
+            template<class U, class G, class UF = std::add_lvalue_reference_t<const U>, class GF = const G&, std::enable_if_t<
+                    (!std::is_convertible_v<UF, T> || !std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
+                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
             
-            template<class U, class G>
-            constexpr explicit expected(const expected<U, G>& other)
+            constexpr explicit expected(const expected<U, G>& other):
+                    v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
             {}
             
-            template<class U, class G>
-            constexpr explicit expected(expected<U, G>&& other)
+            template<class U, class G, class UF = U, class GF = G, std::enable_if_t<
+                    (!std::is_convertible_v<UF, T> || !std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
+                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+            
+            constexpr explicit expected(expected<U, G>&& other):
+                    v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
+            {}
+            
+            template<class U, class G, class UF = std::add_lvalue_reference_t<const U>, class GF = const G&, std::enable_if_t<
+                    (std::is_convertible_v<UF, T> && std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
+                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+            
+            constexpr expected(const expected<U, G>& other):
+                    v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
+            {}
+            
+            template<class U, class G, class UF = U, class GF = G, std::enable_if_t<
+                    (std::is_convertible_v<UF, T> && std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
+                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+            
+            constexpr expected(expected<U, G>&& other):
+                    v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
             {}
             
             
@@ -342,59 +378,75 @@ namespace blt
              * (6)
              */
             
-            template<class U = T, std::enable_if_t<!std::is_convertible_v<U, T>, bool> = true>
-            constexpr explicit expected(U&& v)
+            template<class U = T, std::enable_if_t<!std::is_convertible_v<U, T> &&
+                                                   !std::is_same_v<remove_cvref_t<T>, void> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
+                                                   !std::is_same_v<expected, remove_cvref_t<U>> &&
+                                                   std::is_constructible_v<T, U> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
+            constexpr explicit expected(U&& v): v(T(std::forward<U>(v)))
             {}
             
-            template<class U = T, std::enable_if_t<std::is_convertible_v<U, T>, bool> = true>
-            constexpr expected(U&& v)
+            template<class U = T, std::enable_if_t<std::is_convertible_v<U, T> &&
+                                                   !std::is_same_v<remove_cvref_t<T>, void> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
+                                                   !std::is_same_v<expected, remove_cvref_t<U>> &&
+                                                   std::is_constructible_v<T, U> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
+            constexpr expected(U&& v): v(T(std::forward<U>(v)))
             {}
             
             /*
              * (7)
              */
             
-            template<class G, std::enable_if_t<!std::is_convertible_v<const G&, E>, bool> = true>
-            constexpr explicit expected(const unexpected<G>& e)
+            template<class G, class GF = std::add_const_t<std::add_lvalue_reference_t<G>>, std::enable_if_t<
+                    !std::is_convertible_v<const G&, E> && std::is_constructible_v<E, GF>, bool> = true>
+            constexpr explicit expected(const unexpected<G>& e): v(std::forward<GF>(e.error()))
             {}
             
-            template<class G, std::enable_if_t<std::is_convertible_v<const G&, E>, bool> = true>
-            constexpr expected(const unexpected<G>& e)
+            template<class G, class GF = std::add_const_t<std::add_lvalue_reference_t<G>>, std::enable_if_t<
+                    std::is_convertible_v<const G&, E> && std::is_constructible_v<E, GF>, bool> = true>
+            constexpr expected(const unexpected<G>& e): v(std::forward<GF>(e.error()))
             {}
             
             /*
              * (8)
              */
             
-            template<class G, std::enable_if_t<!std::is_convertible_v<G, E>, bool> = true>
-            constexpr explicit expected(const unexpected<G>& e)
+            template<class G, class GF = std::add_const_t<std::add_lvalue_reference_t<G>>, std::enable_if_t<
+                    !std::is_convertible_v<G, E> && std::is_constructible_v<E, GF>, bool> = true>
+            constexpr explicit expected(unexpected<G>&& e): v(std::forward<GF>(e.error()))
             {}
             
-            template<class G, std::enable_if_t<std::is_convertible_v<G, E>, bool> = true>
-            constexpr expected(const unexpected<G>& e)
+            template<class G, class GF = std::add_const_t<std::add_lvalue_reference_t<G>>, std::enable_if_t<
+                    std::is_convertible_v<G, E> && std::is_constructible_v<E, GF>, bool> = true>
+            constexpr expected(unexpected<G>&& e): v(std::forward<GF>(e.error()))
             {}
             
             /*
              * (9)...(13)
              */
-            template<class... Args>
-            constexpr explicit expected(std::in_place_t, Args&& ... args)
+            template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, bool> = true>
+            constexpr explicit expected(std::in_place_t, Args&& ... args): v(T(std::forward<Args>(args)...))
             {}
             
-            template<class U, class... Args>
-            constexpr explicit expected(std::in_place_t, std::initializer_list<U> il, Args&& ... args)
+            template<class U, class... Args, std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U>&, Args...>, bool> = true>
+            constexpr explicit expected(std::in_place_t, std::initializer_list<U> il, Args&& ... args): v(T(il, std::forward<Args>(args)...))
             {}
             
-            template<class... Args>
-            constexpr explicit expected(std::in_place_t) noexcept
+//            template<class... Args, std::enable_if_t<std::is_same_v<remove_cvref_t<T>, void>, bool> = true>
+//            constexpr explicit expected(std::in_place_t) noexcept: v(T())
+//            {}
+            
+            template<class... Args, std::enable_if_t<std::is_constructible_v<E, Args...>, bool> = true>
+            constexpr explicit expected(unexpect_t, Args&& ... args): v(E(std::forward<Args>(args)...))
             {}
             
-            template<class... Args>
-            constexpr explicit expected(unexpect_t, Args&& ... args)
-            {}
-            
-            template<class U, class... Args>
-            constexpr explicit expected(unexpect_t, std::initializer_list<U> il, Args&& ... args)
+            template<class U, class... Args, std::enable_if_t<std::is_constructible_v<E, std::initializer_list<U>&, Args...>, bool> = true>
+            constexpr explicit expected(unexpect_t, std::initializer_list<U> il, Args&& ... args): v(E(il, std::forward<Args>(args)...))
             {}
             
             expected& operator=(const expected& copy) = delete;
