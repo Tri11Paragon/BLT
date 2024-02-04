@@ -27,8 +27,7 @@
 #include "blt/std/utility.h"
 #include <blt/std/logging.h>
 
-
-namespace blt::gfx
+namespace blt::parse
 {
     class char_tokenizer
     {
@@ -59,7 +58,20 @@ namespace blt::gfx
     T get(std::string_view str)
     {
         T x;
+#if __cplusplus >= BLT_CPP20
         const auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), x);
+#else
+        auto ec = std::errc();
+        if constexpr (std::is_floating_point_v<T>)
+        {
+            x = static_cast<T>(std::stod(std::string(str)));
+        } else if constexpr (std::is_integral_v<T>)
+        {
+            x = static_cast<T>(std::stoll(std::string(str)));
+        } else
+            static_assert(
+                    "You are using a c++ version which does not support the required std::from_chars, manual conversion has failed to find a type!");
+#endif
         // probably not needed.
         if (ec != std::errc())
         {

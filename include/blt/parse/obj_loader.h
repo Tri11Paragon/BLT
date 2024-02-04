@@ -26,7 +26,7 @@
 #include <string_view>
 #include <string>
 
-namespace blt::gfx
+namespace blt::parse
 {
     
     typedef blt::vec3f vertex_t;
