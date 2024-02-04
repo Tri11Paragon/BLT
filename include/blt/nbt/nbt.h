@@ -4,11 +4,10 @@
  * See LICENSE file for license detail
  */
 
-#ifndef BLT_TESTS_NBT_H
-#define BLT_TESTS_NBT_H
+#ifndef BLT_NBT_H
+#define BLT_NBT_H
 
 #include <utility>
-#include <bit>
 #include <cstring>
 #include <type_traits>
 #include <unordered_map>
@@ -441,4 +440,4 @@ namespace blt::nbt {
     
 }
 
-#endif //BLT_TESTS_NBT_H
+#endif //BLT_NBT_H
