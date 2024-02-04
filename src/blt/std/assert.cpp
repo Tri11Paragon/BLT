@@ -52,12 +52,14 @@ namespace blt {
 #endif
     }
     
-    void b_assert_failed(const char* expression, const char* path, int line)
+    void b_assert_failed(const char* expression, const char* msg, const char* path, int line)
     {
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
         BLT_STACK_TRACE(50);
         
         BLT_ERROR("The assertion '%s' has failed in file '%s:%d'", expression, path, line);
+        if (msg != nullptr)
+            BLT_ERROR(msg);
         BLT_ERROR("Stack Trace:");
         
         printStacktrace(messages, size, path, line);

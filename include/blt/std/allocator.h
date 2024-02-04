@@ -210,6 +210,8 @@ namespace blt
             
             void deallocate(pointer p, size_t n) noexcept
             {
+                if (p == nullptr)
+                    return;
 //                for (size_t i = 0; i < n; i++)
 //                    p[i].~T();
                 for (auto*& blk : blocks)
@@ -231,7 +233,8 @@ namespace blt
             template<class U>
             inline void destroy(U* p)
             {
-                p->~U();
+                if (p != nullptr)
+                    p->~U();
             }
             
             [[nodiscard]] inline size_t max_size() const
