@@ -30,7 +30,7 @@
 
 namespace blt
 {
-    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    static inline std::string demangle(const std::string& str)
     {
         int status;
         // only defined for GNU C++11?
@@ -45,7 +45,7 @@ namespace blt
 #else
 namespace blt
 {
-    static BLT_CPP20_CONSTEXPR inline std::string demangle(const std::string& str)
+    static inline std::string demangle(const std::string& str)
     {
         return str;
     }

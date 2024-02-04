@@ -30,6 +30,7 @@ namespace blt
     class area_allocator
     {
         public:
+            using value = T;
             using type = T;
             using value_type = type;
             using pointer = type*;
@@ -44,7 +45,7 @@ namespace blt
             template<class U>
             struct rebind
             {
-                typedef std::allocator<U> other;
+                typedef blt::area_allocator<U, BLOCK_SIZE> other;
             };
         private:
             /**
@@ -218,7 +219,7 @@ namespace blt
                 {
                     if (p >= blk->data && p <= (blk->data + BLOCK_SIZE))
                     {
-                        blk->unallocated_blocks.push_back({p, n});
+                        blk->unallocated_blocks.push_back(pointer_view{p, n});
                         break;
                     }
                 }

@@ -16,10 +16,20 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INSANE_DNS_COMPATIBILITY_H
-#define INSANE_DNS_COMPATIBILITY_H
+#ifndef BLT_COMPATIBILITY_H
+#define BLT_COMPATIBILITY_H
 
-#if __cplusplus >= 202002L
+#define BLT_CPP23 202302L
+#define BLT_CPP20 202002L
+#define BLT_CPP17 201703L
+#define BLT_CPP14 201402L
+#define BLT_CPP11 201103L
+
+#if __cplusplus >= BLT_CPP23
+
+#endif
+
+#if __cplusplus >= BLT_CPP20
     #define BLT_CONTAINS(container, value) container.contains(value)
     #define BLT_CPP20_CONSTEXPR constexpr
     #define BLT_USE_CPP20
@@ -41,4 +51,4 @@
             #error Filesystem ops not supported!\
     #endif
 
-#endif //INSANE_DNS_COMPATIBILITY_H
+#endif //BLT_COMPATIBILITY_H
