@@ -58,6 +58,7 @@ namespace blt::parse
     T get(std::string_view str)
     {
         T x;
+        // TODO: GCC version. C++17 supports from_chars but GCC8.5 doesn't have floating point.
 #if __cplusplus >= BLT_CPP20
         const auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), x);
 #else
