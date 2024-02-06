@@ -56,6 +56,21 @@ int (* func_func_in)(int) = &test_as_func;
 
 int main(int argc, const char** argv)
 {
+//    BLT_INFO("Is blt::vec3 trivial? %b", std::is_trivial_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially constructable? %b", std::is_trivially_constructible_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially copy constructable? %b", std::is_trivially_copy_constructible_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially copy assignment? %b", std::is_trivially_copy_assignable_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially copyable? %b", std::is_trivially_copyable_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially destructable? %b", std::is_trivially_destructible_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially move constructable? %b", std::is_trivially_move_constructible_v<blt::vec3>);
+//    BLT_INFO("Is blt::vec3 trivially move assignable? %b", std::is_trivially_move_assignable_v<blt::vec3>);
+//
+//    blt::vec3 trivial;
+//    for (int i = 0; i < 3; i++)
+//        BLT_TRACE(trivial[i]);
+//
+//    return 0;
+    
     blt::arg_parse parser;
     
     parser.addArgument(
