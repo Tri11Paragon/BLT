@@ -3,7 +3,7 @@
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/std/loader.h>
+#include <blt/fs/loader.h>
 #include <blt/std/assert.h>
 
 std::vector<std::string> blt::fs::getLinesFromFile(std::string_view path)

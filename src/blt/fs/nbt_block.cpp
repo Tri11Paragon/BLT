@@ -3,7 +3,7 @@
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/nbt/nbt_block.h>
+#include <blt/fs/nbt_block.h>
 #include <string>
 #include <fstream>
 

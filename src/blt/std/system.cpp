@@ -15,7 +15,7 @@
 #ifndef WIN32
     
     #include <unistd.h>
-    #include <blt/std/loader.h>
+    #include <blt/fs/loader.h>
 #include "blt/std/assert.h"
 
 inline long blt_get_page_size()
@@ -50,7 +50,7 @@ blt::system::memory_info_t process_proc()
     auto data = blt::string::split(str, ' ');
     BLT_ASSERT(data.size() == 7 && "Something went wrong when parsing /proc/self/statm! Expected 7 values!");
     
-    blt::system::memory_info_t mem {};
+    blt::system::memory_info_t mem{};
     
     mem.size = page_size * std::stoull(data[0]);
     mem.resident = page_size * std::stoull(data[1]);

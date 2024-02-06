@@ -19,7 +19,7 @@
 #define BLT_DISABLE_DEBUG
 
 #include <blt/parse/obj_loader.h>
-#include <blt/std/loader.h>
+#include <blt/fs/loader.h>
 #include <blt/std/string.h>
 #include <cctype>
 #include <charconv>

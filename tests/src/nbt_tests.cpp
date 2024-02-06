@@ -4,11 +4,11 @@
  * See LICENSE file for license detail
  */
 #include "nbt_tests.h"
-#include <blt/nbt/nbt.h>
+#include <blt/fs/nbt.h>
 #include <blt/profiling/profiler.h>
 #include <blt/std/logging.h>
 #include <blt/std/format.h>
-#include <blt/std/filesystem.h>
+#include <blt/fs/filesystem.h>
 #include <filesystem>
 
 void blt::tests::nbtFSBlockRead(size_t buff_size, size_t arr_size, size_t num_array, unsigned char** arr)

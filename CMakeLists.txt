@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(BLT_VERSION 0.10.1)
+set(BLT_VERSION 0.11.3)
 set(BLT_TEST_VERSION 0.0.1)
 
 set(BLT_TARGET BLT)
@@ -15,7 +15,7 @@ option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
-option(BUILD_NBT "Build the BLT NBT + eNBT extension" ON)
+option(BUILD_FS "Build the BLT FS utilities including the NBT + eNBT extension" ON)
 option(BUILD_PARSE "Build the BLT parsers" ON)
 
 option(BUILD_TESTS "Build the BLT test set" OFF)
@@ -45,11 +45,11 @@ else()
     set(PROFILING_FILES "")
 endif()
 
-if(${BUILD_NBT})
-    message("Building NBT")
-    file(GLOB_RECURSE NBT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/nbt/*.cpp")
+if(${BUILD_FS})
+    message("Building FS")
+    file(GLOB_RECURSE FS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/fs/*.cpp")
 else()
-    set(NBT_FILES "")
+    set(FS_FILES "")
 endif()
 
 if(${BUILD_PARSE})
@@ -78,10 +78,12 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
 message("Standard Files ${STD_FILES}")
 message("Profiler Files ${PROFILING_FILES}")
+message("FS Files ${FS_FILES}")
+message("Parser Files ${PARSE_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${NBT_FILES} ${PARSE_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES})
 
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)

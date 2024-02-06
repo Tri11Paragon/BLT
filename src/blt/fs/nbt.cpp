@@ -3,7 +3,7 @@
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/nbt/nbt.h>
+#include <blt/fs/nbt.h>
 #include <blt/std/logging.h>
 #include <cassert>
 
