@@ -165,6 +165,41 @@ namespace blt
                 return range_itr(_end - offset, offset == 0);
             }
     };
+    
+    template<typename I>
+    class itr_offset
+    {
+        private:
+            I begin_;
+            I end_;
+        public:
+            template<typename T>
+            itr_offset(I begin, I end, T offset): begin_(begin), end_(end)
+            {
+                for (T t = 0; t < offset; t++)
+                    ++begin_;
+            }
+            
+            template<typename C, typename T>
+            itr_offset(C& container, T offset): begin_(container.begin()), end_(container.end())
+            {
+                for (T t = 0; t < offset; t++)
+                    ++begin_;
+            }
+            
+            auto begin()
+            {
+                return begin_;
+            }
+            
+            auto end()
+            {
+                return end_;
+            }
+    };
+
+    template<typename C, typename T>
+    itr_offset(C, T) -> itr_offset<typename C::iterator>;
 }
 
 #endif //BLT_RANGES_H
