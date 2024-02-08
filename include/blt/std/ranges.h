@@ -92,6 +92,12 @@ namespace blt
     }
     
     template<typename T>
+    static inline auto enumerate(T&& container)
+    {
+        return enumerator{container.begin(), container.end()};
+    }
+    
+    template<typename T>
     struct range
     {
         public:
