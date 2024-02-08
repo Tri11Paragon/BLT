@@ -216,31 +216,67 @@ namespace blt::string
     
     // taken from https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
     // extended to return a vector
-    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, std::string_view delim)
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string_view s, std::string_view delim)
     {
         size_t pos = 0;
+        size_t from = 0;
         std::vector<std::string> tokens;
-        while ((pos = s.find(delim)) != std::string::npos)
+        while ((pos = s.find(delim, from)) != std::string::npos)
         {
-            auto token = s.substr(0, pos);
-            tokens.push_back(token);
-            s.erase(0, pos + delim.length());
+            auto size = pos - from;
+            auto token = s.substr(from, size);
+            tokens.emplace_back(token);
+            from += size + delim.length();
         }
-        tokens.push_back(std::move(s));
+        tokens.emplace_back(s.substr(from));
+        return tokens;
+    }
+
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string_view s, char delim)
+    {
+        size_t pos = 0;
+        size_t from = 0;
+        std::vector<std::string> tokens;
+        while ((pos = s.find(delim, from)) != std::string::npos)
+        {
+            auto size = pos - from;
+            auto token = s.substr(from, size);
+            tokens.emplace_back(token);
+            from += size + 1;
+        }
+        tokens.emplace_back(s.substr(from));
         return tokens;
     }
     
-    static inline BLT_CPP20_CONSTEXPR std::vector<std::string> split(std::string s, char delim)
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string_view> split_sv(std::string_view s, std::string_view delim)
     {
         size_t pos = 0;
-        std::vector<std::string> tokens;
-        while ((pos = s.find(delim)) != std::string::npos)
+        size_t from = 0;
+        std::vector<std::string_view> tokens;
+        while ((pos = s.find(delim, from)) != std::string::npos)
         {
-            auto token = s.substr(0, pos);
+            auto size = pos - from;
+            auto token = s.substr(from, size);
             tokens.push_back(token);
-            s.erase(0, pos + 1);
+            from += size + delim.length();
         }
-        tokens.push_back(s);
+        tokens.push_back(s.substr(from));
+        return tokens;
+    }
+    
+    static inline BLT_CPP20_CONSTEXPR std::vector<std::string_view> split_sv(std::string_view s, char delim)
+    {
+        size_t pos = 0;
+        size_t from = 0;
+        std::vector<std::string_view> tokens;
+        while ((pos = s.find(delim, from)) != std::string::npos)
+        {
+            auto size = pos - from;
+            auto token = s.substr(from, size);
+            tokens.push_back(token);
+            from += size + 1;
+        }
+        tokens.push_back(s.substr(from));
         return tokens;
     }
     
