@@ -57,7 +57,8 @@ namespace blt
             
             arg_vector_t(std::initializer_list<std::string> f): flags(f)
             {
-                if (flags.size() == 1) {
+                if (flags.size() == 1)
+                {
                     if (!blt::string::starts_with(flags[0], '-'))
                     {
                         name = flags[0];
@@ -477,6 +478,8 @@ namespace blt
     std::string to_string(const blt::arg_data_t& v);
     
     std::string to_string(const blt::arg_data_internal_t& v);
+    
+    std::string to_string(const blt::arg_data_vec_t& v);
     
 }
 

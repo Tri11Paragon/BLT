@@ -7,6 +7,7 @@
 #include <iostream>
 #include <blt/std/string.h>
 #include <algorithm>
+#include "blt/std/utility.h"
 
 namespace blt
 {
@@ -92,36 +93,44 @@ namespace blt
     
     std::string to_string(const arg_data_t& v)
     {
-        if (std::holds_alternative<arg_data_internal_t>(v))
-            return to_string(std::get<arg_data_internal_t>(v));
-        else if (std::holds_alternative<arg_data_vec_t>(v))
-        {
-            const auto& vec = std::get<arg_data_vec_t>(v);
-            if (vec.size() == 1)
-                return to_string(vec[0]);
-            if (vec.empty())
-                return "Empty Vector";
-            std::string str;
-            for (const auto& r : vec)
-            {
-                str += to_string(r);
-                str += ' ';
-            }
-            return "Vector of contents: " + str;
-        }
-        return "Empty";
+        return std::visit(blt::lambda_visitor{
+                [](const arg_data_internal_t& v) {
+                    return to_string(v);
+                },
+                [](const arg_data_vec_t& v) {
+                    return to_string(v);
+                }
+        }, v);
     }
     
     std::string to_string(const arg_data_internal_t& v)
     {
-        if (std::holds_alternative<std::string>(v))
+        return std::visit(blt::lambda_visitor{
+                [&](const std::string& str) {
+                    return str;
+                },
+                [&](bool b) {
+                    return std::string(b ? "True" : "False");
+                },
+                [&](int32_t i) {
+                    return std::to_string(i);
+                }
+        }, v);
+    }
+    
+    std::string to_string(const blt::arg_data_vec_t& vec)
+    {
+        std::string result = "[";
+        
+        for (const auto& value : blt::enumerate(vec))
         {
-            return std::get<std::string>(v);
-        } else if (std::holds_alternative<bool>(v))
-        {
-            return std::get<bool>(v) ? "True" : "False";
+            result += to_string(value.second);
+            if (value.first != vec.size() - 1)
+                result += ", ";
         }
-        return std::to_string(std::get<int32_t>(v));
+        result += "]";
+        
+        return result;
     }
     
     std::string arg_parse::filename(const std::string& path)
