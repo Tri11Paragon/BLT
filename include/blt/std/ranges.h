@@ -9,8 +9,10 @@
 #define BLT_RANGES_H
 
 #include <blt/std/types.h>
+#include <type_traits>
 #include <iterator>
 #include <utility>
+#include <limits>
 
 namespace blt
 {
@@ -164,6 +166,26 @@ namespace blt
                 // not sure if i like this
                 return range_itr(_end - offset, offset == 0);
             }
+    };
+    
+    inline constexpr std::size_t dynamic_extent = std::numeric_limits<std::size_t>::max();
+    
+    template<typename T, std::size_t extend = dynamic_extent>
+    class span
+    {
+        public:
+            using element_type = T;
+            using value_type = std::remove_cv_t<T>;
+            using size_type = blt::size_t;
+            using difference_type = std::ptrdiff_t;
+            using pointer = T*;
+            using const_pointer = const T*;
+            using reference = T&;
+            using const_reference = const T&;
+            
+        private:
+        
+        public:
     };
 }
 
