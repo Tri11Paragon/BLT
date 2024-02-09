@@ -57,7 +57,8 @@ namespace blt
             
             arg_vector_t(std::initializer_list<std::string> f): flags(f)
             {
-                if (flags.size() == 1) {
+                if (flags.size() == 1)
+                {
                     if (!blt::string::starts_with(flags[0], '-'))
                     {
                         name = flags[0];
@@ -325,22 +326,6 @@ namespace blt
                     return static_cast<T>(std::stoll(s));
                 return static_cast<T>(std::stoull(s));
             }
-        
-        private:
-            struct
-            {
-                    friend arg_parse;
-                private:
-                    std::vector<arg_properties_t*> arg_properties_storage;
-                    size_t max_line_length = 80;
-                    // TODO: grouping like git's help
-                    // pre/postfix applied to the help message
-                    std::string prefix;
-                    std::string postfix;
-                public:
-                    std::vector<arg_properties_t*> name_associations;
-                    HASHMAP<std::string, arg_properties_t*> flag_associations;
-            } user_args;
             
             struct arg_results
             {
@@ -385,7 +370,24 @@ namespace blt
                             return data.find(key.substr(1)) != data.end();
                         return data.find(key) != data.end();
                     }
-            } loaded_args;
+            };
+        private:
+            struct
+            {
+                    friend arg_parse;
+                private:
+                    std::vector<arg_properties_t*> arg_properties_storage;
+                    size_t max_line_length = 80;
+                    // TODO: grouping like git's help
+                    // pre/postfix applied to the help message
+                    std::string prefix;
+                    std::string postfix;
+                public:
+                    std::vector<arg_properties_t*> name_associations;
+                    HASHMAP<std::string, arg_properties_t*> flag_associations;
+            } user_args;
+            
+            arg_results loaded_args;
             
             bool subcommand_found = false;
             bool use_full_name = false;
@@ -477,6 +479,8 @@ namespace blt
     std::string to_string(const blt::arg_data_t& v);
     
     std::string to_string(const blt::arg_data_internal_t& v);
+    
+    std::string to_string(const blt::arg_data_vec_t& v);
     
 }
 

@@ -94,6 +94,12 @@ namespace blt
     }
     
     template<typename T>
+    static inline auto enumerate(T&& container)
+    {
+        return enumerator{container.begin(), container.end()};
+    }
+    
+    template<typename T>
     struct range
     {
         public:
@@ -168,6 +174,42 @@ namespace blt
             }
     };
     
+    template<typename I>
+    class itr_offset
+    {
+        private:
+            I begin_;
+            I end_;
+        public:
+            template<typename T>
+            itr_offset(I begin, I end, T offset): begin_(begin), end_(end)
+            {
+                for (T t = 0; t < offset; t++)
+                    ++begin_;
+            }
+            
+            template<typename C, typename T>
+            itr_offset(C& container, T offset): begin_(container.begin()), end_(container.end())
+            {
+                for (T t = 0; t < offset; t++)
+                    ++begin_;
+            }
+            
+            auto begin()
+            {
+                return begin_;
+            }
+            
+            auto end()
+            {
+                return end_;
+            }
+    };
+
+    template<typename C, typename T>
+    itr_offset(C, T) -> itr_offset<typename C::iterator>;
+    
+    
     inline constexpr std::size_t dynamic_extent = std::numeric_limits<std::size_t>::max();
     
     template<typename T, std::size_t extend = dynamic_extent>
@@ -182,7 +224,7 @@ namespace blt
             using const_pointer = const T*;
             using reference = T&;
             using const_reference = const T&;
-            
+        
         private:
         
         public:
