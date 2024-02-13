@@ -91,6 +91,17 @@ namespace blt
     template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
     class scoped_buffer
     {
+        public:
+            using element_type = T;
+            using value_type = std::remove_cv_t<T>;
+            using pointer = T*;
+            using const_pointer = const T*;
+            using reference = T&;
+            using const_reference = const T&;
+            using iterator = T*;
+            using const_iterator = const T*;
+            using reverse_iterator = std::reverse_iterator<iterator>;
+            using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
             T* buffer_ = nullptr;
             size_t size_;
@@ -222,16 +233,56 @@ namespace blt
                 return buffer_;
             }
             
-            inline ptr_iterator<T> begin()
+//            inline auto begin()
+//            {
+//                return ptr_iterator{buffer_};
+//            }
+//
+//            inline ptr_iterator<T> end()
+//            {
+//                return ptr_iterator{&buffer_[size_]};
+//            }
+            
+            constexpr iterator begin() const noexcept
             {
-                return ptr_iterator{buffer_};
+                return data();
             }
             
-            inline ptr_iterator<T> end()
+            constexpr iterator end() const noexcept
             {
-                return ptr_iterator{&buffer_[size_]};
+                return data() + size();
             }
             
+            constexpr const_iterator cbegin() const noexcept
+            {
+                return data();
+            }
+            
+            constexpr const_iterator cend() const noexcept
+            {
+                return data() + size();
+            }
+            
+            constexpr reverse_iterator rbegin() const noexcept
+            {
+                return reverse_iterator{end()};
+            }
+            
+            constexpr reverse_iterator rend() const noexcept
+            {
+                return reverse_iterator{begin()};
+            }
+            
+            constexpr const_reverse_iterator crbegin() const noexcept
+            {
+                return reverse_iterator{cend()};
+            }
+            
+            constexpr const_reverse_iterator crend() const noexcept
+            {
+                return reverse_iterator{cbegin()};
+            }
+
             ~scoped_buffer()
             {
                 delete[] buffer_;
