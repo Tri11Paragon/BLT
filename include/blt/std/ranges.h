@@ -286,7 +286,7 @@ namespace blt
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
             size_type size_;
-            pointer* data_;
+            pointer data_;
         public:
             constexpr span() noexcept: size_(0), data_(nullptr)
             {}
