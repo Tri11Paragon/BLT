@@ -98,18 +98,18 @@ namespace blt
             using const_pointer = const T*;
             using reference = T&;
             using const_reference = const T&;
-            using iterator = T*;
-            using const_iterator = const T*;
+            using iterator = ptr_iterator<T>;
+            using const_iterator = ptr_iterator<const T>;
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
             T* buffer_ = nullptr;
             size_t size_;
         public:
-            scoped_buffer(): buffer_(nullptr), size_(0)
+            constexpr scoped_buffer(): buffer_(nullptr), size_(0)
             {}
             
-            explicit scoped_buffer(size_t size): size_(size)
+            constexpr explicit scoped_buffer(size_t size): size_(size)
             {
                 if (size > 0)
                     buffer_ = new T[size];
@@ -117,7 +117,7 @@ namespace blt
                     buffer_ = nullptr;
             }
             
-            scoped_buffer(const scoped_buffer& copy)
+            constexpr scoped_buffer(const scoped_buffer& copy)
             {
                 if (copy.size() == 0)
                 {
@@ -143,7 +143,7 @@ namespace blt
                 }
             }
             
-            scoped_buffer& operator=(const scoped_buffer& copy)
+            constexpr scoped_buffer& operator=(const scoped_buffer& copy)
             {
                 if (&copy == this)
                     return *this;
@@ -175,7 +175,7 @@ namespace blt
                 return *this;
             }
             
-            scoped_buffer(scoped_buffer&& move) noexcept
+            constexpr scoped_buffer(scoped_buffer&& move) noexcept
             {
                 delete[] buffer_;
                 buffer_ = move.buffer_;
@@ -183,7 +183,7 @@ namespace blt
                 move.buffer_ = nullptr;
             }
             
-            scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
+            constexpr scoped_buffer& operator=(scoped_buffer&& moveAssignment) noexcept
             {
                 delete[] buffer_;
                 buffer_ = moveAssignment.buffer_;
@@ -193,42 +193,42 @@ namespace blt
                 return *this;
             }
             
-            inline T& operator[](size_t index)
+            constexpr inline T& operator[](size_t index)
             {
                 return buffer_[index];
             }
             
-            inline const T& operator[](size_t index) const
+            constexpr inline const T& operator[](size_t index) const
             {
                 return buffer_[index];
             }
             
-            inline T* operator*()
+            constexpr inline T* operator*()
             {
                 return buffer_;
             }
             
-            [[nodiscard]] inline size_t size() const
+            [[nodiscard]] constexpr inline size_t size() const
             {
                 return size_;
             }
             
-            inline T*& ptr()
+            constexpr inline T*& ptr()
             {
                 return buffer_;
             }
             
-            inline const T* const& ptr() const
+            constexpr inline const T* const& ptr() const
             {
                 return buffer_;
             }
             
-            inline const T* const& data() const
+            constexpr inline const T* const& data() const
             {
                 return buffer_;
             }
             
-            inline T*& data()
+            constexpr inline T*& data()
             {
                 return buffer_;
             }
@@ -243,32 +243,32 @@ namespace blt
 //                return ptr_iterator{&buffer_[size_]};
 //            }
             
-            constexpr iterator begin() const noexcept
+            constexpr iterator begin() noexcept
             {
-                return data();
+                return iterator{data()};
             }
             
-            constexpr iterator end() const noexcept
+            constexpr iterator end() noexcept
             {
-                return data() + size();
+                return iterator{data() + size()};
             }
             
             constexpr const_iterator cbegin() const noexcept
             {
-                return data();
+                return const_iterator{data()};
             }
             
             constexpr const_iterator cend() const noexcept
             {
-                return data() + size();
+                return const_iterator{data() + size()};
             }
             
-            constexpr reverse_iterator rbegin() const noexcept
+            constexpr reverse_iterator rbegin() noexcept
             {
                 return reverse_iterator{end()};
             }
             
-            constexpr reverse_iterator rend() const noexcept
+            constexpr reverse_iterator rend() noexcept
             {
                 return reverse_iterator{begin()};
             }
