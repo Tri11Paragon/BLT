@@ -193,6 +193,21 @@ namespace blt
                 return *this;
             }
             
+            /**
+             * Resize the internal buffer. Nothing will occur if the sizes are equal.
+             * This function WILL NOT COPY ANY DATA. It is meant for use when creating a scoped buffer without size.
+             */
+            constexpr void resize(size_t size)
+            {
+                if (size == 0)
+                    return;
+                if (size == size_)
+                    return;
+                delete[] buffer_;
+                buffer_ = new T[size];
+                size_ = size;
+            }
+            
             constexpr inline T& operator[](size_t index)
             {
                 return buffer_[index];
@@ -232,7 +247,7 @@ namespace blt
             {
                 return buffer_;
             }
-            
+
 //            inline auto begin()
 //            {
 //                return ptr_iterator{buffer_};
@@ -282,7 +297,7 @@ namespace blt
             {
                 return reverse_iterator{cbegin()};
             }
-
+            
             ~scoped_buffer()
             {
                 delete[] buffer_;
