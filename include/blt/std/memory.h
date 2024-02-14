@@ -80,6 +80,9 @@ namespace blt
         private:
             V* _v;
     };
+    
+    template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
+    class scoped_buffer;
 
 /**
      * Creates an encapsulation of a T array which will be automatically deleted when this object goes out of scope.
@@ -88,8 +91,8 @@ namespace blt
      * The operator * has been overloaded to return the internal buffer.
      * @tparam T type that is stored in buffer eg char
      */
-    template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
-    class scoped_buffer
+    template<typename T>
+    class scoped_buffer<T, true>
     {
         public:
             using element_type = T;
@@ -247,16 +250,6 @@ namespace blt
             {
                 return buffer_;
             }
-
-//            inline auto begin()
-//            {
-//                return ptr_iterator{buffer_};
-//            }
-//
-//            inline ptr_iterator<T> end()
-//            {
-//                return ptr_iterator{&buffer_[size_]};
-//            }
             
             constexpr iterator begin() noexcept
             {
@@ -302,6 +295,16 @@ namespace blt
             {
                 delete[] buffer_;
             }
+    };
+    
+    template<typename T>
+    class scoped_buffer<T, false> : scoped_buffer<T, true>
+    {
+            using scoped_buffer<T, true>::scoped_buffer;
+        public:
+            scoped_buffer(const scoped_buffer& copy) = delete;
+            
+            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
     };
     
     template<typename T, size_t MAX_SIZE>
@@ -386,16 +389,6 @@ namespace blt
             {
                 return &buffer_[size_];
             }
-    };
-    
-    template<typename T>
-    class scoped_buffer<T, false> : scoped_buffer<T, true>
-    {
-            using scoped_buffer<T, true>::scoped_buffer;
-        public:
-            scoped_buffer(const scoped_buffer& copy) = delete;
-            
-            scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
     };
     
     template<typename T>
