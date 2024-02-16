@@ -26,6 +26,40 @@
 
 namespace blt
 {
+    
+    template<typename value_type, typename pointer, typename const_pointer>
+    class allocator_base
+    {
+        public:
+            template<class U, class... Args>
+            inline void construct(U* p, Args&& ... args)
+            {
+                ::new((void*) p) U(std::forward<Args>(args)...);
+            }
+            
+            template<class U>
+            inline void destroy(U* p)
+            {
+                if (p != nullptr)
+                    p->~U();
+            }
+            
+            [[nodiscard]] inline size_t max_size() const
+            {
+                return std::numeric_limits<size_t>::max();
+            }
+            
+            inline const_pointer address(const value_type& val)
+            {
+                return std::addressof(val);
+            }
+            
+            inline pointer address(value_type& val)
+            {
+                return std::addressof(val);
+            }
+    };
+    
     template<typename T, size_t BLOCK_SIZE = 8192>
     class area_allocator
     {
@@ -47,6 +81,7 @@ namespace blt
             {
                 typedef blt::area_allocator<U, BLOCK_SIZE> other;
             };
+            using allocator_base<value_type, pointer, const_pointer>::allocator_base;
         private:
             /**
              * Stores a view to a region of memory that has been deallocated
@@ -225,6 +260,129 @@ namespace blt
                 }
             }
             
+            ~area_allocator()
+            {
+                for (auto*& blk : blocks)
+                {
+                    free(blk->data);
+                    delete blk;
+                }
+            }
+        
+        private:
+            std::vector<block_storage*> blocks;
+    };
+    
+    template<typename T>
+    class bump_allocator
+    {
+        public:
+            using value = T;
+            using type = T;
+            using value_type = type;
+            using pointer = type*;
+            using const_pointer = const type*;
+            using void_pointer = void*;
+            using const_void_pointer = const void*;
+            using reference = value_type&;
+            using const_reference = const value_type&;
+            using size_type = size_t;
+            using difference_type = size_t;
+            using propagate_on_container_move_assignment = std::false_type;
+            template<class U>
+            struct rebind
+            {
+                typedef blt::bump_allocator<U> other;
+            };
+            using allocator_base<value_type, pointer, const_pointer>::allocator_base;
+        private:
+            pointer buffer_;
+            blt::size_t offset_;
+            blt::size_t size_;
+        public:
+            explicit bump_allocator(blt::size_t size): buffer_(malloc(size * sizeof(T))), size_(size), offset_(0)
+            {}
+            
+            template<typename... Args>
+            explicit bump_allocator(blt::size_t size, Args&& ... defaults): buffer_(malloc(size * sizeof(type))), size_(size), offset_(0)
+            {
+                for (blt::size_t i = 0; i < size_; i++)
+                    ::new(&buffer_[i]) T(std::forward<Args>(defaults)...);
+            }
+            
+            bump_allocator(pointer buffer, blt::size_t size): buffer_(buffer), size_(size), offset_(0)
+            {}
+            
+            bump_allocator(const bump_allocator& copy) = delete;
+            
+            bump_allocator(bump_allocator&& move) noexcept
+            {
+                buffer_ = move.buffer_;
+                size_ = move.size_;
+                offset_ = move.offset_;
+            }
+            
+            bump_allocator& operator=(const bump_allocator& copy) = delete;
+            
+            bump_allocator& operator=(bump_allocator&& move) noexcept
+            {
+                std::swap(move.buffer_, buffer_);
+                std::swap(move.size_, size_);
+                std::swap(move.offset_, offset_);
+            }
+            
+            pointer allocate(blt::size_t n)
+            {
+                auto nv = offset_ + n;
+                if (nv > size_)
+                    throw std::bad_alloc();
+                pointer b = &buffer_[offset_];
+                offset_ = nv;
+                return b;
+            }
+            
+            void deallocate(pointer, blt::size_t)
+            {}
+            
+            ~bump_allocator()
+            {
+                free(buffer_);
+            }
+    };
+    
+    class multi_type_area_allocator
+    {
+        private:
+            struct pointer_view
+            {
+                blt::u8* p;
+                size_t n;
+            };
+            
+            blt::u8* buffer_;
+            blt::u8* offset_;
+            blt::size_t size_;
+        public:
+            
+            template<typename T>
+            [[nodiscard]] T* allocate()
+            {
+                size_t remaining_num_bytes = size_ - static_cast<size_t>(buffer_ - offset_);
+                auto pointer = static_cast<void*>(offset_);
+                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_num_bytes);
+                if (aligned_address == nullptr)
+                    throw std::bad_alloc{};
+                offset_ = static_cast<blt::u8*>(aligned_address) + sizeof(T);
+                return static_cast<T*>(aligned_address);
+            }
+            
+            template<typename T, typename... Args>
+            [[nodiscard]] T* emplace(Args&& ... args)
+            {
+                const auto allocated_memory = allocate<T>();
+                return new(allocated_memory) T{std::forward<Args>(args)...};
+            }
+            
             template<class U, class... Args>
             inline void construct(U* p, Args&& ... args)
             {
@@ -238,32 +396,10 @@ namespace blt
                     p->~U();
             }
             
-            [[nodiscard]] inline size_t max_size() const
+            ~multi_type_area_allocator()
             {
-                return std::numeric_limits<size_t>::max();
+                delete[] buffer_;
             }
-            
-            inline const_pointer address(const value_type& val)
-            {
-                return std::addressof(val);
-            }
-            
-            inline pointer address(value_type& val)
-            {
-                return std::addressof(val);
-            }
-            
-            ~area_allocator()
-            {
-                for (auto*& blk : blocks)
-                {
-                    free(blk->data);
-                    delete blk;
-                }
-            }
-        
-        private:
-            std::vector<block_storage*> blocks;
     };
 }
 
