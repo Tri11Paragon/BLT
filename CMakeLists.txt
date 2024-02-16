@@ -87,6 +87,7 @@ add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FI
 
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
+target_include_directories(${BLT_TARGET} PUBLIC stdc++fs)
 if(${ZLIB_FOUND})
      target_link_libraries(${BLT_TARGET} PUBLIC ZLIB::ZLIB)
 endif()
