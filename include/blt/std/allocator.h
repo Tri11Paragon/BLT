@@ -61,7 +61,7 @@ namespace blt
     };
     
     template<typename T, size_t BLOCK_SIZE = 8192>
-    class area_allocator
+    class area_allocator : public allocator_base<T, T*, const T*>
     {
         public:
             using value = T;
@@ -274,7 +274,7 @@ namespace blt
     };
     
     template<typename T>
-    class bump_allocator
+    class bump_allocator : public allocator_base<T, T*, const T*>
     {
         public:
             using value = T;
@@ -300,17 +300,17 @@ namespace blt
             blt::size_t offset_;
             blt::size_t size_;
         public:
-            explicit bump_allocator(blt::size_t size): buffer_(malloc(size * sizeof(T))), size_(size), offset_(0)
+            explicit bump_allocator(blt::size_t size): buffer_(static_cast<pointer>(malloc(size * sizeof(T)))), offset_(0), size_(size)
             {}
             
             template<typename... Args>
-            explicit bump_allocator(blt::size_t size, Args&& ... defaults): buffer_(malloc(size * sizeof(type))), size_(size), offset_(0)
+            explicit bump_allocator(blt::size_t size, Args&& ... defaults): buffer_(static_cast<pointer>(malloc(size * sizeof(type)))), offset_(0), size_(size)
             {
                 for (blt::size_t i = 0; i < size_; i++)
                     ::new(&buffer_[i]) T(std::forward<Args>(defaults)...);
             }
             
-            bump_allocator(pointer buffer, blt::size_t size): buffer_(buffer), size_(size), offset_(0)
+            bump_allocator(pointer buffer, blt::size_t size): buffer_(buffer), offset_(0), size_(size)
             {}
             
             bump_allocator(const bump_allocator& copy) = delete;
