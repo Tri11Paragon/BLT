@@ -23,6 +23,7 @@
 #include <vector>
 #include <blt/std/utility.h>
 #include <stdexcept>
+#include "logging.h"
 
 namespace blt
 {
@@ -304,7 +305,8 @@ namespace blt
             {}
             
             template<typename... Args>
-            explicit bump_allocator(blt::size_t size, Args&& ... defaults): buffer_(static_cast<pointer>(malloc(size * sizeof(type)))), offset_(0), size_(size)
+            explicit bump_allocator(blt::size_t size, Args&& ... defaults):
+                    buffer_(static_cast<pointer>(malloc(size * sizeof(type)))), offset_(0), size_(size)
             {
                 for (blt::size_t i = 0; i < size_; i++)
                     ::new(&buffer_[i]) T(std::forward<Args>(defaults)...);
@@ -350,19 +352,22 @@ namespace blt
             }
     };
     
-    class multi_type_area_allocator
+    template<bool linked>
+    class multi_type_area_allocator;
+    
+    template<>
+    class multi_type_area_allocator<false>
     {
         private:
-            struct pointer_view
-            {
-                blt::u8* p;
-                size_t n;
-            };
-            
             blt::u8* buffer_;
             blt::u8* offset_;
             blt::size_t size_;
         public:
+            explicit multi_type_area_allocator(blt::size_t size): buffer_(static_cast<blt::u8*>(malloc(size))), offset_(buffer_), size_(size)
+            {}
+            
+            explicit multi_type_area_allocator(blt::u8* buffer, blt::size_t size): buffer_(buffer), offset_(buffer), size_(size)
+            {}
             
             template<typename T>
             [[nodiscard]] T* allocate()
@@ -398,7 +403,118 @@ namespace blt
             
             ~multi_type_area_allocator()
             {
-                delete[] buffer_;
+                free(buffer_);
+            }
+    };
+    
+    template<>
+    class multi_type_area_allocator<true>
+    {
+        private:
+            struct block
+            {
+                blt::u8* buffer;
+                blt::size_t offset;
+                blt::size_t allocated_objects = 0;
+                blt::size_t deallocated_objects = 0;
+            };
+            std::vector<block> blocks;
+            blt::size_t size_;
+            
+            void expand()
+            {
+                BLT_INFO("I have expanded!");
+                blocks.push_back({static_cast<blt::u8*>(malloc(size_)), 0});
+            }
+            
+            template<typename T>
+            T* allocate_back()
+            {
+                auto& back = blocks.back();
+                size_t remaining_bytes = size_ - back.offset;
+                auto void_ptr = reinterpret_cast<void*>(&back.buffer[back.offset]);
+                auto new_ptr = static_cast<blt::u8*>(std::align(alignof(T), sizeof(T), void_ptr, remaining_bytes));
+                if (new_ptr == nullptr)
+                    expand();
+                else
+                {
+                    back.offset += (back.buffer - new_ptr + sizeof(T));
+                    back.allocated_objects++;
+                }
+                return static_cast<T*>(new_ptr);
+            }
+        
+        public:
+            explicit multi_type_area_allocator(blt::size_t size): size_(size)
+            {
+                expand();
+            }
+            
+            template<typename T>
+            [[nodiscard]] T* allocate()
+            {
+                if (blocks.back().offset + sizeof(T) > size_)
+                    expand();
+                if (auto ptr = allocate_back<T>(); ptr == nullptr)
+                {
+                    BLT_INFO("Not enough space for me");
+                    expand();
+                } else
+                    return ptr;
+                if (auto ptr = allocate_back<T>(); ptr == nullptr)
+                    throw std::bad_alloc();
+                else
+                    return ptr;
+            }
+            
+            template<typename T>
+            void deallocate(T* p)
+            {
+                auto* ptr = static_cast<blt::u8*>(p);
+                blt::i64 remove_index = -1;
+                for (auto e : blt::enumerate(blocks))
+                {
+                    auto& block = e.second;
+                    if (ptr >= block.buffer && ptr <= &block.buffer[block.offset])
+                    {
+                        block.deallocated_objects++;
+                        if (block.deallocated_objects == block.allocated_objects)
+                            remove_index = static_cast<blt::i64>(e.first);
+                        break;
+                    }
+                }
+                if (remove_index < 0)
+                    return;
+                std::iter_swap(blocks.begin() + remove_index, blocks.end() - 1);
+                free(blocks.back().buffer);
+                BLT_DEBUG("I have freed a block!");
+                blocks.pop_back();
+            }
+            
+            template<typename T, typename... Args>
+            [[nodiscard]] T* emplace(Args&& ... args)
+            {
+                const auto allocated_memory = allocate<T>();
+                return new(allocated_memory) T{std::forward<Args>(args)...};
+            }
+            
+            template<class U, class... Args>
+            inline void construct(U* p, Args&& ... args)
+            {
+                ::new((void*) p) U(std::forward<Args>(args)...);
+            }
+            
+            template<class U>
+            inline void destroy(U* p)
+            {
+                if (p != nullptr)
+                    p->~U();
+            }
+            
+            ~multi_type_area_allocator()
+            {
+                for (auto& v : blocks)
+                    free(v.buffer);
             }
     };
 }
