@@ -246,7 +246,7 @@ namespace blt::parse
             } else
             {
                 BLT_TRACE("Using cached data; %d; map size: %d", loc->second, vertex_data.size());
-                const auto& d = vertex_data[loc->second];
+                //const auto& d = vertex_data[loc->second];
                 BLT_TRACE("Vertex: (%f, %f, %f), UV: (%f, %f), Normal: (%f, %f, %f)", d.vertex.x(), d.vertex.y(), d.vertex.z(),
                           d.uv.x(), d.uv.y(), d.normal.x(), d.normal.y(), d.normal.z());
                 arr[pair.first] = loc->second;

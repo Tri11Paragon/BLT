@@ -15,36 +15,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#ifndef BLT_SIMD_H
-#define BLT_SIMD_H
-
-#if defined(__AVX__) || defined(__AVX2__)
-    
-    #include <immintrin.h>
-
-#else
-    #warning AVX is not available.
-#endif
-
-#include <xmmintrin.h>
+#include <blt/std/simd.h>
+#include <blt/std/logging.h>
 
 namespace blt
 {
-    class simd
-    {
-        public:
-            using type = TYPE;
-        private:
-#if defined(__AVX__) || defined(__AVX2__)
-            __m256d data;
-#else
 
-#endif
-        public:
-        
-    };
-    
+
+
 }
-
-#endif // BLT_SIMD_H

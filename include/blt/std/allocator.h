@@ -352,7 +352,7 @@ namespace blt
             }
     };
     
-    template<bool linked>
+    template<bool linked = true>
     class multi_type_area_allocator;
     
     template<>
