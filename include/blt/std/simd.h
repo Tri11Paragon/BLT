@@ -34,7 +34,7 @@ namespace blt
     class simd
     {
         public:
-            using type = TYPE;
+        
         private:
 #if defined(__AVX__) || defined(__AVX2__)
             __m256d data;

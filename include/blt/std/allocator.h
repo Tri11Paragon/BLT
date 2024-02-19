@@ -274,99 +274,106 @@ namespace blt
             std::vector<block_storage*> blocks;
     };
     
-    template<typename T>
-    class bump_allocator : public allocator_base<T, T*, const T*>
-    {
-        public:
-            using value = T;
-            using type = T;
-            using value_type = type;
-            using pointer = type*;
-            using const_pointer = const type*;
-            using void_pointer = void*;
-            using const_void_pointer = const void*;
-            using reference = value_type&;
-            using const_reference = const value_type&;
-            using size_type = size_t;
-            using difference_type = size_t;
-            using propagate_on_container_move_assignment = std::false_type;
-            template<class U>
-            struct rebind
-            {
-                typedef blt::bump_allocator<U> other;
-            };
-            using allocator_base<value_type, pointer, const_pointer>::allocator_base;
-        private:
-            pointer buffer_;
-            blt::size_t offset_;
-            blt::size_t size_;
-        public:
-            explicit bump_allocator(blt::size_t size): buffer_(static_cast<pointer>(malloc(size * sizeof(T)))), offset_(0), size_(size)
-            {}
-            
-            template<typename... Args>
-            explicit bump_allocator(blt::size_t size, Args&& ... defaults):
-                    buffer_(static_cast<pointer>(malloc(size * sizeof(type)))), offset_(0), size_(size)
-            {
-                for (blt::size_t i = 0; i < size_; i++)
-                    ::new(&buffer_[i]) T(std::forward<Args>(defaults)...);
-            }
-            
-            bump_allocator(pointer buffer, blt::size_t size): buffer_(buffer), offset_(0), size_(size)
-            {}
-            
-            bump_allocator(const bump_allocator& copy) = delete;
-            
-            bump_allocator(bump_allocator&& move) noexcept
-            {
-                buffer_ = move.buffer_;
-                size_ = move.size_;
-                offset_ = move.offset_;
-            }
-            
-            bump_allocator& operator=(const bump_allocator& copy) = delete;
-            
-            bump_allocator& operator=(bump_allocator&& move) noexcept
-            {
-                std::swap(move.buffer_, buffer_);
-                std::swap(move.size_, size_);
-                std::swap(move.offset_, offset_);
-            }
-            
-            pointer allocate(blt::size_t n)
-            {
-                auto nv = offset_ + n;
-                if (nv > size_)
-                    throw std::bad_alloc();
-                pointer b = &buffer_[offset_];
-                offset_ = nv;
-                return b;
-            }
-            
-            void deallocate(pointer, blt::size_t)
-            {}
-            
-            ~bump_allocator()
-            {
-                free(buffer_);
-            }
-    };
+//    template<typename T>
+//    class bump_allocator : public allocator_base<T, T*, const T*>
+//    {
+//        public:
+//            using value = T;
+//            using type = T;
+//            using value_type = type;
+//            using pointer = type*;
+//            using const_pointer = const type*;
+//            using void_pointer = void*;
+//            using const_void_pointer = const void*;
+//            using reference = value_type&;
+//            using const_reference = const value_type&;
+//            using size_type = size_t;
+//            using difference_type = size_t;
+//            using propagate_on_container_move_assignment = std::false_type;
+//            template<class U>
+//            struct rebind
+//            {
+//                typedef blt::bump_allocator<U> other;
+//            };
+//            using allocator_base<value_type, pointer, const_pointer>::allocator_base;
+//        private:
+//            pointer buffer_;
+//            blt::size_t offset_;
+//            blt::size_t size_;
+//        public:
+//            explicit bump_allocator(blt::size_t size): buffer_(static_cast<pointer>(malloc(size * sizeof(T)))), offset_(0), size_(size)
+//            {}
+//
+//            template<typename... Args>
+//            explicit bump_allocator(blt::size_t size, Args&& ... defaults):
+//                    buffer_(static_cast<pointer>(malloc(size * sizeof(type)))), offset_(0), size_(size)
+//            {
+//                for (blt::size_t i = 0; i < size_; i++)
+//                    ::new(&buffer_[i]) T(std::forward<Args>(defaults)...);
+//            }
+//
+//            bump_allocator(pointer buffer, blt::size_t size): buffer_(buffer), offset_(0), size_(size)
+//            {}
+//
+//            bump_allocator(const bump_allocator& copy) = delete;
+//
+//            bump_allocator(bump_allocator&& move) noexcept
+//            {
+//                buffer_ = move.buffer_;
+//                size_ = move.size_;
+//                offset_ = move.offset_;
+//            }
+//
+//            bump_allocator& operator=(const bump_allocator& copy) = delete;
+//
+//            bump_allocator& operator=(bump_allocator&& move) noexcept
+//            {
+//                std::swap(move.buffer_, buffer_);
+//                std::swap(move.size_, size_);
+//                std::swap(move.offset_, offset_);
+//            }
+//
+//            pointer allocate(blt::size_t n)
+//            {
+//                auto nv = offset_ + n;
+//                if (nv > size_)
+//                    throw std::bad_alloc();
+//                pointer b = &buffer_[offset_];
+//                offset_ = nv;
+//                return b;
+//            }
+//
+//            void deallocate(pointer, blt::size_t)
+//            {}
+//
+//            ~bump_allocator()
+//            {
+//                free(buffer_);
+//            }
+//    };
     
-    template<bool linked = true>
-    class multi_type_area_allocator;
+    /**
+     * The bump allocator is meant to be a faster area allocator which will only allocate forward through either a supplied buffer or size
+     * or will create a linked list type data structure of buffered blocks.
+     * @tparam ALLOC allocator to use for any allocations. In the case of the non-linked variant, this will be used if a size is supplied. The supplied buffer must be allocated with this allocator!
+     * @tparam linked use a linked list to allocate with the allocator or just use the supplied buffer and throw an exception of we cannot allocate
+     */
+    template<typename ALLOC = std::allocator<blt::u8>, bool linked = true>
+    class bump_allocator;
     
-    template<>
-    class multi_type_area_allocator<false>
+    template<typename ALLOC>
+    class bump_allocator<ALLOC, false>
     {
         private:
+            ALLOC allocator;
             blt::u8* buffer_;
             blt::u8* offset_;
             blt::size_t size_;
         public:
-            explicit multi_type_area_allocator(blt::size_t size): buffer_(static_cast<blt::u8*>(malloc(size))), offset_(buffer_), size_(size)
+            explicit bump_allocator(blt::size_t size): buffer_(static_cast<blt::u8*>(allocator.allocate(size))), offset_(buffer_), size_(size)
             {}
             
-            explicit multi_type_area_allocator(blt::u8* buffer, blt::size_t size): buffer_(buffer), offset_(buffer), size_(size)
+            explicit bump_allocator(blt::u8* buffer, blt::size_t size): buffer_(buffer), offset_(buffer), size_(size)
             {}
             
             template<typename T>
@@ -401,30 +408,31 @@ namespace blt
                     p->~U();
             }
             
-            ~multi_type_area_allocator()
+            ~bump_allocator()
             {
-                free(buffer_);
+                allocator.deallocate(buffer_, size_);
             }
     };
     
-    template<>
-    class multi_type_area_allocator<true>
+    template<typename ALLOC>
+    class bump_allocator<ALLOC, true>
     {
         private:
             struct block
             {
-                blt::u8* buffer;
-                blt::size_t offset;
+                blt::u8* buffer = nullptr;
+                blt::size_t offset = 0;
                 blt::size_t allocated_objects = 0;
                 blt::size_t deallocated_objects = 0;
             };
-            std::vector<block> blocks;
+            ALLOC allocator;
+            std::vector<block, typename ALLOC::template rebind<block>> blocks;
             blt::size_t size_;
             
             void expand()
             {
                 BLT_INFO("I have expanded!");
-                blocks.push_back({static_cast<blt::u8*>(malloc(size_)), 0});
+                blocks.push_back({static_cast<blt::u8*>(allocator.allocate(size_)), 0});
             }
             
             template<typename T>
@@ -445,7 +453,10 @@ namespace blt
             }
         
         public:
-            explicit multi_type_area_allocator(blt::size_t size): size_(size)
+            /**
+             * @param size of the list blocks
+             */
+            explicit bump_allocator(blt::size_t size): size_(size)
             {
                 expand();
             }
@@ -486,7 +497,7 @@ namespace blt
                 if (remove_index < 0)
                     return;
                 std::iter_swap(blocks.begin() + remove_index, blocks.end() - 1);
-                free(blocks.back().buffer);
+                allocator.deallocate(blocks.back().buffer, size_);
                 BLT_DEBUG("I have freed a block!");
                 blocks.pop_back();
             }
@@ -511,10 +522,10 @@ namespace blt
                     p->~U();
             }
             
-            ~multi_type_area_allocator()
+            ~bump_allocator()
             {
                 for (auto& v : blocks)
-                    free(v.buffer);
+                    allocator.deallocate(v.buffer, size_);
             }
     };
 }
