@@ -229,7 +229,7 @@ namespace blt
             
             constexpr inline void reserve(size_t size)
             {
-                expand(size_);
+                expand(size);
             }
             
             [[nodiscard]] constexpr inline size_t size() const
