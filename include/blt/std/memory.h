@@ -271,22 +271,22 @@ namespace blt
                 return const_iterator{data() + size()};
             }
             
-            constexpr reverse_iterator rbegin() noexcept
+            constexpr inline reverse_iterator rbegin() noexcept
             {
                 return reverse_iterator{end()};
             }
             
-            constexpr reverse_iterator rend() noexcept
+            constexpr inline reverse_iterator rend() noexcept
             {
                 return reverse_iterator{begin()};
             }
             
-            constexpr const_reverse_iterator crbegin() const noexcept
+            constexpr inline const_iterator crbegin() const noexcept
             {
-                return reverse_iterator{cend()};
+                return const_reverse_iterator {cend()};
             }
             
-            constexpr const_reverse_iterator crend() const noexcept
+            constexpr inline reverse_iterator crend() const noexcept
             {
                 return reverse_iterator{cbegin()};
             }
@@ -305,90 +305,6 @@ namespace blt
             scoped_buffer(const scoped_buffer& copy) = delete;
             
             scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
-    };
-    
-    template<typename T, size_t MAX_SIZE>
-    class static_vector
-    {
-        private:
-            T buffer_[MAX_SIZE];
-            size_t size_ = 0;
-        public:
-            static_vector() = default;
-            
-            inline bool push_back(const T& copy)
-            {
-                if (size_ >= MAX_SIZE)
-                    return false;
-                buffer_[size_++] = copy;
-                return true;
-            }
-            
-            inline bool push_back(T&& move)
-            {
-                if (size_ >= MAX_SIZE)
-                    return false;
-                buffer_[size_++] = std::move(move);
-                return true;
-            }
-            
-            inline T& at(size_t index)
-            {
-                if (index >= MAX_SIZE)
-                    throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
-            }
-            
-            inline T& operator[](size_t index)
-            {
-                return buffer_[index];
-            }
-            
-            inline const T& operator[](size_t index) const
-            {
-                return buffer_[index];
-            }
-            
-            inline void reserve(size_t size)
-            {
-                if (size > MAX_SIZE)
-                    size = MAX_SIZE;
-                size_ = size;
-            }
-            
-            [[nodiscard]] inline size_t size() const
-            {
-                return size_;
-            }
-            
-            [[nodiscard]] inline size_t capacity() const
-            {
-                return MAX_SIZE;
-            }
-            
-            inline T* data()
-            {
-                return buffer_;
-            }
-            
-            inline T* operator*()
-            {
-                return buffer_;
-            }
-            
-            inline T* data() const
-            {
-                return buffer_;
-            }
-            
-            inline T* begin()
-            {
-                return buffer_;
-            }
-            
-            inline T* end()
-            {
-                return &buffer_[size_];
-            }
     };
     
     template<typename T>
