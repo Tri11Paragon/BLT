@@ -324,53 +324,55 @@ namespace blt
             template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
             constexpr iterator insert(const_iterator pos, G&& ref)
             {
-                difference_type loc = *pos - buffer_;
+                difference_type loc = pos - buffer_;
                 if (size_ + 1 >= capacity_)
                     expand();
-                for (auto insert = end() - 1; (insert - buffer_) != loc; insert--)
+                for (auto insert = end() - 1; (insert - buffer_) != loc - 1; insert--)
                 {
                     auto new_pos = insert + 1;
                     *new_pos = *insert;
                 }
-                buffer_[loc] = std::forward(ref);
+                buffer_[loc] = ref;
                 size_++;
-                return &buffer_[loc];
+                return buffer_ + loc;
             }
             
             
             constexpr iterator erase(const_iterator pos)
             {
-                difference_type loc = *pos - buffer_;
+                difference_type loc = pos - buffer_;
                 
-                for (auto fetch = pos + 1; fetch != cend(); fetch++)
+                for (auto fetch = begin() + loc + 1; fetch != end(); fetch++)
                 {
                     auto insert = fetch - 1;
                     *insert = *fetch;
                 }
                 
                 size_--;
-                return &buffer_[loc + 1];
+                return buffer_ + loc + 1;
             }
             
             constexpr iterator erase(const_iterator first, const_iterator last)
             {
-                difference_type loc = *first - buffer_;
-
-                for (auto fetch = last, insert = first; fetch != cend(); fetch++, insert++)
+                difference_type first_pos = first - buffer_;
+                difference_type last_pos = last - buffer_;
+                difference_type remove_amount = last_pos - first_pos;
+                
+                for (auto fetch = begin() + last_pos, insert = begin() + first_pos; fetch != end(); fetch++, insert++)
                 {
-                    *insert = fetch;
+                    *insert = *fetch;
                 }
                 
-                size_ = loc;
-                return &buffer_[loc + 1];
+                size_ -= remove_amount;
+                return buffer_ + first_pos + 1;
             }
             
-            constexpr inline iterator begin() noexcept
+            constexpr inline iterator begin() const noexcept
             {
                 return data();
             }
             
-            constexpr inline iterator end() noexcept
+            constexpr inline iterator end() const noexcept
             {
                 return data() + size();
             }
@@ -385,12 +387,12 @@ namespace blt
                 return data() + size();
             }
             
-            constexpr inline reverse_iterator rbegin() noexcept
+            constexpr inline reverse_iterator rbegin() const noexcept
             {
                 return reverse_iterator{end()};
             }
             
-            constexpr inline reverse_iterator rend() noexcept
+            constexpr inline reverse_iterator rend() const noexcept
             {
                 return reverse_iterator{begin()};
             }

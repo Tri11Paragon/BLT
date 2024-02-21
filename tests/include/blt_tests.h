@@ -35,6 +35,8 @@ namespace blt::test
     {
     
     }
+    
+    void vector_run();
 }
 
 #endif //BLT_BLT_TESTS_H

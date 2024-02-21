@@ -17,69 +17,122 @@
 
 namespace blt
 {
+    namespace itr
+    {
+        template<typename TYPE_ITR, bool is_ptr = std::is_pointer_v<TYPE_ITR>>
+        class iterator;
+        
+        template<typename TYPE_ITR>
+        class iterator<TYPE_ITR, false>
+        {
+            public:
+                using iterator_category = std::input_iterator_tag;
+                using value_type = typename TYPE_ITR::value_type;
+                using difference_type = typename TYPE_ITR::difference_type;
+                using pointer = typename TYPE_ITR::pointer;
+                using reference = typename TYPE_ITR::reference;
+                using const_reference = const typename TYPE_ITR::reference;
+            private:
+                blt::size_t index = 0;
+                TYPE_ITR current;
+            public:
+                explicit iterator(TYPE_ITR current): current(std::move(current))
+                {}
+                
+                iterator& operator++()
+                {
+                    ++index;
+                    ++current;
+                    return *this;
+                }
+                
+                bool operator==(iterator other) const
+                {
+                    return current == other.current;
+                }
+                
+                bool operator!=(iterator other) const
+                {
+                    return current != other.current;
+                }
+                
+                std::pair<blt::size_t, const_reference> operator*() const
+                {
+                    return {index, *current};
+                };
+                
+                std::pair<blt::size_t, reference> operator*()
+                {
+                    return {index, *current};
+                };
+        };
+        
+        template<typename TYPE_ITR>
+        class iterator<TYPE_ITR, true>
+        {
+            public:
+                using iterator_category = std::input_iterator_tag;
+                using value_type = std::remove_pointer_t<TYPE_ITR>;
+                using difference_type = std::ptrdiff_t;
+                using pointer = TYPE_ITR;
+                using reference = std::remove_pointer_t<TYPE_ITR>&;
+                using const_reference = const std::remove_pointer_t<TYPE_ITR>&;
+            private:
+                blt::size_t index = 0;
+                TYPE_ITR current;
+            public:
+                explicit iterator(TYPE_ITR current): current(std::move(current))
+                {}
+                
+                iterator& operator++()
+                {
+                    ++index;
+                    ++current;
+                    return *this;
+                }
+                
+                bool operator==(iterator other) const
+                {
+                    return current == other.current;
+                }
+                
+                bool operator!=(iterator other) const
+                {
+                    return current != other.current;
+                }
+                
+                std::pair<blt::size_t, const_reference> operator*() const
+                {
+                    return {index, *current};
+                };
+                
+                std::pair<blt::size_t, reference> operator*()
+                {
+                    return {index, *current};
+                };
+        };
+    }
+    
     template<typename TYPE_ITR>
     class enumerator
     {
         public:
-            class iterator
-            {
-                public:
-                    using iterator_category = std::input_iterator_tag;
-                    using value_type = typename TYPE_ITR::value_type;
-                    using difference_type = typename TYPE_ITR::difference_type;
-                    using pointer = typename TYPE_ITR::pointer;
-                    using reference = typename TYPE_ITR::reference;
-                private:
-                    blt::size_t index = 0;
-                    TYPE_ITR current;
-                public:
-                    explicit iterator(TYPE_ITR current): current(std::move(current))
-                    {}
-                    
-                    iterator& operator++()
-                    {
-                        ++index;
-                        ++current;
-                        return *this;
-                    }
-                    
-                    bool operator==(iterator other) const
-                    {
-                        return current == other.current;
-                    }
-                    
-                    bool operator!=(iterator other) const
-                    {
-                        return current != other.current;
-                    }
-                    
-                    std::pair<blt::size_t, const reference> operator*() const
-                    {
-                        return {index, *current};
-                    };
-                    
-                    std::pair<blt::size_t, reference> operator*()
-                    {
-                        return {index, *current};
-                    };
-            };
-            
             explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(std::move(begin)), end_(std::move(end))
             {}
             
-            iterator begin()
+            itr::iterator<TYPE_ITR> begin()
             {
                 return begin_;
             }
             
-            iterator end()
+            itr::iterator<TYPE_ITR> end()
             {
                 return end_;
             }
         
         private:
-            iterator begin_;
-            iterator end_;
+            itr::iterator<TYPE_ITR> begin_;
+            itr::iterator<TYPE_ITR> end_;
     };
     
     template<typename T>
@@ -308,20 +361,20 @@ namespace blt
             {}
             
             template<std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
-                                                     (std::is_convertible_v<std::remove_pointer_t<decltype(
-                                                     std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
+                                                              (std::is_convertible_v<std::remove_pointer_t<decltype(
+                                                              std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
             constexpr span(element_type (& arr)[N]) noexcept: size_{N}, data_{arr}
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
-                                                              (std::is_convertible_v<std::remove_pointer_t<decltype(
-                                                              std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
+                                                                       (std::is_convertible_v<std::remove_pointer_t<decltype(
+                                                                       std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
             constexpr span(std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()}
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
-                                                              (std::is_convertible_v<std::remove_pointer_t<decltype(
-                                                              std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
+                                                                       (std::is_convertible_v<std::remove_pointer_t<decltype(
+                                                                       std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
             constexpr span(const std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()}
             {}
             
@@ -337,11 +390,13 @@ namespace blt
             constexpr span(R&& range): size_(std::size(range)), data_(std::data(range))
             {}
             
-            template<size_type SIZE, typename std::enable_if_t<extent != dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
+            template<size_type SIZE, typename std::enable_if_t<
+                    extent != dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
             explicit constexpr span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin())
             {}
             
-            template<size_type SIZE, typename std::enable_if_t<extent == dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
+            template<size_type SIZE, typename std::enable_if_t<
+                    extent == dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
             explicit span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin())
             {}
             

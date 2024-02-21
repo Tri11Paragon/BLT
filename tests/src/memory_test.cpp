@@ -23,6 +23,7 @@
 #include <blt/std/random.h>
 #include <type_traits>
 #include "blt/std/utility.h"
+#include "blt/std/vector.h"
 #include <unordered_set>
 #include <blt/compatibility.h>
 

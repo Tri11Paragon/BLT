@@ -84,6 +84,7 @@ int main(int argc, const char** argv)
                     .setNArgs('?').build());
     parser.addArgument(blt::arg_builder("--utility").setHelp("Run tests on utility functions").setAction(blt::arg_action_t::STORE_TRUE).build());
     parser.addArgument(blt::arg_builder("--data").setHelp("Run tests on data functions").setAction(blt::arg_action_t::STORE_TRUE).build());
+    parser.addArgument(blt::arg_builder("--vector").setHelp("Run tests for the vectors").setAction(blt::arg_action_t::STORE_TRUE).build());
     
     auto args = parser.parse_args(argc, argv);
     
@@ -102,6 +103,9 @@ int main(int argc, const char** argv)
     
     if (args.contains("--data"))
         blt::test::data::run();
+    
+    if (args.contains("--vector"))
+        blt::test::vector_run();
     
     if (args.contains("--nbt"))
     {
