@@ -21,6 +21,7 @@
 
 #include <iterator>
 #include <blt/std/memory_util.h>
+#include "ranges.h"
 
 namespace blt
 {
@@ -145,7 +146,7 @@ namespace blt
             }
     };
     
-    template<typename T, typename ALLOC>
+    template<typename T, typename ALLOC = std::allocator<T>>
     class vector
     {
         private:
@@ -154,6 +155,14 @@ namespace blt
             size_t capacity_ = 0;
             size_t size_ = 0;
             
+            using value_type = T;
+            using allocator_type = ALLOC;
+            using size_type = size_t;
+            using difference_type = std::ptrdiff_t;
+            using reference = value_type&;
+            using const_reference = const value_type&;
+            using pointer = value_type*;
+            using const_pointer = const pointer;
             using iterator = T*;
             using const_iterator = const T*;
             using reverse_iterator = std::reverse_iterator<iterator>;
@@ -182,6 +191,28 @@ namespace blt
                 buffer_ = allocator.allocate(capacity_);
             }
             
+            template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
+            constexpr vector(std::initializer_list<G>&& list): size_(list.size()), capacity_(list.size())
+            {
+                buffer_ = allocator.allocate(capacity_);
+                for (auto e : blt::enumerate(list))
+                    buffer_[e.first] = e.second;
+            }
+            
+            template<typename G, std::enable_if_t<std::is_same_v<blt::vector<T>, G> || std::is_same_v<std::vector<T>, G>, bool> = true>
+            constexpr explicit vector(const G& copy): size_(copy.size()), capacity_(copy.capacity())
+            {
+                buffer_ = allocator.allocate(capacity_);
+                for (auto e : blt::enumerate(copy))
+                    buffer_[e.first] = e.second;
+            }
+            
+            template<typename G, std::enable_if_t<std::is_same_v<blt::vector<T>, G> || std::is_same_v<std::vector<T>, G>, bool> = true>
+            constexpr explicit vector(G&& move): size_(move.size()), capacity_(move.capacity()), buffer_(move.buffer_)
+            {
+                move.buffer_ = nullptr;
+            }
+            
             ~vector()
             {
                 allocator.deallocate(buffer_, capacity_);
@@ -202,14 +233,22 @@ namespace blt
             }
             
             template<typename... Args>
-            constexpr inline void emplace_back(Args&&... args)
+            constexpr inline void emplace_back(Args&& ... args)
             {
                 if (size_ >= capacity_)
                     expand();
-                buffer_[size_++] = T{std::forward<Args>(args)...};
+                new(&buffer_[size_++]) T(std::forward<Args>(args)...);
             }
             
             constexpr inline T& at(size_t index)
+            {
+                if (index >= capacity_)
+                    throw std::runtime_error(
+                            "Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(capacity_) + ')');
+                return buffer_[index];
+            }
+            
+            constexpr inline const T& at(size_t index) const
             {
                 if (index >= capacity_)
                     throw std::runtime_error(

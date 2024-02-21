@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <string_view>
 #include "memory.h"
+#include "vector.h"
 #include <variant>
 
 namespace blt::string
