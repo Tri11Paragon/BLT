@@ -281,6 +281,26 @@ namespace blt
                 return capacity_;
             }
             
+            constexpr inline reference front()
+            {
+                return *buffer_;
+            }
+            
+            constexpr inline const_reference front() const
+            {
+                return *buffer_;
+            }
+            
+            constexpr inline reference back()
+            {
+                return buffer_[size_ - 1];
+            }
+            
+            constexpr inline const_reference back() const
+            {
+                return buffer_[size_ - 1];
+            }
+            
             constexpr inline T* data()
             {
                 return buffer_;
@@ -294,6 +314,55 @@ namespace blt
             constexpr inline T* data() const
             {
                 return buffer_;
+            }
+            
+            [[nodiscard]] constexpr inline bool empty() const
+            {
+                return size_ == 0;
+            }
+            
+            template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
+            constexpr iterator insert(const_iterator pos, G&& ref)
+            {
+                difference_type loc = *pos - buffer_;
+                if (size_ + 1 >= capacity_)
+                    expand();
+                for (auto insert = end() - 1; (insert - buffer_) != loc; insert--)
+                {
+                    auto new_pos = insert + 1;
+                    *new_pos = *insert;
+                }
+                buffer_[loc] = std::forward(ref);
+                size_++;
+                return &buffer_[loc];
+            }
+            
+            
+            constexpr iterator erase(const_iterator pos)
+            {
+                difference_type loc = *pos - buffer_;
+                
+                for (auto fetch = pos + 1; fetch != cend(); fetch++)
+                {
+                    auto insert = fetch - 1;
+                    *insert = *fetch;
+                }
+                
+                size_--;
+                return &buffer_[loc + 1];
+            }
+            
+            constexpr iterator erase(const_iterator first, const_iterator last)
+            {
+                difference_type loc = *first - buffer_;
+
+                for (auto fetch = last, insert = first; fetch != cend(); fetch++, insert++)
+                {
+                    *insert = fetch;
+                }
+                
+                size_ = loc;
+                return &buffer_[loc + 1];
             }
             
             constexpr inline iterator begin() noexcept
