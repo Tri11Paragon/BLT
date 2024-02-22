@@ -24,7 +24,7 @@
     #include <immintrin.h>
 
 #else
-    #warning AVX is not available.
+    //#warning AVX is not available.
 #endif
 
 #include <xmmintrin.h>
