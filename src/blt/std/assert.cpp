@@ -30,7 +30,8 @@
 #endif
 
 namespace blt {
-    
+
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
     static inline std::string _macro_filename(const std::string& path){
         auto paths = blt::string::split(path, "/");
         auto final = paths[paths.size()-1];
@@ -38,6 +39,7 @@ namespace blt {
             return paths[paths.size()-2];
         return final;
     }
+#endif
     
     void b_throw(const char* what, const char* path, int line)
     {
@@ -49,6 +51,10 @@ namespace blt {
         printStacktrace(messages, size, path, line);
         
         BLT_FREE_STACK_TRACE();
+#else
+        (void) what;
+        (void) path;
+        (void) line;
 #endif
     }
     
@@ -66,6 +72,10 @@ namespace blt {
         
         BLT_FREE_STACK_TRACE();
 #endif
+        (void) expression;
+        (void) msg;
+        (void) path;
+        (void) line;
     }
     
     void printStacktrace(char** messages, int size, const char* path, int line)
@@ -106,7 +116,12 @@ namespace blt {
 
             BLT_ERROR(buffer);
         }
+#else
+        (void) size;
+        (void) path;
+        (void) line;
 #endif
+    
     }
     
     

@@ -319,17 +319,17 @@ namespace blt::logging {
             }
     };
     
-#define BLT_NOW() auto t = std::time(nullptr); auto now = std::localtime(&t)
-    #define BLT_ISO_YEAR(S) auto S = std::to_string(now->tm_year + 1900); \
+#define BLT_NOW() auto t = std::time(nullptr); tm now; localtime_s(&now, &t); //auto now = std::localtime(&t)
+    #define BLT_ISO_YEAR(S) auto S = std::to_string(now.tm_year + 1900); \
         S += '-'; \
-        S += ensureHasDigits(now->tm_mon+1, 2); \
+        S += ensureHasDigits(now.tm_mon+1, 2); \
         S += '-'; \
-        S += ensureHasDigits(now->tm_mday, 2);
-    #define BLT_CUR_TIME(S) auto S = ensureHasDigits(now->tm_hour, 2); \
+        S += ensureHasDigits(now.tm_mday, 2);
+    #define BLT_CUR_TIME(S) auto S = ensureHasDigits(now.tm_hour, 2); \
         S += ':'; \
-        S += ensureHasDigits(now->tm_min, 2); \
+        S += ensureHasDigits(now.tm_min, 2); \
         S += ':'; \
-        S += ensureHasDigits(now->tm_sec, 2);
+        S += ensureHasDigits(now.tm_sec, 2);
     
     static inline std::string ensureHasDigits(int current, int digits) {
         std::string asString = std::to_string(current);
@@ -352,27 +352,27 @@ namespace blt::logging {
     const std::unique_ptr<tag_map> tagMap = std::make_unique<tag_map>(tag_map{
             {"YEAR", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return std::to_string(now->tm_year);
+                return std::to_string(now.tm_year);
             }},
             {"MONTH", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_mon+1, 2);
+                return ensureHasDigits(now.tm_mon+1, 2);
             }},
             {"DAY", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_mday, 2);
+                return ensureHasDigits(now.tm_mday, 2);
             }},
             {"HOUR", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_hour, 2);
+                return ensureHasDigits(now.tm_hour, 2);
             }},
             {"MINUTE", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_min, 2);
+                return ensureHasDigits(now.tm_min, 2);
             }},
             {"SECOND", [](const tag_func_param&) -> std::string {
                 BLT_NOW();
-                return ensureHasDigits(now->tm_sec, 2);
+                return ensureHasDigits(now.tm_sec, 2);
             }},
             {"MS", [](const tag_func_param&) -> std::string {
                 return std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -674,6 +674,11 @@ namespace blt::logging {
 
 #endif
 
+#if defined(__clang__) || defined(__llvm__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 #ifdef BLT_DISABLE_LOGGING
     #define BLT_LOG(format, level, ...)
     #define BLT_LOG_STREAM(level)
@@ -751,6 +756,10 @@ namespace blt::logging {
         #define BLT_FATAL(format, ...) BLT_LOG(format, blt::logging::log_level::FATAL, ##__VA_ARGS__)
         #define BLT_FATAL_STREAM BLT_LOG_STREAM(blt::logging::log_level::FATAL)
     #endif
+#endif
+
+#if defined(__clang__) || defined(__llvm__)
+#pragma clang diagnostic pop
 #endif
 
 #endif //BLT_TESTS_LOGGING2_H

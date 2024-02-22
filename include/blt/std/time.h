@@ -86,19 +86,21 @@ namespace blt::system
     static inline std::string getTimeString()
     {
         auto t = std::time(nullptr);
-        auto now = std::localtime(&t);
+        tm now{};
+        localtime_s(&now, &t);
+        //auto now = std::localtime(&t);
         std::stringstream timeString;
-        timeString << (1900 + now->tm_year);
+        timeString << (1900 + now.tm_year);
         timeString << "-";
-        timeString << (1 + now->tm_mon);
+        timeString << (1 + now.tm_mon);
         timeString << "-";
-        timeString << now->tm_mday;
+        timeString << now.tm_mday;
         timeString << " ";
-        timeString << now->tm_hour;
+        timeString << now.tm_hour;
         timeString << ":";
-        timeString << now->tm_min;
+        timeString << now.tm_min;
         timeString << ":";
-        timeString << now->tm_sec;
+        timeString << now.tm_sec;
         return timeString.str();
     }
     
@@ -110,13 +112,15 @@ namespace blt::system
     static inline std::string getTimeStringLog()
     {
         auto t = std::time(nullptr);
-        auto now = std::localtime(&t);
+        tm now{};
+        localtime_s(&now, &t);
+        //auto now = std::localtime(&t);
         std::string timeString = "[";
-        timeString += ensureHasDigits(now->tm_hour, 2);
+        timeString += ensureHasDigits(now.tm_hour, 2);
         timeString += ":";
-        timeString += ensureHasDigits(now->tm_min, 2);
+        timeString += ensureHasDigits(now.tm_min, 2);
         timeString += ":";
-        timeString += ensureHasDigits(now->tm_sec, 2);
+        timeString += ensureHasDigits(now.tm_sec, 2);
         timeString += "] ";
         return timeString;
     }
@@ -127,19 +131,21 @@ namespace blt::system
     static inline std::string getTimeStringFS()
     {
         auto t = std::time(nullptr);
-        auto now = std::localtime(&t);
+        tm now{};
+        localtime_s(&now, &t);
+        //auto now = std::localtime(&t);
         std::stringstream timeString;
-        timeString << (1900 + now->tm_year);
+        timeString << (1900 + now.tm_year);
         timeString << "-";
-        timeString << (1 + now->tm_mon);
+        timeString << (1 + now.tm_mon);
         timeString << "-";
-        timeString << now->tm_mday;
+        timeString << now.tm_mday;
         timeString << "_";
-        timeString << now->tm_hour;
+        timeString << now.tm_hour;
         timeString << "-";
-        timeString << now->tm_min;
+        timeString << now.tm_min;
         timeString << "-";
-        timeString << now->tm_sec;
+        timeString << now.tm_sec;
         return timeString.str();
     }
 }
