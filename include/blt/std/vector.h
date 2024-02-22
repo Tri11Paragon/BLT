@@ -22,6 +22,7 @@
 #include <iterator>
 #include <blt/std/memory_util.h>
 #include "ranges.h"
+#include <stdexcept>
 
 namespace blt
 {

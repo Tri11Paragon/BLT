@@ -20,6 +20,7 @@
 #define BLT_TYPES_H
 
 #include <cstdint>
+#include <cstddef>
 
 #ifndef NO_BLT_NAMESPACE_ON_TYPES
 namespace blt

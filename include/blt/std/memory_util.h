@@ -27,11 +27,19 @@
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
-    #include <byteswap.h>
+    #if defined(__GNUC__) || defined(__GNUG__)
+        #include <byteswap.h>
+
+        #define SWAP16(val) bswap_16(val)
+        #define SWAP32(val) bswap_32(val)
+        #define SWAP64(val) bswap_64(val)
+    #else
+        #define SWAP16(val) __builtin_bswap16(val)
+        #define SWAP32(val) __builtin_bswap32(val)
+        #define SWAP64(val) __builtin_bswap64(val)
+    #endif
     
-    #define SWAP16(val) bswap_16(val)
-    #define SWAP32(val) bswap_32(val)
-    #define SWAP64(val) bswap_64(val)
+    
     #if __cplusplus >= 202002L
         
         #include <bit>

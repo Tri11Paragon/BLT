@@ -144,6 +144,10 @@ namespace blt::system
         // number of dirty pages (0)
         std::uint64_t dt;
     };
+
+#ifdef _MSC_VER
+    using suseconds_t = std::size_t;
+#endif
     
     struct timeval {
         time_t       tv_sec;    /* Seconds */

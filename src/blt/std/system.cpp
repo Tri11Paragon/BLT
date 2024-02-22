@@ -6,10 +6,15 @@
 #include <blt/std/system.h>
 #include <blt/std/logging.h>
 
+#ifndef _MSC_VER
 #include <sys/time.h>            /* for struct timeval */
-#include <climits>                /* for CLK_TCK */
-
 #include <sys/resource.h>
+#else
+    #include <windows.h>
+    #define RUSAGE_SELF 1
+#endif
+
+#include <climits>                /* for CLK_TCK */
 #include <cstring>
 
 #ifndef WIN32

@@ -31,8 +31,10 @@ namespace blt
         return ((seed * (seed * seed * 15731 + 789221) + 1376312589) & 0x7fffffff);
     }
 
+#ifdef __GCC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
     
     /**
      * fast inverse sqrt
@@ -51,8 +53,10 @@ namespace blt
         return y;
     }
 
+#ifdef __GCC
 #pragma GCC diagnostic pop
-    
+#endif
+
     
     static inline constexpr double pow(int b, int p)
     {
