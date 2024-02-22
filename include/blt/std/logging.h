@@ -318,8 +318,14 @@ namespace blt::logging {
                 delete(output);
             }
     };
-    
-#define BLT_NOW() auto t = std::time(nullptr); tm now; localtime_s(&now, &t); //auto now = std::localtime(&t)
+
+#ifdef WIN32
+    #define BLT_NOW() auto t = std::time(nullptr); tm now{}; localtime_s(&now, &t)
+#else
+    #define BLT_NOW() auto t = std::time(nullptr); auto now_ptr = std::localtime(&t); auto& now = *now_ptr
+#endif
+
+//#define BLT_NOW() auto t = std::time(nullptr); tm now; localtime_s(&now, &t); //auto now = std::localtime(&t)
     #define BLT_ISO_YEAR(S) auto S = std::to_string(now.tm_year + 1900); \
         S += '-'; \
         S += ensureHasDigits(now.tm_mon+1, 2); \
