@@ -14,9 +14,9 @@
 namespace blt::system
 {
 #ifdef WIN32
-    #define TIME_FUNC tm now{}; localtime_s(&now, &t)
+    #define BLT_TIME_FUNC(name) auto t = std::time(nullptr); tm name{}; localtime_s(&name, &t)
 #else
-    #define TIME_FUNC auto now_ptr = std::localtime(&t); auto& now = *now_ptr
+    #define BLT_TIME_FUNC(name) auto t = std::time(nullptr); auto ptr_##name = std::localtime(&t); auto& name = *ptr_##name
 #endif
     
     static inline std::string ensureHasDigits(int current, int digits)
@@ -90,9 +90,7 @@ namespace blt::system
      */
     static inline std::string getTimeString()
     {
-        auto t = std::time(nullptr);
-        TIME_FUNC;
-        //auto now = std::localtime(&t);
+        BLT_TIME_FUNC(now);
         std::stringstream timeString;
         timeString << (1900 + now.tm_year);
         timeString << "-";
@@ -115,9 +113,7 @@ namespace blt::system
      */
     static inline std::string getTimeStringLog()
     {
-        auto t = std::time(nullptr);
-        TIME_FUNC;
-        //auto now = std::localtime(&t);
+        BLT_TIME_FUNC(now);
         std::string timeString = "[";
         timeString += ensureHasDigits(now.tm_hour, 2);
         timeString += ":";
@@ -133,9 +129,7 @@ namespace blt::system
      */
     static inline std::string getTimeStringFS()
     {
-        auto t = std::time(nullptr);
-        TIME_FUNC;
-        //auto now = std::localtime(&t);
+        BLT_TIME_FUNC(now);
         std::stringstream timeString;
         timeString << (1900 + now.tm_year);
         timeString << "-";
