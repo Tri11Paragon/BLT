@@ -1,0 +1,28 @@
+include(cmake/color.cmake)
+message("Enabling platform specific compile options for ${PROJECT_NAME}")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # using Clang
+    message("-- Clang Compile: ${Green}-Wall -Wextra -Wpedantic -Weverything -fdiagnostics-color=always${ColourReset}")
+    message("-- Clang Link: ${Green}-export_dynamic${ColourReset}")
+    message("-- Clang libs: ${Green}stdc++fs${ColourReset}")
+    target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -Weverything -fdiagnostics-color=always)
+    target_link_options(${PROJECT_NAME} PUBLIC -export_dynamic)
+    target_link_libraries(${PROJECT_NAME} PUBLIC stdc++fs)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # using GCC
+    message("-- GCC Compile: ${Green}-Wall -Wextra -Wpedantic -fdiagnostics-color=always${ColourReset}")
+    message("-- GCC Link: ${Green}-rdynamic${ColourReset}")
+    message("-- GCC libs: ${Green}stdc++fs${ColourReset}")
+    target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic -fdiagnostics-color=always)
+    target_link_options(${PROJECT_NAME} PUBLIC -rdynamic)
+    target_link_libraries(${PROJECT_NAME} PUBLIC stdc++fs)
+    include(GNUInstallDirs)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    # using Intel C++
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # using Visual Studio C++
+    message("-- MSVC Compile: ${Green}/Wall${ColourReset}")
+    message("-- MSVC Link: ${Green}${ColourReset}")
+    message("-- MSVC libs: ${Green}${ColourReset}")
+    target_compile_options(${PROJECT_NAME} PUBLIC /Wall)
+endif ()

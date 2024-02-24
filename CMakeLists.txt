@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+include(cmake/color.cmake)
 
 set(BLT_VERSION 0.11.3)
 set(BLT_TEST_VERSION 0.0.1)
@@ -30,48 +31,50 @@ option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
 
 configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
 
-if(${BUILD_STD} OR ${BUILD_PROFILING})
-    message("Building STD")
+message("Enabling library compilation")
+if (${BUILD_STD} OR ${BUILD_PROFILING})
+    message("-- Building ${Yellow}standard${ColourReset} cxx files")
     file(GLOB_RECURSE STD_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/std/*.cpp")
-else()
+else ()
     set(STD_FILES "")
-endif()
+endif ()
 
-if(${BUILD_PROFILING})
-    message("Building Profiling")
+if (${BUILD_PROFILING})
+    message("-- Building ${Yellow}profiling${ColourReset} cxx files")
     file(GLOB_RECURSE PROFILING_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/profiling/*.cpp")
-else()
-    message("We are not building profiling")
+else ()
     set(PROFILING_FILES "")
-endif()
+endif ()
 
-if(${BUILD_FS})
-    message("Building FS")
+if (${BUILD_FS})
+    message("-- Building ${Yellow}filesystem${ColourReset} cxx files")
     file(GLOB_RECURSE FS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/fs/*.cpp")
-else()
+else ()
     set(FS_FILES "")
-endif()
+endif ()
 
-if(${BUILD_PARSE})
-    message("Building Parsers")
+if (${BUILD_PARSE})
+    message("-- Building ${Yellow}parser${ColourReset} cxx files")
     file(GLOB_RECURSE PARSE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/parse/*.cpp")
-else()
+else ()
     set(PARSE_FILES "")
-endif()
+endif ()
 
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-    message("Found Parallel Hashmaps")
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
+    message("Found Parallel Hashmaps library, using ${Yellow}phmap${ColourReset} over ${Red}std::unordered_map${ColourReset}")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-endif()
+else()
+    message("Parallel Hashmaps library not found! using ${Yellow}std::unordered_map${ColourReset}")
+endif ()
 
 #include zlib if the user has it.
 find_package(ZLIB QUIET)
 
 if (${ZLIB_FOUND})
     include_directories(${ZLIB_INCLUDE_DIRS})
-else()
+else ()
     message("ZLIB was not found, this is fine however if you wish you use gzip with NBT it is required.")
-endif()
+endif ()
 
 include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
@@ -82,41 +85,30 @@ message("FS Files ${FS_FILES}")
 message("Parser Files ${PARSE_FILES}")
 message("Source: ${CMAKE_SOURCE_DIR}")
 message("Current Source: ${CMAKE_CURRENT_SOURCE_DIR}")
+message("Binary: ${CMAKE_BINARY_DIR}")
+message("Current Binary: ${CMAKE_CURRENT_BINARY_DIR}")
 
 add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES})
 
-if(${ZLIB_FOUND})
+if (${ZLIB_FOUND})
     target_link_libraries(${BLT_TARGET} PUBLIC ZLIB::ZLIB)
-endif()
-if (!MSVC)
-target_link_libraries(${BLT_TARGET} PUBLIC stdc++fs)
-endif()
+endif ()
+
+include(cmake/warnings.cmake)
 
 target_include_directories(${BLT_TARGET} PUBLIC include/)
 target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/config/)
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-    message("Including phmap")
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
+    message("Including Parallel Hashmap directory")
     target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-endif()
+endif ()
 
-if(MSVC)
-    #target_compile_options(${BLT_TARGET} PRIVATE /W4)
-else()
-    # perhaps we should warn on unused variables, but BLT will have lots of them.
-    target_compile_options(${BLT_TARGET} PRIVATE -Wall -Wextra -Wpedantic)
-    target_link_options(${BLT_TARGET} PUBLIC -rdynamic)
-endif()
-
-message("BLT ${CMAKE_PROJECT_VERSION} Successfully included!")
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    include(GNUInstallDirs)
-endif()
+message("BLT ${Yellow}${BLT_VERSION}${ColourReset} Successfully included!")
 
 message("Installing to ${CMAKE_INSTALL_LIBDIR} with headers at ${CMAKE_INSTALL_INCLUDEDIR}")
 
 file(GLOB_RECURSE BLT_HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
-foreach(S ${BLT_HEADER_FILES})
+foreach (S ${BLT_HEADER_FILES})
     string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/include/" "" SO ${S})
     string(REGEX REPLACE "\/[A-Z|a-z|0-9|_|-]*\\.h" "/" SA ${SO})
     list(APPEND BLT_F_HEADERS ${SA})
@@ -125,7 +117,7 @@ endforeach ()
 
 install(FILES ${CMAKE_BINARY_DIR}/config/blt/config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/blt/)
 
-set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${BLT_VERSION})
 set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 install(TARGETS ${BLT_TARGET}
@@ -133,8 +125,8 @@ install(TARGETS ${BLT_TARGET}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-if(${BUILD_TESTS})
-    message("Building test")
+if (${BUILD_TESTS})
+    message("Building test version ${BLT_TEST_VERSION}")
     project(BLT_TESTS VERSION ${BLT_TEST_VERSION})
 
     include_directories(tests/include)
@@ -147,28 +139,10 @@ if(${BUILD_TESTS})
 
     target_link_libraries(BLT_TESTS BLT)
 
-    if(MSVC)
+    include(cmake/warnings.cmake)
+    include(cmake/sanitizers.cmake)
 
-    else()
-        target_compile_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
-        target_link_options(BLT_TESTS PRIVATE -Wall -Werror -Wpedantic -Wno-comment)
-    endif()
-
-    if (${ENABLE_ADDRSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=address)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=address)
-    endif ()
-
-    if (${ENABLE_UBSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=undefined)
-    endif ()
-
-    if (${ENABLE_TSAN} MATCHES ON)
-        target_compile_options(BLT_TESTS PRIVATE -fsanitize=thread)
-        target_link_options(BLT_TESTS PRIVATE -fsanitize=thread)
-    endif ()
     message("Built tests")
-endif()
+endif ()
 
 project(BLT)
