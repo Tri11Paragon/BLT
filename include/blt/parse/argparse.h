@@ -332,11 +332,11 @@ namespace blt
                     friend arg_parse;
                 private:
                     // stores dest value not the flag/name!
-                    HASHSET<std::string> found_args;
+                    hashset_t<std::string> found_args;
                     std::vector<std::string> unrecognized_args;
                 public:
                     std::string program_name;
-                    HASHMAP<std::string, arg_data_t> data;
+                    hashmap_t<std::string, arg_data_t> data;
                     
                     inline arg_data_t& operator[](const std::string& key)
                     {
@@ -384,7 +384,7 @@ namespace blt
                     std::string postfix;
                 public:
                     std::vector<arg_properties_t*> name_associations;
-                    HASHMAP<std::string, arg_properties_t*> flag_associations;
+                    hashmap_t<std::string, arg_properties_t*> flag_associations;
             } user_args;
             
             arg_results loaded_args;

@@ -116,9 +116,9 @@ namespace blt::parse
         private:
             std::vector<constructed_vertex_t> vertex_data_;
             std::vector<object_data> objects_;
-            HASHMAP<std::string, material_t> materials_;
+            hashmap_t<std::string, material_t> materials_;
         public:
-            obj_model_t(std::vector<constructed_vertex_t>&& vertex_data, std::vector<object_data>&& objects, HASHMAP<std::string, material_t>&& mats):
+            obj_model_t(std::vector<constructed_vertex_t>&& vertex_data, std::vector<object_data>&& objects, hashmap_t<std::string, material_t>&& mats):
                     vertex_data_(vertex_data), objects_(objects), materials_(mats)
             {}
             
@@ -148,11 +148,11 @@ namespace blt::parse
             std::vector<normal_t> normals;
             
             // maps between face (constructed vertex) -> vertex indices
-            HASHMAP<face_t, std::int32_t, face_hash, face_eq> vertex_map;
+            hashmap_t<face_t, std::int32_t, face_hash, face_eq> vertex_map;
             std::vector<constructed_vertex_t> vertex_data;
             object_data current_object;
             std::vector<object_data> data;
-            HASHMAP<std::string, material_t> materials;
+            hashmap_t<std::string, material_t> materials;
             
             size_t current_line = 0;
         private:

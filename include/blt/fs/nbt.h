@@ -250,8 +250,8 @@ namespace blt::nbt {
             BLT_WARN("Tag Type not found!");
             return nullptr;
         }
-        static HASHMAP<std::string, tag_t*> toHashmap(const std::vector<tag_t*>& v){
-            HASHMAP<std::string, tag_t*> tags;
+        static hashmap_t<std::string, tag_t*> toHashmap(const std::vector<tag_t*>& v){
+            hashmap_t<std::string, tag_t*> tags;
             for (const auto& t : v)
                 tags[t->getName()] = t;
             return tags;
@@ -321,12 +321,12 @@ namespace blt::nbt {
             }
     };
     
-    class tag_compound : public tag<HASHMAP<std::string, tag_t*>> {
+    class tag_compound : public tag<hashmap_t<std::string, tag_t*>> {
         public:
             tag_compound(): tag(nbt_tag::COMPOUND) {}
             tag_compound(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
             tag_compound(const std::string& name, const std::initializer_list<tag_t*>& v): tag(nbt_tag::COMPOUND, name, _internal_::toHashmap(v)) {}
-            tag_compound(const std::string& name, const HASHMAP<std::string, tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
+            tag_compound(const std::string& name, const hashmap_t<std::string, tag_t*>& v): tag(nbt_tag::COMPOUND, name, v) {}
             
             inline void put(tag_t* tag) {
                 t[tag->getName()] = tag;

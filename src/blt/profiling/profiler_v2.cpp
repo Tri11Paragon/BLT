@@ -210,8 +210,8 @@ namespace blt
      * profiler V1 partial backwards compat
      * ----------------------------
      */
-     
-    HASHMAP<std::string, HASHMAP<std::string, interval_t*>> profiles;
+    
+    hashmap_t<std::string, hashmap_t<std::string, interval_t*>> profiles;
     
     void _internal::startInterval(const std::string& profile_name, const std::string& interval_name)
     {
