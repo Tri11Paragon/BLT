@@ -137,7 +137,7 @@ if (${BUILD_TESTS})
 
     add_executable(BLT_TESTS ${TEST_FILES})
 
-    target_link_libraries(BLT_TESTS BLT)
+    target_link_libraries(BLT_TESTS PRIVATE BLT)
 
     include(cmake/warnings.cmake)
     include(cmake/sanitizers.cmake)
