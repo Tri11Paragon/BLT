@@ -529,6 +529,25 @@ namespace blt
                     allocator.deallocate(v.buffer, size_);
             }
     };
+    
+    template<typename T>
+    class constexpr_allocator
+    {
+        public:
+            constexpr constexpr_allocator() = default;
+            
+            constexpr T* allocate(blt::size_t n)
+            {
+                return ::new T[n];
+            }
+            
+            constexpr void deallocate(T* t, blt::size_t)
+            {
+                ::delete[] t;
+            }
+            
+            constexpr ~constexpr_allocator() = default;
+    };
 }
 
 #define BLT_ALLOCATOR_H
