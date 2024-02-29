@@ -23,6 +23,7 @@
 #include <vector>
 #include <blt/std/utility.h>
 #include <blt/std/types.h>
+#include <blt/compatibility.h>
 #include <stdexcept>
 #include "logging.h"
 
@@ -546,7 +547,7 @@ namespace blt
                 ::delete[] t;
             }
             
-            constexpr ~constexpr_allocator() = default;
+            BLT_CPP20_CONSTEXPR ~constexpr_allocator() = default;
     };
 }
 
