@@ -214,7 +214,7 @@ namespace blt
                 move.buffer_ = nullptr;
             }
             
-            ~vector()
+            constexpr ~vector()
             {
                 allocator.deallocate(buffer_, capacity_);
             }
