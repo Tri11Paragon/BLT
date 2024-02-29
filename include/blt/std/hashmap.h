@@ -41,9 +41,9 @@ namespace blt
     using hashset_t = phmap::flat_hash_set<T, Hash, Eq, Alloc>;
 }
     #else
-namespace blt {
         #include <unordered_map>
         #include <unordered_set>
+namespace blt {
 
     template<typename K, typename V,
         typename Hash = std::hash<K>,
