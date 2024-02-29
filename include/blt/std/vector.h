@@ -193,7 +193,7 @@ namespace blt
             }
             
             template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
-            constexpr vector(std::initializer_list<G>&& list): size_(list.size()), capacity_(list.size())
+            constexpr vector(std::initializer_list<G>&& list): capacity_(list.size()), size_(list.size())
             {
                 buffer_ = allocator.allocate(capacity_);
                 for (auto e : blt::enumerate(list))
@@ -209,7 +209,7 @@ namespace blt
             }
             
             template<typename G, std::enable_if_t<std::is_same_v<blt::vector<T>, G> || std::is_same_v<std::vector<T>, G>, bool> = true>
-            constexpr explicit vector(G&& move): size_(move.size()), capacity_(move.capacity()), buffer_(move.buffer_)
+            constexpr explicit vector(G&& move): buffer_(move.buffer_), capacity_(move.capacity()), size_(move.size())
             {
                 move.buffer_ = nullptr;
             }
