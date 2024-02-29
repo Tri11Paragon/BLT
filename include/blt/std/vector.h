@@ -21,6 +21,7 @@
 
 #include <iterator>
 #include <blt/std/memory_util.h>
+#include <blt/std/allocator.h>
 #include "ranges.h"
 #include <stdexcept>
 

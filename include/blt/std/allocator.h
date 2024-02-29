@@ -274,7 +274,7 @@ namespace blt
         private:
             std::vector<block_storage*> blocks;
     };
-    
+
 //    template<typename T>
 //    class bump_allocator : public allocator_base<T, T*, const T*>
 //    {
