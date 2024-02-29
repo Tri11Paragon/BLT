@@ -22,6 +22,7 @@
 #include <limits>
 #include <vector>
 #include <blt/std/utility.h>
+#include <blt/std/types.h>
 #include <stdexcept>
 #include "logging.h"
 
