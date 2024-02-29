@@ -22,6 +22,7 @@
 #include <iterator>
 #include <blt/std/memory_util.h>
 #include <blt/std/allocator.h>
+#include <blt/compatibility.h>
 #include "ranges.h"
 #include <stdexcept>
 
@@ -215,7 +216,7 @@ namespace blt
                 move.buffer_ = nullptr;
             }
             
-            constexpr ~vector()
+            BLT_CPP20_CONSTEXPR ~vector()
             {
                 allocator.deallocate(buffer_, capacity_);
             }
