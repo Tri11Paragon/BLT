@@ -482,7 +482,7 @@ namespace blt
             template<typename T>
             void deallocate(T* p)
             {
-                auto* ptr = static_cast<blt::u8*>(p);
+                auto* ptr = reinterpret_cast<blt::u8*>(p);
                 blt::i64 remove_index = -1;
                 for (auto e : blt::enumerate(blocks))
                 {
