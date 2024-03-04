@@ -499,7 +499,6 @@ namespace blt
                     return;
                 std::iter_swap(blocks.begin() + remove_index, blocks.end() - 1);
                 allocator.deallocate(blocks.back().buffer, size_);
-                BLT_DEBUG("I have freed a block!");
                 blocks.pop_back();
             }
             
