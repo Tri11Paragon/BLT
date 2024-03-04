@@ -451,7 +451,7 @@ namespace blt
                     back.offset += (back.buffer - new_ptr + sizeof(T));
                     back.allocated_objects++;
                 }
-                return static_cast<T*>(new_ptr);
+                return reinterpret_cast<T*>(new_ptr);
             }
         
         public:
