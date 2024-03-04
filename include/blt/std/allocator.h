@@ -433,7 +433,6 @@ namespace blt
             
             void expand()
             {
-                BLT_INFO("I have expanded!");
                 blocks.push_back({static_cast<blt::u8*>(allocator.allocate(size_)), 0});
             }
             
