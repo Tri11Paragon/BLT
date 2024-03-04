@@ -360,14 +360,14 @@ namespace blt
      * @tparam ALLOC allocator to use for any allocations. In the case of the non-linked variant, this will be used if a size is supplied. The supplied buffer must be allocated with this allocator!
      * @tparam linked use a linked list to allocate with the allocator or just use the supplied buffer and throw an exception of we cannot allocate
      */
-    template<typename ALLOC = std::allocator<blt::u8>, bool linked = true>
+    template<bool linked, template<typename> typename ALLOC = std::allocator>
     class bump_allocator;
     
-    template<typename ALLOC>
-    class bump_allocator<ALLOC, false>
+    template<template<typename> typename ALLOC>
+    class bump_allocator<false, ALLOC>
     {
         private:
-            ALLOC allocator;
+            ALLOC<blt::u8> allocator;
             blt::u8* buffer_;
             blt::u8* offset_;
             blt::size_t size_;
@@ -416,8 +416,8 @@ namespace blt
             }
     };
     
-    template<typename ALLOC>
-    class bump_allocator<ALLOC, true>
+    template<template<typename> typename ALLOC>
+    class bump_allocator<true, ALLOC>
     {
         private:
             struct block
@@ -427,8 +427,8 @@ namespace blt
                 blt::size_t allocated_objects = 0;
                 blt::size_t deallocated_objects = 0;
             };
-            ALLOC allocator;
-            std::vector<block, typename ALLOC::template rebind<block>> blocks;
+            ALLOC<blt::u8> allocator;
+            std::vector<block, ALLOC<block>> blocks;
             blt::size_t size_;
             
             void expand()
