@@ -423,34 +423,38 @@ namespace blt
             struct block
             {
                 blt::u8* buffer = nullptr;
-                blt::size_t offset = 0;
+                blt::u8* offset = nullptr;
                 blt::size_t allocated_objects = 0;
                 blt::size_t deallocated_objects = 0;
+                
+                explicit block(blt::u8* buffer): buffer(buffer), offset(buffer)
+                {}
             };
+            
             ALLOC<blt::u8> allocator;
             std::vector<block, ALLOC<block>> blocks;
             blt::size_t size_;
             
             void expand()
             {
-                blocks.push_back({static_cast<blt::u8*>(allocator.allocate(size_)), 0});
+                auto ptr = static_cast<blt::u8*>(allocator.allocate(size_));
+                blocks.push_back(block{ptr});
             }
             
             template<typename T>
             T* allocate_back()
             {
                 auto& back = blocks.back();
-                size_t remaining_bytes = size_ - back.offset;
-                auto void_ptr = reinterpret_cast<void*>(&back.buffer[back.offset]);
-                auto new_ptr = static_cast<blt::u8*>(std::align(alignof(T), sizeof(T), void_ptr, remaining_bytes));
-                if (new_ptr == nullptr)
-                    expand();
-                else
+                size_t remaining_bytes = size_ - static_cast<size_t>(back.offset - back.buffer);
+                auto pointer = static_cast<void*>(back.offset);
+                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_bytes);
+                if (aligned_address != nullptr)
                 {
-                    back.offset += (back.buffer - new_ptr + sizeof(T));
+                    back.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T);
                     back.allocated_objects++;
                 }
-                return reinterpret_cast<T*>(new_ptr);
+                
+                return static_cast<T*>(aligned_address);
             }
         
         public:
@@ -465,13 +469,9 @@ namespace blt
             template<typename T>
             [[nodiscard]] T* allocate()
             {
-                if (blocks.back().offset + sizeof(T) > size_)
-                    expand();
                 if (auto ptr = allocate_back<T>(); ptr == nullptr)
-                {
-                    BLT_INFO("Not enough space for me");
                     expand();
-                } else
+                else
                     return ptr;
                 if (auto ptr = allocate_back<T>(); ptr == nullptr)
                     throw std::bad_alloc();
@@ -487,7 +487,7 @@ namespace blt
                 for (auto e : blt::enumerate(blocks))
                 {
                     auto& block = e.second;
-                    if (ptr >= block.buffer && ptr <= &block.buffer[block.offset])
+                    if (ptr >= block.buffer && ptr <= block.offset)
                     {
                         block.deallocated_objects++;
                         if (block.deallocated_objects == block.allocated_objects)
