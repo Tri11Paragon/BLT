@@ -26,6 +26,11 @@
 #include <blt/compatibility.h>
 #include <stdexcept>
 #include "logging.h"
+#include <cstdlib>
+
+    #ifdef __unix__
+        #include <sys/mman.h>
+    #endif
 
 namespace blt
 {
@@ -422,10 +427,9 @@ namespace blt
         private:
             struct block
             {
+                blt::size_t allocated_objects = 0;
                 blt::u8* buffer = nullptr;
                 blt::u8* offset = nullptr;
-                blt::size_t allocated_objects = 0;
-                blt::size_t deallocated_objects = 0;
                 
                 explicit block(blt::u8* buffer): buffer(buffer), offset(buffer)
                 {}
@@ -434,11 +438,14 @@ namespace blt
             ALLOC<blt::u8> allocator;
             std::vector<block, ALLOC<block>> blocks;
             blt::size_t size_;
+            blt::size_t allocations = 0;
+            blt::size_t deallocations = 0;
             
             void expand()
             {
                 auto ptr = static_cast<blt::u8*>(allocator.allocate(size_));
                 blocks.push_back(block{ptr});
+                allocations++;
             }
             
             template<typename T>
@@ -483,23 +490,22 @@ namespace blt
             void deallocate(T* p)
             {
                 auto* ptr = reinterpret_cast<blt::u8*>(p);
-                blt::i64 remove_index = -1;
                 for (auto e : blt::enumerate(blocks))
                 {
                     auto& block = e.second;
                     if (ptr >= block.buffer && ptr <= block.offset)
                     {
-                        block.deallocated_objects++;
-                        if (block.deallocated_objects == block.allocated_objects)
-                            remove_index = static_cast<blt::i64>(e.first);
-                        break;
+                        block.allocated_objects--;
+                        if (block.allocated_objects == 0)
+                        {
+                            std::iter_swap(blocks.begin() + e.first, blocks.end() - 1);
+                            allocator.deallocate(blocks.back().buffer, size_);
+                            blocks.pop_back();
+                            deallocations++;
+                        }
+                        return;
                     }
                 }
-                if (remove_index < 0)
-                    return;
-                std::iter_swap(blocks.begin() + remove_index, blocks.end() - 1);
-                allocator.deallocate(blocks.back().buffer, size_);
-                blocks.pop_back();
             }
             
             template<typename T, typename... Args>
@@ -524,8 +530,117 @@ namespace blt
             
             ~bump_allocator()
             {
+                if (allocations != deallocations)
+                    BLT_WARN("Allocator has blocks which have not been deallocated! Destructors might not have been called!");
                 for (auto& v : blocks)
                     allocator.deallocate(v.buffer, size_);
+            }
+    };
+    
+    template<blt::size_t BLOCK_SIZE = 4096 * 16>
+    class bump_allocator2
+    {
+            // power of two
+            static_assert(BLOCK_SIZE && ((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0));
+        private:
+            struct block
+            {
+                struct
+                {
+                    blt::size_t allocated_objects = 0;
+                    block* next = nullptr;
+                    blt::u8* offset = nullptr;
+                } metadata;
+                blt::u8 buffer[BLOCK_SIZE - sizeof(metadata)]{};
+                
+                block()
+                {
+                    metadata.offset = buffer;
+                }
+            };
+            
+            block* base = nullptr;
+            block* head = nullptr;
+            
+            block* allocate_block()
+            {
+                auto* buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
+                construct(buffer);
+                return buffer;
+            }
+            
+            void allocate_forward()
+            {
+                auto* block = allocate_block();
+                head->metadata.next = block;
+                head = block;
+            }
+            
+            template<typename T>
+            T* allocate_back()
+            {
+                size_t remaining_bytes = BLOCK_SIZE - static_cast<size_t>(head->metadata.offset - head->buffer);
+                
+//                auto& back = blocks.back();
+//                size_t remaining_bytes = size_ - static_cast<size_t>(back.offset - back.buffer);
+//                auto pointer = static_cast<void*>(back.offset);
+//                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_bytes);
+//                if (aligned_address != nullptr)
+//                {
+//                    back.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T);
+//                    back.allocated_objects++;
+//                }
+//
+//                return static_cast<T*>(aligned_address);
+            }
+        
+        public:
+            bump_allocator2()
+            {
+                base = head = allocate_block();
+            };
+            
+            template<typename T>
+            [[nodiscard]] T* allocate()
+            {
+            
+            }
+            
+            template<typename T>
+            void deallocate(T* p)
+            {
+            
+            }
+            
+            template<typename T, typename... Args>
+            [[nodiscard]] T* emplace(Args&& ... args)
+            {
+                const auto allocated_memory = allocate<T>();
+                return new(allocated_memory) T{std::forward<Args>(args)...};
+            }
+            
+            template<class U, class... Args>
+            inline void construct(U* p, Args&& ... args)
+            {
+                ::new((void*) p) U(std::forward<Args>(args)...);
+            }
+            
+            template<class U>
+            inline void destroy(U* p)
+            {
+                if (p != nullptr)
+                    p->~U();
+            }
+            
+            ~bump_allocator2()
+            {
+                block* next = base;
+                while (next != nullptr)
+                {
+                    auto* after = next->metadata.next;
+                    free(next);
+                    next = after;
+                }
             }
     };
     
