@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+import subprocess
+
+#repos = ["origin", "github", "tpgc"]
+
+type = input("What kind of commit is this ((M)ajor, (m)inor, (p)atch)? ")
+
+def load_cmake():
+	cmake_file = open("CMakeLists.txt", 'r')
+	cmake_text = cmake_file.read()
+	cmake_file.close()
+	return cmake_text
+
+def write_cmake(cmake_text):
+	cmake_file = open("CMakeLists.txt", 'w')
+	cmake_file.write(cmake_text)
+	cmake_file.close()
+
+def get_version(cmake_text):
+	find_text = "set(BLT_VERSION "
+	begin = cmake_text.find(find_text) + len(find_text)
+	end = cmake_text.find(")", begin)
+	return (cmake_text[begin:end], begin, end)
+
+def split_version(cmake_text):
+	version, begin, end = get_version(cmake_text)
+	version_parts = version.split('.')
+	return (version_parts, begin, end)
+
+def recombine(cmake_text, version_parts, begin, end):
+	constructed_version = version_parts[0] + '.' + version_parts[1] + '.' + version_parts[2]
+	constructed_text_begin = cmake_text[0:begin]
+	constrcuted_text_end = cmake_text[end::]
+	return constructed_text_begin + constructed_version + constrcuted_text_end
+
+
+def inc_major(cmake_text):
+	version_parts, begin, end = split_version(cmake_text)
+	version_parts[0] = str(int(version_parts[0]) + 1)
+	return recombine(cmake_text, version_parts, begin, end)
+
+def inc_minor(cmake_text):
+	version_parts, begin, end = split_version(cmake_text)
+	version_parts[1] = str(int(version_parts[1]) + 1)
+	return recombine(cmake_text, version_parts, begin, end)
+
+def inc_patch(cmake_text):
+	version_parts, begin, end = split_version(cmake_text)
+	version_parts[2] = str(int(version_parts[2]) + 1)
+	return recombine(cmake_text, version_parts, begin, end)
+
+if type.startswith('M'):
+	print("Selected major")
+	write_cmake(inc_major(load_cmake()))
+elif type.startswith('m'):
+	print("Selected minor")
+	write_cmake(inc_minor(load_cmake()))
+elif type.startswith('p') or type.startswith('P') or len(type) == 0:
+	print("Selected patch")
+	write_cmake(inc_patch(load_cmake()))
+
+subprocess.call("./py_commit_helper.sh")
+#subprocess.call("git", "add", "*")
+#subprocess.call("git commit")
+#exec("git remote | xargs -L1 git push --all")
