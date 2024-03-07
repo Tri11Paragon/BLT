@@ -17,19 +17,21 @@
  */
 
 #ifndef BLT_ALLOCATOR_H
-
-#include <optional>
-#include <limits>
-#include <vector>
-#include <blt/std/utility.h>
-#include <blt/std/types.h>
-#include <blt/compatibility.h>
-#include <stdexcept>
-#include "logging.h"
-#include <cstdlib>
-
+    
+    #include <optional>
+    #include <limits>
+    #include <vector>
+    #include <blt/std/utility.h>
+    #include <blt/std/types.h>
+    #include <blt/compatibility.h>
+    #include <stdexcept>
+    #include "logging.h"
+    #include <cstdlib>
+    
     #ifdef __unix__
+        
         #include <sys/mman.h>
+    
     #endif
 
 namespace blt
@@ -580,7 +582,7 @@ namespace blt
             T* allocate_back()
             {
                 size_t remaining_bytes = BLOCK_SIZE - static_cast<size_t>(head->metadata.offset - head->buffer);
-                
+
 //                auto& back = blocks.back();
 //                size_t remaining_bytes = size_ - static_cast<size_t>(back.offset - back.buffer);
 //                auto pointer = static_cast<void*>(back.offset);
