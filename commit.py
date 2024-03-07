@@ -71,4 +71,4 @@ elif type.startswith('p') or type.startswith('P') or len(type) == 0:
 #subprocess.call("./py_commit_helper.sh")
 subprocess.call(["git", "add", "*"])
 subprocess.call(["git", "commit"])
-subprocess.call(["sh -e 'git remote | xargs -L1 git push --all'"])
+subprocess.call(["sh -c 'git remote | xargs -L1 git push --all'"])
