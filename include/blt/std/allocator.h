@@ -27,9 +27,11 @@
 #include <stdexcept>
 #include "logging.h"
 #include <cstdlib>
-
+    
     #ifdef __unix__
+        
         #include <sys/mman.h>
+    
     #endif
 
 namespace blt
@@ -537,18 +539,77 @@ namespace blt
             }
     };
     
-    template<blt::size_t BLOCK_SIZE = 4096 * 16>
+    template<blt::size_t BLOCK_SIZE = 4096 * 512, bool USE_HUGE = true, blt::size_t HUGE_PAGE_SIZE = 4096 * 512>
     class bump_allocator2
     {
             // power of two
-            static_assert(BLOCK_SIZE && ((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0));
+            static_assert(((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0) && "Must be a power of two!");
         private:
+            template<typename LOG_FUNC>
+            static void handle_mmap_error(LOG_FUNC func = BLT_ERROR_STREAM)
+            {
+#define BLT_WRITE(arg) func << arg << '\n';
+                switch (errno)
+                {
+                    case EACCES:
+                        BLT_WRITE("fd not set to open!");
+                        break;
+                    case EAGAIN:
+                        BLT_WRITE("The file has been locked, or too much memory has been locked");
+                        break;
+                    case EBADF:
+                        BLT_WRITE("fd is not a valid file descriptor");
+                        break;
+                    case EEXIST:
+                        BLT_WRITE("MAP_FIXED_NOREPLACE was specified in flags, and the range covered "
+                                  "by addr and length clashes with an existing mapping.");
+                        break;
+                    case EINVAL:
+                        BLT_WRITE("We don't like addr, length, or offset (e.g., they are too large, or not aligned on a page boundary).");
+                        BLT_WRITE("Or length was 0");
+                        BLT_WRITE("Or flags contained none of MAP_PRIVATE, MAP_SHARED, or MAP_SHARED_VALIDATE.");
+                        break;
+                    case ENFILE:
+                        BLT_WRITE("The system-wide limit on the total number of open files has been reached.");
+                        break;
+                    case ENODEV:
+                        BLT_WRITE("The underlying filesystem of the specified file does not support memory mapping.");
+                        break;
+                    case ENOMEM:
+                        BLT_WRITE("No memory is available.");
+                        BLT_WRITE("Or The process's maximum number of mappings would have been exceeded.  "
+                                  "This error can also occur for munmap(), when unmapping a region in the middle of an existing mapping, "
+                                  "since this results in two smaller mappings on either side of the region being unmapped.");
+                        BLT_WRITE("Or The process's RLIMIT_DATA limit, described in getrlimit(2), would have been exceeded.");
+                        BLT_WRITE("Or We don't like addr, because it exceeds the virtual address space of the CPU.");
+                        break;
+                    case EOVERFLOW:
+                        BLT_WRITE("On 32-bit architecture together with the large file extension (i.e., using 64-bit off_t): "
+                                  "the number of pages used for length plus number of "
+                                  "pages used for offset would overflow unsigned long (32 bits).");
+                        break;
+                    case EPERM:
+                        BLT_WRITE("The prot argument asks for PROT_EXEC but the mapped area "
+                                  "belongs to a file on a filesystem that was mounted no-exec.");
+                        BLT_WRITE("Or The operation was prevented by a file seal");
+                        BLT_WRITE("Or The MAP_HUGETLB flag was specified, but the caller "
+                                  "was not privileged (did not have the CAP_IPC_LOCK capability) "
+                                  "and is not a member of the sysctl_hugetlb_shm_group group; "
+                                  "see the description of /proc/sys/vm/sysctl_hugetlb_shm_group");
+                        break;
+                    case ETXTBSY:
+                        BLT_WRITE("MAP_DENYWRITE was set but the object specified by fd is open for writing.");
+                        break;
+                }
+            }
+            
             struct block
             {
                 struct
                 {
                     blt::size_t allocated_objects = 0;
                     block* next = nullptr;
+                    block* prev = nullptr;
                     blt::u8* offset = nullptr;
                 } metadata;
                 blt::u8 buffer[BLOCK_SIZE - sizeof(metadata)]{};
@@ -562,16 +623,46 @@ namespace blt
             block* base = nullptr;
             block* head = nullptr;
             
+            std::vector<block*> allocated_blocks;
+            
             block* allocate_block()
             {
-                auto* buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
+                block* buffer;
+#ifdef __unix__
+                if constexpr (USE_HUGE)
+                {
+                    static_assert((BLOCK_SIZE & (HUGE_PAGE_SIZE - 1)) == 0 && "Must be multiple of the huge page size!");
+                    buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0));
+                    // if we fail to allocate a huge page we can try to allocate normally
+                    if (buffer == MAP_FAILED)
+                    {
+                        BLT_WARN_STREAM << "We failed to allocate huge pages\n";
+                        handle_mmap_error(BLT_WARN_STREAM);
+                        buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+                        if (buffer == MAP_FAILED)
+                        {
+                            BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
+                            handle_mmap_error(BLT_ERROR_STREAM);
+                            throw std::bad_alloc();
+                        }
+                        blt::size_t bytes = BLOCK_SIZE * 2;
+                        auto* ptr = static_cast<void*>(buffer);
+                        buffer = static_cast<block*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
+                    }
+                } else
+                    buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
+#else
+                buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
+#endif
                 construct(buffer);
+                allocated_blocks.push_back(buffer);
                 return buffer;
             }
             
             void allocate_forward()
             {
                 auto* block = allocate_block();
+                block->metadata.prev = head;
                 head->metadata.next = block;
                 head = block;
             }
@@ -579,19 +670,28 @@ namespace blt
             template<typename T>
             T* allocate_back()
             {
-                size_t remaining_bytes = BLOCK_SIZE - static_cast<size_t>(head->metadata.offset - head->buffer);
-                
-//                auto& back = blocks.back();
-//                size_t remaining_bytes = size_ - static_cast<size_t>(back.offset - back.buffer);
-//                auto pointer = static_cast<void*>(back.offset);
-//                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_bytes);
-//                if (aligned_address != nullptr)
-//                {
-//                    back.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T);
-//                    back.allocated_objects++;
-//                }
-//
-//                return static_cast<T*>(aligned_address);
+                blt::size_t remaining_bytes = BLOCK_SIZE - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
+                auto pointer = static_cast<void*>(head->metadata.offset);
+                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_bytes);
+                if (aligned_address != nullptr)
+                {
+                    head->metadata.allocated_objects++;
+                    head->metadata.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T);
+                }
+                return static_cast<T*>(aligned_address);
+            }
+            
+            inline void del(block* p)
+            {
+                if constexpr (USE_HUGE)
+                {
+                    if (munmap(p, BLOCK_SIZE))
+                    {
+                        BLT_ERROR_STREAM << "FAILED TO DEALLOCATE BLOCK\n";
+                        handle_mmap_error(BLT_ERROR_STREAM);
+                    }
+                }else
+                    free(p);
             }
         
         public:
@@ -600,16 +700,45 @@ namespace blt
                 base = head = allocate_block();
             };
             
+            explicit bump_allocator2(blt::size_t): bump_allocator2()
+            {}
+            
             template<typename T>
             [[nodiscard]] T* allocate()
             {
-            
+                if constexpr (sizeof(T) > BLOCK_SIZE)
+                    throw std::bad_alloc();
+                
+                if (T* ptr = allocate_back<T>(); ptr == nullptr)
+                    allocate_forward();
+                else
+                    return ptr;
+                
+                if (T* ptr = allocate_back<T>(); ptr == nullptr)
+                    throw std::bad_alloc();
+                else
+                    return ptr;
             }
             
             template<typename T>
             void deallocate(T* p)
             {
-            
+                if (p == nullptr)
+                    return;
+                //BLT_DEBUG(p);
+                auto* blk = reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
+                //BLT_TRACE(blk);
+                //for (const auto& v : allocated_blocks)
+                //    BLT_INFO(" %p", v);
+                if (--blk->metadata.allocated_objects == 0)
+                {
+                    if (blk == base)
+                        base = allocate_block();
+                    if (blk->metadata.prev != nullptr)
+                        blk->metadata.prev->metadata.next = blk->metadata.next;
+                    
+                    del(blk);
+                }
             }
             
             template<typename T, typename... Args>
@@ -638,29 +767,10 @@ namespace blt
                 while (next != nullptr)
                 {
                     auto* after = next->metadata.next;
-                    free(next);
+                    del(next);
                     next = after;
                 }
             }
-    };
-    
-    template<typename T>
-    class constexpr_allocator
-    {
-        public:
-            constexpr constexpr_allocator() = default;
-            
-            constexpr T* allocate(blt::size_t n)
-            {
-                return ::new T[n];
-            }
-            
-            constexpr void deallocate(T* t, blt::size_t)
-            {
-                ::delete[] t;
-            }
-            
-            BLT_CPP20_CONSTEXPR ~constexpr_allocator() = default;
     };
 }
 
