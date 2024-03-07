@@ -8,7 +8,7 @@ import subprocess
 
 VERSION_BEGIN_STR = "set(BLT_VERSION "
 VERSION_END_STR = ")"
-PATCH_LIMIT = 10
+PATCH_LIMIT = 1000
 
 #---------------------------------------
 #	      DO NOT TOUCH
