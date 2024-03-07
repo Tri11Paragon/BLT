@@ -24,10 +24,12 @@
 #include <blt/std/memory_util.h>
 #include <stdexcept>
 #include <iterator>
+#include <memory>
+#include "logging.h"
 
 namespace blt
 {
-    
+//#define ALIGN_TO(x, size) (((x) + size - 1) & ~(size - 1))
     template<typename T = void>
     class array
     {
@@ -37,56 +39,76 @@ namespace blt
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
-            struct metadata
+            struct metadata_t
             {
                 // size in number of elements!
                 blt::size_t size;
                 
-                explicit metadata(blt::size_t size): size(size)
+                explicit metadata_t(blt::size_t size): size(size)
                 {}
             } metadata;
             
-            T* _data = static_cast<T*>(static_cast<blt::u8*>(this) + sizeof(metadata));
-        public:
+            static constexpr blt::size_t ALIGNMENT = std::max(sizeof(metadata_t), alignof(T));
+            
+            inline T* _data()
+            {
+                return reinterpret_cast<T*>(reinterpret_cast<blt::u8*>(this) + ALIGNMENT);
+            }
+            
             /**
              * constructs an array out of a block of memory of size bytes
              * @param size number of bytes available in the memory allocated to this array.
              */
-            explicit array(blt::size_t size): metadata( (size - sizeof(metadata)) / sizeof(T))
+            explicit array(blt::size_t size): metadata((size - sizeof(metadata)) / sizeof(T))
             {}
+        
+        public:
+            inline static array* construct(void* ptr, blt::size_t size)
+            {
+                auto aligned_ptr = std::align(alignof(array), sizeof(array), ptr, size);
+                return new (aligned_ptr) array<T> {size};
+            }
+            
+            array(const array&) = delete;
+            
+            array(array&&) = delete;
+            
+            array& operator=(const array&) = delete;
+            
+            array& operator=(array&&) = delete;
             
             inline T& operator[](blt::size_t index)
             {
-                return _data[index];
+                return _data()[index];
             }
             
             inline const T& operator[](blt::size_t index) const
             {
-                return _data[index];
+                return _data()[index];
             }
             
             [[nodiscard]] inline T& at(blt::size_t index)
             {
                 if (index > size())
                     throw std::runtime_error("Index " + std::to_string(index) += " is outside the bounds of this array!");
-                return _data[index];
+                return _data()[index];
             }
             
             [[nodiscard]] inline const T& at(blt::size_t index) const
             {
                 if (index > size())
                     throw std::runtime_error("Index " + std::to_string(index) += " is outside the bounds of this array!");
-                return _data[index];
+                return _data()[index];
             }
             
             [[nodiscard]] inline T* data()
             {
-                return _data;
+                return _data();
             }
             
             [[nodiscard]] inline T* data() const
             {
-                return _data;
+                return _data();
             }
             
             [[nodiscard]] inline blt::size_t size() const
@@ -101,27 +123,27 @@ namespace blt
             
             constexpr inline T* operator*()
             {
-                return _data;
+                return data();
             }
             
             constexpr inline T& front()
             {
-                return *_data;
+                return *_data();
             }
             
             constexpr inline const T& front() const
             {
-                return *_data;
+                return *data();
             }
             
             constexpr inline T& back()
             {
-                return _data[size() - 1];
+                return data()[size() - 1];
             }
             
             constexpr inline const T& back() const
             {
-                return _data[size() - 1];
+                return data()[size() - 1];
             }
             
             constexpr inline iterator begin() const noexcept
@@ -163,6 +185,8 @@ namespace blt
             {
                 return reverse_iterator{cbegin()};
             }
+            
+            ~array() = default;
     };
     
 }
