@@ -8,6 +8,7 @@ import subprocess
 
 VERSION_BEGIN_STR = "set(BLT_VERSION "
 VERSION_END_STR = ")"
+PATCH_LIMIT = 10
 
 #---------------------------------------
 #	      DO NOT TOUCH
@@ -56,6 +57,8 @@ def inc_minor(cmake_text):
 
 def inc_patch(cmake_text):
 	version_parts, begin, end = split_version(cmake_text)
+	if int(version_parts[2]) + 1 >= PATCH_LIMIT:
+		return inc_minor(cmake_text)
 	version_parts[2] = str(int(version_parts[2]) + 1)
 	return recombine(cmake_text, version_parts, begin, end)
 
