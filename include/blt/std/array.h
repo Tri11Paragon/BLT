@@ -29,8 +29,35 @@
 
 namespace blt
 {
-//#define ALIGN_TO(x, size) (((x) + size - 1) & ~(size - 1))
-    template<typename T = void>
+    template<typename MetaExtra>
+    struct metadata_template_t;
+    
+    template<>
+    struct metadata_template_t<void>
+    {
+        // size in number of elements!
+        blt::size_t size;
+        
+        explicit metadata_template_t(blt::size_t size): size(size)
+        {}
+    };
+    
+    template<typename Extra>
+    struct metadata_template_t
+    {
+        // size in number of elements!
+        blt::size_t size;
+        Extra extra;
+        
+        explicit metadata_template_t(blt::size_t size): size(size)
+        {}
+    };
+    
+    /**
+     * @tparam T type to store inside
+     * @tparam Extra any extra data to store. void will result in zero size increase.
+     */
+    template<typename T = void, typename Extra = void>
     class array
     {
         public:
@@ -39,14 +66,8 @@ namespace blt
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
-            struct metadata_t
-            {
-                // size in number of elements!
-                blt::size_t size;
-                
-                explicit metadata_t(blt::size_t size): size(size)
-                {}
-            } metadata;
+            using metadata_t = metadata_template_t<Extra>;
+            metadata_t metadata;
             
             static constexpr blt::size_t ALIGNMENT = std::max(sizeof(metadata_t), alignof(T));
             
@@ -66,7 +87,7 @@ namespace blt
             inline static array* construct(void* ptr, blt::size_t size)
             {
                 auto aligned_ptr = std::align(alignof(array), sizeof(array), ptr, size);
-                return new (aligned_ptr) array<T> {size};
+                return new(aligned_ptr) array<T>{size};
             }
             
             array(const array&) = delete;
@@ -184,6 +205,16 @@ namespace blt
             constexpr inline reverse_iterator crend() const noexcept
             {
                 return reverse_iterator{cbegin()};
+            }
+            
+            constexpr inline metadata_t& get_metadata()
+            {
+                return metadata;
+            }
+            
+            constexpr inline const metadata_t& get_metadata() const
+            {
+                return metadata;
             }
             
             ~array() = default;
