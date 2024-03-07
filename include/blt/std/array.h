@@ -45,6 +45,7 @@ namespace blt
     template<typename Extra>
     struct metadata_template_t
     {
+        static_assert(std::is_trivially_copyable_v<Extra> && "Must be raw type!");
         Extra extra;
         // size in number of elements!
         blt::size_t size;
