@@ -539,7 +539,7 @@ namespace blt
             }
     };
     
-    template<blt::size_t BLOCK_SIZE = 4096 * 512, bool USE_HUGE = true, blt::size_t HUGE_PAGE_SIZE = 4096 * 512, bool WARN_ON_FAIL = false>
+    template<blt::size_t BLOCK_SIZE = 4096 * 512, bool USE_HUGE = false, blt::size_t HUGE_PAGE_SIZE = 4096 * 512, bool WARN_ON_FAIL = false>
     class bump_allocator2
     {
             // power of two
