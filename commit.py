@@ -62,18 +62,22 @@ def inc_patch(cmake_text):
 cmake_text = load_cmake()
 cmake_version = get_version(cmake_text)[0]
 print(f"Current Version: {cmake_version}")
-type = input("What kind of commit is this ((M)ajor, (m)inor, (p)atch)? ")
 
-if type.startswith('M'):
-	print("Selected major")
-	write_cmake(inc_major(cmake_text))
-elif type.startswith('m'):
-	print("Selected minor")
-	write_cmake(inc_minor(cmake_text))
-elif type.startswith('p') or type.startswith('P') or len(type) == 0:
-	print("Selected patch")
-	write_cmake(inc_patch(cmake_text))
+try:
+	type = input("What kind of commit is this ((M)ajor, (m)inor, (p)atch)? ")
 
-subprocess.call(["git", "add", "*"])
-subprocess.call(["git", "commit"])
-subprocess.call(["sh", "-c", "git remote | xargs -L1 git push --all"])
+	if type.startswith('M'):
+		print("Selected major")
+		write_cmake(inc_major(cmake_text))
+	elif type.startswith('m'):
+		print("Selected minor")
+		write_cmake(inc_minor(cmake_text))
+	elif type.startswith('p') or type.startswith('P') or len(type) == 0:
+		print("Selected patch")
+		write_cmake(inc_patch(cmake_text))
+
+	subprocess.call(["git", "add", "*"])
+	subprocess.call(["git", "commit"])
+	subprocess.call(["sh", "-c", "git remote | xargs -L1 git push --all"])
+except KeyboardInterrupt:
+	print("\nCancelling!")
