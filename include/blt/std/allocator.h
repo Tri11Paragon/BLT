@@ -623,8 +623,6 @@ namespace blt
             block* base = nullptr;
             block* head = nullptr;
             
-            std::vector<block*> allocated_blocks;
-            
             block* allocate_block()
             {
                 block* buffer;
@@ -638,16 +636,22 @@ namespace blt
                     {
                         BLT_WARN_STREAM << "We failed to allocate huge pages\n";
                         handle_mmap_error(BLT_WARN_STREAM);
-                        buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+                        BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
+                                           "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
+                        blt::size_t bytes = BLOCK_SIZE * 2;
+                        buffer = static_cast<block*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
                         if (buffer == MAP_FAILED)
                         {
                             BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
                             handle_mmap_error(BLT_ERROR_STREAM);
                             throw std::bad_alloc();
                         }
-                        blt::size_t bytes = BLOCK_SIZE * 2;
+                        if (((size_t)buffer & (HUGE_PAGE_SIZE - 1)) != 0)
+                            BLT_ERROR("Pointer is not aligned! %p", buffer);
                         auto* ptr = static_cast<void*>(buffer);
+                        auto ptr_size = reinterpret_cast<blt::size_t>(ptr);
                         buffer = static_cast<block*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
+                        BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
                     }
                 } else
                     buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
@@ -655,7 +659,6 @@ namespace blt
                 buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
 #endif
                 construct(buffer);
-                allocated_blocks.push_back(buffer);
                 return buffer;
             }
             
@@ -725,11 +728,7 @@ namespace blt
             {
                 if (p == nullptr)
                     return;
-                //BLT_DEBUG(p);
                 auto* blk = reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
-                //BLT_TRACE(blk);
-                //for (const auto& v : allocated_blocks)
-                //    BLT_INFO(" %p", v);
                 if (--blk->metadata.allocated_objects == 0)
                 {
                     if (blk == base)
