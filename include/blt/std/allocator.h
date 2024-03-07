@@ -539,7 +539,7 @@ namespace blt
             }
     };
     
-    template<blt::size_t BLOCK_SIZE = 4096 * 512, bool USE_HUGE = true, blt::size_t HUGE_PAGE_SIZE = 4096 * 512>
+    template<blt::size_t BLOCK_SIZE = 4096 * 512, bool USE_HUGE = true, blt::size_t HUGE_PAGE_SIZE = 4096 * 512, bool WARN_ON_FAIL = false>
     class bump_allocator2
     {
             // power of two
@@ -634,10 +634,13 @@ namespace blt
                     // if we fail to allocate a huge page we can try to allocate normally
                     if (buffer == MAP_FAILED)
                     {
-                        BLT_WARN_STREAM << "We failed to allocate huge pages\n";
-                        handle_mmap_error(BLT_WARN_STREAM);
-                        BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
-                                           "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
+                        if constexpr (WARN_ON_FAIL)
+                        {
+                            BLT_WARN_STREAM << "We failed to allocate huge pages\n";
+                            handle_mmap_error(BLT_WARN_STREAM);
+                            BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
+                                               "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
+                        }
                         blt::size_t bytes = BLOCK_SIZE * 2;
                         buffer = static_cast<block*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
                         if (buffer == MAP_FAILED)
@@ -646,12 +649,16 @@ namespace blt
                             handle_mmap_error(BLT_ERROR_STREAM);
                             throw std::bad_alloc();
                         }
-                        if (((size_t)buffer & (HUGE_PAGE_SIZE - 1)) != 0)
-                            BLT_ERROR("Pointer is not aligned! %p", buffer);
+                        if constexpr (WARN_ON_FAIL)
+                        {
+                            if (((size_t) buffer & (HUGE_PAGE_SIZE - 1)) != 0)
+                                BLT_ERROR("Pointer is not aligned! %p", buffer);
+                        }
                         auto* ptr = static_cast<void*>(buffer);
                         auto ptr_size = reinterpret_cast<blt::size_t>(ptr);
                         buffer = static_cast<block*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
-                        BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
+                        if constexpr (WARN_ON_FAIL)
+                            BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
                     }
                 } else
                     buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
@@ -693,7 +700,7 @@ namespace blt
                         BLT_ERROR_STREAM << "FAILED TO DEALLOCATE BLOCK\n";
                         handle_mmap_error(BLT_ERROR_STREAM);
                     }
-                }else
+                } else
                     free(p);
             }
         
