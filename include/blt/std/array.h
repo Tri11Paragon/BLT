@@ -45,9 +45,9 @@ namespace blt
     template<typename Extra>
     struct metadata_template_t
     {
+        Extra extra;
         // size in number of elements!
         blt::size_t size;
-        Extra extra;
         
         explicit metadata_template_t(blt::size_t size): size(size)
         {}
