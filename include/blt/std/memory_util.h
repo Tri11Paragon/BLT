@@ -28,8 +28,9 @@
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
     
     #if defined(__GNUC__) || defined(__GNUG__)
+        
         #include <byteswap.h>
-
+        
         #define SWAP16(val) bswap_16(val)
         #define SWAP32(val) bswap_32(val)
         #define SWAP64(val) bswap_64(val)
@@ -127,6 +128,69 @@ namespace blt::mem
         std::memcpy(&r, &type, sizeof(type));
         return r;
     }
+    
+}
+
+namespace blt
+{
+    template<typename V>
+    struct ptr_iterator
+    {
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using difference_type = std::ptrdiff_t;
+            using value_type = V;
+            using pointer = value_type*;
+            using reference = value_type&;
+            
+            explicit ptr_iterator(V* v): _v(v)
+            {}
+            
+            reference operator*() const
+            { return *_v; }
+            
+            pointer operator->()
+            { return _v; }
+            
+            ptr_iterator& operator++()
+            {
+                _v++;
+                return *this;
+            }
+            
+            ptr_iterator& operator--()
+            {
+                _v--;
+                return *this;
+            }
+            
+            ptr_iterator operator++(int)
+            {
+                auto tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+            
+            ptr_iterator operator--(int)
+            {
+                auto tmp = *this;
+                --(*this);
+                return tmp;
+            }
+            
+            friend bool operator==(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return a._v == b._v;
+            }
+            
+            friend bool operator!=(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return a._v != b._v;
+            }
+        
+        private:
+            V* _v;
+    };
 }
 
 #endif //BLT_MEMORY_UTIL_H

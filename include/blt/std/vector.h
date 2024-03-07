@@ -108,12 +108,12 @@ namespace blt
                 return buffer_;
             }
             
-            constexpr inline iterator begin() noexcept
+            constexpr inline iterator begin() const noexcept
             {
                 return data();
             }
             
-            constexpr inline iterator end() noexcept
+            constexpr inline iterator end() const noexcept
             {
                 return data() + size();
             }
@@ -128,12 +128,12 @@ namespace blt
                 return data() + size();
             }
             
-            constexpr inline reverse_iterator rbegin() noexcept
+            constexpr inline reverse_iterator rbegin() const noexcept
             {
                 return reverse_iterator{end()};
             }
             
-            constexpr inline reverse_iterator rend() noexcept
+            constexpr inline reverse_iterator rend() const noexcept
             {
                 return reverse_iterator{begin()};
             }

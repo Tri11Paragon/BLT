@@ -22,65 +22,6 @@
 namespace blt
 {
     
-    template<typename V>
-    struct ptr_iterator
-    {
-        public:
-            using iterator_category = std::random_access_iterator_tag;
-            using difference_type = std::ptrdiff_t;
-            using value_type = V;
-            using pointer = value_type*;
-            using reference = value_type&;
-            
-            explicit ptr_iterator(V* v): _v(v)
-            {}
-            
-            reference operator*() const
-            { return *_v; }
-            
-            pointer operator->()
-            { return _v; }
-            
-            ptr_iterator& operator++()
-            {
-                _v++;
-                return *this;
-            }
-            
-            ptr_iterator& operator--()
-            {
-                _v--;
-                return *this;
-            }
-            
-            ptr_iterator operator++(int)
-            {
-                auto tmp = *this;
-                ++(*this);
-                return tmp;
-            }
-            
-            ptr_iterator operator--(int)
-            {
-                auto tmp = *this;
-                --(*this);
-                return tmp;
-            }
-            
-            friend bool operator==(const ptr_iterator& a, const ptr_iterator& b)
-            {
-                return a._v == b._v;
-            }
-            
-            friend bool operator!=(const ptr_iterator& a, const ptr_iterator& b)
-            {
-                return a._v != b._v;
-            }
-        
-        private:
-            V* _v;
-    };
-    
     template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
     class scoped_buffer;
 
