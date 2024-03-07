@@ -27,7 +27,7 @@ def write_cmake(cmake_text):
 	cmake_file.close()
 
 def get_version(cmake_text):
-	begin = cmake_text.find(VERSION_BEGIN_STR) + len(VERSION_BEGIN_STR)
+	begin = cmake_text.find(VERSION_BEGIN_STR) + len(find_text)
 	end = cmake_text.find(VERSION_END_STR, begin)
 	return (cmake_text[begin:end], begin, end)
 
@@ -69,6 +69,6 @@ elif type.startswith('p') or type.startswith('P') or len(type) == 0:
 	write_cmake(inc_patch(load_cmake()))
 
 #subprocess.call("./py_commit_helper.sh")
-subprocess.call(["git", "add", "*"])
-subprocess.call(["git", "commit"])
-subprocess.call(["sh -e 'git remote | xargs -L1 git push --all'"])
+subprocess.call("git", "add", "*")
+subprocess.call("git", "commit")
+subprocess.call("sh -e 'git remote | xargs -L1 git push --all'")
