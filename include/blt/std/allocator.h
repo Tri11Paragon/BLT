@@ -21,6 +21,7 @@
     #include <optional>
     #include <limits>
     #include <vector>
+    #include <blt/std/ranges.h>
     #include <blt/std/utility.h>
     #include <blt/std/types.h>
     #include <blt/compatibility.h>
@@ -368,10 +369,10 @@ namespace blt
      * @tparam linked use a linked list to allocate with the allocator or just use the supplied buffer and throw an exception of we cannot allocate
      */
     template<bool linked, template<typename> typename ALLOC = std::allocator>
-    class bump_allocator;
+    class bump_allocator_old;
     
     template<template<typename> typename ALLOC>
-    class bump_allocator<false, ALLOC>
+    class bump_allocator_old<false, ALLOC>
     {
         private:
             ALLOC<blt::u8> allocator;
@@ -379,10 +380,10 @@ namespace blt
             blt::u8* offset_;
             blt::size_t size_;
         public:
-            explicit bump_allocator(blt::size_t size): buffer_(static_cast<blt::u8*>(allocator.allocate(size))), offset_(buffer_), size_(size)
+            explicit bump_allocator_old(blt::size_t size): buffer_(static_cast<blt::u8*>(allocator.allocate(size))), offset_(buffer_), size_(size)
             {}
             
-            explicit bump_allocator(blt::u8* buffer, blt::size_t size): buffer_(buffer), offset_(buffer), size_(size)
+            explicit bump_allocator_old(blt::u8* buffer, blt::size_t size): buffer_(buffer), offset_(buffer), size_(size)
             {}
             
             template<typename T>
@@ -417,14 +418,14 @@ namespace blt
                     p->~U();
             }
             
-            ~bump_allocator()
+            ~bump_allocator_old()
             {
                 allocator.deallocate(buffer_, size_);
             }
     };
     
     template<template<typename> typename ALLOC>
-    class bump_allocator<true, ALLOC>
+    class bump_allocator_old<true, ALLOC>
     {
         private:
             struct block
@@ -470,7 +471,7 @@ namespace blt
             /**
              * @param size of the list blocks
              */
-            explicit bump_allocator(blt::size_t size): size_(size)
+            explicit bump_allocator_old(blt::size_t size): size_(size)
             {
                 expand();
             }
@@ -530,7 +531,7 @@ namespace blt
                     p->~U();
             }
             
-            ~bump_allocator()
+            ~bump_allocator_old()
             {
                 if (allocations != deallocations)
                     BLT_WARN("Allocator has blocks which have not been deallocated! Destructors might not have been called!");
@@ -542,7 +543,7 @@ namespace blt
     inline constexpr blt::size_t BLT_2MB_SIZE = 4096 * 512;
     
     template<blt::size_t BLOCK_SIZE = BLT_2MB_SIZE, bool USE_HUGE = false, blt::size_t HUGE_PAGE_SIZE = BLT_2MB_SIZE, bool WARN_ON_FAIL = false>
-    class bump_allocator2
+    class bump_allocator
     {
             // power of two
             static_assert(((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0) && "Must be a power of two!");
@@ -705,14 +706,25 @@ namespace blt
                 } else
                     free(p);
             }
-        
+            
+            template<typename T, typename FUNC>
+            inline T* attempt_allocation(FUNC f)
+            {
+                T* ptr = allocate_back<T>();
+                if (ptr == nullptr)
+                    f();
+                return ptr;
+            }
         public:
-            bump_allocator2()
+            bump_allocator()
             {
                 base = head = allocate_block();
             };
             
-            explicit bump_allocator2(blt::size_t): bump_allocator2()
+            /**
+             * Takes an unused size parameter. Purely used for compatibility with the old bump_allocator
+             */
+            explicit bump_allocator(blt::size_t): bump_allocator()
             {}
             
             template<typename T>
@@ -721,15 +733,10 @@ namespace blt
                 if constexpr (sizeof(T) > BLOCK_SIZE)
                     throw std::bad_alloc();
                 
-                if (T* ptr = allocate_back<T>(); ptr == nullptr)
-                    allocate_forward();
-                else
-                    return ptr;
-                
-                if (T* ptr = allocate_back<T>(); ptr == nullptr)
-                    throw std::bad_alloc();
-                else
-                    return ptr;
+                auto* ptr = attempt_allocation<T>([this]() {allocate_forward();});
+                if (ptr == nullptr)
+                    return attempt_allocation<T>([]() {throw std::bad_alloc();});
+                return ptr;
             }
             
             template<typename T>
@@ -769,7 +776,7 @@ namespace blt
                     p->~U();
             }
             
-            ~bump_allocator2()
+            ~bump_allocator()
             {
                 block* next = base;
                 while (next != nullptr)
