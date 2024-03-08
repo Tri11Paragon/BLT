@@ -633,7 +633,8 @@ namespace blt
                 if constexpr (USE_HUGE)
                 {
                     static_assert((BLOCK_SIZE & (HUGE_PAGE_SIZE - 1)) == 0 && "Must be multiple of the huge page size!");
-                    buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0));
+                    buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE,
+                                                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0));
                     // if we fail to allocate a huge page we can try to allocate normally
                     if (buffer == MAP_FAILED)
                     {
@@ -645,7 +646,7 @@ namespace blt
                                                "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
                         }
                         blt::size_t bytes = BLOCK_SIZE * 2;
-                        buffer = static_cast<block*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+                        buffer = static_cast<block*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
                         if (buffer == MAP_FAILED)
                         {
                             BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
@@ -681,15 +682,15 @@ namespace blt
             }
             
             template<typename T>
-            T* allocate_back()
+            T* allocate_back(blt::size_t count)
             {
                 blt::size_t remaining_bytes = BLOCK_SIZE - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
                 auto pointer = static_cast<void*>(head->metadata.offset);
-                const auto aligned_address = std::align(alignof(T), sizeof(T), pointer, remaining_bytes);
+                const auto aligned_address = std::align(alignof(T) * count, sizeof(T) * count, pointer, remaining_bytes);
                 if (aligned_address != nullptr)
                 {
                     head->metadata.allocated_objects++;
-                    head->metadata.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T);
+                    head->metadata.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T) * count;
                 }
                 return static_cast<T*>(aligned_address);
             }
@@ -708,13 +709,14 @@ namespace blt
             }
             
             template<typename T, typename FUNC>
-            inline T* attempt_allocation(FUNC f)
+            inline T* attempt_allocation(FUNC f, blt::size_t count)
             {
-                T* ptr = allocate_back<T>();
+                T* ptr = allocate_back<T>(count);
                 if (ptr == nullptr)
                     f();
                 return ptr;
             }
+        
         public:
             bump_allocator()
             {
@@ -728,14 +730,14 @@ namespace blt
             {}
             
             template<typename T>
-            [[nodiscard]] T* allocate()
+            [[nodiscard]] T* allocate(blt::size_t count = 1)
             {
                 if constexpr (sizeof(T) > BLOCK_SIZE)
                     throw std::bad_alloc();
                 
-                auto* ptr = attempt_allocation<T>([this]() {allocate_forward();});
+                auto* ptr = attempt_allocation<T>([this]() { allocate_forward(); }, count);
                 if (ptr == nullptr)
-                    return attempt_allocation<T>([]() {throw std::bad_alloc();});
+                    return attempt_allocation<T>([]() { throw std::bad_alloc(); }, count);
                 return ptr;
             }
             
@@ -761,6 +763,17 @@ namespace blt
             {
                 const auto allocated_memory = allocate<T>();
                 return new(allocated_memory) T{std::forward<Args>(args)...};
+            }
+            
+            template<typename T, typename... Args>
+            [[nodiscard]] T* emplace_many(blt::size_t count, Args&& ... args)
+            {
+                if (count == 0)
+                    return nullptr;
+                const auto allocated_memory = allocate<T>(count);
+                for (blt::size_t i = 0; i < count; i++)
+                    new(allocated_memory + i) T{std::forward<Args>(args)...};
+                return allocated_memory;
             }
             
             template<class U, class... Args>
