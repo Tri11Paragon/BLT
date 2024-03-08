@@ -762,7 +762,7 @@ namespace blt
                     if (blk->metadata.prev != nullptr)
                         blk->metadata.prev->metadata.next = blk->metadata.next;
                     
-                    //del(blk);
+                    del(blk);
                 }
             }
             
