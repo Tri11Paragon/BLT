@@ -608,7 +608,7 @@ namespace blt
             
             struct block
             {
-                struct
+                struct block_metadata_t
                 {
                     blt::size_t allocated_objects = 0;
                     block* next = nullptr;
@@ -622,6 +622,8 @@ namespace blt
                     metadata.offset = buffer;
                 }
             };
+            
+            static constexpr blt::size_t BASE_REMAINDER = BLOCK_SIZE - sizeof(typename block::block_metadata_t);
             
             block* base = nullptr;
             block* head = nullptr;
@@ -681,16 +683,22 @@ namespace blt
                 head = block;
             }
             
+            void* allocate_bytes(blt::size_t bytes, blt::size_t alignment)
+            {
+                blt::size_t remaining_bytes = BASE_REMAINDER - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
+                auto pointer = static_cast<void*>(head->metadata.offset);
+                return std::align(alignment, bytes, pointer, remaining_bytes);
+            }
+            
             template<typename T>
             T* allocate_back(blt::size_t count)
             {
-                blt::size_t remaining_bytes = BLOCK_SIZE - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
-                auto pointer = static_cast<void*>(head->metadata.offset);
-                const auto aligned_address = std::align(alignof(T) * count, sizeof(T) * count, pointer, remaining_bytes);
+                blt::size_t bytes = sizeof(T) * count;
+                const auto aligned_address = allocate_bytes(bytes, alignof(T));
                 if (aligned_address != nullptr)
                 {
                     head->metadata.allocated_objects++;
-                    head->metadata.offset = static_cast<blt::u8*>(aligned_address) + sizeof(T) * count;
+                    head->metadata.offset = static_cast<blt::u8*>(aligned_address) + bytes;
                 }
                 return static_cast<T*>(aligned_address);
             }
@@ -732,7 +740,7 @@ namespace blt
             template<typename T>
             [[nodiscard]] T* allocate(blt::size_t count = 1)
             {
-                if constexpr (sizeof(T) > BLOCK_SIZE)
+                if constexpr (sizeof(T) > BASE_REMAINDER)
                     throw std::bad_alloc();
                 
                 auto* ptr = attempt_allocation<T>([this]() { allocate_forward(); }, count);
@@ -754,8 +762,14 @@ namespace blt
                     if (blk->metadata.prev != nullptr)
                         blk->metadata.prev->metadata.next = blk->metadata.next;
                     
-                    del(blk);
+                    //del(blk);
                 }
+            }
+            
+            template<typename T>
+            auto* blk(T* p)
+            {
+                return reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
             }
             
             template<typename T, typename... Args>
