@@ -728,6 +728,8 @@ namespace blt
              */
             void* allocate_bytes(blt::size_t bytes, blt::size_t alignment)
             {
+                if (head == nullptr)
+                    return nullptr;
                 blt::size_t remaining_bytes = BLOCK_REMAINDER - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
                 auto pointer = static_cast<void*>(head->metadata.offset);
                 return std::align(alignment, bytes, pointer, remaining_bytes);
