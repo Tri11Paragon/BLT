@@ -540,14 +540,36 @@ namespace blt
             }
     };
     
+    // size of 2mb in bytes
     inline constexpr blt::size_t BLT_2MB_SIZE = 4096 * 512;
     
+    /**
+     * blt::bump_allocator. Allocates blocks of BLOCK_SIZE with zero reuse. When all objects from a block are fully deallocated the block will be freed
+     * @tparam BLOCK_SIZE size of block to use. recommended to be multiple of page size or huge page size.
+     * @tparam USE_HUGE allocate using mmap and huge pages. If this fails it will use mmap to allocate normally. defaults to off because linux has parent huge pages.
+     * @tparam HUGE_PAGE_SIZE size the system allows huge pages to be. defaults to 2mb
+     * @tparam WARN_ON_FAIL print warning messages if allocating huge pages fail
+     */
     template<blt::size_t BLOCK_SIZE = BLT_2MB_SIZE, bool USE_HUGE = false, blt::size_t HUGE_PAGE_SIZE = BLT_2MB_SIZE, bool WARN_ON_FAIL = false>
     class bump_allocator
     {
-            // power of two
+            // ensure power of two
             static_assert(((BLOCK_SIZE & (BLOCK_SIZE - 1)) == 0) && "Must be a power of two!");
+        public:
+            /**
+             * convert any pointer back into a pointer its block
+             */
+            template<typename T>
+            static inline auto to_block(T* p)
+            {
+                return reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
+            }
+        
         private:
+            /**
+             * Logging function used for handling mmap errors. call after a failed mmap call.
+             * @param LOG_FUNC function to log with, must be a BLT_*_STREAM
+             */
             template<typename LOG_FUNC>
             static void handle_mmap_error(LOG_FUNC func = BLT_ERROR_STREAM)
             {
@@ -623,11 +645,18 @@ namespace blt
                 }
             };
             
-            static constexpr blt::size_t BASE_REMAINDER = BLOCK_SIZE - sizeof(typename block::block_metadata_t);
+            // remaining space inside the block after accounting for the metadata
+            static constexpr blt::size_t BLOCK_REMAINDER = BLOCK_SIZE - sizeof(typename block::block_metadata_t);
             
             block* base = nullptr;
             block* head = nullptr;
             
+            /**
+             * Handles the allocation of the bytes for the block.
+             * This function will either use mmap to allocate huge pages if requested
+             * or use std::align_alloc to create an aligned allocation
+             * @return pointer to a constructed block
+             */
             block* allocate_block()
             {
                 block* buffer;
@@ -675,23 +704,43 @@ namespace blt
                 return buffer;
             }
             
+            /**
+             * Allocates a new block and pushes it to the front of the linked listed
+             */
             void allocate_forward()
             {
                 auto* block = allocate_block();
+                if (head == nullptr)
+                {
+                    base = head = block;
+                    return;
+                }
                 block->metadata.prev = head;
                 head->metadata.next = block;
                 head = block;
             }
             
+            /**
+             * handles the actual allocation and alignment of memory
+             * @param bytes number of bytes to allocate
+             * @param alignment alignment required
+             * @return aligned pointer
+             */
             void* allocate_bytes(blt::size_t bytes, blt::size_t alignment)
             {
-                blt::size_t remaining_bytes = BASE_REMAINDER - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
+                blt::size_t remaining_bytes = BLOCK_REMAINDER - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
                 auto pointer = static_cast<void*>(head->metadata.offset);
                 return std::align(alignment, bytes, pointer, remaining_bytes);
             }
             
+            /**
+             * allocate an object starting from the next available address
+             * @tparam T type to allocate for
+             * @param count number of elements to allocate
+             * @return nullptr if the object could not be allocated, pointer to the object if it could, pointer to the start if count != 1
+             */
             template<typename T>
-            T* allocate_back(blt::size_t count)
+            T* allocate_object(blt::size_t count)
             {
                 blt::size_t bytes = sizeof(T) * count;
                 const auto aligned_address = allocate_bytes(bytes, alignof(T));
@@ -703,7 +752,11 @@ namespace blt
                 return static_cast<T*>(aligned_address);
             }
             
-            inline void del(block* p)
+            /**
+             * Frees a block
+             * @param p pointer to the block to free
+             */
+            inline void delete_block(block* p)
             {
                 if constexpr (USE_HUGE)
                 {
@@ -715,63 +768,67 @@ namespace blt
                 } else
                     free(p);
             }
-            
-            template<typename T, typename FUNC>
-            inline T* attempt_allocation(FUNC f, blt::size_t count)
-            {
-                T* ptr = allocate_back<T>(count);
-                if (ptr == nullptr)
-                    f();
-                return ptr;
-            }
-        
         public:
-            bump_allocator()
-            {
-                base = head = allocate_block();
-            };
+            bump_allocator() = default;
             
             /**
              * Takes an unused size parameter. Purely used for compatibility with the old bump_allocator
              */
-            explicit bump_allocator(blt::size_t): bump_allocator()
+            explicit bump_allocator(blt::size_t)
             {}
             
+            /**
+             * Allocate bytes for a type
+             * @tparam T type to allocate
+             * @param count number of elements to allocate for
+             * @throws std::bad_alloc
+             * @return aligned pointer to the beginning of the allocated memory
+             */
             template<typename T>
             [[nodiscard]] T* allocate(blt::size_t count = 1)
             {
-                if constexpr (sizeof(T) > BASE_REMAINDER)
+                if constexpr (sizeof(T) > BLOCK_REMAINDER)
                     throw std::bad_alloc();
                 
-                auto* ptr = attempt_allocation<T>([this]() { allocate_forward(); }, count);
+                T* ptr = allocate_object<T>(count);
+                if (ptr != nullptr)
+                    return ptr;
+                allocate_forward();
+                ptr = allocate_object<T>(count);
                 if (ptr == nullptr)
-                    return attempt_allocation<T>([]() { throw std::bad_alloc(); }, count);
+                    throw std::bad_alloc();
                 return ptr;
             }
             
+            /**
+             * Deallocate a pointer, does not call the destructor
+             * @tparam T type of pointer
+             * @param p pointer to deallocate
+             */
             template<typename T>
             void deallocate(T* p)
             {
                 if (p == nullptr)
                     return;
-                auto* blk = reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
+                auto blk = to_block(p);
                 if (--blk->metadata.allocated_objects == 0)
                 {
                     if (blk == base)
-                        base = allocate_block();
+                        base = head = nullptr;
                     if (blk->metadata.prev != nullptr)
                         blk->metadata.prev->metadata.next = blk->metadata.next;
                     
-                    del(blk);
+                    delete_block(blk);
                 }
             }
             
-            template<typename T>
-            auto* blk(T* p)
-            {
-                return reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
-            }
-            
+            /**
+             * allocate a type then call its constructor with arguments
+             * @tparam T type to construct
+             * @tparam Args type of args to construct with
+             * @param args args to construct with
+             * @return aligned pointer to the constructed type
+             */
             template<typename T, typename... Args>
             [[nodiscard]] T* emplace(Args&& ... args)
             {
@@ -779,6 +836,14 @@ namespace blt
                 return new(allocated_memory) T{std::forward<Args>(args)...};
             }
             
+            /**
+             * allocate an array of count T with argument(s) args and call T's constructor
+             * @tparam T class to construct
+             * @tparam Args argument types to supply to construction
+             * @param count size of the array to allocate in number of elements. Note calling this with count = 0 is equivalent to calling emplace
+             * @param args the args to supply to construction
+             * @return aligned pointer to the beginning of the array of T
+             */
             template<typename T, typename... Args>
             [[nodiscard]] T* emplace_many(blt::size_t count, Args&& ... args)
             {
@@ -790,17 +855,45 @@ namespace blt
                 return allocated_memory;
             }
             
+            /**
+             * Used to construct a class U with parameters Args
+             * @tparam U class to construct
+             * @tparam Args args to use
+             * @param p pointer to non-constructed memory
+             * @param args list of arguments to build the class with
+             */
             template<class U, class... Args>
             inline void construct(U* p, Args&& ... args)
             {
                 ::new((void*) p) U(std::forward<Args>(args)...);
             }
             
+            /**
+             * Call the destructor for class U with pointer p
+             * @tparam U class to call destructor on, this will not do anything if the type is std::trivially_destructible
+             * @param p
+             */
             template<class U>
             inline void destroy(U* p)
             {
-                if (p != nullptr)
-                    p->~U();
+                if constexpr (std::is_trivially_destructible_v<U>)
+                {
+                    if (p != nullptr)
+                        p->~U();
+                }
+            }
+            
+            /**
+             * Calls destroy on pointer p
+             * Then calls deallocate on p
+             * @tparam U class to destroy
+             * @param p pointer to deallocate
+             */
+            template<class U>
+            inline void destruct(U* p)
+            {
+                destroy(p);
+                deallocate(p);
             }
             
             ~bump_allocator()
@@ -809,7 +902,7 @@ namespace blt
                 while (next != nullptr)
                 {
                     auto* after = next->metadata.next;
-                    del(next);
+                    delete_block(next);
                     next = after;
                 }
             }
