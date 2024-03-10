@@ -344,6 +344,9 @@ namespace blt
             constexpr span() noexcept: size_(0), data_(nullptr)
             {}
             
+            constexpr span(T* data, size_type count): size_(count), data_(data)
+            {}
+            
             template<class It, std::size_t SIZE, typename std::enable_if_t<extent != dynamic_extent && SIZE == extent, bool> = true>
             constexpr explicit span(It first, size_type count): size_(count), data_(&*first)
             {}
