@@ -567,12 +567,13 @@ namespace blt
             
             class stats_t
             {
+                    friend bump_allocator;
                 private:
                     blt::size_t allocated_blocks = 0;
                     blt::size_t allocated_bytes = 0;
                     blt::size_t peak_blocks = 0;
                     blt::size_t peak_bytes = 0;
-                public:
+                protected:
                     inline void incrementBlocks()
                     {
                         allocated_blocks++;
@@ -596,27 +597,30 @@ namespace blt
                     {
                         allocated_bytes -= bytes;
                     }
+                
+                public:
                     
-                    inline auto getAllocatedBlocks()
+                    inline auto getAllocatedBlocks() const
                     {
                         return allocated_blocks;
                     }
                     
-                    inline auto getAllocatedBytes()
+                    inline auto getAllocatedBytes() const
                     {
                         return allocated_bytes;
                     }
                     
-                    inline auto getPeakBlocks()
+                    inline auto getPeakBlocks() const
                     {
                         return peak_blocks;
                     }
                     
-                    inline auto getPeakBytes()
+                    inline auto getPeakBytes() const
                     {
                         return peak_bytes;
                     }
             };
+        
         private:
             stats_t stats;
             
