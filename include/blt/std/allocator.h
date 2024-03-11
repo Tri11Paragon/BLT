@@ -970,7 +970,12 @@ namespace blt
                 deallocate(p);
             }
             
-            inline const auto& getStats()
+            inline void resetStats()
+            {
+                stats = {};
+            }
+            
+            inline const auto& getStats() const
             {
                 return stats;
             }

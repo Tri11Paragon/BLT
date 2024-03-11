@@ -73,10 +73,15 @@ namespace blt
      * @return
      */
     template<int decimal_places>
-    static inline double round_up(double value)
+    constexpr static inline double round_up(double value)
     {
-        constexpr double multiplier = pow(10, decimal_places);
-        return ((int) (value * multiplier) + 1) / multiplier;
+        if constexpr (decimal_places < 0)
+            return value;
+        else
+        {
+            constexpr double multiplier = pow(10, decimal_places);
+            return ((int) (value * multiplier) + 1) / multiplier;
+        }
     }
     
     /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {

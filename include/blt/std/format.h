@@ -39,20 +39,21 @@ namespace blt::string
         return ret;
     }
     
+    template<int decimal_places = 0>
     static inline std::string fromBytes(unsigned long bytes)
     {
         if (bytes > 1073741824)
         {
             // gigabyte
-            return std::to_string(round_up<3>((double) bytes / 1024.0 / 1024.0 / 1024.0)) += "gb";
+            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0 / 1024.0 / 1024.0)) += "gb";
         } else if (bytes > 1048576)
         {
             // megabyte
-            return std::to_string(round_up<3>((double) bytes / 1024.0 / 1024.0)) += "mb";
+            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0 / 1024.0)) += "mb";
         } else if (bytes > 1024)
         {
             // kilobyte
-            return std::to_string(round_up<3>((double) bytes / 1024.0)) += "kb";
+            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0)) += "kb";
         } else
         {
             return std::to_string(bytes) += "b";
