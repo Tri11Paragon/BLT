@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 include(cmake/color.cmake)
 
-set(BLT_VERSION 0.14.11)
+set(BLT_VERSION 0.14.12)
 set(BLT_TEST_VERSION 0.0.1)
 
 set(BLT_TARGET BLT)
@@ -21,6 +21,7 @@ option(BUILD_PARSE "Build the BLT parsers" ON)
 
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
+option(BLT_DISABLE_STATS "Disable tracking stats in certain objects. Enabling this will cause stat functions to return 0" OFF)
 option(BLT_DISABLE_LOGGING "Disable blt::logging (all macros and will safely disable logging function!)" OFF)
 option(BLT_DISABLE_TRACE "Disable blt::logging BLT_TRACE macro" OFF)
 option(BLT_DISABLE_DEBUG "Disable blt::logging BLT_DEBUG macro" OFF)
@@ -28,6 +29,10 @@ option(BLT_DISABLE_INFO "Disable blt::logging BLT_INFO macro" OFF)
 option(BLT_DISABLE_WARN "Disable blt::logging BLT_WARN macro" OFF)
 option(BLT_DISABLE_ERROR "Disable blt::logging BLT_ERROR macro" OFF)
 option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
+
+if(${BLT_DISABLE_STATS})
+    add_compile_definitions(BLT_DISABLE_STATS)
+endif ()
 
 configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
 

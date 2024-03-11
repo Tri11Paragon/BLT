@@ -564,8 +564,62 @@ namespace blt
             {
                 return reinterpret_cast<block*>(reinterpret_cast<std::uintptr_t>(p) & static_cast<std::uintptr_t>(~(BLOCK_SIZE - 1)));
             }
-        
+            
+            class stats_t
+            {
+                private:
+                    blt::size_t allocated_blocks = 0;
+                    blt::size_t allocated_bytes = 0;
+                    blt::size_t peak_blocks = 0;
+                    blt::size_t peak_bytes = 0;
+                public:
+                    inline void incrementBlocks()
+                    {
+                        allocated_blocks++;
+                        if (allocated_blocks > peak_blocks)
+                            peak_blocks = allocated_blocks;
+                    }
+                    
+                    inline void decrementBlocks()
+                    {
+                        allocated_blocks--;
+                    }
+                    
+                    inline void incrementBytes(blt::size_t bytes)
+                    {
+                        allocated_bytes += bytes;
+                        if (allocated_bytes > peak_bytes)
+                            peak_bytes = allocated_bytes;
+                    }
+                    
+                    inline void decrementBytes(blt::size_t bytes)
+                    {
+                        allocated_bytes -= bytes;
+                    }
+                    
+                    inline auto getAllocatedBlocks()
+                    {
+                        return allocated_blocks;
+                    }
+                    
+                    inline auto getAllocatedBytes()
+                    {
+                        return allocated_bytes;
+                    }
+                    
+                    inline auto getPeakBlocks()
+                    {
+                        return peak_blocks;
+                    }
+                    
+                    inline auto getPeakBytes()
+                    {
+                        return peak_bytes;
+                    }
+            };
         private:
+            stats_t stats;
+            
             /**
              * Logging function used for handling mmap errors. call after a failed mmap call.
              * @param LOG_FUNC function to log with, must be a BLT_*_STREAM
@@ -701,6 +755,9 @@ namespace blt
                 buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
 #endif
                 construct(buffer);
+#ifndef BLT_DISABLE_STATS
+                stats.incrementBlocks();
+#endif
                 return buffer;
             }
             
@@ -760,6 +817,9 @@ namespace blt
              */
             inline void delete_block(block* p)
             {
+#ifndef BLT_DISABLE_STATS
+                stats.decrementBlocks();
+#endif
                 if constexpr (USE_HUGE)
                 {
                     if (munmap(p, BLOCK_SIZE))
@@ -770,6 +830,7 @@ namespace blt
                 } else
                     free(p);
             }
+        
         public:
             bump_allocator() = default;
             
@@ -791,6 +852,10 @@ namespace blt
             {
                 if constexpr (sizeof(T) > BLOCK_REMAINDER)
                     throw std::bad_alloc();
+
+#ifndef BLT_DISABLE_STATS
+                stats.incrementBytes(sizeof(T) * count);
+#endif
                 
                 T* ptr = allocate_object<T>(count);
                 if (ptr != nullptr)
@@ -808,10 +873,13 @@ namespace blt
              * @param p pointer to deallocate
              */
             template<typename T>
-            void deallocate(T* p)
+            void deallocate(T* p, blt::size_t count = 1)
             {
                 if (p == nullptr)
                     return;
+#ifndef BLT_DISABLE_STATS
+                stats.decrementBytes(sizeof(T) * count);
+#endif
                 auto blk = to_block(p);
                 if (--blk->metadata.allocated_objects == 0)
                 {
@@ -896,6 +964,11 @@ namespace blt
             {
                 destroy(p);
                 deallocate(p);
+            }
+            
+            inline const auto& getStats()
+            {
+                return stats;
             }
             
             ~bump_allocator()
