@@ -878,7 +878,7 @@ namespace blt
             template<class U>
             inline void destroy(U* p)
             {
-                if constexpr (std::is_trivially_destructible_v<U>)
+                if constexpr (!std::is_trivially_destructible_v<U>)
                 {
                     if (p != nullptr)
                         p->~U();
