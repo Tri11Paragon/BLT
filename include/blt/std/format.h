@@ -39,7 +39,8 @@ namespace blt::string
         return ret;
     }
     
-    template<int decimal_places = 0>
+    // negative decimal places will not round.
+    template<int decimal_places = -1>
     static inline std::string fromBytes(unsigned long bytes)
     {
         if (bytes > 1073741824)
