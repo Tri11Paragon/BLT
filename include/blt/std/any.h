@@ -17,6 +17,7 @@
  */
 
 #include <cstring>
+
 #ifndef BLT_ANY_H
 #define BLT_ANY_H
 
@@ -155,6 +156,32 @@ namespace blt::unsafe
                     }
                 }
                 return std::any_cast<T>(variant.any);
+            }
+    };
+    
+    class buffer_any_t
+    {
+        private:
+            blt::u8* _data;
+        public:
+            explicit buffer_any_t(blt::u8* data): _data(data)
+            {}
+            
+            template<typename T>
+            buffer_any_t& set(const T& t)
+            {
+                static_assert(std::is_trivially_copyable_v<T> && "Type must be trivially copyable");
+                std::memcpy(_data, &t, sizeof(t));
+                return *this;
+            }
+            
+            template<typename T>
+            T any_cast()
+            {
+                static_assert(std::is_trivially_copyable_v<T> && "Type must be trivially copyable");
+                T t;
+                std::memcpy(&t, _data, sizeof(T));
+                return t;
             }
     };
     
