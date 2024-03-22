@@ -47,6 +47,7 @@ namespace blt
             std::vector<std::thread*> threads;
             std::variant<std::queue<thread_function>, thread_function> func_queue;
             std::mutex queue_mutex;
+            bool func_loaded = false;
         public:
             explicit thread_pool(std::uint64_t number_of_threads = 8, std::optional<thread_function> default_function = {})
             {
@@ -76,14 +77,15 @@ namespace blt
                                 func();
                             } else
                             {
-                                {
+                                if (!func_loaded){
                                     std::scoped_lock lock(queue_mutex);
                                     if (std::holds_alternative<std::queue<thread_function>>(func_queue))
                                     {
                                         std::this_thread::sleep_for(std::chrono::milliseconds(16));
-                                        BLT_WARN("Running non queue variant with a queue inside!");
-                                        break;
+                                        //BLT_WARN("Running non queue variant with a queue inside!");
+                                        continue;
                                     }
+                                    func_loaded = true;
                                 }
                                 auto& func = std::get<thread_function>(func_queue);
                                 func();
