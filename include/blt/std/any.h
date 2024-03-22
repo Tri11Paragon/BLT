@@ -168,15 +168,14 @@ namespace blt::unsafe
             {}
             
             template<typename T>
-            buffer_any_t& set(const T& t)
+            void set(const T& t) const
             {
                 static_assert(std::is_trivially_copyable_v<T> && "Type must be trivially copyable");
                 std::memcpy(_data, &t, sizeof(t));
-                return *this;
             }
             
             template<typename T>
-            T any_cast()
+            T any_cast() const
             {
                 static_assert(std::is_trivially_copyable_v<T> && "Type must be trivially copyable");
                 T t;
