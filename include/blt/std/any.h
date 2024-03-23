@@ -206,6 +206,7 @@ namespace blt::unsafe
                 static_assert(std::is_trivially_copyable_v<T> && "Type must be byte copyable");
                 static_assert(sizeof(T) <= SIZE && "Size must be less than or equal to internal buffer");
                 std::memcpy(data, &t, sizeof(t));
+                return *this;
             }
             
             template<typename T>
