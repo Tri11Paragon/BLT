@@ -24,6 +24,8 @@
     #include <blt/std/ranges.h>
     #include <blt/std/utility.h>
     #include <blt/std/types.h>
+    // TODO: remove
+    //#include <blt/std/hashmap.h>
     #include <blt/compatibility.h>
     #include <stdexcept>
     #include "logging.h"
@@ -623,6 +625,7 @@ namespace blt
         
         private:
             stats_t stats;
+            //blt::hashset_t<void*> deletes;
             
             /**
              * Logging function used for handling mmap errors. call after a failed mmap call.
@@ -695,7 +698,7 @@ namespace blt
                     block* prev = nullptr;
                     blt::u8* offset = nullptr;
                 } metadata;
-                blt::u8 buffer[BLOCK_SIZE - sizeof(metadata)]{};
+                blt::u8 buffer[BLOCK_SIZE - sizeof(block_metadata_t)]{};
                 
                 block()
                 {
@@ -884,14 +887,30 @@ namespace blt
 #ifndef BLT_DISABLE_STATS
                 stats.decrementBytes(sizeof(T) * count);
 #endif
+//                if (deletes.contains(p))
+//                {
+//                    BLT_FATAL("pointer %p has already been freed", p);
+//                    throw std::bad_alloc();
+//                }else
+//                    deletes.insert(static_cast<void*>(p));
+                
                 auto blk = to_block(p);
-                if (--blk->metadata.allocated_objects == 0)
+                blk->metadata.allocated_objects--;
+                if (blk->metadata.allocated_objects == 0)
                 {
+                    //BLT_INFO("Deallocating block from %p in (1) %p current head %p, based: %p", p, blk, head, base);
                     if (blk == base)
-                        base = head = nullptr;
-                    if (blk->metadata.prev != nullptr)
+                    {
+                        base = base->metadata.next;
+                        // if they were equal (single allocated block) we also need to move the head forward
+                        if (blk == head)
+                            head = base;
+                    } else if (blk == head) // else, need to make sure the head ptr gets moved back, otherwise we will use a head that has been freed
+                        head = blk->metadata.prev;
+                    else if (blk->metadata.prev != nullptr) // finally if it wasn't the head we need to bridge the gap in the list
                         blk->metadata.prev->metadata.next = blk->metadata.next;
                     
+                    //BLT_INFO("Deallocating block from %p in (2) %p current head %p, based: %p", p, blk, head, base);
                     delete_block(blk);
                 }
             }
