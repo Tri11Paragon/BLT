@@ -20,7 +20,7 @@
 
 namespace blt
 {
-    typedef std::variant<std::string, bool, int32_t> arg_data_internal_t;
+    typedef std::variant<std::string, bool, int32_t, float, double, int64_t> arg_data_internal_t;
     typedef std::vector<arg_data_internal_t> arg_data_vec_t;
     typedef std::variant<arg_data_internal_t, arg_data_vec_t> arg_data_t;
     

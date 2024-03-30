@@ -106,14 +106,23 @@ namespace blt
     std::string to_string(const arg_data_internal_t& v)
     {
         return std::visit(blt::lambda_visitor{
-                [&](const std::string& str) {
+                [](const std::string& str) {
                     return str;
                 },
-                [&](bool b) {
+                [](bool b) {
                     return std::string(b ? "True" : "False");
                 },
-                [&](int32_t i) {
+                [](int32_t i) {
                     return std::to_string(i);
+                },
+                [](float f){
+                    return std::to_string(f);
+                },
+                [](int64_t i) {
+                    return std::to_string(i);
+                },
+                [](double f){
+                    return std::to_string(f);
                 }
         }, v);
     }
