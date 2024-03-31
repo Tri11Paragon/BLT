@@ -17,7 +17,7 @@
 #include <blt/std/error.h>
 #include <blt/std/logging.h>
 
-namespace blt
+namespace blt::error
 {
     void print_socket_error()
     {
