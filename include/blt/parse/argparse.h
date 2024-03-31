@@ -17,10 +17,11 @@
 #include <variant>
 #include <algorithm>
 #include <type_traits>
+#include "blt/std/utility.h"
 
 namespace blt
 {
-    typedef std::variant<std::string, bool, int32_t, float, double, int64_t> arg_data_internal_t;
+    typedef std::variant<std::string, bool, int32_t> arg_data_internal_t;
     typedef std::vector<arg_data_internal_t> arg_data_vec_t;
     typedef std::variant<arg_data_internal_t, arg_data_vec_t> arg_data_t;
     
@@ -307,8 +308,13 @@ namespace blt
             template<typename T>
             static inline T get_cast(arg_data_t& v)
             {
-                if constexpr (std::is_same_v<T, arg_data_vec_t>)
-                    return std::get<arg_data_vec_t>(v);
+                if (std::holds_alternative<arg_data_vec_t>(v))
+                {
+                    if constexpr (std::is_same_v<T, arg_data_vec_t>)
+                        return std::get<arg_data_vec_t>(v);
+                    else
+                        throw std::runtime_error("Cannot request singular data from stored vector type");
+                }
                 auto t = std::get<arg_data_internal_t>(v);
                 // user is requesting an int, but holds a string, we are going to make the assumption the data can be converted
                 // it is up to the user to deal with the variant if they do not want this behaviour!
@@ -319,12 +325,20 @@ namespace blt
                     return static_cast<T>(std::get<int32_t>(t));
                 if (std::holds_alternative<bool>(t))
                     return static_cast<T>(std::get<bool>(t));
+                
                 auto s = std::get<std::string>(t);
+                
+                if (s.empty())
+                    throw std::runtime_error("Key does not have value!");
+                
                 if constexpr (std::is_floating_point_v<T>)
                     return static_cast<T>(std::stod(s));
-                if constexpr (std::is_signed_v<T>)
+                else if constexpr (std::is_signed_v<T>)
                     return static_cast<T>(std::stoll(s));
-                return static_cast<T>(std::stoull(s));
+                else if constexpr (std::is_unsigned_v<T>)
+                    return static_cast<T>(std::stoull(s));
+                else
+                    return static_cast<T>(s);
             }
             
             struct arg_results
@@ -346,10 +360,17 @@ namespace blt
                     template<typename T>
                     inline T get(const std::string& key)
                     {
-                        if constexpr (std::is_same_v<T, std::string>)
-                            return blt::arg_parse::get<T>(data[key]);
+                        hashmap_t<std::string, arg_data_t>::iterator val;
+                        if (blt::string::starts_with(key, "--"))
+                            val = data.find(key.substr(2));
+                        else if (blt::string::starts_with(key, '-'))
+                            val = data.find(key.substr(1));
                         else
-                            return blt::arg_parse::get_cast<T>(data[key]);
+                            val = data.find(key);
+                        if constexpr (std::is_same_v<T, std::string>)
+                            return blt::arg_parse::get<T>(val->second);
+                        else
+                            return blt::arg_parse::get_cast<T>(val->second);
                     }
                     
                     inline auto begin()
@@ -371,6 +392,7 @@ namespace blt
                         return data.find(key) != data.end();
                     }
             };
+        
         private:
             struct
             {
