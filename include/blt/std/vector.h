@@ -103,17 +103,17 @@ namespace blt
                 return buffer_;
             }
             
-            constexpr inline T* data() const
+            constexpr inline const T* data() const
             {
                 return buffer_;
             }
             
-            constexpr inline iterator begin() const noexcept
+            constexpr inline iterator begin() noexcept
             {
                 return data();
             }
             
-            constexpr inline iterator end() const noexcept
+            constexpr inline iterator end() noexcept
             {
                 return data() + size();
             }
