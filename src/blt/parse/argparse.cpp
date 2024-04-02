@@ -115,15 +115,6 @@ namespace blt
                 [](int32_t i) {
                     return std::to_string(i);
                 },
-                [](float f){
-                    return std::to_string(f);
-                },
-                [](int64_t i) {
-                    return std::to_string(i);
-                },
-                [](double f){
-                    return std::to_string(f);
-                }
         }, v);
     }
     
