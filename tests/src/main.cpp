@@ -107,6 +107,9 @@ int main(int argc, const char** argv)
     if (args.contains("--vector"))
         blt::test::vector_run();
     
+    if (args.contains("--fixed_point"))
+        blt::test::fixed_point();
+    
     if (args.contains("--nbt"))
     {
         auto v = blt::arg_parse::get<std::string>(args["nbt"]);
