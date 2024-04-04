@@ -62,15 +62,15 @@ namespace blt
             
             BLT_ATTRIB_NO_INLINE friend fp64 operator*(fp64 left, fp64 right)
             {
-                auto lhs = static_cast<__int128>(left.v);
-                auto rhs = static_cast<__int128>(right.v);
+                auto lhs = static_cast<unsigned __int128>(left.v);
+                auto rhs = static_cast<unsigned __int128>(right.v);
                 return fp64(static_cast<u64>((lhs * rhs) >> 32));
             }
             
             BLT_ATTRIB_NO_INLINE friend fp64 operator/(fp64 left, fp64 right)
             {
-                auto lhs = static_cast<__int128>(left.v);
-                auto rhs = static_cast<__int128>(right.v);
+                auto lhs = static_cast<unsigned __int128>(left.v);
+                auto rhs = static_cast<unsigned __int128>(right.v);
                 return fp64(static_cast<u64>((lhs / rhs) << 32));
             }
             
