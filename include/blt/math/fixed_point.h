@@ -19,9 +19,71 @@
 #ifndef BLT_FIXED_POINT_H
 #define BLT_FIXED_POINT_H
 
+#include <blt/std/types.h>
+#include <blt/std/utility.h>
+
 namespace blt
 {
-
+    struct fp64
+    {
+        private:
+            u64 v = 0;
+            
+            fp64() = default;
+            
+            explicit fp64(u64 v): v(v)
+            {}
+        
+        public:
+            static fp64 from_u64(u64 ui)
+            {
+                fp64 fp;
+                fp.v = ui << 32;
+                return fp;
+            }
+            
+            static fp64 from_i64(i64 si)
+            {
+                u64 ui = static_cast<u64>(si);
+                fp64 fp;
+                fp.v = ui << 32;
+                return fp;
+            }
+            
+            BLT_ATTRIB_NO_INLINE friend fp64 operator+(fp64 left, fp64 right)
+            {
+                return fp64(left.v + right.v);
+            }
+            
+            BLT_ATTRIB_NO_INLINE friend fp64 operator-(fp64 left, fp64 right)
+            {
+                return fp64(left.v - right.v);
+            }
+            
+            BLT_ATTRIB_NO_INLINE friend fp64 operator*(fp64 left, fp64 right)
+            {
+                auto lhs = static_cast<__int128>(left.v);
+                auto rhs = static_cast<__int128>(right.v);
+                return fp64(static_cast<u64>((lhs * rhs) >> 32));
+            }
+            
+            BLT_ATTRIB_NO_INLINE friend fp64 operator/(fp64 left, fp64 right)
+            {
+                auto lhs = static_cast<__int128>(left.v);
+                auto rhs = static_cast<__int128>(right.v);
+                return fp64(static_cast<u64>((lhs / rhs) << 32));
+            }
+            
+            [[nodiscard]] u64 as_u64() const
+            {
+                return v >> 32;
+            }
+            
+            [[nodiscard]] i64 as_i64() const
+            {
+                return static_cast<i64>(v >> 32);
+            }
+    };
 }
 
 #endif //BLT_FIXED_POINT_H

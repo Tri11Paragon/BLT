@@ -16,13 +16,23 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/math/fixed_point.h>
+#include <blt/std/logging.h>
+#include <iostream>
+#include <blt_tests.h>
 
 namespace blt::test
 {
-    
     void fixed_point()
     {
-    
+        fp64 uv = fp64::from_u64(32);
+        fp64 iv = fp64::from_i64(16);
+        
+        std::cout << uv.as_i64() << " : " << uv.as_u64() << std::endl;
+        std::cout << iv.as_i64() << " : " << iv.as_u64() << std::endl;
+        
+        std::cout << (uv * iv).as_i64() << std::endl;
+        std::cout << (uv * iv).as_u64() << std::endl;
+        std::cout << (uv / iv).as_i64() << std::endl;
+        std::cout << (uv / iv).as_u64() << std::endl;
     }
-    
 }
