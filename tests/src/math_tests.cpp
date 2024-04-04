@@ -19,16 +19,44 @@
 #include <blt/math/vectors.h>
 #include <blt/std/logging.h>
 #include <iostream>
+#include <ios>
 #include <blt_tests.h>
 #include <cmath>
+#include <iomanip>
+#include <limits>
 
 using vec3fp = blt::vec<blt::fp64, 3>;
 
 namespace blt::test
 {
+    void print(fp64 v, const std::string& name = "")
+    {
+        std::cout << name << " [" << v.raw() << ':' << std::hex << v.raw() << std::dec << "]\tu64(" << v.as_u64() << ")\ti64(" << v.as_i64()
+                  << ")\tu32(" << v.as_u32() << ")\ti32(" << v.as_i32() << ")\tf32("
+                  << std::setprecision(std::numeric_limits<long double>::digits10 + 1)
+                  << std::setw(16) << std::fixed << v.as_f32() << ")\tf64(" << v.as_f64() << ")\n";
+    }
+    
     void fixed_point()
     {
         //vec3fp hello = {fp64::from_f64(32.023), fp64::from_f64(422.34023), fp64::from_f64(321.023)};
+        
+        print(FP64_UMAX, "umax");
+        print(FP64_UMIN, "umin");
+        print(FP64_IMAX, "imax");
+        print(FP64_IMIN, "imin");
+        print(FP64_FMAX, "fmax");
+        print(FP64_FMIN, "fmin");
+        print(FP64_EPSILON, "epis");
+        print(FP64_PI, "pi  ");
+        print(FP64_PI_2, "pi2 ");
+        print(FP64_PI_4, "pi4 ");
+        print(FP64_1_PI, "1/pi");
+        print(FP64_2_PI, "1/p2");
+        print(FP64_SQRT2, "sqr2");
+        print(FP64_1_SQRT2, "isq2");
+        print(FP64_E, "e   ");
+        print(FP64_LOG2E, "logE");
         
         fp64 uv = fp64::from_u64(32);
         fp64 iv = fp64::from_i64(16);
@@ -36,14 +64,26 @@ namespace blt::test
         fp64 fv = fp64::from_f32(53.4234234);
         fp64 pi = fp64::from_f64(M_PI);
         
-        std::cout << "[" << static_cast<u64>(uv) << "]: " << uv.as_i64() << " : " << uv.as_u64() << " : " << uv.as_f64() << std::endl;
-        std::cout << "[" << static_cast<u64>(iv) << "]: " << iv.as_i64() << " : " << iv.as_u64() << " : " << iv.as_f64() << std::endl;
-        std::cout << "[" << static_cast<u64>(fv) << "]: " << fv.as_i64() << " : " << fv.as_u64() << " : " << fv.as_f64() << std::endl;
-        std::cout << "[" << static_cast<u64>(pi) << "]: " << pi.as_i64() << " : " << pi.as_u64() << " : " << pi.as_f64() << std::endl;
+        print(uv * iv, "32 * 16");
+        print(uv / iv, "32 / 16");
+        print(fv / pi, "53.4234234 / pi");
         
-        std::cout << (uv * iv).as_i64() << std::endl;
-        std::cout << (uv * iv).as_u64() << std::endl;
-        std::cout << (uv / iv).as_i64() << std::endl;
-        std::cout << (uv / iv).as_u64() << std::endl;
+        print(uv + iv, "32 + 16");
+        print(uv - iv, "32 - 16");
+        
+        print(fp64::from_f32(32.43242), "32.43242");
+        print(fp64::from_f64(634.2349932493423), "634.2349932493423");
+        print(fp64::from_u32(3194967295), "3194967295");
+        print(fp64::from_i32(-1194967295), "-1194967295");
+        print(fp64::from_i64(-13194967295), "-13194967295");
+        print(fp64::from_u64(66294967295), "66294967295");
+        
+        uv *= fp64::from_i32(-32);
+        
+        print(uv);
+        
+        uv /= fp64::from_i32(-16);
+        
+        print(uv);
     }
 }
