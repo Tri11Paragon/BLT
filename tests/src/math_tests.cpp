@@ -19,6 +19,7 @@
 #include <blt/std/logging.h>
 #include <iostream>
 #include <blt_tests.h>
+#include <cmath>
 
 namespace blt::test
 {
@@ -27,8 +28,13 @@ namespace blt::test
         fp64 uv = fp64::from_u64(32);
         fp64 iv = fp64::from_i64(16);
         
-        std::cout << uv.as_i64() << " : " << uv.as_u64() << std::endl;
-        std::cout << iv.as_i64() << " : " << iv.as_u64() << std::endl;
+        fp64 fv = fp64::from_f32(53.4234234);
+        fp64 pi = fp64::from_f64(M_PI);
+        
+        std::cout << "[" << static_cast<u64>(uv) << "]: " << uv.as_i64() << " : " << uv.as_u64() << " : " << uv.as_f64() << std::endl;
+        std::cout << "[" << static_cast<u64>(iv) << "]: " << iv.as_i64() << " : " << iv.as_u64() << " : " << iv.as_f64() << std::endl;
+        std::cout << "[" << static_cast<u64>(fv) << "]: " << fv.as_i64() << " : " << fv.as_u64() << " : " << fv.as_f64() << std::endl;
+        std::cout << "[" << static_cast<u64>(pi) << "]: " << pi.as_i64() << " : " << pi.as_u64() << " : " << pi.as_f64() << std::endl;
         
         std::cout << (uv * iv).as_i64() << std::endl;
         std::cout << (uv * iv).as_u64() << std::endl;
