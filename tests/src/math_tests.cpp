@@ -16,15 +16,20 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/math/fixed_point.h>
+#include <blt/math/vectors.h>
 #include <blt/std/logging.h>
 #include <iostream>
 #include <blt_tests.h>
 #include <cmath>
 
+using vec3fp = blt::vec<blt::fp64, 3>;
+
 namespace blt::test
 {
     void fixed_point()
     {
+        //vec3fp hello = {fp64::from_f64(32.023), fp64::from_f64(422.34023), fp64::from_f64(321.023)};
+        
         fp64 uv = fp64::from_u64(32);
         fp64 iv = fp64::from_i64(16);
         
