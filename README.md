@@ -25,7 +25,25 @@ A C++17 common utilities library to make thing easy!
       - Computes a rolling average in a dynamically allocated array.
       - Useful for average FPS over a period of time
   - ### fixed_point.h
-    - 
+    - Provides a 64bit fixed point number with 2^32 bits of precision on each side of the decimal
+    - Mostly optimal assembly, avoids sign extension by using 64 bit numbers
+    - Requires your compiler to support 128 bit numbers
+    - Docs: TODO
+  - ### fixed_point_vector.h
+    - Not finished due to complications in the vector type, this is a TODO
+  - ### log_util.h
+    - provides overloads for logging math types
+  - ### math.h
+    - blt::toRadians 
+      - to radians function (from deg)
+    - blt::f_randi
+      - fast random integer from seed
+    - blt::fsqrt
+      - fast inverse square root algorithm, floats only
+    - blt::pow
+      - power function
+    - blt::round_up
+      - rounds up to a variable number of decimal places
 
 # Specialties
 ## blt::logging.v2 

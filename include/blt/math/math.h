@@ -57,10 +57,11 @@ namespace blt
 #pragma GCC diagnostic pop
 #endif
 
-    
-    static inline constexpr double pow(int b, int p)
+
+    template<typename B, typename P, typename R = decltype(B() * P())>
+    static inline constexpr R pow(B b, P p)
     {
-        int collection = 1;
+        R collection = 1;
         for (int i = 0; i < p; i++)
             collection *= b;
         return collection;
@@ -79,7 +80,7 @@ namespace blt
             return value;
         else
         {
-            constexpr double multiplier = pow(10, decimal_places);
+            constexpr double multiplier = pow(10.0, decimal_places);
             return ((int) (value * multiplier) + 1) / multiplier;
         }
     }
