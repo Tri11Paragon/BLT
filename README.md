@@ -1,9 +1,31 @@
-# **BLT v0.8.0a**
-A C++20 common utilities library to make thing easy! 
+# **BLT v0.16**
+A C++17 common utilities library to make thing easy! 
 
 ![Icon](icon_large.png)
 
 ---
+
+# ***Features***
+- ## blt/fs
+  - ### loader.h
+    - std::string blt::fs::getFile(std::string_view path)
+      - Gets the entire file as a string.
+    - std::vector\<std::string> blt::fs::getLinesFromFile(std::string_view path)
+      - Gets the entire file as a string, then splits on the new line character. Then returns a vector of those lines
+    - std::vector\<std::string> blt::fs::recursiveInclude(std::string_view path, std::string include_header, std::vector<include_guard> guards);
+      - Recursively include in order based on the include string (include_header) marked by the include guards
+      - Defaults to C/C++/GLSL preprocessor style (Was designed for GLSL)
+    - std::string blt::fs::loadBrainFuckFile(const std::string& path)
+      - Load a brainfuck file recursively, uses ~ to mark the include path
+  - ### nbt.h
+    - probably needs to be remade (TODO)
+- ## blt/math
+  - ### averages.h
+    - blt::averagizer_o_matic
+      - Computes a rolling average in a dynamically allocated array.
+      - Useful for average FPS over a period of time
+  - ### fixed_point.h
+    - 
 
 # Specialties
 ## blt::logging.v2 
@@ -27,7 +49,7 @@ The goal was to create an API which would function exactly as the Python docs de
 ## blt::profile_t (v2)
 The newest version of my profiler solution now features a CPU cycle counter, CPU thread execution time, and wall time. It has more options for
 sorting and general printing while featuring a nicer codebase. It is an improvement over blt::profiling while maintaining (almost) complete backwards
-compatability. Due to changes in the ABI the `BLT_PRINT_PROFILE` macro deletes the internal profiles and intervals AND takes arguments which match
+compatability. Due to changes in the API the `BLT_PRINT_PROFILE` macro deletes the internal profiles and intervals AND takes arguments which match
 the new formatting options for profiling v2. However, `BLT_START_INTERVAL`, `BLT_WRITE_PROFILE`, and `BLT_END_INTERVAL` are still the same.
 Documentation for this is coming soon, along with more profiling features. the `BLT_*` macros can be disabled by the standard `BLT_DISABLE_PROFILING`
 from the v1 profiler. It is encouraged to use the new blt::* profile functions over the macros however these currently cannot be disabled. (TODO)

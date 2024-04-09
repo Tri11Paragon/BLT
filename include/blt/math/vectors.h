@@ -16,6 +16,8 @@
 
 namespace blt
 {
+
+#define MSVC_COMPILER (!defined(__GNUC__) && !defined(__clang__))
     
     constexpr float EPSILON = 0.0001f;
     
@@ -23,8 +25,6 @@ namespace blt
     {
         return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
     }
-
-#define MSVC_COMPILER (!defined(__GNUC__) && !defined(__clang__))
     
     template<typename T, std::uint32_t size>
     struct vec

@@ -52,34 +52,6 @@ namespace blt::fs
         
         return buffer;
     }
-    
-    static inline std::string loadShaderFile(std::string_view path)
-    {
-        std::stringstream stringStream;
-        
-        auto lines = recursiveInclude(path);
-        
-        for (const auto& line : lines)
-        {
-            // now process the defines, if they exist
-//            if (line.starts_with("#define")) {
-//                auto defineParts = String::split(line, " ");
-//                // create a new define statement in the defines place but with the respective value.
-//                if (defines.contains(defineParts[1])) {
-//                    stringStream << "#define ";
-//                    stringStream << defineParts[1] << " ";
-//                    stringStream << defines[defineParts[1]];
-//                    stringStream << "\n";
-//                    continue;
-//                }
-//            }
-            stringStream << line;
-            stringStream << "\n";
-        }
-        
-        //tlog << stringStream.str();
-        return stringStream.str();
-    }
 }
 
 #endif //BLT_TESTS_LOADER_H

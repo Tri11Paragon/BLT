@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/math/fixed_point.h>
+#include <blt/math/fixed_point_vectors.h>
 #include <blt/math/vectors.h>
 #include <blt/std/logging.h>
 #include <iostream>
@@ -24,8 +25,6 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
-
-using vec3fp = blt::vec<blt::fp64, 3>;
 
 namespace blt::test
 {
