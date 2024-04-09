@@ -18,6 +18,7 @@
 #include <blt/math/fixed_point.h>
 #include <blt/math/fixed_point_vectors.h>
 #include <blt/math/vectors.h>
+#include <blt/math/log_util.h>
 #include <blt/std/logging.h>
 #include <iostream>
 #include <ios>
@@ -38,6 +39,20 @@ namespace blt::test
     
     void fixed_point()
     {
+        blt::vec3f vf(34, 34, 2);
+        blt::vec3ul vul(34, 34, 2);
+        
+        std::cout << vf << std::endl;
+        BLT_TRACE(vf);
+        BLT_TRACE(vul);
+        BLT_DEBUG_STREAM << vul << '\n';
+        
+        blt::mat4x4 mat;
+        std::cout << mat << std::endl;
+        BLT_TRACE(mat);
+        BLT_DEBUG_STREAM << mat << '\n';
+        
+        
         //vec3fp hello = {fp64::from_f64(32.023), fp64::from_f64(422.34023), fp64::from_f64(321.023)};
         
         print(FP64_UMAX, "umax");

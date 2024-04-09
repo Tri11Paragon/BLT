@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <array>
 #include <type_traits>
+#include <blt/std/types.h>
 
 namespace blt
 {
@@ -26,7 +27,7 @@ namespace blt
         return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     struct vec
     {
             static_assert(std::is_arithmetic_v<T> && "blt::vec must be created using an arithmetic type!");
@@ -44,7 +45,8 @@ namespace blt
              * @param t default value to fill with
              * @param args list of args
              */
-            vec(T t, std::initializer_list<T> args)
+            template<typename U, std::enable_if_t<std::is_same_v<T, U> || std::is_convertible_v<U, T>, bool> = true>
+            vec(U t, std::initializer_list<U> args)
             {
                 auto b = args.begin();
                 for (auto& v : elements)
@@ -63,7 +65,12 @@ namespace blt
              * Create a vector from an initializer list, if the list doesn't have enough elements it will be filled with the default value (0)
              * @param args
              */
-            vec(std::initializer_list<T> args): vec(static_cast<T>(0), args)
+            template<typename U, std::enable_if_t<std::is_same_v<T, U> || std::is_convertible_v<U, T>, bool> = true>
+            vec(std::initializer_list<U> args): vec(U(), args)
+            {}
+            
+            template<typename... Args>
+            explicit vec(Args... args): vec(std::array<T, size>{static_cast<T>(args)...})
             {}
             
             explicit vec(T t)
@@ -114,7 +121,7 @@ namespace blt
             [[nodiscard]] inline T magnitude() const
             {
                 T total = 0;
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     total += elements[i] * elements[i];
                 return std::sqrt(total);
             }
@@ -139,7 +146,7 @@ namespace blt
             
             inline vec<T, size>& operator=(T v)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] = v;
                 return *this;
             }
@@ -147,49 +154,49 @@ namespace blt
             inline vec<T, size> operator-()
             {
                 vec<T, size> initializer{};
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     initializer[i] = -elements[i];
                 return vec<T, size>{initializer};
             }
             
             inline vec<T, size>& operator+=(const vec<T, size>& other)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] += other[i];
                 return *this;
             }
             
             inline vec<T, size>& operator*=(const vec<T, size>& other)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] *= other[i];
                 return *this;
             }
             
             inline vec<T, size>& operator+=(T f)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] += f;
                 return *this;
             }
             
             inline vec<T, size>& operator*=(T f)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] *= f;
                 return *this;
             }
             
             inline vec<T, size>& operator-=(const vec<T, size>& other)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] -= other[i];
                 return *this;
             }
             
             inline vec<T, size>& operator-=(T f)
             {
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     elements[i] -= f;
                 return *this;
             }
@@ -200,7 +207,7 @@ namespace blt
             static inline constexpr T dot(const vec<T, size>& left, const vec<T, size>& right)
             {
                 T dot = 0;
-                for (std::uint32_t i = 0; i < size; i++)
+                for (blt::u32 i = 0; i < size; i++)
                     dot += left[i] * right[i];
                 return dot;
             }
@@ -256,147 +263,147 @@ namespace blt
             }
     };
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] + right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] - right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator+(const vec<T, size>& left, T f)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] + f;
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator-(const vec<T, size>& left, T f)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] + f;
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator+(T f, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = f + right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator-(T f, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = f - right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] * right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator*(const vec<T, size>& left, T f)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] * f;
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator*(T f, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = f * right[i];
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr vec<T, size> operator/(const vec<T, size>& left, T f)
     {
         vec<T, size> initializer{};
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             initializer[i] = left[i] / f;
         return initializer;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr bool operator==(const vec<T, size>& left, const vec<T, size>& right)
     {
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             if (left[i] != right[i])
                 return false;
         return true;
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr bool operator!=(const vec<T, size>& left, const vec<T, size>& right)
     {
         return !(left == right);
     }
     
-    template<typename T, std::uint32_t size>
+    template<typename T, blt::u32 size>
     inline constexpr bool operator&&(const vec<T, size>& left, const vec<T, size>& right)
     {
-        for (std::uint32_t i = 0; i < size; i++)
+        for (blt::u32 i = 0; i < size; i++)
             if (!f_equal(left[i], right[i]))
                 return false;
         return true;
     }
     
-    typedef vec<float, 2> vec2f;
-    typedef vec<float, 3> vec3f;
-    typedef vec<float, 4> vec4f;
+    using vec2f = vec<float, 2>;
+    using vec3f = vec<float, 3>;
+    using vec4f = vec<float, 4>;
     
-    typedef vec<double, 2> vec2d;
-    typedef vec<double, 3> vec3d;
-    typedef vec<double, 4> vec4d;
+    using vec2d = vec<double, 2>;
+    using vec3d = vec<double, 3>;
+    using vec4d = vec<double, 4>;
     
-    typedef vec<std::int32_t, 2> vec2i;
-    typedef vec<std::int32_t, 3> vec3i;
-    typedef vec<std::int32_t, 4> vec4i;
+    using vec2i = vec<blt::i32, 2>;
+    using vec3i = vec<blt::i32, 3>;
+    using vec4i = vec<blt::i32, 4>;
     
-    typedef vec<std::int64_t, 2> vec2l;
-    typedef vec<std::int64_t, 3> vec3l;
-    typedef vec<std::int64_t, 4> vec4l;
+    using vec2l = vec<blt::i64, 2>;
+    using vec3l = vec<blt::i64, 3>;
+    using vec4l = vec<blt::i64, 4>;
     
-    typedef vec<std::uint32_t, 2> vec2ui;
-    typedef vec<std::uint32_t, 3> vec3ui;
-    typedef vec<std::uint32_t, 4> vec4ui;
+    using vec2ui = vec<blt::u32, 2>;
+    using vec3ui = vec<blt::u32, 3>;
+    using vec4ui = vec<blt::u32, 4>;
     
-    typedef vec<std::uint64_t, 2> vec2ul;
-    typedef vec<std::uint64_t, 3> vec3ul;
-    typedef vec<std::uint64_t, 4> vec4ul;
+    using vec2ul = vec<blt::u64, 2>;
+    using vec3ul = vec<blt::u64, 3>;
+    using vec4ul = vec<blt::u64, 4>;
     
-    typedef vec2f vec2;
-    typedef vec3f vec3;
-    typedef vec4f vec4;
+    using vec2 = vec2f;
+    using vec3 = vec3f;
+    using vec4 = vec4f;
     
     namespace vec_algorithm
     {

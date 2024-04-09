@@ -91,7 +91,7 @@ namespace blt::string
 #endif
     }
     
-    static inline BLT_CPP20_CONSTEXPR bool ends_with(std::string_view string, std::string_view search);
+    BLT_CPP20_CONSTEXPR bool ends_with(std::string_view string, std::string_view search);
     
     static inline BLT_CPP20_CONSTEXPR bool ends_with(std::string_view string, char search)
     {

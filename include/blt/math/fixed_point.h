@@ -25,8 +25,13 @@
 //#define BLT_DEBUG_NO_INLINE BLT_ATTRIB_NO_INLINE
 #define BLT_DEBUG_NO_INLINE
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 namespace blt
 {
+    
     struct fp64
     {
         private:
@@ -247,5 +252,9 @@ namespace blt
     // log2(e)
     static constexpr const inline fp64 FP64_LOG2E = fp64::from_f64(1.4426950408889634074f);
 }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #endif //BLT_FIXED_POINT_H
