@@ -234,12 +234,12 @@ namespace blt
             
             inline auto* data()
             {
-                return elements;
+                return elements.data();
             }
             
             [[nodiscard]] inline const auto* data() const
             {
-                return elements;
+                return elements.data();
             }
             
             auto begin()
