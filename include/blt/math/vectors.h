@@ -232,6 +232,16 @@ namespace blt
                 return (du / dv) * v;
             }
             
+            inline auto* data()
+            {
+                return elements;
+            }
+            
+            [[nodiscard]] inline const auto* data() const
+            {
+                return elements;
+            }
+            
             auto begin()
             {
                 return elements.begin();
