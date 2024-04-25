@@ -17,6 +17,7 @@
     #endif
 #else
     #include <chrono>
+    using suseconds_t = int;
 #endif
 
 #include <cstdint>
