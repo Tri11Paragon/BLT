@@ -22,12 +22,11 @@
 #if defined(__AVX__) || defined(__AVX2__)
     
     #include <immintrin.h>
+    #include <xmmintrin.h>
 
 #else
     //#warning AVX is not available.
 #endif
-
-#include <xmmintrin.h>
 
 namespace blt
 {
