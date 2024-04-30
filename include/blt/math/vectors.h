@@ -415,6 +415,14 @@ namespace blt
     using vec3 = vec3f;
     using vec4 = vec4f;
     
+    using color4 = vec4;
+    using color3 = vec3;
+    
+    color4 make_color(float r, float g, float b)
+    {
+        return color4{r, g, b};
+    }
+    
     namespace vec_algorithm
     {
         static inline void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3)
