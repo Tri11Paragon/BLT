@@ -418,7 +418,7 @@ namespace blt
     using color4 = vec4;
     using color3 = vec3;
     
-    color4 make_color(float r, float g, float b)
+    inline color4 make_color(float r, float g, float b)
     {
         return color4{r, g, b};
     }
