@@ -420,7 +420,7 @@ namespace blt
     
     inline color4 make_color(float r, float g, float b)
     {
-        return color4{r, g, b};
+        return color4{r, g, b, 1.0f};
     }
     
     namespace vec_algorithm
