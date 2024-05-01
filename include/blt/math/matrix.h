@@ -9,6 +9,7 @@
 
 #include <blt/math/vectors.h>
 #include <cstring>
+#include <type_traits>
 
 #ifndef M_PI
 // MSVC does not have M_PI
@@ -20,14 +21,16 @@ namespace blt
     
     class mat4x4
     {
+            static_assert(std::is_trivially_copyable_v<blt::vec4> && "Vector must be trivially copyable!");
         protected:
             // 4x4 = 16
-            union dataType
-            {
-                float single[16];
-                float dim[4][4];
-            };
-            dataType data{};
+//            union dataType
+//            {
+//                float single[16];
+//                float dim[4][4];
+//                blt::vec4 v[4];
+//            };
+            blt::vec4 data[4];
             
             friend mat4x4 operator+(const mat4x4& left, const mat4x4& right);
             
@@ -44,10 +47,20 @@ namespace blt
             friend mat4x4 operator/(float c, const mat4x4& v);
         
         public:
+            static mat4x4 make_empty()
+            {
+                mat4x4 ret;
+                ret.m00(0);
+                ret.m11(0);
+                ret.m22(0);
+                ret.m33(0);
+                return ret;
+            }
+            
             mat4x4()
             {
-                for (float& i : data.single)
-                    i = 0;
+//                for (float& i : data.single)
+//                    i = 0;
                 // set identity matrix default
                 m00(1);
                 m11(1);
@@ -58,17 +71,21 @@ namespace blt
             mat4x4(const blt::vec4& c1, const blt::vec4& c2, const blt::vec4& c3, const blt::vec4& c4)
             {
                 // dangerous?
-                std::memcpy(data.dim[0], c1.data(), 4 * sizeof(float));
-                std::memcpy(data.dim[1], c2.data(), 4 * sizeof(float));
-                std::memcpy(data.dim[2], c3.data(), 4 * sizeof(float));
-                std::memcpy(data.dim[3], c4.data(), 4 * sizeof(float));
+//                std::memcpy(data.dim[0], c1.data(), 4 * sizeof(float));
+//                std::memcpy(data.dim[1], c2.data(), 4 * sizeof(float));
+//                std::memcpy(data.dim[2], c3.data(), 4 * sizeof(float));
+//                std::memcpy(data.dim[3], c4.data(), 4 * sizeof(float));
+                data[0] = c1;
+                data[1] = c2;
+                data[2] = c3;
+                data[3] = c4;
             }
             
             mat4x4(const mat4x4& mat)
             {
-                for (int i = 0; i < 16; i++)
+                for (int i = 0; i < 4; i++)
                 {
-                    data.single[i] = mat.data.single[i];
+                    data[i] = mat.data[i];
                 }
             }
             
@@ -76,19 +93,24 @@ namespace blt
             {
                 if (&copy == this)
                     return *this;
-                for (int i = 0; i < 16; i++)
+                for (int i = 0; i < 4; i++)
                 {
-                    data.single[i] = copy.data.single[i];
+                    data[i] = copy.data[i];
                 }
                 return *this;
             }
             
             explicit mat4x4(const float dat[16])
             {
-                for (int i = 0; i < 16; i++)
-                {
-                    data.single[i] = dat[i];
-                }
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        data[i][j] = dat[j + i * 4];
+            }
+            
+            explicit mat4x4(const blt::vec4 dat[4])
+            {
+                for (int i = 0; i < 4; i++)
+                    data[i] = dat[i];
             }
             
             inline mat4x4& translate(float x, float y, float z)
@@ -203,63 +225,80 @@ namespace blt
             
             [[nodiscard]] mat4x4 adjugate() const
             {
-                mat4x4 ad;
-                ad.w11(w22() * w33() * w44() + w23() * w34() * w42() + w24() * w32() * w43()
-                       - w24() * w33() * w42() - w23() * w32() * w44() - w22() * w34() * w43());
-                ad.w12(w21() * w33() * w44() + w23() * w34() * w41() + w24() * w31() * w43()
-                       - w24() * w33() * w41() - w23() * w31() * w44() - w21() * w34() * w43());
-                ad.w13(w21() * w32() * w44() + w22() * w34() * w41() + w24() * w31() * w42()
-                       - w24() * w32() * w41() - w22() * w31() * w44() - w21() * w34() * w42());
-                ad.w14(w21() * w32() * w43() + w22() * w33() * w41() + w23() * w31() * w42()
-                       - w23() * w32() * w41() - w22() * w31() * w43() - w21() * w33() * w42());
+                auto& m = *this;
+                auto Coef00 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+                auto Coef02 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
+                auto Coef03 = m[1][2] * m[2][3] - m[2][2] * m[1][3];
                 
-                ad.w21(w12() * w33() * w44() + w13() * w34() * w42() + w14() * w32() * w43()
-                       - w14() * w33() * w42() - w13() * w32() * w44() - w12() * w34() * w43());
-                ad.w22(w11() * w33() * w44() + w13() * w34() * w41() + w14() * w31() * w43()
-                       - w14() * w33() * w41() - w13() * w31() * w44() - w11() * w34() * w43());
-                ad.w23(w11() * w32() * w44() + w12() * w34() * w41() + w14() * w31() * w42()
-                       - w14() * w32() * w41() - w12() * w31() * w44() - w11() * w34() * w42());
-                ad.w24(w11() * w32() * w43() + w12() * w33() * w41() + w13() * w31() * w42()
-                       - w13() * w32() * w41() - w12() * w31() * w43() - w11() * w33() * w42());
+                auto Coef04 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
+                auto Coef06 = m[1][1] * m[3][3] - m[3][1] * m[1][3];
+                auto Coef07 = m[1][1] * m[2][3] - m[2][1] * m[1][3];
                 
-                ad.w31(w12() * w23() * w44() + w13() * w24() * w42() + w14() * w22() * w43()
-                       - w14() * w23() * w42() - w13() * w22() * w44() - w12() * w24() * w43());
-                ad.w32(w11() * w23() * w44() + w13() * w24() * w41() + w14() * w21() * w43()
-                       - w14() * w23() * w41() - w13() * w21() * w44() - w11() * w24() * w43());
-                ad.w33(w11() * w22() * w44() + w12() * w24() * w41() + w14() * w21() * w42()
-                       - w14() * w22() * w41() - w12() * w21() * w44() - w11() * w24() * w42());
-                ad.w34(w11() * w22() * w43() + w12() * w23() * w41() + w13() * w21() * w42()
-                       - w13() * w22() * w41() - w12() * w21() * w43() - w11() * w23() * w42());
+                auto Coef08 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
+                auto Coef10 = m[1][1] * m[3][2] - m[3][1] * m[1][2];
+                auto Coef11 = m[1][1] * m[2][2] - m[2][1] * m[1][2];
                 
-                ad.w41(w12() * w23() * w34() + w13() * w24() * w32() + w14() * w22() * w33()
-                       - w14() * w23() * w32() - w13() * w22() * w34() - w12() * w24() * w33());
-                ad.w42(w11() * w23() * w34() + w13() * w24() * w31() + w14() * w21() * w33()
-                       - w14() * w23() * w31() - w13() * w21() * w34() - w11() * w24() * w33());
-                ad.w43(w11() * w22() * w34() + w12() * w24() * w31() + w14() * w21() * w32()
-                       - w14() * w22() * w31() - w12() * w21() * w34() - w11() * w24() * w32());
-                ad.w44(w11() * w22() * w33() + w12() * w23() * w31() + w13() * w21() * w32()
-                       - w13() * w22() * w31() - w12() * w21() * w33() - w11() * w23() * w32());
+                auto Coef12 = m[2][0] * m[3][3] - m[3][0] * m[2][3];
+                auto Coef14 = m[1][0] * m[3][3] - m[3][0] * m[1][3];
+                auto Coef15 = m[1][0] * m[2][3] - m[2][0] * m[1][3];
                 
-                for (int i = 1; i <= 4; i++)
-                {
-                    for (int j = 1; j <= 4; j++)
-                    {
-                        auto v = static_cast<float>(std::pow(-1, j + i));
-                        ad.w(j, i, v * ad.w(j, i));
-                    }
-                }
-                return ad;
+                auto Coef16 = m[2][0] * m[3][2] - m[3][0] * m[2][2];
+                auto Coef18 = m[1][0] * m[3][2] - m[3][0] * m[1][2];
+                auto Coef19 = m[1][0] * m[2][2] - m[2][0] * m[1][2];
+                
+                auto Coef20 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+                auto Coef22 = m[1][0] * m[3][1] - m[3][0] * m[1][1];
+                auto Coef23 = m[1][0] * m[2][1] - m[2][0] * m[1][1];
+                
+                blt::vec4 Fac0(Coef00, Coef00, Coef02, Coef03);
+                blt::vec4 Fac1(Coef04, Coef04, Coef06, Coef07);
+                blt::vec4 Fac2(Coef08, Coef08, Coef10, Coef11);
+                blt::vec4 Fac3(Coef12, Coef12, Coef14, Coef15);
+                blt::vec4 Fac4(Coef16, Coef16, Coef18, Coef19);
+                blt::vec4 Fac5(Coef20, Coef20, Coef22, Coef23);
+                
+                blt::vec4 Vec0(m[1][0], m[0][0], m[0][0], m[0][0]);
+                blt::vec4 Vec1(m[1][1], m[0][1], m[0][1], m[0][1]);
+                blt::vec4 Vec2(m[1][2], m[0][2], m[0][2], m[0][2]);
+                blt::vec4 Vec3(m[1][3], m[0][3], m[0][3], m[0][3]);
+                
+                blt::vec4 Inv0(Vec1 * Fac0 - Vec2 * Fac1 + Vec3 * Fac2);
+                blt::vec4 Inv1(Vec0 * Fac0 - Vec2 * Fac3 + Vec3 * Fac4);
+                blt::vec4 Inv2(Vec0 * Fac1 - Vec1 * Fac3 + Vec3 * Fac5);
+                blt::vec4 Inv3(Vec0 * Fac2 - Vec1 * Fac4 + Vec2 * Fac5);
+                
+                blt::vec4 SignA(+1, -1, +1, -1);
+                blt::vec4 SignB(-1, +1, -1, +1);
+                return mat4x4(Inv0 * SignA, Inv1 * SignB, Inv2 * SignA, Inv3 * SignB);
             }
             
             [[nodiscard]] mat4x4 inverse() const
             {
-                auto ad = adjugate();
-                auto d = 1 / determinant();
-                return d * ad;
+                auto& m = *this;
+                auto Inverse = adjugate();
+                
+                blt::vec4 Row0(Inverse[0][0], Inverse[1][0], Inverse[2][0], Inverse[3][0]);
+                
+                blt::vec4 Dot0(m[0] * Row0);
+                auto Dot1 = (Dot0.x() + Dot0.y()) + (Dot0.z() + Dot0.w());
+                
+                auto OneOverDeterminant = 1.0f / Dot1;
+                
+                return Inverse * OneOverDeterminant;
+            }
+            
+            inline const blt::vec4& operator[](int column) const
+            {
+                return data[column];
+            }
+            
+            inline blt::vec4& operator[](int column)
+            {
+                return data[column];
             }
             
             [[nodiscard]] inline float m(int row, int column) const
-            { return data.single[row + column * 4]; };
+            { return data[column][row]; };
             
             [[nodiscard]] inline float m00() const
             { return m(0, 0); }
@@ -310,7 +349,7 @@ namespace blt
             { return m(3, 3); }
             
             inline float m(int row, int column, float value)
-            { return data.single[row + column * 4] = value; };
+            { return data[column][row] = value; };
             
             inline float m00(float d)
             { return m(0, 0, d); }
@@ -361,7 +400,7 @@ namespace blt
             { return m(3, 3, d); }
             
             [[nodiscard]] inline float w(int row, int column) const
-            { return data.single[(row - 1) + (column - 1) * 4]; };
+            { return data[column - 1][row - 1]; };
             
             [[nodiscard]] inline float w11() const
             { return m(0, 0); }
@@ -412,7 +451,7 @@ namespace blt
             { return m(3, 3); }
             
             inline float w(int row, int column, float value)
-            { return data.single[(row - 1) + (column - 1) * 4] = value; };
+            { return data[column - 1][row - 1] = value; };
             
             inline float w11(float d)
             { return m(0, 0, d); }
@@ -463,25 +502,25 @@ namespace blt
             { return m(3, 3, d); }
             
             inline float* ptr()
-            { return data.single; }
+            { return data[0].data(); }
     };
     
     // adds the two mat4x4 left and right
     inline mat4x4 operator+(const mat4x4& left, const mat4x4& right)
     {
-        float data[16];
-        for (int i = 0; i < 16; i++)
-            data[i] = left.data.single[i] + right.data.single[i];
-        return mat4x4{data};
+        mat4x4 ret = left;
+        for (int i = 0; i < 4; i++)
+            ret[i] += right.data[i];
+        return ret;
     }
     
     // subtracts the right mat4x4 from the left.
     inline mat4x4 operator-(const mat4x4& left, const mat4x4& right)
     {
-        float data[16];
-        for (int i = 0; i < 16; i++)
-            data[i] = left.data.single[i] - right.data.single[i];
-        return mat4x4{data};
+        mat4x4 ret = left;
+        for (int i = 0; i < 4; i++)
+            ret[i] -= right.data[i];
+        return ret;
     }
     
     // since matrices are made identity by default, we need to create the result collector matrix without identity
@@ -494,7 +533,7 @@ namespace blt
     // multiples the left with the right
     inline mat4x4 operator*(const mat4x4& left, const mat4x4& right)
     {
-        mat4x4 mat{emptyMatrix};
+        mat4x4 mat = mat4x4::make_empty();
         
         // TODO: check avx with this??
         for (int i = 0; i < 4; i++)
@@ -542,9 +581,9 @@ namespace blt
     {
         mat4x4 mat{};
         
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 4; i++)
         {
-            mat.data.single[i] = c * v.data.single[i];
+            mat.data[i] = c * v.data[i];
         }
         
         return mat;
@@ -555,9 +594,9 @@ namespace blt
     {
         mat4x4 mat{};
         
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 4; i++)
         {
-            mat.data.single[i] = v.data.single[i] * c;
+            mat.data[i] = v.data[i] * c;
         }
         
         return mat;
@@ -568,9 +607,9 @@ namespace blt
     {
         mat4x4 mat{};
         
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 4; i++)
         {
-            mat.data.single[i] = v.data.single[i] / c;
+            mat.data[i] = v.data[i] / c;
         }
         
         return mat;
@@ -581,9 +620,10 @@ namespace blt
     {
         mat4x4 mat{};
         
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 4; i++)
         {
-            mat.data.single[i] = c / v.data.single[i];
+            for (int j = 0; j < 4; j++)
+                mat.data[i][j] = c / v.data[i][j];
         }
         
         return mat;
@@ -594,7 +634,7 @@ namespace blt
     // http://www.songho.ca/opengl/gl_projectionmatrix.html
     static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far)
     {
-        mat4x4 perspectiveMat4x4{emptyMatrix};
+        mat4x4 perspectiveMat4x4 = mat4x4::make_empty();
         
         float halfTan = tanf(fov * 0.5f * (float) M_PI / 180.0f);
         perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));
@@ -608,7 +648,7 @@ namespace blt
     
     static inline mat4x4 ortho(float left, float right, float top, float bottom, float near, float far)
     {
-        mat4x4 perspectiveMat4x4{emptyMatrix};
+        mat4x4 perspectiveMat4x4 = mat4x4::make_empty();
         
         perspectiveMat4x4.m00(2 / (right - left));
         perspectiveMat4x4.m11(2 / (top - bottom));
