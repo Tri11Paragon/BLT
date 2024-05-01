@@ -24,7 +24,7 @@ void run_logging() {
 //    blt::logging::trace << "Seeee\n Super\n";
     
     std::string hello = "superSexyMax";
-    std::cout << "String starts with: " << blt::string::contains(hello, "superSexyMaxE") << "\n";
+    std::cout << "String starts with: " << blt::string::contains(main_graph, "superSexyMaxE") << "\n";
 }
 
 #endif //BLT_TESTS_LOGGING_H
