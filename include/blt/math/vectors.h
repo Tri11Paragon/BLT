@@ -423,6 +423,52 @@ namespace blt
         return color4{r, g, b, 1.0f};
     }
     
+    template<typename ValueType, u32 size>
+    inline blt::vec<ValueType, 2> make_vec2(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    {
+        if constexpr (size >= 2)
+        {
+            return blt::vec<ValueType, 2>(t.x(), t.y());
+        } else
+        {
+            return blt::vec<ValueType, 2>(t.x(), fill);
+        }
+    }
+    
+    template<typename ValueType, u32 size>
+    inline blt::vec<ValueType, 3> make_vec3(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    {
+        if constexpr (size >= 3)
+        {
+            return blt::vec<ValueType, 3>(t.x(), t.y(), t.z());
+        } else
+        {
+            blt::vec<ValueType, 3> ret;
+            for (size_t i = 0; i < size; i++)
+                ret[i] = t[i];
+            for (size_t i = size; i < 3; i++)
+                ret[i] = fill;
+            return ret;
+        }
+    }
+    
+    template<typename ValueType, u32 size>
+    inline blt::vec<ValueType, 4> make_vec4(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    {
+        if constexpr (size >= 4)
+        {
+            return blt::vec<ValueType, 4>(t.x(), t.y(), t.z(), t.w());
+        } else
+        {
+            blt::vec<ValueType, 4> ret;
+            for (size_t i = 0; i < size; i++)
+                ret[i] = t[i];
+            for (size_t i = size; i < 4; i++)
+                ret[i] = fill;
+            return ret;
+        }
+    }
+    
     namespace vec_algorithm
     {
         static inline void findOrthogonalBasis(const vec3& v, vec3& v1, vec3& v2, vec3& v3)
