@@ -291,39 +291,39 @@ namespace blt
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator+(const vec<T, size>& left, T right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator+(const vec<T, size>& left, G right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + right;
+            initializer[i] = left[i] + static_cast<T>(right);
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator-(const vec<T, size>& left, T right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator-(const vec<T, size>& left, G right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + right;
+            initializer[i] = left[i] + static_cast<T>(right);
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator+(T f, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator+(G left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = f + right[i];
+            initializer[i] = static_cast<T>(left) + right[i];
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator-(T f, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator-(G left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = f - right[i];
+            initializer[i] = static_cast<T>(left) - right[i];
         return initializer;
     }
     
@@ -336,39 +336,39 @@ namespace blt
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator*(const vec<T, size>& left, T right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator*(const vec<T, size>& left, G right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] * right;
+            initializer[i] = left[i] * static_cast<T>(right);
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator*(T f, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator*(G left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = f * right[i];
+            initializer[i] = static_cast<T>(left) * right[i];
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator/(const vec<T, size>& left, T right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator/(const vec<T, size>& left, G right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] / right;
+            initializer[i] = left[i] / static_cast<T>(right);
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator/(T left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr vec<T, size> operator/(G left, const vec<T, size>& right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left / right[i];
+            initializer[i] = static_cast<T>(left) / right[i];
         return initializer;
     }
     
