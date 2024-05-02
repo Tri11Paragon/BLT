@@ -292,20 +292,20 @@ namespace blt
     }
     
     template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator+(const vec<T, size>& left, T f)
+    inline constexpr vec<T, size> operator+(const vec<T, size>& left, T right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + f;
+            initializer[i] = left[i] + right;
         return initializer;
     }
     
     template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator-(const vec<T, size>& left, T f)
+    inline constexpr vec<T, size> operator-(const vec<T, size>& left, T right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + f;
+            initializer[i] = left[i] + right;
         return initializer;
     }
     
@@ -337,11 +337,11 @@ namespace blt
     }
     
     template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator*(const vec<T, size>& left, T f)
+    inline constexpr vec<T, size> operator*(const vec<T, size>& left, T right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] * f;
+            initializer[i] = left[i] * right;
         return initializer;
     }
     
@@ -355,11 +355,20 @@ namespace blt
     }
     
     template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator/(const vec<T, size>& left, T f)
+    inline constexpr vec<T, size> operator/(const vec<T, size>& left, T right)
     {
         vec<T, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] / f;
+            initializer[i] = left[i] / right;
+        return initializer;
+    }
+    
+    template<typename T, blt::u32 size>
+    inline constexpr vec<T, size> operator/(T left, const vec<T, size>& right)
+    {
+        vec<T, size> initializer{};
+        for (blt::u32 i = 0; i < size; i++)
+            initializer[i] = left / right[i];
         return initializer;
     }
     
