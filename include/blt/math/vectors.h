@@ -28,13 +28,12 @@ namespace blt
     }
     
     template<typename T, blt::u32 size>
-    struct vec
-    {
+    struct vec {
             static_assert(std::is_arithmetic_v<T> && "blt::vec must be created using an arithmetic type!");
         private:
             std::array<T, size> elements;
         public:
-            vec()
+            constexpr vec()
             {
                 for (auto& v : elements)
                     v = static_cast<T>(0);
@@ -46,13 +45,11 @@ namespace blt
              * @param args list of args
              */
             template<typename U, std::enable_if_t<std::is_same_v<T, U> || std::is_convertible_v<U, T>, bool> = true>
-            vec(U t, std::initializer_list<U> args)
+            constexpr vec(U t, std::initializer_list<U> args): elements()
             {
                 auto b = args.begin();
-                for (auto& v : elements)
-                {
-                    if (b == args.end())
-                    {
+                for (auto& v : elements) {
+                    if (b == args.end()) {
                         v = t;
                         continue;
                     }
@@ -66,59 +63,65 @@ namespace blt
              * @param args
              */
             template<typename U, std::enable_if_t<std::is_same_v<T, U> || std::is_convertible_v<U, T>, bool> = true>
-            vec(std::initializer_list<U> args): vec(U(), args)
+            constexpr vec(std::initializer_list<U> args): vec(U(), args)
             {}
             
             template<typename... Args>
-            explicit vec(Args... args): vec(std::array<T, size>{static_cast<T>(args)...})
+            constexpr explicit vec(Args... args): vec(std::array<T, size>{static_cast<T>(args)...})
             {}
             
-            explicit vec(T t)
+            constexpr explicit vec(T t)
             {
                 for (auto& v : elements)
                     v = t;
             }
             
-            explicit vec(const T elem[size])
+            constexpr explicit vec(const T elem[size])
             {
                 for (size_t i = 0; i < size; i++)
                     elements[i] = elem[i];
             }
             
-            explicit vec(std::array<T, size> elem)
+            constexpr explicit vec(std::array<T, size> elem): elements(elem)
+            {}
+            
+            template<typename G, size_t base_size, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
+            constexpr explicit vec(std::array<G, base_size> el): elements()
             {
-                auto b = elem.begin();
-                for (auto& v : elements)
+                auto b = el.begin();
+                auto m = elements.begin();
+                while (b != el.end() && m != elements.end())
                 {
-                    v = *b;
+                    *m = *b;
+                    ++m;
                     ++b;
                 }
             }
             
-            [[nodiscard]] inline T x() const
+            [[nodiscard]] constexpr inline T x() const
             {
                 return elements[0];
             }
             
-            [[nodiscard]] inline T y() const
+            [[nodiscard]] constexpr inline T y() const
             {
                 static_assert(size > 1);
                 return elements[1];
             }
             
-            [[nodiscard]] inline T z() const
+            [[nodiscard]] constexpr inline T z() const
             {
                 static_assert(size > 2);
                 return elements[2];
             }
             
-            [[nodiscard]] inline T w() const
+            [[nodiscard]] constexpr inline T w() const
             {
                 static_assert(size > 3);
                 return elements[3];
             }
             
-            [[nodiscard]] inline T magnitude() const
+            [[nodiscard]] constexpr inline T magnitude() const
             {
                 T total = 0;
                 for (blt::u32 i = 0; i < size; i++)
@@ -126,7 +129,7 @@ namespace blt
                 return std::sqrt(total);
             }
             
-            [[nodiscard]] inline vec<T, size> normalize() const
+            [[nodiscard]] constexpr inline vec<T, size> normalize() const
             {
                 T mag = this->magnitude();
                 if (mag == 0)
@@ -134,24 +137,24 @@ namespace blt
                 return *this / mag;
             }
             
-            inline T& operator[](int index)
+            constexpr inline T& operator[](int index)
             {
                 return elements[index];
             }
             
-            inline T operator[](int index) const
+            constexpr inline T operator[](int index) const
             {
                 return elements[index];
             }
             
-            inline vec<T, size>& operator=(T v)
+            constexpr inline vec<T, size>& operator=(T v)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] = v;
                 return *this;
             }
             
-            inline vec<T, size> operator-()
+            constexpr inline vec<T, size> operator-()
             {
                 vec<T, size> initializer{};
                 for (blt::u32 i = 0; i < size; i++)
@@ -159,42 +162,42 @@ namespace blt
                 return vec<T, size>{initializer};
             }
             
-            inline vec<T, size>& operator+=(const vec<T, size>& other)
+            constexpr inline vec<T, size>& operator+=(const vec<T, size>& other)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] += other[i];
                 return *this;
             }
             
-            inline vec<T, size>& operator*=(const vec<T, size>& other)
+            constexpr inline vec<T, size>& operator*=(const vec<T, size>& other)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] *= other[i];
                 return *this;
             }
             
-            inline vec<T, size>& operator+=(T f)
+            constexpr inline vec<T, size>& operator+=(T f)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] += f;
                 return *this;
             }
             
-            inline vec<T, size>& operator*=(T f)
+            constexpr inline vec<T, size>& operator*=(T f)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] *= f;
                 return *this;
             }
             
-            inline vec<T, size>& operator-=(const vec<T, size>& other)
+            constexpr inline vec<T, size>& operator-=(const vec<T, size>& other)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] -= other[i];
                 return *this;
             }
             
-            inline vec<T, size>& operator-=(T f)
+            constexpr inline vec<T, size>& operator-=(T f)
             {
                 for (blt::u32 i = 0; i < size; i++)
                     elements[i] -= f;
@@ -204,7 +207,7 @@ namespace blt
             /**
              * performs the dot product of left * right
              */
-            static inline constexpr T dot(const vec<T, size>& left, const vec<T, size>& right)
+            constexpr static inline T dot(const vec<T, size>& left, const vec<T, size>& right)
             {
                 T dot = 0;
                 for (blt::u32 i = 0; i < size; i++)
@@ -212,7 +215,7 @@ namespace blt
                 return dot;
             }
             
-            static inline constexpr vec<T, size> cross(
+            constexpr static inline vec<T, size> cross(
                     const vec<T, size>& left, const vec<T, size>& right
                                                       )
             {
@@ -223,7 +226,7 @@ namespace blt
                         left.x() * right.y() - left.y() * right.x()};
             }
             
-            static inline constexpr vec<T, size> project(
+            constexpr static inline vec<T, size> project(
                     const vec<T, size>& u, const vec<T, size>& v
                                                         )
             {
@@ -232,42 +235,42 @@ namespace blt
                 return (du / dv) * v;
             }
             
-            inline auto* data()
+            constexpr inline auto* data()
             {
                 return elements.data();
             }
             
-            [[nodiscard]] inline const auto* data() const
+            [[nodiscard]] constexpr inline const auto* data() const
             {
                 return elements.data();
             }
             
-            auto begin()
+            constexpr auto begin()
             {
                 return elements.begin();
             }
             
-            auto end()
+            constexpr auto end()
             {
                 return elements.end();
             }
             
-            auto rbegin()
+            constexpr auto rbegin()
             {
                 return elements.rbegin();
             }
             
-            auto rend()
+            constexpr auto rend()
             {
                 return elements.rend();
             }
             
-            [[nodiscard]] auto cbegin() const
+            [[nodiscard]] constexpr auto cbegin() const
             {
                 return elements.cbegin();
             }
             
-            [[nodiscard]] auto cend() const
+            [[nodiscard]] constexpr auto cend() const
             {
                 return elements.cend();
             }
@@ -435,11 +438,9 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 2> make_vec2(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 2)
-        {
+        if constexpr (size >= 2) {
             return blt::vec<ValueType, 2>(t.x(), t.y());
-        } else
-        {
+        } else {
             return blt::vec<ValueType, 2>(t.x(), fill);
         }
     }
@@ -447,11 +448,9 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 3> make_vec3(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 3)
-        {
+        if constexpr (size >= 3) {
             return blt::vec<ValueType, 3>(t.x(), t.y(), t.z());
-        } else
-        {
+        } else {
             blt::vec<ValueType, 3> ret;
             for (size_t i = 0; i < size; i++)
                 ret[i] = t[i];
@@ -464,11 +463,9 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 4> make_vec4(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 4)
-        {
+        if constexpr (size >= 4) {
             return blt::vec<ValueType, 4>(t.x(), t.y(), t.z(), t.w());
-        } else
-        {
+        } else {
             blt::vec<ValueType, 4> ret;
             for (size_t i = 0; i < size; i++)
                 ret[i] = t[i];
@@ -485,8 +482,7 @@ namespace blt
             v1 = v.normalize();
             
             vec3 arbitraryVector{1, 0, 0};
-            if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9)
-            {
+            if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9) {
                 arbitraryVector = vec3{0, 1, 0};
             }
             
@@ -505,12 +501,10 @@ namespace blt
             basis[0] = basis[0].normalize();
             
             // iterate over the rest of the vectors
-            for (int i = 1; i < n; ++i)
-            {
+            for (int i = 1; i < n; ++i) {
                 // subtract the projections of the vector onto the previous basis vectors
                 vec3 new_vector = vectors[i];
-                for (int j = 0; j < i; ++j)
-                {
+                for (int j = 0; j < i; ++j) {
                     float projection = vec3::dot(vectors[i], basis[j]);
                     new_vector[0] -= projection * basis[j].x();
                     new_vector[1] -= projection * basis[j].y();
