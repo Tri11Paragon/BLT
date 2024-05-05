@@ -21,7 +21,7 @@ namespace blt
 /**
  * Prints error with stack trace if assertion fails.  Does not stop execution.
  */
-#define blt_assert(expr) do {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, nullptr, __FILE__, __LINE__) } while (0)
+#define blt_assert(expr) do {static_cast<bool>(expr) ? void(0) : blt::b_assert_failed(#expr, nullptr, __FILE__, __LINE__); } while (0)
 /**
 * Prints error with stack trace if assertion fails. Will print fail_message after
 * the assertion expression but before the stack trace. Does not stop execution.
