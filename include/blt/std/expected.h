@@ -75,7 +75,7 @@ namespace blt
             }
             
             template<typename E2>
-            inline friend constexpr bool operator==(const unexpected& x, const unexpected <E2>& y)
+            inline friend constexpr bool operator==(const unexpected& x, const unexpected<E2>& y)
             {
                 return x.error() == y.error();
             }
@@ -122,31 +122,42 @@ namespace blt
             template<typename U, typename G>
             inline static constexpr bool eight_insanity_v =
                     std::is_constructible_v<T, expected<U, G>&> || std::is_constructible_v<T, expected<U, G>> ||
-            std::is_constructible_v<T, const expected<U, G>&> || std::is_constructible_v<T, const expected<U, G>> ||
-            std::is_convertible_v<expected<U, G>&, T> || std::is_convertible_v<expected<U, G>, T> ||
-            std::is_convertible_v<const expected<U, G>&, T> || std::is_convertible_v<const expected<U, G>, T>;
+                    std::is_constructible_v<T, const expected<U, G>&> || std::is_constructible_v<T, const expected<U, G>> ||
+                    std::is_convertible_v<expected<U, G>&, T> || std::is_convertible_v<expected<U, G>, T> ||
+                    std::is_convertible_v<const expected<U, G>&, T> || std::is_convertible_v<const expected<U, G>, T>;
             
             template<typename U, typename G>
             inline static constexpr bool four_insanity_v =
                     std::is_constructible_v<unexpected<E>, expected<U, G>&> || std::is_constructible_v<unexpected<E>, expected<U, G>> ||
-            std::is_constructible_v<unexpected<E>, const expected<U, G>&> || std::is_constructible_v<unexpected<E>, const expected<U, G>>;
-        
+                    std::is_constructible_v<unexpected<E>, const expected<U, G>&> || std::is_constructible_v<unexpected<E>, const expected<U, G>>;
         public:
             template<typename std::enable_if_t<std::is_default_constructible_v<T>, bool> = true>
             constexpr expected() noexcept: v(T())
             {}
             
-            constexpr expected(const expected& copy) = delete;
-            
-            constexpr expected(expected&& move) noexcept: v(move ? std::move(*move) : std::move(move.error()))
+//            constexpr expected(const expected& copy) = delete;
+            constexpr expected(const expected<T, E, true>& copy): expected<T, E, true>::v(copy.v)
             {}
+            
+            expected& operator=(const expected& copy)
+            {
+                v = copy.v;
+            }
+            
+            constexpr expected(expected&& move) noexcept: v(std::move(move.v))
+            {}
+            
+            expected& operator=(expected&& move)
+            {
+                std::swap(v, move.v);
+            }
             
             /*
              * (4)...(5)
              */
             template<class U, class G, class UF = std::add_lvalue_reference_t<const U>, class GF = const G&, std::enable_if_t<
                     (!std::is_convertible_v<UF, T> || !std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
-                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+                    std::is_constructible_v<E, GF> && !eight_insanity_v<U, G> && !four_insanity_v<U, G>, bool> = true>
             
             constexpr explicit expected(const expected<U, G>& other):
                     v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
@@ -154,7 +165,7 @@ namespace blt
             
             template<class U, class G, class UF = U, class GF = G, std::enable_if_t<
                     (!std::is_convertible_v<UF, T> || !std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
-                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+                    std::is_constructible_v<E, GF> && !eight_insanity_v<U, G> && !four_insanity_v<U, G>, bool> = true>
             
             constexpr explicit expected(expected<U, G>&& other):
                     v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
@@ -162,7 +173,7 @@ namespace blt
             
             template<class U, class G, class UF = std::add_lvalue_reference_t<const U>, class GF = const G&, std::enable_if_t<
                     (std::is_convertible_v<UF, T> && std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
-                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+                    std::is_constructible_v<E, GF> && !eight_insanity_v<U, G> && !four_insanity_v<U, G>, bool> = true>
             
             constexpr expected(const expected<U, G>& other):
                     v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
@@ -170,7 +181,7 @@ namespace blt
             
             template<class U, class G, class UF = U, class GF = G, std::enable_if_t<
                     (std::is_convertible_v<UF, T> && std::is_convertible_v<GF, E>) && (std::is_constructible_v<T, UF> || std::is_void_v<U>) &&
-                    std::is_constructible_v<E, GF> && !eight_insanity_v < U, G>&& !four_insanity_v<U, G>, bool> = true>
+                    std::is_constructible_v<E, GF> && !eight_insanity_v<U, G> && !four_insanity_v<U, G>, bool> = true>
             
             constexpr expected(expected<U, G>&& other):
                     v(other.has_value() ? std::forward<UF>(*other) : std::forward<GF>(other.error()))
@@ -182,22 +193,22 @@ namespace blt
              */
             
             template<class U = T, std::enable_if_t<!std::is_convertible_v<U, T> &&
-            !std::is_same_v<remove_cvref_t<T>, void> &&
-            !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
-            !std::is_same_v<expected, remove_cvref_t<U>> &&
-                    std::is_constructible_v<T, U> &&
-            !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
-            !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
+                                                   !std::is_same_v<remove_cvref_t<T>, void> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
+                                                   !std::is_same_v<expected, remove_cvref_t<U>> &&
+                                                   std::is_constructible_v<T, U> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
             constexpr explicit expected(U&& v): v(T(std::forward<U>(v)))
             {}
             
             template<class U = T, std::enable_if_t<std::is_convertible_v<U, T> &&
-            !std::is_same_v<remove_cvref_t<T>, void> &&
-            !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
-            !std::is_same_v<expected, remove_cvref_t<U>> &&
-                    std::is_constructible_v<T, U> &&
-            !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
-            !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
+                                                   !std::is_same_v<remove_cvref_t<T>, void> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, std::in_place_t> &&
+                                                   !std::is_same_v<expected, remove_cvref_t<U>> &&
+                                                   std::is_constructible_v<T, U> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, unexpected<U>> &&
+                                                   !std::is_same_v<remove_cvref_t<U>, expected<T, E>>, bool> = true>
             constexpr expected(U&& v): v(T(std::forward<U>(v)))
             {}
             
@@ -251,10 +262,6 @@ namespace blt
             template<class U, class... Args, std::enable_if_t<std::is_constructible_v<E, std::initializer_list<U>&, Args...>, bool> = true>
             constexpr explicit expected(unexpect_t, std::initializer_list<U> il, Args&& ... args): v(E(il, std::forward<Args>(args)...))
             {}
-            
-            expected& operator=(const expected& copy) = delete;
-            
-            expected& operator=(expected&& move) = default;
             
             [[nodiscard]] constexpr explicit operator bool() const noexcept
             {
@@ -362,15 +369,14 @@ namespace blt
     };
     
     template<typename T, typename E>
-    class expected<T, E, true> : expected<T, E, false>
+    class expected<T, E, false> : public expected<T, E, true>
     {
         public:
-            using expected<T, E, false>::expected;
+            using expected<T, E, true>::expected;
             
-            constexpr expected(const expected& copy): expected<T, E, false>::v(copy ? *copy : copy.error())
-            {}
+            constexpr expected(const expected<T, E, false>& copy) = delete;
             
-            expected& operator=(const expected& copy) = default;
+            expected& operator=(const expected& copy) = delete;
     };
 }
 

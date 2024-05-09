@@ -1,6 +1,6 @@
+#pragma once
 /*
- *  <Short Description>
- *  Copyright (C) 2023  Brett Terpstra
+ *  Copyright (C) 2024  Brett Terpstra
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,30 +16,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef BLT_BLT_TESTS_H
-#define BLT_BLT_TESTS_H
-
-#include <memory_test.h>
-#include <blt/parse/argparse.h>
-#include <utility_test.h>
-#include <blt/std/utility.h>
-#include <templating_test.h>
+#ifndef BLT_TEMPLATING_TEST_H
+#define BLT_TEMPLATING_TEST_H
 
 namespace blt::test
 {
-    namespace data
-    {
-        void run();
-    }
-    
-    namespace sys
-    {
-    
-    }
-    
-    void vector_run();
-    void allocator();
-    void fixed_point();
+    void template_test();
 }
 
-#endif //BLT_BLT_TESTS_H
+#endif //BLT_TEMPLATING_TEST_H
