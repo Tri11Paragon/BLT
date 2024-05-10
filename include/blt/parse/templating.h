@@ -324,6 +324,7 @@ namespace blt
                 {
                     return if_func();
                 }
+                BLT_TRACE(next.token);
                 return blt::unexpected(template_parser_failure_t::UNKNOWN_STATEMENT_ERROR);
             }
             
@@ -374,7 +375,7 @@ namespace blt
                     if (!engine.contains(next.token))
                         return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
                     if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE ||
-                        consumer.next().type == template_token_t::CURLY_CLOSE)
+                        consumer.next().type == template_token_t::CURLY_CLOSE || consumer.next().type == template_token_t::PAR_CLOSE)
                     {
                         consumer.advance();
                         return engine.get(next.token);
