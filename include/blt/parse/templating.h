@@ -33,6 +33,8 @@
 namespace blt
 {
     
+    class template_engine_t;
+    
     template<typename Storage, typename Consumable>
     class template_consumer_base_t
     {
@@ -170,6 +172,7 @@ namespace blt
         STRING_EXPECTED_CONCAT,
         IF_EXPECTED_PAREN,
         BOOL_EXPECTED_PAREN,
+        BOOL_TYPE_NOT_FOUND,
         UNKNOWN_STATEMENT_ERROR,
         UNKNOWN_ERROR
     };
@@ -204,17 +207,26 @@ namespace blt
     class template_token_consumer_t : public template_consumer_base_t<std::vector<template_token_data_t>, template_token_data_t>
     {
         public:
-            explicit template_token_consumer_t(const std::vector<template_token_data_t>& statement): template_consumer_base_t(statement)
+            explicit template_token_consumer_t(const std::vector<template_token_data_t>& statement, std::string_view raw_string):
+                    template_consumer_base_t(statement), raw_string(raw_string)
             {}
             
-            std::string_view from_last(std::string_view raw_string)
+            void set_marker()
             {
-                if (current_index == 0)
-                    return "";
-                auto token = storage[getPreviousIndex()];
-                auto len = (&token.token.back() - &raw_string.front()) - last_read_index;
+                // when setting the marker, we need to go from the last closing brace
+                auto index = storage.begin() + getCurrentIndex();
+                while (index->type != template_token_t::CURLY_CLOSE)
+                    index--;
+                last_read_index = ((&index->token.front() + index->token.size()) - &raw_string[last_read_index]);
+            }
+            
+            std::string_view from_last()
+            {
+                if (!hasNext())
+                    return std::string_view(&raw_string[last_read_index], raw_string.size() - last_read_index);
+                auto token = storage[getCurrentIndex()];
+                auto len = ((&token.token.back()) - &raw_string[last_read_index]);
                 auto str = std::string_view(&raw_string[last_read_index], len);
-                last_read_index += len;
                 return str;
             }
             
@@ -224,7 +236,45 @@ namespace blt
             }
         
         private:
+            std::string_view raw_string;
             size_t last_read_index = 0;
+    };
+    
+    class template_engine_t
+    {
+        public:
+            inline std::string& operator[](const std::string& key)
+            {
+                return substitutions[key];
+            }
+            
+            inline std::string& operator[](std::string_view key)
+            {
+                return substitutions[key];
+            }
+            
+            inline template_engine_t& set(std::string_view key, std::string_view replacement)
+            {
+                substitutions[key] = replacement;
+                return *this;
+            }
+            
+            inline bool contains(std::string_view token)
+            {
+                return substitutions.contains(token);
+            }
+            
+            inline auto get(std::string_view token)
+            {
+                return evaluate(substitutions[token]);
+            }
+            
+            static blt::expected<std::vector<template_token_data_t>, template_tokenizer_failure_t> process_string(std::string_view str);
+            
+            blt::expected<std::string, template_parser_failure_t> evaluate(std::string_view str);
+        
+        private:
+            blt::hashmap_t<std::string, std::string> substitutions;
     };
     
     class template_parser_t
@@ -233,8 +283,8 @@ namespace blt
             using estring = blt::expected<std::string, template_parser_failure_t>;
             using ebool = blt::expected<bool, template_parser_failure_t>;
             
-            template_parser_t(blt::hashmap_t<std::string, std::string>& substitutions, template_token_consumer_t& consumer):
-                    substitutions(substitutions), consumer(consumer)
+            template_parser_t(template_engine_t& engine, template_token_consumer_t& consumer):
+                    engine(engine), consumer(consumer)
             {}
             
             estring parse()
@@ -321,25 +371,25 @@ namespace blt
                 auto next = consumer.consume();
                 if (next.type == template_token_t::STRING)
                 {
-                    BLT_TRACE(next.token);
-                    while (consumer.hasNext())
-                        BLT_TRACE(consumer.consume().token);
-                    if (!substitutions.contains(next.token))
+                    if (!engine.contains(next.token))
                         return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
-                    if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE)
+                    if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE ||
+                        consumer.next().type == template_token_t::CURLY_CLOSE)
                     {
                         consumer.advance();
-                        return substitutions[next.token];
+                        return engine.get(next.token);
                     }
                     
                     if (consumer.next().type != template_token_t::ADD)
                         return blt::unexpected(template_parser_failure_t::STRING_EXPECTED_CONCAT);
                     consumer.advance();
                     auto str = string();
-                    if (str)
-                        return substitutions[next.token] + str.value();
-                    else
+                    if (!str)
                         return str;
+                    auto sub = engine.get(next.token);
+                    if (!sub)
+                        return sub;
+                    return sub.value() + str.value();
                 } else
                 {
                     if (consumer.next().type == template_token_t::SEMI)
@@ -364,83 +414,147 @@ namespace blt
                     auto b = bool_statement();
                     if (consumer.consume().type != template_token_t::PAR_CLOSE)
                         return blt::unexpected(template_parser_failure_t::BOOL_EXPECTED_PAREN);
+                    consumer.advance();
                     return b;
                 }
                 return bool_expression();
             }
             
-            ebool bool_expression()
+            ebool bool_value()
             {
+                bool b1;
                 auto next = consumer.next();
                 if (next.type == template_token_t::PAR_OPEN)
-                    return bool_statement();
-                consumer.advance();
-                if (next.type == template_token_t::NOT)
                 {
                     auto b = bool_statement();
-                    if (b)
-                        return !b.value();
-                    else
+                    if (!b)
                         return b;
-                } else if (next.type == template_token_t::STRING)
+                    b1 = b.value();
+                } else
                 {
-                    auto bool_val = next.token.empty();
+                    bool invert = false;
+                    // prefixes
+                    if (next.type == template_token_t::NOT)
+                    {
+                        invert = true;
+                        consumer.advance();
+                    }
+                    if (consumer.next().type == template_token_t::PAR_OPEN)
+                    {
+                        auto b = bool_statement();
+                        if (!b)
+                            return b;
+                        b1 = b.value();
+                    } else
+                    {
+                        auto b = statement();
+                        if (!b)
+                            return blt::unexpected(b.error());
+                        b1 = !b.value().empty();
+                    }
+                    if (invert)
+                        b1 = !b1;
+                }
+                return b1;
+            }
+            
+            ebool bool_expression()
+            {
+                // this whole thing is just bad. please redo. TODO
+                std::vector<int> values;
+                while (consumer.next().type != template_token_t::PAR_CLOSE)
+                {
+                    auto next = consumer.next();
+                    auto bv = bool_value();
+                    if (!bv)
+                        return bv;
+                    values.push_back(bv.value());
+                    
+                    if (values.size() == 2)
+                    {
+                        auto b1 = values[0];
+                        auto b2 = values[1];
+                        values.pop_back();
+                        values.pop_back();
+                        switch (next.type)
+                        {
+                            case template_token_t::AND:
+                                values.push_back(b1 && b2);
+                                break;
+                            case template_token_t::OR:
+                                values.push_back(b1 || b2);
+                                break;
+                            case template_token_t::XOR:
+                                values.push_back(b1 ^ b2);
+                                break;
+                            default:
+                                return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
+                        }
+                    }
+                    
                     next = consumer.next();
                     if (next.type == template_token_t::PAR_CLOSE)
-                        return bool_val;
+                        break;
                     consumer.advance();
-                    if (next.type == template_token_t::AND)
-                    {
-                        auto other_val = bool_expression();
-                        if (!other_val)
-                            return other_val;
-                        return bool_val && other_val.value();
-                    } else if (next.type == template_token_t::OR)
-                    {
-                        auto other_val = bool_expression();
-                        if (!other_val)
-                            return other_val;
-                        return bool_val || other_val.value();
-                    } else if (next.type == template_token_t::XOR)
-                    {
-                        auto other_val = bool_expression();
-                        if (!other_val)
-                            return other_val;
-                        return bool_val ^ other_val.value();
-                    }
+//                    bv = bool_value();
+//                    if (!bv)
+//                        return bv;
+//                    values.push_back(bv.value());
+//
+//                    switch (next.type)
+//                    {
+//                        case template_token_t::AND:
+//                            ret =
+//                        case template_token_t::OR:
+//                            break;
+//                        case template_token_t::XOR:
+//                            break;
+//                        default:
+//                            return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
+//                    }
                 }
-                return unexpected(template_parser_failure_t::UNKNOWN_ERROR);
+                if (values.empty())
+                    BLT_WARN("This is not possible!");
+                return values[0];
+//                if (next.type == template_token_t::NOT)
+//                {
+//                    auto b = bool_statement();
+//                    if (b)
+//                        return !b.value();
+//                    else
+//                        return b;
+//                } else if (next.type == template_token_t::STRING)
+//                {
+//                    auto bool_val = next.token.empty();
+//                    next = consumer.next();
+//                    if (next.type == template_token_t::PAR_CLOSE)
+//                        return bool_val;
+//                    consumer.advance();
+//                    if (next.type == template_token_t::AND)
+//                    {
+//                        auto other_val = bool_expression();
+//                        if (!other_val)
+//                            return other_val;
+//                        return bool_val && other_val.value();
+//                    } else if (next.type == template_token_t::OR)
+//                    {
+//                        auto other_val = bool_expression();
+//                        if (!other_val)
+//                            return other_val;
+//                        return bool_val || other_val.value();
+//                    } else if (next.type == template_token_t::XOR)
+//                    {
+//                        auto other_val = bool_expression();
+//                        if (!other_val)
+//                            return other_val;
+//                        return bool_val ^ other_val.value();
+//                    }
+//                }
+//                return unexpected(template_parser_failure_t::UNKNOWN_ERROR);
             }
             
-            blt::hashmap_t<std::string, std::string>& substitutions;
+            template_engine_t& engine;
             template_token_consumer_t& consumer;
-    };
-    
-    class template_engine_t
-    {
-        public:
-            inline std::string& operator[](const std::string& key)
-            {
-                return substitutions[key];
-            }
-            
-            inline std::string& operator[](std::string_view key)
-            {
-                return substitutions[key];
-            }
-            
-            inline template_engine_t& set(std::string_view key, std::string_view replacement)
-            {
-                substitutions[key] = replacement;
-                return *this;
-            }
-            
-            static blt::expected<std::vector<template_token_data_t>, template_tokenizer_failure_t> process_string(std::string_view str);
-            
-            blt::expected<std::string, template_parser_failure_t> evaluate(std::string_view str);
-        
-        private:
-            blt::hashmap_t<std::string, std::string> substitutions;
     };
     
 }

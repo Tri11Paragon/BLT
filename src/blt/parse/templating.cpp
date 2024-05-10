@@ -154,7 +154,9 @@ namespace blt
                 default:
                     // do not add whitespace to anything
                     if (std::isspace(c))
+                    {
                         break;
+                    }
                     if (start == -1)
                         start = current_start;
                     if (consumer.hasNext() && (isNonStringNext(consumer.next()) || std::isspace(consumer.next())))
@@ -203,36 +205,41 @@ namespace blt
         }
         
         std::string return_str;
-        return_str.reserve(str.size());
+        //return_str.reserve(str.size());
         
-        template_token_consumer_t consumer{tokens.value()};
+        template_token_consumer_t consumer{tokens.value(), str};
         
-        template_parser_t parser(substitutions, consumer);
+        template_parser_t parser(*this, consumer);
         
         while (consumer.hasNext())
         {
-            BLT_TRACE("Running with next %d", static_cast<int>(consumer.next().type));
             while (consumer.hasNext(2))
             {
                 if (consumer.next().type == template_token_t::IDENT && consumer.next(1).type == template_token_t::CURLY_OPEN)
                 {
-                    BLT_TRACE("From Last: %s", std::string(consumer.from_last(str)).c_str());
-                    return_str += consumer.from_last(str);
+                    return_str += consumer.from_last();
                     break;
                 }
                 consumer.advance();
             }
+            if (!consumer.hasNext(2))
+                break;
+            
             if (auto result = parser.parse())
+            {
+                BLT_DEBUG("Result parser: %s", result.value().c_str());
                 return_str += result.value();
-            else
+            }else
             {
                 if (result.error() == template_parser_failure_t::FUNCTION_DISCARD)
                     continue;
                 return result;
             }
+            consumer.set_marker();
         }
-        
-        BLT_TRACE(return_str);
+        while(consumer.hasNext())
+            consumer.advance();
+        return_str += consumer.from_last();
         
         return return_str;
     }
