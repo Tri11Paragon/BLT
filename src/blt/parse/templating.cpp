@@ -40,6 +40,7 @@ namespace blt
             case ',':
             case '.':
             case '|':
+            case '+':
                 return true;
             default:
                 return false;
@@ -122,6 +123,9 @@ namespace blt
                     break;
                 case ',':
                     tokens.emplace_back(template_token_t::COMMA, level, consumer.from(current_start, current_start + 1));
+                    break;
+                case '+':
+                    tokens.emplace_back(template_token_t::ADD, level, consumer.from(current_start, current_start + 1));
                     break;
                 case '.':
                     tokens.emplace_back(template_token_t::PERIOD, level, consumer.from(current_start, current_start + 1));
@@ -207,18 +211,25 @@ namespace blt
         
         while (consumer.hasNext())
         {
+            BLT_TRACE("Running with next %d", static_cast<int>(consumer.next().type));
             while (consumer.hasNext(2))
             {
-                if (consumer.next().type == template_token_t::IDENT && consumer.next().type == template_token_t::CURLY_OPEN)
+                if (consumer.next().type == template_token_t::IDENT && consumer.next(1).type == template_token_t::CURLY_OPEN)
                 {
+                    BLT_TRACE("From Last: %s", std::string(consumer.from_last(str)).c_str());
                     return_str += consumer.from_last(str);
                     break;
                 }
+                consumer.advance();
             }
             if (auto result = parser.parse())
                 return_str += result.value();
             else
+            {
+                if (result.error() == template_parser_failure_t::FUNCTION_DISCARD)
+                    continue;
                 return result;
+            }
         }
         
         return return_str;

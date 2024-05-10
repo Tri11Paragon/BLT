@@ -142,6 +142,7 @@ namespace blt
             expected& operator=(const expected& copy)
             {
                 v = copy.v;
+                return *this;
             }
             
             constexpr expected(expected&& move) noexcept: v(std::move(move.v))
@@ -150,6 +151,7 @@ namespace blt
             expected& operator=(expected&& move)
             {
                 std::swap(v, move.v);
+                return *this;
             }
             
             /*

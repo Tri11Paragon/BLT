@@ -31,6 +31,7 @@
 
 namespace blt
 {
+    
     template<typename Storage, typename Consumable>
     class template_consumer_base_t
     {
@@ -79,6 +80,7 @@ namespace blt
     {
         //STRING,         // A string of characters not $ { or }
         IDENT,          // $
+        ADD,            // +
         CURLY_OPEN,     // {
         CURLY_CLOSE,    // }
         IF,             // IF
@@ -143,6 +145,8 @@ namespace blt
                 return "[COMMA]";
             case template_token_t::PERIOD:
                 return "[PERIOD]";
+            case template_token_t::ADD:
+                return "[ADD]";
         }
     }
     
@@ -155,8 +159,18 @@ namespace blt
     
     enum class template_parser_failure_t
     {
+        SUBSTITUTION_NOT_FOUND,
         TOKENIZER_FAILURE,
-        NO_MATCHING_CURLY
+        NO_MATCHING_CURLY,
+        MISSING_IDENT_BRACES,
+        FUNCTION_EXPECTED_STRING,
+        FUNCTION_NOT_FOUND,
+        FUNCTION_DISCARD,
+        STRING_EXPECTED_CONCAT,
+        IF_EXPECTED_PAREN,
+        BOOL_EXPECTED_PAREN,
+        UNKNOWN_STATEMENT_ERROR,
+        UNKNOWN_ERROR
     };
     
     struct template_token_data_t
@@ -198,9 +212,14 @@ namespace blt
                     return "";
                 auto token = storage[getPreviousIndex()];
                 auto len = (&token.token.back() - &raw_string.front()) - last_read_index;
-                auto str = std::string_view(&raw_string[last_read_index], len);
+                auto str = std::string_view(&raw_string[lasomt_read_index], len);
                 last_read_index += len;
                 return str;
+            }
+            
+            void back()
+            {
+                current_index--;
             }
         
         private:
@@ -211,27 +230,181 @@ namespace blt
     {
         public:
             using estring = blt::expected<std::string, template_parser_failure_t>;
+            using ebool = blt::expected<bool, template_parser_failure_t>;
+            
             template_parser_t(blt::hashmap_t<std::string, std::string>& substitutions, template_token_consumer_t& consumer):
                     substitutions(substitutions), consumer(consumer)
             {}
             
             estring parse()
             {
-                consumer.advance(2);
-                auto str = statement();
-                if (!str)
+                auto next = consumer.consume();
+                if (next.type == template_token_t::IDENT && consumer.next().type == template_token_t::CURLY_OPEN)
+                {
+                    consumer.advance();
+                    auto str = statement();
+                    consumer.advance();
                     return str;
-                // should never occur
-                if (consumer.hasNext() && consumer.next().type != template_token_t::CURLY_CLOSE)
-                    return blt::unexpected(template_parser_failure_t::NO_MATCHING_CURLY);
-                consumer.advance();
-                return str;
+                }
+                return blt::unexpected(template_parser_failure_t::MISSING_IDENT_BRACES);
             }
         
         private:
             estring statement()
             {
+                auto next = consumer.consume();
+                if (next.type == template_token_t::STRING || next.type == template_token_t::QUOTE)
+                {
+                    consumer.back();
+                    return string();
+                } else if (next.type == template_token_t::FUNCTION)
+                {
+                    return function();
+                } else if (next.type == template_token_t::IDENT && consumer.hasNext() && consumer.next().type == template_token_t::CURLY_OPEN)
+                {
+                    consumer.advance();
+                    auto stmt = statement();
+                    // should never occur
+                    if (consumer.hasNext() && consumer.next().type != template_token_t::CURLY_CLOSE)
+                        return blt::unexpected(template_parser_failure_t::NO_MATCHING_CURLY);
+                    consumer.advance();
+                    return stmt;
+                } else if (next.type == template_token_t::IF)
+                {
+                    return if_func();
+                }
+                return blt::unexpected(template_parser_failure_t::UNKNOWN_STATEMENT_ERROR);
+            }
             
+            estring function()
+            {
+                auto str = consumer.consume();
+                if (str.type != template_token_t::STRING)
+                    return blt::unexpected(template_parser_failure_t::FUNCTION_EXPECTED_STRING);
+                if (str.token == "DISCARD")
+                    return blt::unexpected(template_parser_failure_t::FUNCTION_DISCARD);
+                return blt::unexpected(template_parser_failure_t::FUNCTION_NOT_FOUND);
+            }
+            
+            estring if_func()
+            {
+                // IF(
+                if (consumer.consume().type != template_token_t::PAR_OPEN)
+                    return blt::unexpected(template_parser_failure_t::IF_EXPECTED_PAREN);
+                // (statement)
+                auto bool_eval = bool_statement();
+                if (!bool_eval)
+                    return blt::unexpected(bool_eval.error());
+                if (consumer.consume().type != template_token_t::PAR_CLOSE)
+                    return blt::unexpected(template_parser_failure_t::IF_EXPECTED_PAREN);
+                auto true_statement = statement();
+                estring false_statement = blt::unexpected(template_parser_failure_t::UNKNOWN_ERROR);
+                if (consumer.next().type == template_token_t::ELSE)
+                {
+                    consumer.advance();
+                    false_statement = statement();
+                }
+                if (bool_eval.value())
+                {
+                    return true_statement;
+                } else
+                {
+                    if (false_statement)
+                        return false_statement;
+                    return "";
+                }
+            }
+            
+            estring string()
+            {
+                auto next = consumer.consume();
+                if (next.type == template_token_t::STRING)
+                {
+                    if (!substitutions.contains(next.token))
+                        return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
+                    if (consumer.next().type == template_token_t::SEMI)
+                    {
+                        consumer.advance();
+                        return substitutions[next.token];
+                    }
+                    if (consumer.next().type != template_token_t::ADD)
+                        return blt::unexpected(template_parser_failure_t::STRING_EXPECTED_CONCAT);
+                    consumer.advance();
+                    auto str = string();
+                    if (str)
+                        return substitutions[next.token] + str.value();
+                    else
+                        return str;
+                } else
+                {
+                    if (consumer.next().type == template_token_t::SEMI)
+                    {
+                        consumer.advance();
+                        return std::string(next.token);
+                    }
+                    auto str = string();
+                    if (str)
+                        return std::string(next.token) + str.value();
+                    else
+                        return str;
+                }
+            }
+            
+            ebool bool_statement()
+            {
+                auto next = consumer.next();
+                if (next.type == template_token_t::PAR_OPEN)
+                {
+                    consumer.advance();
+                    auto b = bool_statement();
+                    if (consumer.consume().type != template_token_t::PAR_CLOSE)
+                        return blt::unexpected(template_parser_failure_t::BOOL_EXPECTED_PAREN);
+                    return b;
+                }
+                return bool_expression();
+            }
+            
+            ebool bool_expression()
+            {
+                auto next = consumer.next();
+                if (next.type == template_token_t::PAR_OPEN)
+                    return bool_statement();
+                consumer.advance();
+                if (next.type == template_token_t::NOT)
+                {
+                    auto b = bool_statement();
+                    if (b)
+                        return !b.value();
+                    else
+                        return b;
+                } else if (next.type == template_token_t::STRING)
+                {
+                    auto bool_val = next.token.empty();
+                    next = consumer.next();
+                    if (next.type == template_token_t::PAR_CLOSE)
+                        return bool_val;
+                    consumer.advance();
+                    if (next.type == template_token_t::AND)
+                    {
+                        auto other_val = bool_expression();
+                        if (!other_val)
+                            return other_val;
+                        return bool_val && other_val.value();
+                    } else if (next.type == template_token_t::OR)
+                    {
+                        auto other_val = bool_expression();
+                        if (!other_val)
+                            return other_val;
+                        return bool_val || other_val.value();
+                    } else if (next.type == template_token_t::XOR)
+                    {
+                        auto other_val = bool_expression();
+                        if (!other_val)
+                            return other_val;
+                        return bool_val ^ other_val.value();
+                    }
+                }
+                return unexpected(template_parser_failure_t::UNKNOWN_ERROR);
             }
             
             blt::hashmap_t<std::string, std::string>& substitutions;
