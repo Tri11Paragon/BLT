@@ -27,6 +27,7 @@
 #include <blt/std/hashmap.h>
 #include <blt/std/types.h>
 #include <blt/std/expected.h>
+#include <blt/std/logging.h>
 #include <variant>
 
 namespace blt
@@ -320,13 +321,17 @@ namespace blt
                 auto next = consumer.consume();
                 if (next.type == template_token_t::STRING)
                 {
+                    BLT_TRACE(next.token);
+                    while (consumer.hasNext())
+                        BLT_TRACE(consumer.consume().token);
                     if (!substitutions.contains(next.token))
                         return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
-                    if (consumer.next().type == template_token_t::SEMI)
+                    if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE)
                     {
                         consumer.advance();
                         return substitutions[next.token];
                     }
+                    
                     if (consumer.next().type != template_token_t::ADD)
                         return blt::unexpected(template_parser_failure_t::STRING_EXPECTED_CONCAT);
                     consumer.advance();

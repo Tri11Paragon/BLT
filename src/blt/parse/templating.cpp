@@ -232,6 +232,8 @@ namespace blt
             }
         }
         
+        BLT_TRACE(return_str);
+        
         return return_str;
     }
 }
