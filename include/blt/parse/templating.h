@@ -212,7 +212,7 @@ namespace blt
                     return "";
                 auto token = storage[getPreviousIndex()];
                 auto len = (&token.token.back() - &raw_string.front()) - last_read_index;
-                auto str = std::string_view(&raw_string[lasomt_read_index], len);
+                auto str = std::string_view(&raw_string[last_read_index], len);
                 last_read_index += len;
                 return str;
             }
