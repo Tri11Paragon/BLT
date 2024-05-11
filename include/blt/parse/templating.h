@@ -171,6 +171,7 @@ namespace blt
         FUNCTION_DISCARD,
         STRING_EXPECTED_CONCAT,
         IF_EXPECTED_PAREN,
+        IF_EXPECTED_CURLY,
         BOOL_EXPECTED_PAREN,
         BOOL_TYPE_NOT_FOUND,
         UNKNOWN_STATEMENT_ERROR,
@@ -234,6 +235,13 @@ namespace blt
             {
                 current_index--;
             }
+            
+            auto prev()
+            {
+                if (current_index == 0)
+                    throw std::runtime_error("Current Index cannot be zero!");
+                return storage[current_index - 1];
+            }
         
         private:
             std::string_view raw_string;
@@ -266,14 +274,26 @@ namespace blt
             
             inline auto get(std::string_view token)
             {
-                return evaluate(substitutions[token]);
+                return internal_evaluate(substitutions[token], true);
             }
             
             static blt::expected<std::vector<template_token_data_t>, template_tokenizer_failure_t> process_string(std::string_view str);
             
-            blt::expected<std::string, template_parser_failure_t> evaluate(std::string_view str);
+            blt::expected<std::string, template_parser_failure_t> evaluate(std::string_view str)
+            {
+                auto eval = internal_evaluate(str, false);
+                if (eval.has_value())
+                    return eval;
+                else
+                    if (eval.error() == template_parser_failure_t::FUNCTION_DISCARD)
+                        return "";
+                    else
+                        return eval;
+            }
         
         private:
+            blt::expected<std::string, template_parser_failure_t> internal_evaluate(std::string_view str, bool discard);
+            
             blt::hashmap_t<std::string, std::string> substitutions;
     };
     
@@ -307,7 +327,8 @@ namespace blt
                 if (next.type == template_token_t::STRING || next.type == template_token_t::QUOTE)
                 {
                     consumer.back();
-                    return string();
+                    auto str = string();
+                    return str;
                 } else if (next.type == template_token_t::FUNCTION)
                 {
                     return function();
@@ -330,6 +351,8 @@ namespace blt
             estring function()
             {
                 auto str = consumer.consume();
+                if (consumer.next().type == template_token_t::SEMI)
+                    consumer.advance();
                 if (str.type != template_token_t::STRING)
                     return blt::unexpected(template_parser_failure_t::FUNCTION_EXPECTED_STRING);
                 if (str.token == "DISCARD")
@@ -346,24 +369,31 @@ namespace blt
                 auto bool_eval = bool_statement();
                 if (!bool_eval)
                     return blt::unexpected(bool_eval.error());
-                BLT_TRACE(bool_eval.value());
-                if (consumer.consume().type != template_token_t::PAR_CLOSE)
-                    return blt::unexpected(template_parser_failure_t::IF_EXPECTED_PAREN);
-                BLT_TRACE("Statement");
+                
+                if (consumer.consume().type != template_token_t::CURLY_OPEN)
+                    return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
                 auto true_statement = statement();
+                if (consumer.consume().type != template_token_t::CURLY_CLOSE)
+                    return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+                
                 estring false_statement = blt::unexpected(template_parser_failure_t::UNKNOWN_ERROR);
-                BLT_TRACE(consumer.next().token);
+                bool has_false = false;
                 if (consumer.next().type == template_token_t::ELSE)
                 {
                     consumer.advance();
+                    if (consumer.consume().type != template_token_t::CURLY_OPEN)
+                        return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
                     false_statement = statement();
+                    if (consumer.consume().type != template_token_t::CURLY_CLOSE)
+                        return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+                    
+                    has_false = true;
                 }
                 if (bool_eval.value())
-                {
                     return true_statement;
-                } else
+                else
                 {
-                    if (false_statement)
+                    if (has_false)
                         return false_statement;
                     return "";
                 }
@@ -374,12 +404,15 @@ namespace blt
                 auto next = consumer.consume();
                 if (next.type == template_token_t::STRING)
                 {
-                    if (!engine.contains(next.token))
-                        return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
+//
+//                        return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
                     if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE ||
                         consumer.next().type == template_token_t::CURLY_CLOSE || consumer.next().type == template_token_t::PAR_CLOSE)
                     {
-                        consumer.advance();
+                        if (consumer.next().type == template_token_t::SEMI)
+                            consumer.advance();
+                        if (!engine.contains(next.token))
+                            return "";
                         return engine.get(next.token);
                     }
                     
@@ -454,8 +487,6 @@ namespace blt
                         auto b = statement();
                         if (!b)
                             return blt::unexpected(b.error());
-                        BLT_DEBUG(b.value());
-                        BLT_DEBUG(consumer.next().token);
                         b1 = !b.value().empty();
                     }
                 }
@@ -468,7 +499,7 @@ namespace blt
             {
                 // this whole thing is just bad. please redo. TODO
                 std::vector<int> values;
-                while (consumer.next().type != template_token_t::PAR_CLOSE)
+                while (consumer.next().type != template_token_t::CURLY_OPEN)
                 {
                     auto next = consumer.next();
                     auto bv = bool_value();
@@ -494,74 +525,18 @@ namespace blt
                                 values.push_back(b1 ^ b2);
                                 break;
                             default:
+                                BLT_WARN("Unexpected token '%s'", std::string(next.token).c_str());
                                 return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
                         }
                     }
                     next = consumer.next();
-                    BLT_TRACE(next.token);
-                    BLT_TRACE("Current State:");
-                    for (auto b : values)
-                        BLT_INFO(b);
-                    if (next.type == template_token_t::PAR_CLOSE)
+                    if (next.type == template_token_t::CURLY_OPEN)
                         break;
                     consumer.advance();
-//                    bv = bool_value();
-//                    if (!bv)
-//                        return bv;
-//                    values.push_back(bv.value());
-//
-//                    switch (next.type)
-//                    {
-//                        case template_token_t::AND:
-//                            ret =
-//                        case template_token_t::OR:
-//                            break;
-//                        case template_token_t::XOR:
-//                            break;
-//                        default:
-//                            return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
-//                    }
                 }
-                BLT_INFO(consumer.next().token);
-                consumer.advance();
                 if (values.empty())
                     BLT_WARN("This is not possible!");
                 return values[0];
-//                if (next.type == template_token_t::NOT)
-//                {
-//                    auto b = bool_statement();
-//                    if (b)
-//                        return !b.value();
-//                    else
-//                        return b;
-//                } else if (next.type == template_token_t::STRING)
-//                {
-//                    auto bool_val = next.token.empty();
-//                    next = consumer.next();
-//                    if (next.type == template_token_t::PAR_CLOSE)
-//                        return bool_val;
-//                    consumer.advance();
-//                    if (next.type == template_token_t::AND)
-//                    {
-//                        auto other_val = bool_expression();
-//                        if (!other_val)
-//                            return other_val;
-//                        return bool_val && other_val.value();
-//                    } else if (next.type == template_token_t::OR)
-//                    {
-//                        auto other_val = bool_expression();
-//                        if (!other_val)
-//                            return other_val;
-//                        return bool_val || other_val.value();
-//                    } else if (next.type == template_token_t::XOR)
-//                    {
-//                        auto other_val = bool_expression();
-//                        if (!other_val)
-//                            return other_val;
-//                        return bool_val ^ other_val.value();
-//                    }
-//                }
-//                return unexpected(template_parser_failure_t::UNKNOWN_ERROR);
             }
             
             template_engine_t& engine;

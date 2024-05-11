@@ -183,7 +183,7 @@ namespace blt
         return tokens;
     }
     
-    blt::expected<std::string, template_parser_failure_t> template_engine_t::evaluate(std::string_view str)
+    blt::expected<std::string, template_parser_failure_t> template_engine_t::internal_evaluate(std::string_view str, bool discard)
     {
         auto tokens = process_string(str);
         
@@ -226,18 +226,19 @@ namespace blt
                 break;
             
             if (auto result = parser.parse())
-            {
-                BLT_DEBUG("Result parser: %s", result.value().c_str());
                 return_str += result.value();
-            }else
+            else
             {
                 if (result.error() == template_parser_failure_t::FUNCTION_DISCARD)
-                    continue;
-                return result;
+                {
+                    if (discard)
+                        return blt::unexpected(template_parser_failure_t::FUNCTION_DISCARD);
+                } else
+                    return result;
             }
             consumer.set_marker();
         }
-        while(consumer.hasNext())
+        while (consumer.hasNext())
             consumer.advance();
         return_str += consumer.from_last();
         
