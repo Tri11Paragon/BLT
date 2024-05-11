@@ -324,7 +324,6 @@ namespace blt
                 {
                     return if_func();
                 }
-                BLT_TRACE(next.token);
                 return blt::unexpected(template_parser_failure_t::UNKNOWN_STATEMENT_ERROR);
             }
             
@@ -347,10 +346,13 @@ namespace blt
                 auto bool_eval = bool_statement();
                 if (!bool_eval)
                     return blt::unexpected(bool_eval.error());
+                BLT_TRACE(bool_eval.value());
                 if (consumer.consume().type != template_token_t::PAR_CLOSE)
                     return blt::unexpected(template_parser_failure_t::IF_EXPECTED_PAREN);
+                BLT_TRACE("Statement");
                 auto true_statement = statement();
                 estring false_statement = blt::unexpected(template_parser_failure_t::UNKNOWN_ERROR);
+                BLT_TRACE(consumer.next().token);
                 if (consumer.next().type == template_token_t::ELSE)
                 {
                     consumer.advance();
@@ -425,6 +427,14 @@ namespace blt
             {
                 bool b1;
                 auto next = consumer.next();
+                bool invert = false;
+                // prefixes
+                if (next.type == template_token_t::NOT)
+                {
+                    invert = true;
+                    consumer.advance();
+                    next = consumer.next();
+                }
                 if (next.type == template_token_t::PAR_OPEN)
                 {
                     auto b = bool_statement();
@@ -433,13 +443,6 @@ namespace blt
                     b1 = b.value();
                 } else
                 {
-                    bool invert = false;
-                    // prefixes
-                    if (next.type == template_token_t::NOT)
-                    {
-                        invert = true;
-                        consumer.advance();
-                    }
                     if (consumer.next().type == template_token_t::PAR_OPEN)
                     {
                         auto b = bool_statement();
@@ -451,11 +454,13 @@ namespace blt
                         auto b = statement();
                         if (!b)
                             return blt::unexpected(b.error());
+                        BLT_DEBUG(b.value());
+                        BLT_DEBUG(consumer.next().token);
                         b1 = !b.value().empty();
                     }
-                    if (invert)
-                        b1 = !b1;
                 }
+                if (invert)
+                    b1 = !b1;
                 return b1;
             }
             
@@ -492,8 +497,11 @@ namespace blt
                                 return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
                         }
                     }
-                    
                     next = consumer.next();
+                    BLT_TRACE(next.token);
+                    BLT_TRACE("Current State:");
+                    for (auto b : values)
+                        BLT_INFO(b);
                     if (next.type == template_token_t::PAR_CLOSE)
                         break;
                     consumer.advance();
@@ -514,6 +522,8 @@ namespace blt
 //                            return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
 //                    }
                 }
+                BLT_INFO(consumer.next().token);
+                consumer.advance();
                 if (values.empty())
                     BLT_WARN("This is not possible!");
                 return values[0];
