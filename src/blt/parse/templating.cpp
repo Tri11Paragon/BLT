@@ -244,4 +244,224 @@ namespace blt
         
         return return_str;
     }
+    
+    template_parser_t::ebool template_parser_t::bool_expression()
+    {
+        // this whole thing is just bad. please redo. TODO
+        std::vector<int> values;
+        while (consumer.next().type != template_token_t::CURLY_OPEN)
+        {
+            auto next = consumer.next();
+            auto bv = bool_value();
+            if (!bv)
+                return bv;
+            values.push_back(bv.value());
+            
+            if (values.size() == 2)
+            {
+                auto b1 = values[0];
+                auto b2 = values[1];
+                values.pop_back();
+                values.pop_back();
+                switch (next.type)
+                {
+                    case template_token_t::AND:
+                        values.push_back(b1 && b2);
+                        break;
+                    case template_token_t::OR:
+                        values.push_back(b1 || b2);
+                        break;
+                    case template_token_t::XOR:
+                        values.push_back(b1 ^ b2);
+                        break;
+                    default:
+                        BLT_WARN("Unexpected token '%s'", std::string(next.token).c_str());
+                        return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
+                }
+            }
+            next = consumer.next();
+            if (next.type == template_token_t::CURLY_OPEN)
+                break;
+            consumer.advance();
+        }
+        if (values.empty())
+            BLT_WARN("This is not possible!");
+        return values[0];
+    }
+    
+    template_parser_t::ebool template_parser_t::bool_value()
+    {
+        bool b1;
+        auto next = consumer.next();
+        bool invert = false;
+        // prefixes
+        if (next.type == template_token_t::NOT)
+        {
+            invert = true;
+            consumer.advance();
+            next = consumer.next();
+        }
+        if (next.type == template_token_t::PAR_OPEN)
+        {
+            auto b = bool_statement();
+            if (!b)
+                return b;
+            b1 = b.value();
+        } else
+        {
+            if (consumer.next().type == template_token_t::PAR_OPEN)
+            {
+                auto b = bool_statement();
+                if (!b)
+                    return b;
+                b1 = b.value();
+            } else
+            {
+                auto b = statement();
+                if (!b)
+                    return blt::unexpected(b.error());
+                b1 = !b.value().empty();
+            }
+        }
+        if (invert)
+            b1 = !b1;
+        return b1;
+    }
+    
+    template_parser_t::ebool template_parser_t::bool_statement()
+    {
+        auto next = consumer.next();
+        if (next.type == template_token_t::PAR_OPEN)
+        {
+            consumer.advance();
+            auto b = bool_statement();
+            if (consumer.consume().type != template_token_t::PAR_CLOSE)
+                return blt::unexpected(template_parser_failure_t::BOOL_EXPECTED_PAREN);
+            consumer.advance();
+            return b;
+        }
+        return bool_expression();
+    }
+    
+    template_parser_t::estring template_parser_t::string()
+    {
+        auto next = consumer.consume();
+        if (next.type == template_token_t::STRING)
+        {
+//
+//                        return blt::unexpected(template_parser_failure_t::SUBSTITUTION_NOT_FOUND);
+            if (consumer.next().type == template_token_t::SEMI || consumer.next().type == template_token_t::ELSE ||
+                consumer.next().type == template_token_t::CURLY_CLOSE || consumer.next().type == template_token_t::PAR_CLOSE)
+            {
+                if (consumer.next().type == template_token_t::SEMI)
+                    consumer.advance();
+                if (!engine.contains(next.token))
+                    return "";
+                return engine.get(next.token);
+            }
+            
+            if (consumer.next().type != template_token_t::ADD)
+                return blt::unexpected(template_parser_failure_t::STRING_EXPECTED_CONCAT);
+            consumer.advance();
+            auto str = string();
+            if (!str)
+                return str;
+            auto sub = engine.get(next.token);
+            if (!sub)
+                return sub;
+            return sub.value() + str.value();
+        } else
+        {
+            if (consumer.next().type == template_token_t::SEMI)
+            {
+                consumer.advance();
+                return std::string(next.token);
+            }
+            auto str = string();
+            if (str)
+                return std::string(next.token) + str.value();
+            else
+                return str;
+        }
+    }
+    
+    template_parser_t::estring template_parser_t::if_func()
+    {
+        // IF(
+        if (consumer.consume().type != template_token_t::PAR_OPEN)
+            return blt::unexpected(template_parser_failure_t::IF_EXPECTED_PAREN);
+        // (statement)
+        auto bool_eval = bool_statement();
+        if (!bool_eval)
+            return blt::unexpected(bool_eval.error());
+        
+        if (consumer.consume().type != template_token_t::CURLY_OPEN)
+            return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+        auto true_statement = statement();
+        if (consumer.consume().type != template_token_t::CURLY_CLOSE)
+            return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+        
+        estring false_statement = blt::unexpected(template_parser_failure_t::UNKNOWN_ERROR);
+        bool has_false = false;
+        if (consumer.next().type == template_token_t::ELSE)
+        {
+            consumer.advance();
+            if (consumer.consume().type != template_token_t::CURLY_OPEN)
+                return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+            false_statement = statement();
+            if (consumer.consume().type != template_token_t::CURLY_CLOSE)
+                return blt::unexpected(template_parser_failure_t::IF_EXPECTED_CURLY);
+            
+            has_false = true;
+        }
+        if (bool_eval.value())
+            return true_statement;
+        else
+        {
+            if (has_false)
+                return false_statement;
+            return "";
+        }
+    }
+    
+    template_parser_t::estring template_parser_t::function()
+    {
+        auto str = consumer.consume();
+        if (consumer.next().type == template_token_t::SEMI)
+            consumer.advance();
+        if (str.type != template_token_t::STRING)
+            return blt::unexpected(template_parser_failure_t::FUNCTION_EXPECTED_STRING);
+        if (str.token == "DISCARD")
+            return blt::unexpected(template_parser_failure_t::FUNCTION_DISCARD);
+        return blt::unexpected(template_parser_failure_t::FUNCTION_NOT_FOUND);
+    }
+    
+    template_parser_t::estring template_parser_t::statement()
+    {
+        auto next = consumer.consume();
+        if (next.type == template_token_t::STRING || next.type == template_token_t::QUOTE)
+        {
+            consumer.back();
+            auto str = string();
+            return str;
+        } else if (next.type == template_token_t::FUNCTION)
+        {
+            return function();
+        } else if (next.type == template_token_t::IDENT && consumer.hasNext() && consumer.next().type == template_token_t::CURLY_OPEN)
+        {
+            consumer.advance();
+            auto stmt = statement();
+            // should never occur
+            if (consumer.hasNext() && consumer.next().type != template_token_t::CURLY_CLOSE)
+                return blt::unexpected(template_parser_failure_t::NO_MATCHING_CURLY);
+            consumer.advance();
+            return stmt;
+        } else if (next.type == template_token_t::IF)
+        {
+            return if_func();
+        }
+        return blt::unexpected(template_parser_failure_t::UNKNOWN_STATEMENT_ERROR);
+    }
+    
+    
 }
