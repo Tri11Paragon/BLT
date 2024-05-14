@@ -137,6 +137,9 @@ namespace blt
             inline mat4x4& translate(const vec3& vec)
             { return translate(vec[0], vec[1], vec[2]); }
             
+            inline mat4x4& translate(const vec2& vec)
+            { return translate(vec[0], vec[1], 0); }
+            
             inline mat4x4& scale(float x, float y, float z)
             {
                 mat4x4 scale_mat{};
@@ -155,6 +158,9 @@ namespace blt
             
             inline mat4x4& scale(const vec3& vec)
             { return scale(vec[0], vec[1], vec[2]); }
+            
+            inline mat4x4& scale(const vec2& vec)
+            { return scale(vec[0], vec[1], 1.0f); }
             
             // angle in radians
             inline mat4x4& rotateX(float angle)
