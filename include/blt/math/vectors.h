@@ -28,7 +28,8 @@ namespace blt
     }
     
     template<typename T, blt::u32 size>
-    struct vec {
+    struct vec
+    {
             static_assert(std::is_arithmetic_v<T> && "blt::vec must be created using an arithmetic type!");
         private:
             std::array<T, size> elements;
@@ -48,8 +49,10 @@ namespace blt
             constexpr vec(U t, std::initializer_list<U> args): elements()
             {
                 auto b = args.begin();
-                for (auto& v : elements) {
-                    if (b == args.end()) {
+                for (auto& v : elements)
+                {
+                    if (b == args.end())
+                    {
                         v = t;
                         continue;
                     }
@@ -430,6 +433,12 @@ namespace blt
     using color4 = vec4;
     using color3 = vec3;
     
+    inline color4 interpolate(const color4& in, const color4& desired, float factor)
+    {
+        auto diff = desired - in;
+        return in + (diff * factor);
+    }
+    
     inline color4 make_color(float r, float g, float b)
     {
         return color4{r, g, b, 1.0f};
@@ -438,9 +447,11 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 2> make_vec2(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 2) {
+        if constexpr (size >= 2)
+        {
             return blt::vec<ValueType, 2>(t.x(), t.y());
-        } else {
+        } else
+        {
             return blt::vec<ValueType, 2>(t.x(), fill);
         }
     }
@@ -448,9 +459,11 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 3> make_vec3(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 3) {
+        if constexpr (size >= 3)
+        {
             return blt::vec<ValueType, 3>(t.x(), t.y(), t.z());
-        } else {
+        } else
+        {
             blt::vec<ValueType, 3> ret;
             for (size_t i = 0; i < size; i++)
                 ret[i] = t[i];
@@ -463,9 +476,11 @@ namespace blt
     template<typename ValueType, u32 size>
     inline blt::vec<ValueType, 4> make_vec4(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
-        if constexpr (size >= 4) {
+        if constexpr (size >= 4)
+        {
             return blt::vec<ValueType, 4>(t.x(), t.y(), t.z(), t.w());
-        } else {
+        } else
+        {
             blt::vec<ValueType, 4> ret;
             for (size_t i = 0; i < size; i++)
                 ret[i] = t[i];
@@ -482,7 +497,8 @@ namespace blt
             v1 = v.normalize();
             
             vec3 arbitraryVector{1, 0, 0};
-            if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9) {
+            if (std::abs(vec3::dot(v, arbitraryVector)) > 0.9)
+            {
                 arbitraryVector = vec3{0, 1, 0};
             }
             
@@ -501,10 +517,12 @@ namespace blt
             basis[0] = basis[0].normalize();
             
             // iterate over the rest of the vectors
-            for (int i = 1; i < n; ++i) {
+            for (int i = 1; i < n; ++i)
+            {
                 // subtract the projections of the vector onto the previous basis vectors
                 vec3 new_vector = vectors[i];
-                for (int j = 0; j < i; ++j) {
+                for (int j = 0; j < i; ++j)
+                {
                     float projection = vec3::dot(vectors[i], basis[j]);
                     new_vector[0] -= projection * basis[j].x();
                     new_vector[1] -= projection * basis[j].y();
