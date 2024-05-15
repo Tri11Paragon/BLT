@@ -433,19 +433,19 @@ namespace blt
     using color4 = vec4;
     using color3 = vec3;
     
-    inline color4 interpolate(const color4& in, const color4& desired, float factor)
+    inline constexpr color4 interpolate(const color4& in, const color4& desired, float factor)
     {
         auto diff = desired - in;
         return in + (diff * factor);
     }
     
-    inline color4 make_color(float r, float g, float b)
+    inline constexpr color4 make_color(float r, float g, float b)
     {
         return color4{r, g, b, 1.0f};
     }
     
     template<typename ValueType, u32 size>
-    inline blt::vec<ValueType, 2> make_vec2(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    inline constexpr blt::vec<ValueType, 2> make_vec2(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
         if constexpr (size >= 2)
         {
@@ -457,7 +457,7 @@ namespace blt
     }
     
     template<typename ValueType, u32 size>
-    inline blt::vec<ValueType, 3> make_vec3(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    inline constexpr blt::vec<ValueType, 3> make_vec3(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
         if constexpr (size >= 3)
         {
@@ -474,7 +474,7 @@ namespace blt
     }
     
     template<typename ValueType, u32 size>
-    inline blt::vec<ValueType, 4> make_vec4(const blt::vec<ValueType, size>& t, size_t fill = 0)
+    inline constexpr blt::vec<ValueType, 4> make_vec4(const blt::vec<ValueType, size>& t, size_t fill = 0)
     {
         if constexpr (size >= 4)
         {
