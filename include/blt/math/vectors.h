@@ -433,12 +433,6 @@ namespace blt
     using color4 = vec4;
     using color3 = vec3;
     
-    inline constexpr color4 interpolate(const color4& in, const color4& desired, float factor)
-    {
-        auto diff = desired - in;
-        return in + (diff * factor);
-    }
-    
     inline constexpr color4 make_color(float r, float g, float b)
     {
         return color4{r, g, b, 1.0f};
