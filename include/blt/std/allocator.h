@@ -24,8 +24,9 @@
     #include <blt/std/ranges.h>
     #include <blt/std/utility.h>
     #include <blt/std/types.h>
-    // TODO: remove
-    //#include <blt/std/hashmap.h>
+    #include <blt/std/assert.h>
+// TODO: remove
+//#include <blt/std/hashmap.h>
     #include <blt/compatibility.h>
     #include <stdexcept>
     #include "logging.h"
@@ -546,6 +547,106 @@ namespace blt
     inline constexpr blt::size_t BLT_2MB_SIZE = 4096 * 512;
     
     /**
+    * Logging function used for handling mmap errors. call after a failed mmap call.
+    * @param LOG_FUNC function to log with, must be a BLT_*_STREAM
+    */
+    template<typename LOG_FUNC>
+    static void handle_mmap_error(LOG_FUNC func = BLT_ERROR_STREAM)
+    {
+#define BLT_WRITE(arg) func << arg << '\n';
+        switch (errno)
+        {
+            case EACCES:
+                BLT_WRITE("fd not set to open!");
+                break;
+            case EAGAIN:
+                BLT_WRITE("The file has been locked, or too much memory has been locked");
+                break;
+            case EBADF:
+                BLT_WRITE("fd is not a valid file descriptor");
+                break;
+            case EEXIST:
+                BLT_WRITE("MAP_FIXED_NOREPLACE was specified in flags, and the range covered "
+                          "by addr and length clashes with an existing mapping.");
+                break;
+            case EINVAL:
+                BLT_WRITE("We don't like addr, length, or offset (e.g., they are too large, or not aligned on a page boundary).");
+                BLT_WRITE("Or length was 0");
+                BLT_WRITE("Or flags contained none of MAP_PRIVATE, MAP_SHARED, or MAP_SHARED_VALIDATE.");
+                break;
+            case ENFILE:
+                BLT_WRITE("The system-wide limit on the total number of open files has been reached.");
+                break;
+            case ENODEV:
+                BLT_WRITE("The underlying filesystem of the specified file does not support memory mapping.");
+                break;
+            case ENOMEM:
+                BLT_WRITE("No memory is available.");
+                BLT_WRITE("Or The process's maximum number of mappings would have been exceeded.  "
+                          "This error can also occur for munmap(), when unmapping a region in the middle of an existing mapping, "
+                          "since this results in two smaller mappings on either side of the region being unmapped.");
+                BLT_WRITE("Or The process's RLIMIT_DATA limit, described in getrlimit(2), would have been exceeded.");
+                BLT_WRITE("Or We don't like addr, because it exceeds the virtual address space of the CPU.");
+                break;
+            case EOVERFLOW:
+                BLT_WRITE("On 32-bit architecture together with the large file extension (i.e., using 64-bit off_t): "
+                          "the number of pages used for length plus number of "
+                          "pages used for offset would overflow unsigned long (32 bits).");
+                break;
+            case EPERM:
+                BLT_WRITE("The prot argument asks for PROT_EXEC but the mapped area "
+                          "belongs to a file on a filesystem that was mounted no-exec.");
+                BLT_WRITE("Or The operation was prevented by a file seal");
+                BLT_WRITE("Or The MAP_HUGETLB flag was specified, but the caller "
+                          "was not privileged (did not have the CAP_IPC_LOCK capability) "
+                          "and is not a member of the sysctl_hugetlb_shm_group group; "
+                          "see the description of /proc/sys/vm/sysctl_hugetlb_shm_group");
+                break;
+            case ETXTBSY:
+                BLT_WRITE("MAP_DENYWRITE was set but the object specified by fd is open for writing.");
+                break;
+        }
+    }
+    
+    template<typename T, bool WARN_ON_FAIL = false>
+    static inline T* allocate_huge_page(blt::size_t BLOCK_SIZE, blt::size_t HUGE_PAGE_SIZE = BLT_2MB_SIZE)
+    {
+        BLT_ASSERT((BLOCK_SIZE & (HUGE_PAGE_SIZE - 1)) == 0 && "Must be multiple of the huge page size!");
+        T* buffer = static_cast<T*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE,
+                                          MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0));
+        // if we fail to allocate a huge page we can try to allocate normally
+        if (buffer == MAP_FAILED)
+        {
+            if constexpr (WARN_ON_FAIL)
+            {
+                BLT_WARN_STREAM << "We failed to allocate huge pages\n";
+                handle_mmap_error(BLT_WARN_STREAM);
+                BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
+                                   "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
+            }
+            blt::size_t bytes = BLOCK_SIZE * 2;
+            buffer = static_cast<T*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
+            if (buffer == MAP_FAILED)
+            {
+                BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
+                handle_mmap_error(BLT_ERROR_STREAM);
+                throw std::bad_alloc();
+            }
+            if constexpr (WARN_ON_FAIL)
+            {
+                if (((size_t) buffer & (HUGE_PAGE_SIZE - 1)) != 0)
+                    BLT_ERROR("Pointer is not aligned! %p", buffer);
+            }
+            auto* ptr = static_cast<void*>(buffer);
+            auto ptr_size = reinterpret_cast<blt::size_t>(ptr);
+            buffer = static_cast<T*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
+            if constexpr (WARN_ON_FAIL)
+                BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
+        }
+        return buffer;
+    }
+    
+    /**
      * blt::bump_allocator. Allocates blocks of BLOCK_SIZE with zero reuse. When all objects from a block are fully deallocated the block will be freed
      * @tparam BLOCK_SIZE size of block to use. recommended to be multiple of page size or huge page size.
      * @tparam USE_HUGE allocate using mmap and huge pages. If this fails it will use mmap to allocate normally. defaults to off because linux has parent huge pages.
@@ -627,68 +728,6 @@ namespace blt
             stats_t stats;
             //blt::hashset_t<void*> deletes;
             
-            /**
-             * Logging function used for handling mmap errors. call after a failed mmap call.
-             * @param LOG_FUNC function to log with, must be a BLT_*_STREAM
-             */
-            template<typename LOG_FUNC>
-            static void handle_mmap_error(LOG_FUNC func = BLT_ERROR_STREAM)
-            {
-#define BLT_WRITE(arg) func << arg << '\n';
-                switch (errno)
-                {
-                    case EACCES:
-                        BLT_WRITE("fd not set to open!");
-                        break;
-                    case EAGAIN:
-                        BLT_WRITE("The file has been locked, or too much memory has been locked");
-                        break;
-                    case EBADF:
-                        BLT_WRITE("fd is not a valid file descriptor");
-                        break;
-                    case EEXIST:
-                        BLT_WRITE("MAP_FIXED_NOREPLACE was specified in flags, and the range covered "
-                                  "by addr and length clashes with an existing mapping.");
-                        break;
-                    case EINVAL:
-                        BLT_WRITE("We don't like addr, length, or offset (e.g., they are too large, or not aligned on a page boundary).");
-                        BLT_WRITE("Or length was 0");
-                        BLT_WRITE("Or flags contained none of MAP_PRIVATE, MAP_SHARED, or MAP_SHARED_VALIDATE.");
-                        break;
-                    case ENFILE:
-                        BLT_WRITE("The system-wide limit on the total number of open files has been reached.");
-                        break;
-                    case ENODEV:
-                        BLT_WRITE("The underlying filesystem of the specified file does not support memory mapping.");
-                        break;
-                    case ENOMEM:
-                        BLT_WRITE("No memory is available.");
-                        BLT_WRITE("Or The process's maximum number of mappings would have been exceeded.  "
-                                  "This error can also occur for munmap(), when unmapping a region in the middle of an existing mapping, "
-                                  "since this results in two smaller mappings on either side of the region being unmapped.");
-                        BLT_WRITE("Or The process's RLIMIT_DATA limit, described in getrlimit(2), would have been exceeded.");
-                        BLT_WRITE("Or We don't like addr, because it exceeds the virtual address space of the CPU.");
-                        break;
-                    case EOVERFLOW:
-                        BLT_WRITE("On 32-bit architecture together with the large file extension (i.e., using 64-bit off_t): "
-                                  "the number of pages used for length plus number of "
-                                  "pages used for offset would overflow unsigned long (32 bits).");
-                        break;
-                    case EPERM:
-                        BLT_WRITE("The prot argument asks for PROT_EXEC but the mapped area "
-                                  "belongs to a file on a filesystem that was mounted no-exec.");
-                        BLT_WRITE("Or The operation was prevented by a file seal");
-                        BLT_WRITE("Or The MAP_HUGETLB flag was specified, but the caller "
-                                  "was not privileged (did not have the CAP_IPC_LOCK capability) "
-                                  "and is not a member of the sysctl_hugetlb_shm_group group; "
-                                  "see the description of /proc/sys/vm/sysctl_hugetlb_shm_group");
-                        break;
-                    case ETXTBSY:
-                        BLT_WRITE("MAP_DENYWRITE was set but the object specified by fd is open for writing.");
-                        break;
-                }
-            }
-            
             struct block
             {
                 struct block_metadata_t
@@ -724,38 +763,7 @@ namespace blt
 #ifdef __unix__
                 if constexpr (USE_HUGE)
                 {
-                    static_assert((BLOCK_SIZE & (HUGE_PAGE_SIZE - 1)) == 0 && "Must be multiple of the huge page size!");
-                    buffer = static_cast<block*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE,
-                                                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0));
-                    // if we fail to allocate a huge page we can try to allocate normally
-                    if (buffer == MAP_FAILED)
-                    {
-                        if constexpr (WARN_ON_FAIL)
-                        {
-                            BLT_WARN_STREAM << "We failed to allocate huge pages\n";
-                            handle_mmap_error(BLT_WARN_STREAM);
-                            BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
-                                               "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
-                        }
-                        blt::size_t bytes = BLOCK_SIZE * 2;
-                        buffer = static_cast<block*>(mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE, -1, 0));
-                        if (buffer == MAP_FAILED)
-                        {
-                            BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
-                            handle_mmap_error(BLT_ERROR_STREAM);
-                            throw std::bad_alloc();
-                        }
-                        if constexpr (WARN_ON_FAIL)
-                        {
-                            if (((size_t) buffer & (HUGE_PAGE_SIZE - 1)) != 0)
-                                BLT_ERROR("Pointer is not aligned! %p", buffer);
-                        }
-                        auto* ptr = static_cast<void*>(buffer);
-                        auto ptr_size = reinterpret_cast<blt::size_t>(ptr);
-                        buffer = static_cast<block*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
-                        if constexpr (WARN_ON_FAIL)
-                            BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
-                    }
+                    buffer = allocate_huge_page<block, WARN_ON_FAIL>(BLOCK_SIZE, HUGE_PAGE_SIZE);
                 } else
                     buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
 #else
