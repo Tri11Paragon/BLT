@@ -802,7 +802,7 @@ namespace blt
             {
                 if (head == nullptr)
                     return nullptr;
-                blt::size_t remaining_bytes = BLOCK_REMAINDER - static_cast<blt::size_t>(head->metadata.offset - head->buffer);
+                blt::size_t remaining_bytes = BLOCK_REMAINDER - static_cast<blt::ptrdiff_t>(head->metadata.offset - head->buffer);
                 auto pointer = static_cast<void*>(head->metadata.offset);
                 return std::align(alignment, bytes, pointer, remaining_bytes);
             }
