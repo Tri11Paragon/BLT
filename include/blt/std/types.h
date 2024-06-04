@@ -37,6 +37,7 @@ namespace blt
     using u64 = std::uint64_t;
     
     using size_t = std::size_t;
+    using ptrdiff_t = std::ptrdiff_t;
     using f32 = float;
     using f64 = double;
 #ifndef NO_BLT_NAMESPACE_ON_TYPES
