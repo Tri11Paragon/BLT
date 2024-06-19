@@ -69,7 +69,7 @@ namespace blt::error
                 BLT_WARN("Network is unreachable");
                 break;
             case ENOTSOCK:
-                BLT_WARN("Socket operation on non-socket");
+                BLT_WARN("Socket operation_t on non-socket");
                 break;
             case EPROTOTYPE:
                 BLT_WARN("Protocol wrong type for socket");

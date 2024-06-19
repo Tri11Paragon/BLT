@@ -596,7 +596,7 @@ namespace blt
             case EPERM:
                 BLT_WRITE("The prot argument asks for PROT_EXEC but the mapped area "
                           "belongs to a file on a filesystem that was mounted no-exec.");
-                BLT_WRITE("Or The operation was prevented by a file seal");
+                BLT_WRITE("Or The operation_t was prevented by a file seal");
                 BLT_WRITE("Or The MAP_HUGETLB flag was specified, but the caller "
                           "was not privileged (did not have the CAP_IPC_LOCK capability) "
                           "and is not a member of the sysctl_hugetlb_shm_group group; "

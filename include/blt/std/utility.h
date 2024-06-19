@@ -60,6 +60,12 @@ namespace blt
     {
         return demangle(typeid(T).name());
     }
+    
+    template<typename T>
+    static BLT_CPP20_CONSTEXPR inline std::string type_string_raw()
+    {
+        return typeid(T).name();
+    }
 
 //#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
 //#define BLT_LAMBDA(var, code) [](var) -> auto { return code; }
