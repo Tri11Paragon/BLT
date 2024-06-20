@@ -224,7 +224,7 @@ namespace blt
             
             constexpr inline const_iterator crbegin() const noexcept
             {
-                return const_reverse_iterator {cend()};
+                return const_reverse_iterator{cend()};
             }
             
             constexpr inline reverse_iterator crend() const noexcept
@@ -247,6 +247,266 @@ namespace blt
             
             scoped_buffer operator=(scoped_buffer& copyAssignment) = delete;
     };
+    
+    
+    // TODO: might already have a version of this somewhere!
+    template<typename T, bool = std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>>
+    class expanding_buffer;
+    
+    template<typename T>
+    class expanding_buffer<T, true>
+    {
+        public:
+            using element_type = T;
+            using value_type = std::remove_cv_t<T>;
+            using pointer = T*;
+            using const_pointer = const T*;
+            using reference = T&;
+            using const_reference = const T&;
+            using iterator = ptr_iterator<T>;
+            using const_iterator = ptr_iterator<const T>;
+            using reverse_iterator = std::reverse_iterator<iterator>;
+            using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        private:
+            T* buffer_ = nullptr;
+            size_t size_;
+        public:
+            constexpr expanding_buffer(): buffer_(nullptr), size_(0)
+            {}
+            
+            constexpr explicit expanding_buffer(size_t size): size_(size)
+            {
+                if (size > 0)
+                    buffer_ = new T[size];
+                else
+                    buffer_ = nullptr;
+            }
+            
+            constexpr expanding_buffer(const expanding_buffer& copy)
+            {
+                if (copy.size() == 0)
+                {
+                    buffer_ = nullptr;
+                    size_ = 0;
+                    return;
+                }
+                buffer_ = new T[copy.size()];
+                size_ = copy.size_;
+                
+                if constexpr (std::is_trivially_copyable_v<T>)
+                {
+                    std::memcpy(buffer_, copy.buffer_, copy.size() * sizeof(T));
+                } else
+                {
+                    if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
+                    {
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = T(copy[i]);
+                    } else
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = copy[i];
+                }
+            }
+            
+            constexpr expanding_buffer& operator=(const expanding_buffer& copy)
+            {
+                if (&copy == this)
+                    return *this;
+                
+                if (copy.size() == 0)
+                {
+                    buffer_ = nullptr;
+                    size_ = 0;
+                    return *this;
+                }
+                
+                delete_this(buffer_, size());
+                buffer_ = new T[copy.size()];
+                size_ = copy.size_;
+                
+                if constexpr (std::is_trivially_copyable_v<T>)
+                {
+                    std::memcpy(buffer_, copy.buffer_, copy.size() * sizeof(T));
+                } else
+                {
+                    if constexpr (std::is_copy_constructible_v<T> && !std::is_copy_assignable_v<T>)
+                    {
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = T(copy[i]);
+                    } else
+                        for (size_t i = 0; i < this->size_; i++)
+                            buffer_[i] = copy[i];
+                }
+                return *this;
+            }
+            
+            constexpr expanding_buffer(expanding_buffer&& move) noexcept
+            {
+                delete_this(buffer_, size());
+                buffer_ = move.buffer_;
+                size_ = move.size();
+                move.buffer_ = nullptr;
+            }
+            
+            constexpr expanding_buffer& operator=(expanding_buffer&& moveAssignment) noexcept
+            {
+                delete_this(buffer_, size());
+                buffer_ = moveAssignment.buffer_;
+                size_ = moveAssignment.size();
+                moveAssignment.buffer_ = nullptr;
+                
+                return *this;
+            }
+            
+            /**
+             * Resize the internal buffer. Nothing will occur if the sizes are equal.
+             * This function WILL NOT COPY ANY DATA. It is meant for use when creating a scoped buffer without size.
+             */
+            constexpr void resize(size_t size)
+            {
+                if (size == 0)
+                    return;
+                if (size == size_)
+                    return;
+                delete_this(buffer_, this->size());
+                buffer_ = new T[size];
+                size_ = size;
+            }
+            
+            constexpr inline T& operator[](size_t index)
+            {
+                if (index >= size())
+                    expand(index);
+                return buffer_[index];
+            }
+            
+            constexpr inline const T& operator[](size_t index) const
+            {
+                if (index >= size())
+                    expand(index);
+                return buffer_[index];
+            }
+            
+            constexpr inline T* operator*()
+            {
+                return buffer_;
+            }
+            
+            [[nodiscard]] constexpr inline size_t size() const
+            {
+                return size_;
+            }
+            
+            constexpr inline T*& ptr()
+            {
+                return buffer_;
+            }
+            
+            constexpr inline const T* const& ptr() const
+            {
+                return buffer_;
+            }
+            
+            constexpr inline const T* const& data() const
+            {
+                return buffer_;
+            }
+            
+            constexpr inline T*& data()
+            {
+                return buffer_;
+            }
+            
+            constexpr iterator begin() noexcept
+            {
+                return iterator{data()};
+            }
+            
+            constexpr iterator end() noexcept
+            {
+                return iterator{data() + size()};
+            }
+            
+            constexpr const_iterator cbegin() const noexcept
+            {
+                return const_iterator{data()};
+            }
+            
+            constexpr const_iterator cend() const noexcept
+            {
+                return const_iterator{data() + size()};
+            }
+            
+            constexpr inline reverse_iterator rbegin() noexcept
+            {
+                return reverse_iterator{end()};
+            }
+            
+            constexpr inline reverse_iterator rend() noexcept
+            {
+                return reverse_iterator{begin()};
+            }
+            
+            constexpr inline const_iterator crbegin() const noexcept
+            {
+                return const_reverse_iterator{cend()};
+            }
+            
+            constexpr inline reverse_iterator crend() const noexcept
+            {
+                return reverse_iterator{cbegin()};
+            }
+            
+            ~expanding_buffer()
+            {
+                delete_this(buffer_, size());
+            }
+        
+        private:
+            void expand(blt::size_t size)
+            {
+                size = std::max(this->size(), size);
+                T* new_buffer = new T[blt::mem::next_byte_allocation(size)];
+                if constexpr (std::is_trivially_copyable_v<T>)
+                {
+                    std::memcpy(new_buffer, buffer_, size * sizeof(T));
+                } else
+                {
+                    if constexpr (std::is_copy_constructible_v<T> && !std::is_move_constructible_v<T>)
+                    {
+                        for (size_t i = 0; i < size; i++)
+                            new_buffer[i] = T(buffer_[i]);
+                    } else
+                        for (size_t i = 0; i < size; i++)
+                            new_buffer[i] = std::move(buffer_[i]);
+                }
+                delete[] buffer_;
+                buffer_ = new_buffer;
+            }
+            
+            inline void delete_this(T* buffer, blt::size_t)
+            {
+//                if constexpr (std::is_trivially_destructible_v<T>)
+//                    return;
+//                if (buffer == nullptr)
+//                    return;
+//                for (blt::size_t i = 0; i < size; i++)
+//                    buffer[i]->~T();
+//                free(buffer);
+                delete[] buffer;
+            }
+    };
+    
+    template<typename T>
+    class expanding_buffer<T, false> : expanding_buffer<T, true>
+    {
+            using expanding_buffer<T, true>::expanding_buffer;
+        public:
+            expanding_buffer(const expanding_buffer& copy) = delete;
+            
+            expanding_buffer operator=(expanding_buffer& copyAssignment) = delete;
+    };
+    
     
     template<typename T>
     struct nullptr_initializer
