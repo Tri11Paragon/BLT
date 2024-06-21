@@ -44,4 +44,23 @@ namespace blt
 }
 #endif
 
+namespace blt
+{
+    template<typename T>
+    struct integer_type
+    {
+        T id;
+        
+        integer_type() = default;
+        
+        integer_type(T id): id(id) // NOLINT
+        {}
+        
+        inline operator T() const // NOLINT
+        {
+            return id;
+        }
+    };
+}
+
 #endif //BLT_TYPES_H
