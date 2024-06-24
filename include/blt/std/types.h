@@ -49,6 +49,8 @@ namespace blt
     template<typename T>
     struct integer_type
     {
+        using value_type = T;
+        
         T id;
         
         integer_type() = default;
@@ -59,6 +61,26 @@ namespace blt
         inline operator T() const // NOLINT
         {
             return id;
+        }
+        
+        friend bool operator==(const integer_type<T>& a, const integer_type<T>& b)
+        {
+            return a.id == b.id;
+        }
+        
+        friend bool operator!=(const integer_type<T>& a, const integer_type<T>& b)
+        {
+            return a.id != b.id;
+        }
+        
+        friend bool operator<(const integer_type<T>& a, const integer_type<T>& b)
+        {
+            return a.id < b.id;
+        }
+        
+        friend bool operator>(const integer_type<T>& a, const integer_type<T>& b)
+        {
+            return a.id > b.id;
         }
     };
 }
