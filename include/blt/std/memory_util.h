@@ -113,8 +113,10 @@ namespace blt::mem
         return fromBytes(in, *out);
     }
     
-    inline static size_t next_byte_allocation(size_t prev_size, size_t default_allocation_block = 8192)
+    inline static size_t next_byte_allocation(size_t prev_size, size_t default_allocation_block = 8192, size_t default_size = 16)
     {
+        if (prev_size < default_size)
+            return default_size;
         if (prev_size < default_allocation_block)
             return prev_size * 2;
         return prev_size + default_allocation_block;

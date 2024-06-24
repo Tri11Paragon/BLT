@@ -269,7 +269,7 @@ namespace blt
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         private:
             T* buffer_ = nullptr;
-            size_t size_;
+            size_t size_ = 0;
         public:
             constexpr expanding_buffer(): buffer_(nullptr), size_(0)
             {}
@@ -465,23 +465,25 @@ namespace blt
         private:
             void expand(blt::size_t size)
             {
-                size = std::max(this->size(), size);
-                T* new_buffer = new T[blt::mem::next_byte_allocation(size)];
+                size = std::max(size_, size);
+                size = blt::mem::next_byte_allocation(size);
+                T* new_buffer = new T[size];
                 if constexpr (std::is_trivially_copyable_v<T>)
                 {
-                    std::memcpy(new_buffer, buffer_, size * sizeof(T));
+                    std::memcpy(new_buffer, buffer_, size_ * sizeof(T));
                 } else
                 {
                     if constexpr (std::is_copy_constructible_v<T> && !std::is_move_constructible_v<T>)
                     {
-                        for (size_t i = 0; i < size; i++)
+                        for (size_t i = 0; i < size_; i++)
                             new_buffer[i] = T(buffer_[i]);
                     } else
-                        for (size_t i = 0; i < size; i++)
+                        for (size_t i = 0; i < size_; i++)
                             new_buffer[i] = std::move(buffer_[i]);
                 }
                 delete[] buffer_;
                 buffer_ = new_buffer;
+                size_ = size;
             }
             
             inline void delete_this(T* buffer, blt::size_t)
