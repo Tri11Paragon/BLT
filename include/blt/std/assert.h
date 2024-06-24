@@ -16,6 +16,8 @@ namespace blt
     void b_assert_failed(const char* expression, const char* msg, const char* path, int line);
     
     void b_throw(const char* what, const char* path, int line);
+    
+    void b_abort(const char* what, const char* path, int line);
 }
 
 /**
@@ -53,5 +55,7 @@ namespace blt
 // prints as error with stack trace and throws the exception.
 #define BLT_THROW(throwable) do {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;} while(0)
 
+
+#define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); } while (0)
 
 #endif //BLT_ASSERT_H

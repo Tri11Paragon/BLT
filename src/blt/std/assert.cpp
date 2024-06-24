@@ -124,5 +124,21 @@ namespace blt {
     
     }
     
+    void b_abort(const char* what, const char* path, int line)
+    {
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+        BLT_STACK_TRACE(50);
+#endif
+        BLT_FATAL("----{ABORT}----");
+        BLT_FATAL("\tWhat: ", what);
+        BLT_FATAL("\tcalled from %s:%d", path, line);
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+        printStacktrace(messages, size, path, line);
+        
+        BLT_FREE_STACK_TRACE();
+#endif
+        std::exit(EXIT_FAILURE);
+    }
+    
     
 }
