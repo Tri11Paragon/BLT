@@ -468,20 +468,23 @@ namespace blt
                 size = std::max(size_, size);
                 size = blt::mem::next_byte_allocation(size);
                 T* new_buffer = new T[size];
-                if constexpr (std::is_trivially_copyable_v<T>)
+                if (buffer_ != nullptr)
                 {
-                    std::memcpy(new_buffer, buffer_, size_ * sizeof(T));
-                } else
-                {
-                    if constexpr (std::is_copy_constructible_v<T> && !std::is_move_constructible_v<T>)
+                    if constexpr (std::is_trivially_copyable_v<T>)
                     {
-                        for (size_t i = 0; i < size_; i++)
-                            new_buffer[i] = T(buffer_[i]);
+                        std::memcpy(new_buffer, buffer_, size_ * sizeof(T));
                     } else
-                        for (size_t i = 0; i < size_; i++)
-                            new_buffer[i] = std::move(buffer_[i]);
+                    {
+                        if constexpr (std::is_copy_constructible_v<T> && !std::is_move_constructible_v<T>)
+                        {
+                            for (size_t i = 0; i < size_; i++)
+                                new_buffer[i] = T(buffer_[i]);
+                        } else
+                            for (size_t i = 0; i < size_; i++)
+                                new_buffer[i] = std::move(buffer_[i]);
+                    }
+                    delete[] buffer_;
                 }
-                delete[] buffer_;
                 buffer_ = new_buffer;
                 size_ = size;
             }
