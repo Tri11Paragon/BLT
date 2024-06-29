@@ -94,12 +94,16 @@ namespace blt
 
 #if defined(__GNUC__) || defined(__llvm__)
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))
+    #define BLT_ATTRIB_CONST __attribute__((const))
+    #define BLT_ATTRIB_PURE __attribute__((pure))
 #else
     #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
         #define BLT_ATTRIB_NO_INLINE __declspec(noinline)
     #else
         #define BLT_ATTRIB_NO_INLINE
     #endif
+    #define BLT_ATTRIB_CONST
+    #define BLT_ATTRIB_PURE
 #endif
     
     template<typename T>
