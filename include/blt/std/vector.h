@@ -539,12 +539,72 @@ namespace blt
     class svo_vector
     {
         public:
+            constexpr svo_vector() = default;
+            
+            template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
+            constexpr svo_vector(std::initializer_list<G> list)
+            {
+                if (list.size() > BUFFER_SIZE)
+                {
+                    // TODO: how to avoid copy here?
+                    data.buffer_pointer = alloc.allocate(list.size());
+                    for (const auto& v : blt::enumerate(list))
+                        new (&data.buffer_pointer[v.first]) T(v.second);
+                    capacity = list.size();
+                    used = list.size();
+                } else
+                {
+                    for (const auto& v : blt::enumerate(list))
+                        new (&data.buffer[v.first]) T(v.second);
+                    used = list.size();
+                }
+            }
+            
+            template<typename G, std::enable_if_t<std::is_same_v<blt::vector<T>, G> || std::is_same_v<std::vector<T>, G>, bool> = true>
+            constexpr explicit svo_vector(G&& universal)
+            {
+                if (universal.size() > BUFFER_SIZE)
+                {
+                
+                } else
+                {
+                
+                }
+            }
+            
+            [[nodiscard]] constexpr blt::size_t size() const
+            {
+                return used;
+            }
+            
+            [[nodiscard]] constexpr bool is_heap() const
+            {
+                return used > BUFFER_SIZE;
+            }
+            
+            BLT_CPP20_CONSTEXPR ~svo_vector()
+            {
+                if (is_heap())
+                {
+                    for (blt::size_t i = 0; i < used; i++)
+                        data.buffer_pointer[i].~T();
+                    alloc.deallocate(data.buffer_pointer, capacity);
+                } else
+                {
+                    for (blt::size_t i = 0; i < used; i++)
+                        data.buffer[i].~T();
+                }
+            }
         
         private:
-            union buffer_data {
+            union buffer_data
+            {
                 T* buffer_pointer;
                 T buffer[BUFFER_SIZE];
-            };
+            } data;
+            ALLOC alloc;
+            blt::size_t used = 0;
+            blt::size_t capacity = BUFFER_SIZE;
     };
     
 }
