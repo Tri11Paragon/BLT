@@ -264,10 +264,11 @@ namespace blt
             {
                 if (v1.size() != v2.size())
                     return false;
-                for (blt::size_t i = 0; i < v1.size(); i++) {
+                for (blt::size_t i = 0; i < v1.size(); i++)
+                {
                     if (v1[i] != v2[i])
                         return false;
-                    }
+                }
                 return true;
             }
     };
@@ -532,6 +533,18 @@ namespace blt
             {
                 return reverse_iterator{cbegin()};
             }
+    };
+    
+    template<typename T, blt::size_t BUFFER_SIZE = 8 / sizeof(T), typename ALLOC = std::allocator<T>>
+    class svo_vector
+    {
+        public:
+        
+        private:
+            union buffer_data {
+                T* buffer_pointer;
+                T buffer[BUFFER_SIZE];
+            };
     };
     
 }
