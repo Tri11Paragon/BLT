@@ -94,8 +94,17 @@ namespace blt
 
 #if defined(__GNUC__) || defined(__llvm__)
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))
-    #define BLT_ATTRIB_CONST __attribute__((const))
-    #define BLT_ATTRIB_PURE __attribute__((pure))
+    /**
+     * means that the return value is solely a function of the arguments,
+     * and if any of the arguments are pointers, then the pointers must not be dereferenced.
+     */
+    #define BLT_ATTRIB_NO_SIDE_EFFECTS __attribute__((const))
+    /**
+     * the function has no side effects and the value returned depends on the arguments and the state of global variables.
+     * Therefore it is safe for the optimizer to elide some calls to it, if the arguments are the same,
+     * and the caller did not do anything to change the state of the globals in between the calls.
+     */
+    #define BLT_ATTRIB_GLOBAL_READ_ONLY __attribute__((pure))
 #else
     #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
         #define BLT_ATTRIB_NO_INLINE __declspec(noinline)
