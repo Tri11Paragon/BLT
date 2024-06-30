@@ -25,6 +25,7 @@
 #include <blt/compatibility.h>
 #include "ranges.h"
 #include <stdexcept>
+#include <array>
 
 namespace blt
 {
@@ -33,11 +34,16 @@ namespace blt
     class static_vector
     {
         private:
-            T buffer_[MAX_SIZE];
+            std::array<T, MAX_SIZE> buffer_;
             size_t size_ = 0;
             
-            using iterator = T*;
-            using const_iterator = const T*;
+            using value_type = T;
+            using reference = T&;
+            using pointer = T*;
+            using const_reference = const T&;
+            using const_pointer = const T*;
+            using iterator = blt::ptr_iterator<T>;
+            using const_iterator = blt::ptr_iterator<const T>;
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         public:
@@ -59,21 +65,19 @@ namespace blt
                 return true;
             }
             
-            constexpr inline T& at(size_t index)
+            //TODO: replace with placement new / byte data
+            template<typename... Args>
+            constexpr inline bool emplace_back(Args&& ... args)
             {
-                if (index >= MAX_SIZE)
-                    throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
-                return buffer_[index];
+                if (size_ >= MAX_SIZE)
+                    return false;
+                buffer_[size_++] = T{std::forward<Args>(args)...};
+                return true;
             }
             
-            constexpr inline T& operator[](size_t index)
+            constexpr inline void pop_back()
             {
-                return buffer_[index];
-            }
-            
-            constexpr inline const T& operator[](size_t index) const
-            {
-                return buffer_[index];
+                size_--;
             }
             
             constexpr inline void reserve(size_t size)
@@ -81,6 +85,18 @@ namespace blt
                 if (size > MAX_SIZE)
                     size = MAX_SIZE;
                 size_ = size;
+            }
+            
+            [[nodiscard]] constexpr inline bool empty() const
+            {
+                return size() == 0;
+            }
+            
+            constexpr inline void clear()
+            {
+                for (auto& v : *this)
+                    v = {};
+                size_ = 0;
             }
             
             [[nodiscard]] constexpr inline size_t size() const
@@ -93,19 +109,66 @@ namespace blt
                 return MAX_SIZE;
             }
             
-            constexpr inline T* data()
+            [[nodiscard]] constexpr inline blt::size_t max_size() const
+            {
+                return MAX_SIZE;
+            }
+            
+            constexpr inline reference at(size_t index)
+            {
+                if (index >= MAX_SIZE)
+                    throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
+                return buffer_[index];
+            }
+            
+            constexpr inline reference operator[](size_t index)
+            {
+                return buffer_[index];
+            }
+            
+            constexpr inline const_reference operator[](size_t index) const
+            {
+                return buffer_[index];
+            }
+            
+            constexpr inline pointer operator*()
             {
                 return buffer_;
             }
             
-            constexpr inline T* operator*()
+            constexpr inline const_pointer operator*() const
             {
                 return buffer_;
             }
             
-            constexpr inline const T* data() const
+            constexpr inline pointer data()
             {
                 return buffer_;
+            }
+            
+            constexpr inline const_pointer data() const
+            {
+                return buffer_;
+            }
+            
+            constexpr inline reference front()
+            {
+                return data()[0];
+            }
+            
+            constexpr inline const_reference front() const
+            {
+                return data()[0];
+            }
+            
+            constexpr inline reference back()
+            {
+                return data()[size() - 1];
+            }
+            
+            constexpr inline const_reference back() const
+            {
+                return data()[size() - 1];
             }
             
             constexpr inline iterator begin() noexcept
@@ -146,6 +209,54 @@ namespace blt
             constexpr inline reverse_iterator crend() const noexcept
             {
                 return reverse_iterator{cbegin()};
+            }
+            
+            template<typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool> = true>
+            constexpr iterator insert(const_iterator pos, G&& ref)
+            {
+                blt::ptrdiff_t loc = pos - buffer_;
+                if (size_ + 1 >= capacity())
+                {
+                    BLT_ABORT("Inserting exceeds size of internal buffer!");
+                }
+                for (auto insert = end() - 1; (insert - buffer_) != loc - 1; insert--)
+                {
+                    auto new_pos = insert + 1;
+                    *new_pos = *insert;
+                }
+                buffer_[loc] = ref;
+                size_++;
+                return buffer_ + loc;
+            }
+            
+            
+            constexpr iterator erase(const_iterator pos)
+            {
+                blt::ptrdiff_t loc = pos - buffer_;
+                
+                for (auto fetch = begin() + loc + 1; fetch != end(); fetch++)
+                {
+                    auto insert = fetch - 1;
+                    *insert = *fetch;
+                }
+                
+                size_--;
+                return buffer_ + loc + 1;
+            }
+            
+            constexpr iterator erase(const_iterator first, const_iterator last)
+            {
+                blt::ptrdiff_t first_pos = first - buffer_;
+                blt::ptrdiff_t last_pos = last - buffer_;
+                blt::ptrdiff_t remove_amount = last_pos - first_pos;
+                
+                for (auto fetch = begin() + last_pos, insert = begin() + first_pos; fetch != end(); fetch++, insert++)
+                {
+                    *insert = *fetch;
+                }
+                
+                size_ -= remove_amount;
+                return buffer_ + first_pos + 1;
             }
     };
     
