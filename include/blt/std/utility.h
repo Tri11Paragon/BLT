@@ -97,6 +97,9 @@ namespace blt
     /**
      * means that the return value is solely a function of the arguments,
      * and if any of the arguments are pointers, then the pointers must not be dereferenced.
+     * Calls to functions whose return value is not affected by changes to the observable state of the program
+     * and that have no observable effects on such state other than
+     * to return a value may lend themselves to optimizations such as common subexpression elimination.
      */
     #define BLT_ATTRIB_NO_SIDE_EFFECTS __attribute__((const))
     /**
