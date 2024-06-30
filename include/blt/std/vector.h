@@ -258,6 +258,18 @@ namespace blt
                 size_ -= remove_amount;
                 return buffer_ + first_pos + 1;
             }
+            
+            template<typename T1, blt::size_t size1, typename T2, blt::size_t size2, std::enable_if_t<std::is_convertible_v<T1, T2>, bool> = true>
+            constexpr friend bool operator==(const static_vector<T1, size1>& v1, const static_vector<T2, size2>& v2)
+            {
+                if (v1.size() != v2.size())
+                    return false;
+                for (blt::size_t i = 0; i < v1.size(); i++) {
+                    if (v1[i] != v2[i])
+                        return false;
+                    }
+                return true;
+            }
     };
     
     template<typename T, typename ALLOC = std::allocator<T>>
@@ -277,8 +289,8 @@ namespace blt
             using const_reference = const value_type&;
             using pointer = value_type*;
             using const_pointer = const pointer;
-            using iterator = T*;
-            using const_iterator = const T*;
+            using iterator = blt::ptr_iterator<T>;
+            using const_iterator = blt::ptr_iterator<const T>;
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
             

@@ -19,6 +19,7 @@
 #ifndef BLT_MEMORY_UTIL_H
 #define BLT_MEMORY_UTIL_H
 
+#include <blt/std/types.h>
 #include <type_traits>
 #include <array>
 #include <cstring>
@@ -140,19 +141,24 @@ namespace blt
     {
         public:
             using iterator_category = std::random_access_iterator_tag;
-            using difference_type = std::ptrdiff_t;
+            using difference_type = blt::ptrdiff_t;
             using value_type = V;
             using pointer = value_type*;
             using reference = value_type&;
+            using iter_reference = ptr_iterator&;
             
             explicit ptr_iterator(V* v): _v(v)
             {}
             
             reference operator*() const
-            { return *_v; }
+            {
+                return *_v;
+            }
             
             pointer operator->()
-            { return _v; }
+            {
+                return _v;
+            }
             
             ptr_iterator& operator++()
             {
@@ -178,6 +184,63 @@ namespace blt
                 auto tmp = *this;
                 --(*this);
                 return tmp;
+            }
+            
+            iter_reference operator+=(difference_type amount)
+            {
+                _v += amount;
+                return *this;
+            }
+            
+            iter_reference operator-=(difference_type amount)
+            {
+                _v -= amount;
+                return *this;
+            }
+            
+            reference operator[](difference_type index)
+            {
+                return *(_v + index);
+            }
+            
+            reference operator[](blt::size_t index)
+            {
+                return *(_v + index);
+            }
+            
+            friend bool operator<(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return b._v - a._v > 0;
+            }
+            
+            friend bool operator>(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return a._v - b._v > 0;
+            }
+            
+            friend bool operator<=(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return b._v - a._v >= 0;
+            }
+            
+            friend bool operator>=(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return a._v - b._v >= 0;
+            }
+            
+            friend difference_type operator-(const ptr_iterator& a, const ptr_iterator& b)
+            {
+                return a._v - b._v;
+            }
+            
+            friend ptr_iterator operator+(const ptr_iterator& a, difference_type n)
+            {
+                return ptr_iterator(a._v + n);
+            }
+            
+            friend ptr_iterator operator+(difference_type n, const ptr_iterator& a)
+            {
+                return ptr_iterator(a._v + n);
             }
             
             friend bool operator==(const ptr_iterator& a, const ptr_iterator& b)
