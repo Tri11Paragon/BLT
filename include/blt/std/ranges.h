@@ -19,6 +19,27 @@ namespace blt
 {
     namespace itr
     {
+        template<typename ITER>
+        class itr_container
+        {
+            public:
+                itr_container(ITER&& begin, ITER&& end): begin_(std::forward<ITER>(begin)), end_(std::forward<ITER>(end))
+                {}
+                
+                ITER begin()
+                {
+                    return begin_;
+                }
+                
+                ITER end()
+                {
+                    return end_;
+                }
+            
+            private:
+                ITER begin_, end_;
+        };
+        
         template<typename TYPE_ITR, bool is_ptr = std::is_pointer_v<TYPE_ITR>>
         class iterator;
         
@@ -151,6 +172,12 @@ namespace blt
     static inline auto enumerate(T&& container)
     {
         return enumerator{container.begin(), container.end()};
+    }
+    
+    template<typename ITER>
+    static inline auto enumerate(ITER&& begin, ITER&& end)
+    {
+        return itr::itr_container<ITER>{std::forward<ITER>(begin), std::forward<ITER>(end)};
     }
     
     template<typename T>
