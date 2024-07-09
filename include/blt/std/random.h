@@ -62,13 +62,13 @@ namespace blt::random
      * @param max exclusive max
      * @return random int between min (inclusive) and max (exclusive)
      */
-    template<typename T>
+    template<typename T = blt::i32>
     static inline T pcg_random32(blt::u32& seed, T min = 0, T max = 2)
     {
         return static_cast<T>((pcg_double32(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
     }
     
-    template<typename T>
+    template<typename T = blt::i32>
     static inline T pcg_random32c(blt::u32 seed, T min = 0, T max = 2)
     {
         return pcg_int(seed, min, max);
@@ -96,13 +96,13 @@ namespace blt::random
         return murmur_double64(seed);
     }
     
-    template<typename T>
+    template<typename T = blt::i32>
     static inline T murmur_random64(blt::u64& seed, T min = 0, T max = 2)
     {
         return static_cast<T>((murmur_double64(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
     }
     
-    template<typename T>
+    template<typename T = blt::i32>
     static inline T murmur_random64c(blt::u64 seed, T min = 0, T max = 2)
     {
         return murmur_integral_64(seed, min, max);
