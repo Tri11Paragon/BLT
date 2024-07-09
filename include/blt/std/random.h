@@ -14,7 +14,7 @@ namespace blt::random
 {
     // https://github.com/avaneev/komihash/tree/main
     
-    static inline blt::u32 PCG_Hash(blt::u32 input)
+    static inline blt::u32 pcg_hash32(blt::u32 input)
     {
         blt::u32 state = input * 747796405u + 2891336453u;
         blt::u32 word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
@@ -32,28 +32,28 @@ namespace blt::random
         return h;
     }
     
-    static inline double pcg_double(blt::u32& seed)
+    static inline double pcg_double32(blt::u32& seed)
     {
-        seed = PCG_Hash(seed);
+        seed = pcg_hash32(seed);
         return static_cast<double>(seed) / static_cast<double>(std::numeric_limits<blt::u32>::max());
     }
     
-    static inline float pcg_float(blt::u32& seed)
+    static inline float pcg_float32(blt::u32& seed)
     {
-        return static_cast<float>(pcg_double(seed));
+        return static_cast<float>(pcg_double32(seed));
     }
     
     /**
      * @return random float without changing seed
      */
-    static inline float pcg_float_c(blt::u32 seed)
+    static inline float pcg_float32c(blt::u32 seed)
     {
-        return pcg_float(seed);
+        return pcg_float32(seed);
     }
     
-    static inline double pcg_double_c(blt::u32 seed)
+    static inline double pcg_double32c(blt::u32 seed)
     {
-        return pcg_double(seed);
+        return pcg_double32(seed);
     }
     
     /**
@@ -62,46 +62,48 @@ namespace blt::random
      * @param max exclusive max
      * @return random int between min (inclusive) and max (exclusive)
      */
-    static inline int pcg_int(blt::u32& seed, int min = 0, int max = 2)
+    template<typename T>
+    static inline T pcg_random32(blt::u32& seed, T min = 0, T max = 2)
     {
-        return static_cast<int>((pcg_double(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
+        return static_cast<T>((pcg_double32(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
     }
     
-    static inline int pcg_int_c(blt::u32 seed, int min = 0, int max = 2)
+    template<typename T>
+    static inline T pcg_random32c(blt::u32 seed, T min = 0, T max = 2)
     {
         return pcg_int(seed, min, max);
     }
     
     
-    static inline double murmur_double(blt::u64& seed)
+    static inline double murmur_double64(blt::u64& seed)
     {
         seed = murmur64(seed);
         return static_cast<double>(seed) / static_cast<double>(std::numeric_limits<blt::u64>::max());
     }
     
-    static inline float murmur_float(blt::u64& seed)
+    static inline float murmur_float64(blt::u64& seed)
     {
-        return static_cast<float>(murmur_double(seed));
+        return static_cast<float>(murmur_double64(seed));
     }
     
-    static inline float murmur_float_c(blt::u64 seed)
+    static inline float murmur_float64c(blt::u64 seed)
     {
-        return murmur_float(seed);
+        return murmur_float64(seed);
     }
     
-    static inline double murmur_double_c(blt::u64 seed)
+    static inline double murmur_double64c(blt::u64 seed)
     {
-        return murmur_double(seed);
-    }
-    
-    template<typename T>
-    static inline T murmur_integral_64(blt::u64& seed, T min = 0, T max = 2)
-    {
-        return static_cast<T>((murmur_double(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
+        return murmur_double64(seed);
     }
     
     template<typename T>
-    static inline T murmur_integral_64c(blt::u64 seed, T min = 0, T max = 2)
+    static inline T murmur_random64(blt::u64& seed, T min = 0, T max = 2)
+    {
+        return static_cast<T>((murmur_double64(seed) * static_cast<double>(max - min)) + static_cast<double>(min));
+    }
+    
+    template<typename T>
+    static inline T murmur_random64c(blt::u64 seed, T min = 0, T max = 2)
     {
         return murmur_integral_64(seed, min, max);
     }
