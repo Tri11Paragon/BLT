@@ -21,27 +21,27 @@ namespace blt
     
 #define SORT_INTERVALS_FUNC_MACRO(use_history, TYPE_END, TYPE_START, TYPE_TOTAL)                            \
     [&use_history](const interval_t* a, const interval_t* b) -> bool {                                      \
-        if (!use_history){                                                                                   \
+        /*if (!use_history){                                                                                \
             auto a_diff = a->TYPE_END - a->TYPE_START;                                                      \
             auto b_diff = b->TYPE_END - b->TYPE_START;                                                      \
             return a_diff > b_diff;                                                                         \
         } else {                                                                                            \
-            return a->TYPE_TOTAL < b->TYPE_TOTAL;                                                           \
-        }                                                                                                   \
+            */return a->TYPE_TOTAL < b->TYPE_TOTAL;                                                         \
+        /*}*/                                                                                               \
     }
 
 #define INTERVAL_DIFFERENCE_MACRO(printHistory, interval)                                                   \
     auto wall = printHistory                                                                                \
                 ? (static_cast<double>(interval->wall_total) / static_cast<double>(interval->count))        \
-                : static_cast<double>(interval->wall_end - interval->wall_start);                           \
+                : static_cast<double>(interval->wall_total);                                                \
                                                                                                             \
     auto thread = printHistory                                                                              \
                   ? (static_cast<double>(interval->thread_total) / static_cast<double>(interval->count))    \
-                  : static_cast<double>(interval->thread_end - interval->thread_start);                     \
+                  : (static_cast<double>(interval->thread_total));                                          \
                                                                                                             \
     auto cycles = printHistory                                                                              \
                   ? ((interval->cycles_total) / (interval->count))                                          \
-                  : (interval->cycles_end - interval->cycles_start);
+                  : (interval->cycles_total);
     
     enum class unit
     {
@@ -150,7 +150,7 @@ namespace blt
     
     void printProfile(profile_t& profiler, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
     {
-        bool printHistory = flags & PRINT_HISTORY;
+        bool printHistory = flags & AVERAGE_HISTORY;
         bool printCycles = flags & PRINT_CYCLES;
         bool printThread = flags & PRINT_THREAD;
         bool printWall = flags & PRINT_WALL;

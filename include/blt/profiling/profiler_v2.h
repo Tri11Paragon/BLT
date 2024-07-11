@@ -16,7 +16,7 @@
 namespace blt
 {
     // use the historical values (average) instead of the latest values
-    static inline constexpr std::uint32_t PRINT_HISTORY = 0x1;
+    static inline constexpr std::uint32_t AVERAGE_HISTORY = 0x1;
     // print out the cycles
     static inline constexpr std::uint32_t PRINT_CYCLES = 0x2;
     // print out the wall time
@@ -96,7 +96,7 @@ namespace blt
     
     void endInterval(interval_t* interval);
     
-    void printProfile(profile_t& profiler, std::uint32_t flags = PRINT_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
+    void printProfile(profile_t& profiler, std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
                       sort_by sort = sort_by::CYCLES, blt::logging::log_level log_level = blt::logging::log_level::NONE);
     
     void writeProfile(std::ifstream& stream, const profile_t& profiler);
@@ -109,7 +109,7 @@ namespace blt
         
         void endInterval(const std::string& profile_name, const std::string& interval_name);
         
-        void printProfile(const std::string& profile_name, std::uint32_t flags = PRINT_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
+        void printProfile(const std::string& profile_name, std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
                           sort_by sort = sort_by::CYCLES, blt::logging::log_level log_level = blt::logging::log_level::NONE);
         
         void writeProfile(std::ifstream& stream, const std::string& profile_name);
