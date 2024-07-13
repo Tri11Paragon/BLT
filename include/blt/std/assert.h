@@ -56,6 +56,6 @@ namespace blt
 #define BLT_THROW(throwable) do {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;} while(0)
 
 
-#define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); std::exit(1); } while (0)
+#define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); std::abort(); } while (0)
 
 #endif //BLT_ASSERT_H
