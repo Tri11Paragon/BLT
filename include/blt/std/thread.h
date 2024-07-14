@@ -19,20 +19,91 @@
 #ifndef BLT_THREAD_H
 #define BLT_THREAD_H
 
+#include <blt/std/types.h>
 #include <thread>
 #include <functional>
 #include <string>
 #include <vector>
 #include <queue>
+#include <utility>
 #include <variant>
 #include <atomic>
 #include <mutex>
 #include <chrono>
 #include <optional>
 #include <blt/std/logging.h>
+#include <condition_variable>
 
 namespace blt
 {
+    
+    class barrier
+    {
+        public:
+            explicit barrier(blt::size_t threads, std::optional<std::reference_wrapper<std::atomic_bool>> exit_cond = {}):
+                    thread_count(threads), threads_waiting(0), use_count(0), exit_cond(exit_cond), count_mutex(), cv()
+            {
+                if (threads == 0)
+                    throw std::runtime_error("Barrier thread count cannot be 0");
+            }
+            
+            barrier(const barrier& copy) = delete;
+            
+            barrier(barrier&& move) = delete;
+            
+            barrier& operator=(const barrier& copy) = delete;
+            
+            barrier& operator=(barrier&& move) = delete;
+            
+            ~barrier() = default;
+            
+            void wait()
+            {
+                // (unique_lock acquires lock)
+                std::unique_lock lock(count_mutex);
+                std::size_t current_uses = use_count;
+                
+                if (++threads_waiting == thread_count)
+                {
+                    threads_waiting = 0;
+                    use_count++;
+                    cv.notify_all();
+                } else
+                {
+                    if constexpr (BUSY_LOOP_WAIT > 0) // NOLINT
+                    {
+                        lock.unlock();
+                        for (blt::size_t i = 0; i < BUSY_LOOP_WAIT; i++)
+                        {
+                            if (use_count != current_uses || (exit_cond && exit_cond->get()))
+                                return;
+                        }
+                        lock.lock();
+                    }
+                    cv.wait(lock, [this, &current_uses]() {
+                        return (use_count != current_uses || (exit_cond && exit_cond->get()));
+                    });
+                }
+            }
+            
+            void notify_all()
+            {
+                cv.notify_all();
+            }
+        
+        private:
+            blt::size_t thread_count;
+            blt::size_t threads_waiting;
+            blt::size_t use_count;
+            std::optional<std::reference_wrapper<std::atomic_bool>> exit_cond;
+            std::mutex count_mutex;
+            std::condition_variable cv;
+            
+            // improves performance by not blocking the thread for n iterations of the loop.
+            // If the condition is not met by the end of this loop we can block the thread.
+            static constexpr blt::size_t BUSY_LOOP_WAIT = 200;
+    };
+    
     /**
      * @tparam queue should we use a queue or execute the same function over and over?
      */
