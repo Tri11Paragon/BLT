@@ -69,7 +69,7 @@ namespace blt
             constexpr vec(std::initializer_list<U> args): vec(U(), args)
             {}
             
-            template<typename... Args>
+            template<typename... Args, std::enable_if_t<sizeof...(Args) == size, bool> = true>
             constexpr explicit vec(Args... args): vec(std::array<T, size>{static_cast<T>(args)...})
             {}
             
