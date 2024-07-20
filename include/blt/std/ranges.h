@@ -176,7 +176,7 @@ namespace blt
     }
     
     template<typename Begin, typename End>
-    static inline auto enumerate(Begin&& begin, End&& end)
+    static inline auto iterate(Begin&& begin, End&& end)
     {
         return itr::itr_container<Begin, End>{std::forward<Begin>(begin), std::forward<End>(end)};
     }
