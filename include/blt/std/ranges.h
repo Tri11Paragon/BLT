@@ -163,6 +163,18 @@ namespace blt
         return enumerator{container.begin(), container.end()};
     }
     
+    template<typename T, blt::size_t size>
+    static inline auto enumerate(const T(&container)[size])
+    {
+        return enumerator{&container[0], &container[size]};
+    }
+    
+    template<typename T, blt::size_t size>
+    static inline auto enumerate(T(&container)[size])
+    {
+        return enumerator{&container[0], &container[size]};
+    }
+    
     template<typename T>
     static inline auto enumerate(T& container)
     {
