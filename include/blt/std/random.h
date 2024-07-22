@@ -71,7 +71,7 @@ namespace blt::random
     template<typename T = blt::i32>
     static inline T pcg_random32c(blt::u32 seed, T min = 0, T max = 2)
     {
-        return pcg_int(seed, min, max);
+        return pcg_random32(seed, min, max);
     }
     
     
@@ -105,7 +105,7 @@ namespace blt::random
     template<typename T = blt::i32>
     static inline T murmur_random64c(blt::u64 seed, T min = 0, T max = 2)
     {
-        return murmur_integral_64(seed, min, max);
+        return murmur_random64(seed, min, max);
     }
     
 }
