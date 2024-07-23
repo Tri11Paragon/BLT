@@ -172,6 +172,8 @@ namespace blt::logging
     
     void flush();
     
+    void newline();
+    
     void setThreadName(const std::string& name);
     
     void setLogFormat(const log_format& format);
@@ -676,6 +678,11 @@ namespace blt::logging {
         std::cout.flush();
     }
     
+    void newline()
+    {
+        std::cout << std::endl;
+    }
+    
 }
 
 #endif
@@ -705,6 +712,7 @@ namespace blt::logging {
     #define BLT_ERROR(format, ...)
     #define BLT_FATAL(format, ...)
 #else
+    #define BLT_NEWLINE() blt::logging::newline()
     #define BLT_LOG(format, level, ...) blt::logging::log(format, level, __FILE__, __LINE__, ##__VA_ARGS__)
     #define BLT_LOG_STREAM(level) blt::logging::logger{level, __FILE__, __LINE__}
     #ifdef BLT_DISABLE_TRACE
