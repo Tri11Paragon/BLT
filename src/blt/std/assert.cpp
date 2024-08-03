@@ -89,11 +89,15 @@ namespace blt {
         printStacktrace(messages, size, path, line);
         
         BLT_FREE_STACK_TRACE();
-#endif
+#else
         (void) expression;
         (void) msg;
         (void) path;
         (void) line;
+#endif
+        if (msg != nullptr)
+            throw abort_exception(msg);
+        throw abort_exception(expression);
     }
     
     void printStacktrace(char** messages, int size, const char* path, int line)

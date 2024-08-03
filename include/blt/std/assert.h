@@ -35,7 +35,6 @@ namespace blt
 #define BLT_ASSERT(expr) do {                                                   \
         if (!static_cast<bool>(expr)) {                                         \
             blt::b_assert_failed(#expr, nullptr, __FILE__, __LINE__);           \
-            std::exit(EXIT_FAILURE);                                            \
         }                                                                       \
     } while (0)
 
@@ -46,7 +45,6 @@ namespace blt
 #define BLT_ASSERT_MSG(expr, fail_message) do {                                 \
         if (!static_cast<bool>(expr)) {                                         \
             blt::b_assert_failed(#expr, fail_message, __FILE__, __LINE__);      \
-            std::exit(EXIT_FAILURE);                                            \
         }                                                                       \
     } while (0)
 
