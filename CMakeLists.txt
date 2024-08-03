@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
 
+<<<<<<< HEAD
 set(BLT_VERSION 0.18.14)
+=======
+set(BLT_VERSION 0.18.15)
+>>>>>>> refs/remotes/origin/main
 set(BLT_TEST_VERSION 0.0.1)
 
 set(BLT_TARGET BLT)

@@ -31,6 +31,9 @@
 
 namespace blt
 {
+    template<typename RefType>
+    using ref = std::reference_wrapper<RefType>;
+    
     static inline std::string demangle(const std::string& str)
     {
         int status;

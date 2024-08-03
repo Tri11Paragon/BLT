@@ -376,14 +376,14 @@ namespace blt
             constexpr inline T& operator[](size_t index)
             {
                 if (index >= size())
-                    expand(index);
+                    allocate_for(index);
                 return buffer_[index];
             }
             
             constexpr inline const T& operator[](size_t index) const
             {
                 if (index >= size())
-                    expand(index);
+                    allocate_for(index);
                 return buffer_[index];
             }
             
@@ -461,13 +461,10 @@ namespace blt
             {
                 delete_this(buffer_, size());
             }
-        
-        private:
-            void expand(blt::size_t size)
+            
+            void expand(blt::size_t new_size)
             {
-                size = std::max(size_, size);
-                size = blt::mem::next_byte_allocation(size);
-                T* new_buffer = new T[size];
+                T* new_buffer = new T[new_size];
                 if (buffer_ != nullptr)
                 {
                     if constexpr (std::is_trivially_copyable_v<T>)
@@ -486,7 +483,15 @@ namespace blt
                     delete[] buffer_;
                 }
                 buffer_ = new_buffer;
-                size_ = size;
+                size_ = new_size;
+            }
+        
+        private:
+            void allocate_for(blt::size_t accessing_index)
+            {
+                accessing_index = std::max(size_, accessing_index);
+                accessing_index = blt::mem::next_byte_allocation(accessing_index);
+                expand(accessing_index);
             }
             
             inline void delete_this(T* buffer, blt::size_t)
