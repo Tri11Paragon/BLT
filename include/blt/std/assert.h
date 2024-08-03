@@ -18,6 +18,23 @@ namespace blt
     void b_throw(const char* what, const char* path, int line);
     
     void b_abort(const char* what, const char* path, int line);
+    
+    struct abort_exception : public std::exception
+    {
+        public:
+            abort_exception() = default;
+            
+            explicit abort_exception(std::string error): error(std::move(error))
+            {}
+            
+            [[nodiscard]] const char* what() const noexcept override
+            {
+                return error.c_str();
+            }
+        
+        private:
+            std::string error;
+    };
 }
 
 /**
@@ -56,6 +73,6 @@ namespace blt
 #define BLT_THROW(throwable) do {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;} while(0)
 
 
-#define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); std::abort(); } while (0)
+#define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); throw blt::abort_exception(); } while (0)
 
 #endif //BLT_ASSERT_H
