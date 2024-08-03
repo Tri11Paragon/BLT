@@ -21,6 +21,8 @@
 
 #include <blt/std/types.h>
 #include <utility>
+#include <type_traits>
+#include <ostream>
 
 namespace blt::meta
 {
@@ -56,6 +58,29 @@ namespace blt::meta
     template<typename Lambda>
     lambda_helper(Lambda) -> lambda_helper<Lambda, decltype(&Lambda::operator())>;
     
+    // https://stackoverflow.com/questions/66397071/is-it-possible-to-check-if-overloaded-operator-for-type-or-class-exists
+    template<class T>
+    class is_streamable
+    {
+        private:
+            template<typename Subs>
+            static auto test(int) -> decltype(std::declval<std::ostream&>() << std::declval<Subs>(), std::true_type())
+            {
+                return std::declval<std::true_type>();
+            }
+            
+            template<typename>
+            static auto test(...) -> std::false_type
+            {
+                return std::declval<std::false_type>();
+            }
+        
+        public:
+            static constexpr bool value = decltype(test<T>(0))::value;
+    };
+    
+    template<class T>
+    inline constexpr bool is_streamable_v = is_streamable<T>::value;
     
 }
 
