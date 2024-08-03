@@ -10,6 +10,24 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <exception>
+
+struct abort_exception : public std::exception
+{
+    public:
+        explicit abort_exception(const char* error): error(error)
+        {}
+        
+        [[nodiscard]] const char* what() const noexcept override
+        {
+            if (error == nullptr)
+                return "Abort called";
+            return error;
+        }
+    
+    private:
+        const char* error{nullptr};
+};
 
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
     
@@ -129,7 +147,7 @@ namespace blt {
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
         BLT_STACK_TRACE(50);
 #endif
-        BLT_FATAL("----{ABORT}----");
+        BLT_FATAL("----{BLT ABORT}----");
         BLT_FATAL("\tWhat: %s", what);
         BLT_FATAL("\tcalled from %s:%d", path, line);
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
@@ -137,7 +155,7 @@ namespace blt {
         
         BLT_FREE_STACK_TRACE();
 #endif
-        std::exit(EXIT_FAILURE);
+        throw abort_exception(what);
     }
     
     
