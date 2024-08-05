@@ -96,6 +96,7 @@ namespace blt
 
 
 #if defined(__GNUC__) || defined(__llvm__)
+    #define BLT_UNREACHABLE __builtin_unreachable()
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))
     /**
      * means that the return value is solely a function of the arguments,
@@ -114,11 +115,18 @@ namespace blt
 #else
     #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
         #define BLT_ATTRIB_NO_INLINE __declspec(noinline)
+        #define BLT_UNREACHABLE __assume(false)
     #else
         #define BLT_ATTRIB_NO_INLINE
+        #define BLT_UNREACHABLE
     #endif
     #define BLT_ATTRIB_CONST
     #define BLT_ATTRIB_PURE
+#endif
+
+#if __cplusplus > 202002L
+    #undef BLT_UNREACHABLE
+    #define BLT_UNREACHABLE std::unreachable()
 #endif
     
     template<typename T>
