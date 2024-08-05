@@ -227,11 +227,15 @@ namespace blt
     
     void _internal::endInterval(const std::string& profile_name, const std::string& interval_name)
     {
+        if (profiles[profile_name].empty() || profiles[profile_name].find(interval_name) == profiles[profile_name].end())
+            return;
         blt::endInterval(profiles[profile_name].at(interval_name));
     }
     
     void _internal::writeProfile(std::ifstream& stream, const std::string& profile_name)
     {
+        if (profiles.find(profile_name) == profiles.end())
+            return;
         auto& pref = profiles[profile_name];
         profile_t profile{profile_name};
         for (const auto& i : pref)
@@ -242,6 +246,8 @@ namespace blt
     
     void _internal::printProfile(const std::string& profile_name, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
     {
+        if (profiles.find(profile_name) == profiles.end())
+            return;
         auto& pref = profiles[profile_name];
         profile_t profile{profile_name};
         for (const auto& i : pref)
