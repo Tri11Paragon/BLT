@@ -47,12 +47,18 @@ namespace blt::meta
     };
     
     template<typename TheLambda, typename IReturn, typename IClass, typename... LArgs>
-    struct lambda_helper<TheLambda, IReturn(IClass::*)(LArgs...)>
+    struct lambda_helper<TheLambda, IReturn (IClass::*)(LArgs...) const>
     {
         using Lambda = TheLambda;
         using Return = IReturn;
         using Class = IClass;
         using Args = arg_helper<LArgs...>;
+        
+        template<typename T>
+        explicit lambda_helper(T)
+        {}
+        
+        lambda_helper() = default;
     };
     
     template<typename Lambda>
