@@ -196,7 +196,7 @@ namespace blt
     template<typename Begin, typename End>
     static inline auto reverse_iterate(Begin&& begin, End&& end)
     {
-        return itr::itr_container<Begin, End>{std::reverse_iterator(std::forward<Begin>(begin)), std::reverse_iterator(std::forward<End>(end))};
+        return itr::itr_container{std::reverse_iterator(std::forward<Begin>(begin)), std::reverse_iterator(std::forward<End>(end))};
     }
     
     template<typename T>
