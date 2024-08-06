@@ -164,13 +164,13 @@ namespace blt
     }
     
     template<typename T, blt::size_t size>
-    static inline auto enumerate(const T(&container)[size])
+    static inline auto enumerate(const T(& container)[size])
     {
         return enumerator{&container[0], &container[size]};
     }
     
     template<typename T, blt::size_t size>
-    static inline auto enumerate(T(&container)[size])
+    static inline auto enumerate(T(& container)[size])
     {
         return enumerator{&container[0], &container[size]};
     }
@@ -191,6 +191,12 @@ namespace blt
     static inline auto iterate(Begin&& begin, End&& end)
     {
         return itr::itr_container<Begin, End>{std::forward<Begin>(begin), std::forward<End>(end)};
+    }
+    
+    template<typename Begin, typename End>
+    static inline auto reverse_iterate(Begin&& begin, End&& end)
+    {
+        return itr::itr_container<Begin, End>{std::reverse_iterator(std::forward<Begin>(begin)), std::reverse_iterator(std::forward<End>(end))};
     }
     
     template<typename T>
