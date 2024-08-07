@@ -383,7 +383,7 @@ namespace blt
             constexpr inline const T& operator[](size_t index) const
             {
                 if (index >= size())
-                    allocate_for(index);
+                    BLT_ABORT("Index out of bounds");
                 return buffer_[index];
             }
             
