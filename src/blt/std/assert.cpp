@@ -11,12 +11,20 @@
 #include <iomanip>
 #include <sstream>
 #include <exception>
+#include <cstring>
 
 struct abort_exception : public std::exception
 {
     public:
-        explicit abort_exception(const char* error): error(error)
-        {}
+        explicit abort_exception(const char* what)
+        {
+            auto len = std::strlen(what) + 1;
+            error = static_cast<char*>(std::malloc(len));
+            std::memcpy(static_cast<char*>(error), what, len);
+        }
+        
+        abort_exception(const abort_exception& copy) = delete;
+        abort_exception& operator=(const abort_exception& copy) = delete;
         
         [[nodiscard]] const char* what() const noexcept override
         {
@@ -24,15 +32,21 @@ struct abort_exception : public std::exception
                 return "Abort called";
             return error;
         }
+        
+        ~abort_exception() override
+        {
+            std::free(static_cast<void*>(error));
+        }
     
     private:
-        const char* error{nullptr};
+        char* error{nullptr};
 };
 
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
     
     #include <execinfo.h>
     #include <cstdlib>
+
 #endif
 
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
@@ -47,16 +61,20 @@ struct abort_exception : public std::exception
     #define BLT_FREE_STACK_TRACE() void();
 #endif
 
-namespace blt {
+namespace blt
+{
 
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
-    static inline std::string _macro_filename(const std::string& path){
+    
+    static inline std::string _macro_filename(const std::string& path)
+    {
         auto paths = blt::string::split(path, "/");
-        auto final = paths[paths.size()-1];
+        auto final = paths[paths.size() - 1];
         if (final == "/")
-            return paths[paths.size()-2];
+            return paths[paths.size() - 2];
         return final;
     }
+
 #endif
     
     void b_throw(const char* what, const char* path, int line)
@@ -105,7 +123,8 @@ namespace blt {
         if (messages == nullptr)
             return;
 #if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
-        for (int i = 1; i < size; i++){
+        for (int i = 1; i < size; i++)
+        {
             int tabs = i - 1;
             std::string buffer;
             for (int j = 0; j < tabs; j++)
@@ -135,7 +154,7 @@ namespace blt {
                 buffer += " in ";
             buffer += loc;
             
-
+            
             BLT_ERROR(buffer);
         }
 #else
