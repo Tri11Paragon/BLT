@@ -33,6 +33,13 @@ namespace blt::meta
         using Next = arg_helper<IArgs...>;
     };
     
+    template<typename IFirst>
+    struct arg_helper<IFirst>
+    {
+        using First = IFirst;
+        using Next = void;
+    };
+    
     template<>
     struct arg_helper<void>
     {
@@ -97,7 +104,7 @@ namespace blt::meta
     {}; \
     template<typename T> \
     inline constexpr bool has_func_##FUNC##_v = has_func_##FUNC<T>::value; \
-    
+
 }
 
 #endif //BLT_GP_META_H
