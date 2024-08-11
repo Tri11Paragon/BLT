@@ -65,7 +65,7 @@ namespace blt::meta
     lambda_helper(Lambda) -> lambda_helper<Lambda, decltype(&Lambda::operator())>;
     
     // https://stackoverflow.com/questions/66397071/is-it-possible-to-check-if-overloaded-operator-for-type-or-class-exists
-    template<class T>
+    template<typename T>
     class is_streamable
     {
         private:
@@ -87,6 +87,16 @@ namespace blt::meta
     
     template<class T>
     inline constexpr bool is_streamable_v = is_streamable<T>::value;
+
+#define BLT_META_MAKE_FUNCTION_CHECK(FUNC, ...)\
+    template<typename T, typename = void> \
+    class has_func_##FUNC : public std::false_type \
+    {}; \
+    template<typename T> \
+    class has_func_##FUNC<T, std::void_t<decltype(std::declval<T>().drop(,##__VA_ARGS__))>> : public std::true_type \
+    {}; \
+    template<typename T> \
+    inline constexpr bool has_func_##FUNC##_v = has_func_##FUNC<T>::value; \
     
 }
 
