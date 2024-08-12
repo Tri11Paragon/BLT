@@ -113,7 +113,7 @@ namespace blt
         
     };
     
-    template<typename T, typename E, bool = std::is_copy_constructible_v<T>>
+    template<typename T, typename E, bool = std::is_copy_constructible_v<T>, bool = std::is_default_constructible_v<T>>
     class expected
     {
         protected:
@@ -131,10 +131,6 @@ namespace blt
                     std::is_constructible_v<unexpected<E>, expected<U, G>&> || std::is_constructible_v<unexpected<E>, expected<U, G>> ||
                     std::is_constructible_v<unexpected<E>, const expected<U, G>&> || std::is_constructible_v<unexpected<E>, const expected<U, G>>;
         public:
-            template<typename std::enable_if_t<std::is_default_constructible_v<T>, bool> = true>
-            constexpr expected() noexcept: v(T())
-            {}
-            
 //            constexpr expected(const expected& copy) = delete;
             constexpr expected(const expected<T, E, true>& copy): expected<T, E, true>::v(copy.v)
             {}
@@ -371,10 +367,34 @@ namespace blt
     };
     
     template<typename T, typename E>
-    class expected<T, E, false> : public expected<T, E, true>
+    class expected<T, E, true, true> : public expected<T, E, true, false>
     {
         public:
-            using expected<T, E, true>::expected;
+            using expected<T, E, true, false>::expected;
+            
+            constexpr expected() noexcept: expected<T, E, std::is_copy_constructible_v<T>, false>(T())
+            {}
+    };
+    
+    template<typename T, typename E>
+    class expected<T, E, false, true> : public expected<T, E, true, false>
+    {
+        public:
+            using expected<T, E, true, false>::expected;
+            
+            constexpr expected() noexcept: expected<T, E, std::is_copy_constructible_v<T>, false>(T())
+            {}
+            
+            constexpr expected(const expected<T, E, false>& copy) = delete;
+            
+            expected& operator=(const expected& copy) = delete;
+    };
+    
+    template<typename T, typename E>
+    class expected<T, E, false, false> : public expected<T, E, true, false>
+    {
+        public:
+            using expected<T, E, true, false>::expected;
             
             constexpr expected(const expected<T, E, false>& copy) = delete;
             
