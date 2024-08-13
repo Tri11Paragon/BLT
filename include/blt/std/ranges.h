@@ -20,9 +20,6 @@ namespace blt
 {
     namespace itr
     {
-        BLT_META_MAKE_MEMBER_CHECK(value_type);
-        
-        BLT_META_MAKE_MEMBER_CHECK(reference);
         
         template<typename Begin, typename End>
         class itr_container
@@ -46,59 +43,38 @@ namespace blt
                 End end_;
         };
         
-        template<typename T>
-        struct value_type_helper
+        template<typename TYPE_ITR>
+        class iterator_base
         {
-            template<typename Subs>
-            inline static constexpr auto test() -> decltype(Subs::value_type)
-            {
-                return std::declval<Subs::value_type>();
-            }
-            
-            template<typename>
-            inline static constexpr auto test() -> decltype(std::remove_pointer_t<T>())
-            {
-                return std::declval<std::remove_pointer_t<T>>();
-            }
+            public:
+                using value_type = blt::meta::value_type_t<TYPE_ITR, std::remove_pointer_t<TYPE_ITR>>;
+                using difference_type = blt::meta::difference_t<TYPE_ITR, std::ptrdiff_t>;
+                using pointer = blt::meta::pointer_t<TYPE_ITR, TYPE_ITR>;
+                using reference = blt::meta::reference_t<TYPE_ITR, std::remove_pointer_t<TYPE_ITR>&>;
+                using const_reference = blt::meta::const_reference_t<TYPE_ITR, const std::remove_pointer_t<TYPE_ITR>&>;
         };
-        
-        template<typename T>
-        struct reference_type_helper
-        {
-            template<typename Subs, std::enable_if_t<has_member_reference_v<Subs>, bool> = true>
-            inline static constexpr auto test() -> typename Subs::reference
-            {
-                return std::declval<typename Subs::reference>();
-            }
-            
-            template<typename>
-            inline static constexpr auto test() -> decltype(std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>())&
-            {
-                return std::declval<std::remove_pointer_t<T>&>();
-            }
-        };
-        
-        template<typename T>
-        using value_type_t = decltype(value_type_helper<T>::template test<T>());
-        template<typename T>
-        using reference_t = decltype(reference_type_helper<T>::template test<T>());
         
         template<typename TYPE_ITR>
         class iterator
         {
             public:
                 using iterator_category = std::input_iterator_tag;
-                using value_type = value_type_t<TYPE_ITR>;
-                using difference_type = typename TYPE_ITR::difference_type;
-                using pointer = typename TYPE_ITR::pointer;
-                using reference = reference_t<TYPE_ITR>;
-                using const_reference = const reference_t<TYPE_ITR>;
+                using value_type = typename iterator_base<TYPE_ITR>::value_type;
+                using difference_type = typename iterator_base<TYPE_ITR>::difference_type;
+                using pointer = typename iterator_base<TYPE_ITR>::pointer;
+                using reference = typename iterator_base<TYPE_ITR>::reference;
+                using const_reference = typename iterator_base<TYPE_ITR>::const_reference;
             private:
-                blt::size_t index = 0;
+                blt::size_t index;
                 TYPE_ITR current;
             public:
-                explicit iterator(TYPE_ITR current): current(std::move(current))
+                explicit iterator(TYPE_ITR current, blt::size_t index): index(index), current(std::move(current))
                 {}
+                
+                auto iter()
+                {
+                    return current;
+                }
                 
                 iterator& operator++()
                 {
@@ -127,106 +103,67 @@ namespace blt
                     return {index, *current};
                 };
         };
-
-//        template<typename TYPE_ITR, bool is_ptr = std::is_pointer_v<TYPE_ITR>>
-//        class iterator;
-//
-//        template<typename TYPE_ITR>
-//        class iterator<TYPE_ITR, false>
-//        {
-//            public:
-//                using iterator_category = std::input_iterator_tag;
-//                using value_type = typename TYPE_ITR::value_type;
-//                using difference_type = typename TYPE_ITR::difference_type;
-//                using pointer = typename TYPE_ITR::pointer;
-//                using reference = typename TYPE_ITR::reference;
-//                using const_reference = const typename TYPE_ITR::reference;
-//            private:
-//                blt::size_t index = 0;
-//                TYPE_ITR current;
-//            public:
-//                explicit iterator(TYPE_ITR current): current(std::move(current))
-//                {}
-//
-//                iterator& operator++()
-//                {
-//                    ++index;
-//                    ++current;
-//                    return *this;
-//                }
-//
-//                bool operator==(iterator other) const
-//                {
-//                    return current == other.current;
-//                }
-//
-//                bool operator!=(iterator other) const
-//                {
-//                    return current != other.current;
-//                }
-//
-//                std::pair<blt::size_t, const_reference> operator*() const
-//                {
-//                    return {index, *current};
-//                };
-//
-//                std::pair<blt::size_t, reference> operator*()
-//                {
-//                    return {index, *current};
-//                };
-//        };
-//
-//        template<typename TYPE_ITR>
-//        class iterator<TYPE_ITR, true>
-//        {
-//            public:
-//                using iterator_category = std::input_iterator_tag;
-//                using value_type = std::remove_pointer_t<TYPE_ITR>;
-//                using difference_type = std::ptrdiff_t;
-//                using pointer = TYPE_ITR;
-//                using reference = std::remove_pointer_t<TYPE_ITR>&;
-//                using const_reference = const std::remove_pointer_t<TYPE_ITR>&;
-//            private:
-//                blt::size_t index = 0;
-//                TYPE_ITR current;
-//            public:
-//                explicit iterator(TYPE_ITR current): current(std::move(current))
-//                {}
-//
-//                iterator& operator++()
-//                {
-//                    ++index;
-//                    ++current;
-//                    return *this;
-//                }
-//
-//                bool operator==(iterator other) const
-//                {
-//                    return current == other.current;
-//                }
-//
-//                bool operator!=(iterator other) const
-//                {
-//                    return current != other.current;
-//                }
-//
-//                std::pair<blt::size_t, const_reference> operator*() const
-//                {
-//                    return {index, *current};
-//                };
-//
-//                std::pair<blt::size_t, reference> operator*()
-//                {
-//                    return {index, *current};
-//                };
-//        };
+        
+        template<typename TYPE_ITR>
+        class reverse_iterator
+        {
+            public:
+                using iterator_category = std::input_iterator_tag;
+                using value_type = typename iterator_base<TYPE_ITR>::value_type;
+                using difference_type = typename iterator_base<TYPE_ITR>::difference_type;
+                using pointer = typename iterator_base<TYPE_ITR>::pointer;
+                using reference = typename iterator_base<TYPE_ITR>::reference;
+                using const_reference = typename iterator_base<TYPE_ITR>::const_reference;
+            private:
+                blt::size_t index;
+                TYPE_ITR current;
+            public:
+                explicit reverse_iterator(TYPE_ITR current, blt::size_t index): index(index), current(std::move(current))
+                {}
+                
+                auto iter()
+                {
+                    return current;
+                }
+                
+                reverse_iterator& operator++()
+                {
+                    --index;
+                    --current;
+                    return *this;
+                }
+                
+                bool operator==(reverse_iterator other) const
+                {
+                    return current == other.current;
+                }
+                
+                bool operator!=(reverse_iterator other) const
+                {
+                    return current != other.current;
+                }
+                
+                std::pair<blt::size_t, const_reference> operator*() const
+                {
+                    return {index, *current};
+                };
+                
+                std::pair<blt::size_t, reference> operator*()
+                {
+                    return {index, *current};
+                };
+        };
     }
     
-    template<typename TYPE_ITR>
+    template<typename TYPE_ITR, template<typename> typename iterator = itr::iterator>
     class enumerator
     {
         public:
-            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(std::move(begin)), end_(std::move(end))
+            explicit enumerator(TYPE_ITR begin, TYPE_ITR end): begin_(std::move(begin), 0), end_(std::move(end), 0)
+            {}
+            
+            explicit enumerator(TYPE_ITR begin, TYPE_ITR end, blt::size_t i_begin, blt::size_t i_end):
+                    begin_(std::move(begin), i_begin), end_(std::move(end), i_end)
             {}
             
             itr::iterator<TYPE_ITR> begin()
@@ -240,8 +177,8 @@ namespace blt
             }
         
         private:
-            itr::iterator<TYPE_ITR> begin_;
-            itr::iterator<TYPE_ITR> end_;
+            iterator<TYPE_ITR> begin_;
+            iterator<TYPE_ITR> end_;
     };
     
     template<typename T>
