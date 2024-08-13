@@ -100,11 +100,23 @@ namespace blt::meta
     class has_func_##FUNC : public std::false_type \
     {}; \
     template<typename T> \
-    class has_func_##FUNC<T, std::void_t<decltype(std::declval<T>().drop(,##__VA_ARGS__))>> : public std::true_type \
+    class has_func_##FUNC<T, std::void_t<decltype(std::declval<T>().FUNC(,##__VA_ARGS__))>> : public std::true_type \
     {}; \
     template<typename T> \
-    inline constexpr bool has_func_##FUNC##_v = has_func_##FUNC<T>::value; \
+    inline constexpr bool has_func_##FUNC##_v = has_func_##FUNC<T>::value;
 
+
+#define BLT_META_MAKE_MEMBER_CHECK(MEMBER)\
+    template<typename T, typename = void> \
+    class has_member_##MEMBER : public std::false_type \
+    {}; \
+    template<typename T> \
+    class has_member_##MEMBER<T, std::void_t<decltype(T::MEMBER)>> : public std::true_type \
+    {}; \
+    template<typename T> \
+    inline constexpr bool has_member_##MEMBER##_v = has_member_##MEMBER<T>::value;
+    
+    
 }
 
 #endif //BLT_GP_META_H
