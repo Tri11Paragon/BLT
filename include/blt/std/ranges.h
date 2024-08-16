@@ -436,19 +436,19 @@ namespace blt
             template<std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
                                                               (std::is_convertible_v<std::remove_pointer_t<decltype(
                                                               std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
-            constexpr span(element_type (& arr)[N]) noexcept: size_{N}, data_{arr}
+            constexpr span(element_type (& arr)[N]) noexcept: size_{N}, data_{arr} // NOLINT
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
                                                                        (std::is_convertible_v<std::remove_pointer_t<decltype(
                                                                        std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
-            constexpr span(std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()}
+            constexpr span(std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()} // NOLINT
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<(N == dynamic_extent || N == extent) &&
                                                                        (std::is_convertible_v<std::remove_pointer_t<decltype(
                                                                        std::data(std::declval<T(&)[N]>()))>(*)[], T(*)[]>), bool> = true>
-            constexpr span(const std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()}
+            constexpr span(const std::array<U, N>& arr) noexcept: size_(N), data_{arr.data()} // NOLINT
             {}
             
             template<class R, class RCV = std::remove_cv_t<std::remove_reference_t<R>>, typename std::enable_if_t<
@@ -460,17 +460,17 @@ namespace blt
             template<class R, class RCV = std::remove_cv_t<std::remove_reference_t<R>>, typename std::enable_if_t<
                     extent == dynamic_extent && span_detail::is_cont_v<RCV> &&
                     std::is_convertible_v<std::remove_pointer_t<decltype(std::data(std::declval<R>()))>(*)[], T(*)[]>, bool> = true>
-            constexpr span(R&& range): size_(std::size(range)), data_(std::data(range))
+            constexpr span(R&& range): size_(std::size(range)), data_(std::data(range)) // NOLINT
             {}
             
             template<size_type SIZE, typename std::enable_if_t<
                     extent != dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
-            explicit constexpr span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin())
+            explicit constexpr span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin()) // NOLINT
             {}
             
             template<size_type SIZE, typename std::enable_if_t<
                     extent == dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
-            explicit span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin())
+            explicit span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin()) // NOLINT
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<
@@ -480,8 +480,15 @@ namespace blt
             
             template<class U, std::size_t N, typename std::enable_if_t<
                     !(extent != dynamic_extent && N == dynamic_extent) && std::is_convertible_v<U(*)[], T(*)[]>, bool> = true>
-            constexpr span(const span<U, N>& source) noexcept: size_{source.size()}, data_{source.data()}
+            constexpr span(const span<U, N>& source) noexcept: size_{source.size()}, data_{source.data()} // NOLINT
             {}
+            
+            constexpr span& operator=(const span& copy)
+            {
+                size_ = copy.size();
+                data_ = copy.data();
+                return *this;
+            }
             
             constexpr span(const span& other) noexcept = default;
             
