@@ -19,15 +19,9 @@ namespace blt
      * --------------------------
      */
     
-#define SORT_INTERVALS_FUNC_MACRO(use_history, TYPE_END, TYPE_START, TYPE_TOTAL)                            \
-    [&use_history](const interval_t* a, const interval_t* b) -> bool {                                      \
-        /*if (!use_history){                                                                                \
-            auto a_diff = a->TYPE_END - a->TYPE_START;                                                      \
-            auto b_diff = b->TYPE_END - b->TYPE_START;                                                      \
-            return a_diff > b_diff;                                                                         \
-        } else {                                                                                            \
-            */return a->TYPE_TOTAL < b->TYPE_TOTAL;                                                         \
-        /*}*/                                                                                               \
+#define SORT_INTERVALS_FUNC_MACRO(TYPE_END, TYPE_START, TYPE_TOTAL)                                         \
+    [](const interval_t* a, const interval_t* b) -> bool {                                                  \
+            return a->TYPE_TOTAL < b->TYPE_TOTAL;                                                           \
     }
 
 #define INTERVAL_DIFFERENCE_MACRO(printHistory, interval)                                                   \
@@ -100,19 +94,19 @@ namespace blt
         BLT_WARN("Write profile for V2 is currently a TODO");
     }
     
-    void sort_intervals(std::vector<interval_t*>& intervals, sort_by sort, bool use_history)
+    void sort_intervals(std::vector<interval_t*>& intervals, sort_by sort, bool)
     {
         std::function<bool(const interval_t* a, const interval_t* b)> sort_func;
         switch (sort)
         {
             case sort_by::CYCLES:
-                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, cycles_start, cycles_end, cycles_total);
+                sort_func = SORT_INTERVALS_FUNC_MACRO(cycles_start, cycles_end, cycles_total);
                 break;
             case sort_by::WALL:
-                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, wall_start, wall_end, wall_total);
+                sort_func = SORT_INTERVALS_FUNC_MACRO(wall_start, wall_end, wall_total);
                 break;
             case sort_by::THREAD:
-                sort_func = SORT_INTERVALS_FUNC_MACRO(use_history, thread_start, thread_end, thread_total);
+                sort_func = SORT_INTERVALS_FUNC_MACRO(thread_start, thread_end, thread_total);
                 break;
         }
         std::sort(intervals.begin(), intervals.end(), sort_func);
