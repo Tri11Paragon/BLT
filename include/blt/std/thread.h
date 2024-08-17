@@ -94,7 +94,7 @@ namespace blt
         private:
             blt::size_t thread_count;
             blt::size_t threads_waiting;
-            blt::size_t use_count;
+            std::atomic_uint64_t use_count;
             std::optional<std::reference_wrapper<std::atomic_bool>> exit_cond;
             std::mutex count_mutex;
             std::condition_variable cv;
