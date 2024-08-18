@@ -39,9 +39,10 @@ namespace blt
     */
     void handle_mmap_error(blt::logging::logger func);
     
-    inline static constexpr blt::size_t align_to_size(blt::size_t in, blt::size_t align)
+    inline static constexpr blt::size_t align_size_to(blt::size_t size, blt::size_t align)
     {
-        return 0;
+        const blt::size_t MASK = ~(align - 1);
+        return (size & MASK) + align;
     }
     
     void* allocate_2mb_huge_pages(blt::size_t bytes);
