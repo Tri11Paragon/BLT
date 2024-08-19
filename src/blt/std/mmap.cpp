@@ -78,4 +78,30 @@ namespace blt
             }
         }
     }
+    
+    void* allocate_2mb_huge_pages(blt::size_t bytes)
+    {
+#ifdef __unix__
+        auto buffer = mmap(nullptr, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
+        if (buffer == MAP_FAILED)
+        {
+            BLT_WARN_STREAM << "Failed to allocate huge pages, reason:\n";
+            handle_mmap_error(BLT_WARN_STREAM);
+            throw std::bad_alloc();
+        }
+        return buffer;
+#else
+        BLT_ABORT("Platform not supported for huge page allocation!");
+#endif
+    }
+    
+    void mmap_free(void* ptr, blt::size_t bytes)
+    {
+        if (munmap(ptr, bytes))
+        {
+            BLT_ERROR_STREAM << "Failed to deallocate\n";
+            handle_mmap_error(BLT_ERROR_STREAM);
+            throw std::bad_alloc();
+        }
+    }
 }

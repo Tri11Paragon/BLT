@@ -21,6 +21,7 @@
 
 #include <blt/std/logging.h>
 #include <blt/std/types.h>
+#include <cstdlib>
 
 #ifdef __unix__
     
@@ -46,6 +47,36 @@ namespace blt
     }
     
     void* allocate_2mb_huge_pages(blt::size_t bytes);
+    
+    void mmap_free(void* ptr, blt::size_t bytes);
+    
+    class mmap_huge_allocator
+    {
+        public:
+            void* allocate(blt::size_t bytes) // NOLINT
+            {
+                return allocate_2mb_huge_pages(bytes);
+            }
+            
+            void deallocate(void* ptr, blt::size_t bytes) // NOLINT
+            {
+                mmap_free(ptr, bytes);
+            }
+    };
+    
+    class aligned_huge_allocator
+    {
+        public:
+            void* allocate(blt::size_t bytes) // NOLINT
+            {
+                return std::aligned_alloc(BLT_2MB_SIZE, bytes);
+            }
+            
+            void deallocate(void* ptr, blt::size_t) // NOLINT
+            {
+                std::free(ptr);
+            }
+    };
     
 }
 
