@@ -26,7 +26,7 @@
 
 namespace blt::meta
 {
-    template<typename IFirst, typename... IArgs>
+    template<typename IFirst = std::void_t<void>, typename... IArgs>
     struct arg_helper
     {
         using First = IFirst;
@@ -41,7 +41,7 @@ namespace blt::meta
     };
     
     template<>
-    struct arg_helper<void>
+    struct arg_helper<>
     {
         using First = void;
         using Next = void;
