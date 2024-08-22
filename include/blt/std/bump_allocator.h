@@ -119,7 +119,9 @@ namespace blt
 //            std::atomic<block*> head = nullptr;
 //            Alloc alloc;
 //    };
-    
+
+
+
 }
 
 #endif //BLT_ATOMIC_ALLOCATOR_H
