@@ -56,8 +56,8 @@ namespace blt
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-
-
+    
+    
     template<typename B, typename P, typename R = decltype(B() * P())>
     static inline constexpr R pow(B b, P p)
     {
@@ -67,22 +67,61 @@ namespace blt
         return collection;
     }
     
+    template<blt::i64 decimal_places>
+    struct round_up_t
+    {
+        constexpr inline double operator()(double value)
+        {
+            if constexpr (decimal_places < 0)
+                return value;
+            else
+            {
+                constexpr double multiplier = pow(10.0, decimal_places);
+                auto i_value = static_cast<blt::i64>(value);
+                auto f_value = value - static_cast<double>(i_value);
+                if (f_value > 0)
+                    return ((static_cast<double>(i_value) * multiplier + 1) / multiplier);
+                else
+                    return static_cast<double>(i_value);
+            }
+        }
+    };
+    
+    template<blt::i64 decimal_places>
+    struct round_down_t
+    {
+        constexpr inline double operator()(double value)
+        {
+            if constexpr (decimal_places < 0)
+                return value;
+            else
+            {
+                constexpr double multiplier = pow(10.0, decimal_places);
+                return (static_cast<blt::i64>(value * multiplier)) / multiplier;
+            }
+        }
+    };
+    
     /**
      * This is a fast rounding function and is not guaranteed to be 100% correct
      * @tparam decimal_places
      * @param value
      * @return
      */
-    template<int decimal_places>
+    template<blt::i64 decimal_places>
     constexpr static inline double round_up(double value)
     {
-        if constexpr (decimal_places < 0)
-            return value;
-        else
-        {
-            constexpr double multiplier = pow(10.0, decimal_places);
-            return ((int) (value * multiplier) + 1) / multiplier;
-        }
+        
+        round_up_t<decimal_places> round_func;
+        return round_func(value);
+    }
+    
+    template<blt::i64 decimal_places>
+    constexpr static inline double round_down(double value)
+    {
+        
+        round_down_t<decimal_places> round_func;
+        return round_func(value);
     }
     
     /*inline std::ostream& operator<<(std::ostream& out, const mat4x4& v) {

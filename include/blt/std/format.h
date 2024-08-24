@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include <blt/math/math.h>
+#include <blt/std/types.h>
 #include <algorithm>
 #include <string_view>
 #include "memory.h"
@@ -19,17 +20,27 @@
 
 namespace blt::string
 {
-    
     template<typename T>
     static inline std::string withGrouping(T t, size_t group = 3)
     {
         // TODO: all this + make it faster
-        static_assert(std::is_integral_v<T>, "Must be integer type! (Floats currently not supported!)");
+        static_assert(std::is_arithmetic_v<T> && "Must be arithmetic type!");
         auto str = std::to_string(t);
         std::string ret;
         ret.reserve(str.size());
-        size_t count = 0;
-        for (int64_t i = str.size() - 1; i >= 0; i--)
+        blt::size_t count = 0;
+        auto start_pos = static_cast<blt::i64>(str.size() - 1);
+        for (auto i = start_pos; i >= 0; i--)
+        {
+            if (str[i] == '.')
+            {
+                start_pos = i - 1;
+                break;
+            }
+        }
+        for (auto i = static_cast<blt::i64>(str.size() - 1); i > start_pos; i--)
+            ret += str[i];
+        for (auto i = start_pos; i >= 0; i--)
         {
             ret += str[i];
             if (count++ % (group) == group - 1 && i != 0)
@@ -38,27 +49,113 @@ namespace blt::string
         std::reverse(ret.begin(), ret.end());
         return ret;
     }
-    
-    // negative decimal places will not round.
-    template<int decimal_places = -1>
-    static inline std::string fromBytes(unsigned long bytes)
+}
+
+namespace blt
+{
+    class byte_convert_t
     {
-        if (bytes > 1073741824)
-        {
-            // gigabyte
-            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0 / 1024.0 / 1024.0)) += "gb";
-        } else if (bytes > 1048576)
-        {
-            // megabyte
-            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0 / 1024.0)) += "mb";
-        } else if (bytes > 1024)
-        {
-            // kilobyte
-            return std::to_string(round_up<decimal_places>((double) bytes / 1024.0)) += "kb";
-        } else
-        {
-            return std::to_string(bytes) += "b";
-        }
+        public:
+            enum class byte_t : blt::u64
+            {
+                Bytes = 1,
+                Kilobyte = 1024,
+                Megabyte = 1024 * 1024,
+                Gigabyte = 1024 * 1024 * 1024,
+            };
+            
+            explicit byte_convert_t(blt::u64 bytes): bytes(bytes)
+            {}
+            
+            byte_convert_t(blt::u64 bytes, byte_t convert_type): bytes(bytes), type(convert_type)
+            {
+                converted = static_cast<double>(bytes) / static_cast<double>(static_cast<blt::u64>(type));
+            }
+            
+            byte_convert_t& convert_to_nearest_type()
+            {
+                if (bytes > 1073741824)
+                {
+                    // gigabyte
+                    type = byte_t::Gigabyte;
+                } else if (bytes > 1048576)
+                {
+                    // megabyte
+                    type = byte_t::Megabyte;
+                } else if (bytes > 1024)
+                {
+                    // kilobyte
+                    type = byte_t::Kilobyte;
+                } else
+                {
+                    type = byte_t::Bytes;
+                }
+                converted = static_cast<double>(bytes) / static_cast<double>(static_cast<blt::u64>(type));
+                return *this;
+            }
+            
+            [[nodiscard]] std::string_view type_string() const
+            {
+                switch (type)
+                {
+                    case byte_t::Bytes:
+                        return "b";
+                    case byte_t::Kilobyte:
+                        return "KiB";
+                    case byte_t::Megabyte:
+                        return "MiB";
+                    case byte_t::Gigabyte:
+                        return "GiB";
+                }
+                return "NotPossible!";
+            }
+            
+            [[nodiscard]] double getConverted() const
+            {
+                return converted;
+            }
+            
+            template<blt::i64 decimal_places = -1, template<blt::i64> typename round_function = round_up_t>
+            [[nodiscard]] double getConvertedRound() const
+            {
+                round_function<decimal_places> convert{};
+                return convert(converted);
+            }
+            
+            template<blt::i64 decimal_places = -1, template<blt::i64> typename round_function = round_up_t>
+            [[nodiscard]] std::string to_pretty_string() const
+            {
+                auto str = string::withGrouping(getConvertedRound<decimal_places, round_function>(), 3);
+                str += type_string();
+                return str;
+            }
+            
+            [[nodiscard]] blt::u64 getBytes() const
+            {
+                return bytes;
+            }
+            
+            [[nodiscard]] byte_t getType() const
+            {
+                return type;
+            }
+        
+        private:
+            blt::u64 bytes = 0;
+            byte_t type = byte_t::Bytes;
+            double converted = 0;
+    };
+}
+
+namespace blt::string
+{
+    // negative decimal places will not round.
+    template<blt::i64 decimal_places = -1>
+    static inline std::string fromBytes(blt::u64 bytes)
+    {
+        byte_convert_t convert(bytes);
+        convert.convert_to_nearest_type();
+        return std::to_string(convert.getConvertedRound<decimal_places>()) + convert.type_string();
     }
     
     // TODO: update table formatter to use these!
