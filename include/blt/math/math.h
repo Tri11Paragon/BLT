@@ -77,10 +77,10 @@ namespace blt
             else
             {
                 constexpr double multiplier = pow(10.0, decimal_places);
-                auto i_value = static_cast<blt::i64>(value);
-                auto f_value = value - static_cast<double>(i_value);
+                auto i_value = static_cast<blt::i64>(value * multiplier);
+                auto f_value = (value * multiplier) - static_cast<double>(i_value);
                 if (f_value > 0)
-                    return ((static_cast<double>(i_value) * multiplier + 1) / multiplier);
+                    return ((static_cast<double>(i_value) + 1) / multiplier);
                 else
                     return static_cast<double>(i_value);
             }
