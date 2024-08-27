@@ -208,7 +208,7 @@ namespace blt::random
             
             constexpr result_type operator()()
             {
-                return get_u64(min(), max());
+                return get_u64(min(), max() + 1);
             }
         
         private:
