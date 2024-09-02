@@ -158,6 +158,11 @@ namespace blt::string
         return std::to_string(convert.getConvertedRound<decimal_places>()) + convert.type_string();
     }
     
+    static inline std::string bytes_to_pretty(blt::u64 bytes)
+    {
+        return byte_convert_t(bytes).convert_to_nearest_type().to_pretty_string();
+    }
+    
     // TODO: update table formatter to use these!
     /**
      * creates a line starting/ending with ending char filled between with spacing char
