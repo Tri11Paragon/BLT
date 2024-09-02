@@ -36,7 +36,7 @@ namespace blt::error
                 BLT_WARN("Address already in use");
                 break;
             case EADDRNOTAVAIL:
-                BLT_WARN("Cannot assign requested address");
+                BLT_WARN("Cannot copy_fast requested address");
                 break;
             case EAFNOSUPPORT:
                 BLT_WARN("Address family not supported by protocol");
