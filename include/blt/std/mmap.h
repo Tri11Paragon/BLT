@@ -74,7 +74,10 @@ namespace blt
     class mmap_huge_allocator
     {
         public:
-            void* allocate(blt::size_t bytes, huge_page_t page_type) // NOLINT
+            explicit mmap_huge_allocator(huge_page_t page_type): page_type(page_type)
+            {}
+            
+            void* allocate(blt::size_t bytes) // NOLINT
             {
                 return allocate_huge_pages(page_type, bytes);
             }
@@ -83,6 +86,8 @@ namespace blt
             {
                 mmap_free(ptr, bytes);
             }
+        private:
+            huge_page_t page_type;
     };
     
     class aligned_huge_allocator

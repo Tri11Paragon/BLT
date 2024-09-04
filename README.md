@@ -55,7 +55,7 @@ If you are using BLT as a CMake library (as you should!) this is done for you.
   - Using CMake
     - Several options are provided which disable various logging contexts, as such global logging can be disabled by passing `-DBLT_DISABLE_LOGGING:BOOL=ON`
     - Options follow the pattern of `BLT_DISABLE_LEVEL` where level is one of `TRACE`,`DEBUG`,`INFO`,`WARN`,`ERROR`, or `FATAL`.
-      - This allows for individual logging levels to be disabled while leaving the others functional. These options can be combined.
+      - This allows for individual_t logging levels to be disabled while leaving the others functional. These options can be combined.
       - See CMakeLists.txt for a complete list of options.
   - Standalone
     - The CMake options define global variables in a config file. If you are using logging standalone you will need to remove the config include.
