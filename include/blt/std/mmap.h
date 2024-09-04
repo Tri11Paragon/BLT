@@ -23,22 +23,43 @@
 #include <blt/std/types.h>
 #include <cstdlib>
 
-#ifdef __unix__
-    
-    #include <sys/mman.h>
-
-#endif
-
 // size of 2mb in bytes
-inline constexpr blt::size_t BLT_2MB_SIZE = 4096 * 512;
+inline constexpr blt::size_t BLT_2MB_SIZE = 2048 * 1024;
+inline constexpr blt::size_t BLT_1GB_SIZE = 1048576 * 1024;
 
 namespace blt
 {
     
+    enum class huge_page_t : blt::u64
+    {
+        BLT_2MB_PAGE,
+        BLT_1GB_PAGE
+    };
+    
+    class bad_alloc_t : public std::exception
+    {
+        public:
+            bad_alloc_t() = default;
+            
+            explicit bad_alloc_t(std::string_view str): str(str)
+            {}
+            
+            explicit bad_alloc_t(std::string str): str(std::move(str))
+            {}
+            
+            [[nodiscard]] const char* what() const noexcept override
+            {
+                return str.c_str();
+            }
+        
+        private:
+            std::string str;
+    };
+    
     /**
     * Logging function used for handling mmap errors. call after a failed mmap call.
     */
-    void handle_mmap_error(blt::logging::logger func);
+    std::string handle_mmap_error();
     
     inline static constexpr blt::size_t align_size_to(blt::size_t size, blt::size_t align)
     {
@@ -46,16 +67,16 @@ namespace blt
         return (size & MASK) + align;
     }
     
-    void* allocate_2mb_huge_pages(blt::size_t bytes);
+    void* allocate_huge_pages(huge_page_t page_type, blt::size_t bytes);
     
     void mmap_free(void* ptr, blt::size_t bytes);
     
     class mmap_huge_allocator
     {
         public:
-            void* allocate(blt::size_t bytes) // NOLINT
+            void* allocate(blt::size_t bytes, huge_page_t page_type) // NOLINT
             {
-                return allocate_2mb_huge_pages(bytes);
+                return allocate_huge_pages(page_type, bytes);
             }
             
             void deallocate(void* ptr, blt::size_t bytes) // NOLINT

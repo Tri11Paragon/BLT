@@ -31,6 +31,12 @@
     #include "logging.h"
     #include <cstdlib>
 
+#ifdef __unix__
+    
+    #include <sys/mman.h>
+
+#endif
+
 namespace blt
 {
     
@@ -548,7 +554,7 @@ namespace blt
             if constexpr (WARN_ON_FAIL)
             {
                 BLT_WARN_STREAM << "We failed to allocate huge pages\n";
-                handle_mmap_error(BLT_WARN_STREAM);
+                BLT_WARN_STREAM << handle_mmap_error();
                 BLT_WARN_STREAM << "\033[1;31mYou should attempt to enable "
                                    "huge pages as this will allocate normal pages and double the memory usage!\033[22m\n";
             }
@@ -557,8 +563,7 @@ namespace blt
             if (buffer == MAP_FAILED)
             {
                 BLT_ERROR_STREAM << "Failed to allocate normal pages\n";
-                handle_mmap_error(BLT_ERROR_STREAM);
-                throw std::bad_alloc();
+                throw bad_alloc_t(handle_mmap_error());
             }
             if constexpr (WARN_ON_FAIL)
             {
@@ -768,7 +773,7 @@ namespace blt
                     if (munmap(p, BLOCK_SIZE))
                     {
                         BLT_ERROR_STREAM << "FAILED TO DEALLOCATE BLOCK\n";
-                        handle_mmap_error(BLT_ERROR_STREAM);
+                        throw bad_alloc_t(handle_mmap_error());
                     }
                 } else
                     free(p);

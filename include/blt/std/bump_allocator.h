@@ -35,7 +35,7 @@
 
 namespace blt
 {
-    
+
 //    template<typename Alloc = blt::aligned_huge_allocator>
 //    class atomic_bump_allocator
 //    {
