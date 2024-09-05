@@ -6,7 +6,7 @@
 #include <blt/profiling/profiler_v2.h>
 #include <blt/std/time.h>
 #include <blt/std/system.h>
-#include <blt/std/format.h>
+#include <blt/format/format.h>
 #include <functional>
 #include <blt/std/hashmap.h>
 #include <blt/compatibility.h>

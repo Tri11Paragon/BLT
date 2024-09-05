@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 0.19.7)
+set(BLT_VERSION 0.20.0)
 set(BLT_TEST_VERSION 0.0.1)
 
 set(BLT_TARGET BLT)
@@ -17,6 +17,7 @@ option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_FS "Build the BLT FS utilities including the NBT + eNBT extension" ON)
 option(BUILD_PARSE "Build the BLT parsers" ON)
+option(BUILD_FORMAT "Build the BLT formatters" ON)
 
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
@@ -64,6 +65,13 @@ else ()
     set(PARSE_FILES "")
 endif ()
 
+if (${BUILD_FORMAT})
+    message(STATUS "Building ${Yellow}format${ColourReset} cxx files")
+    file(GLOB_RECURSE FORMAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/format/*.cpp")
+else ()
+    set(FORMAT_FILES "")
+endif ()
+
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Found Parallel Hashmaps library, using ${Yellow}phmap${ColourReset} over ${Red}std::unordered_map${ColourReset}")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
@@ -83,7 +91,7 @@ endif ()
 include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
-add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES})
 
 string(REPLACE "+" "\\+" escaped_source ${CMAKE_CURRENT_SOURCE_DIR})
 string(APPEND escaped_source "/src/blt/.*/")

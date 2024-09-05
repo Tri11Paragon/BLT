@@ -10,7 +10,7 @@
 #include <blt/std/logging.h>
 #include <iostream>
 #include <algorithm>
-#include <blt/std/format.h>
+#include <blt/format/format.h>
 
 #define TIME_FUNCTION blt::system::getCPUThreadTime()
 
