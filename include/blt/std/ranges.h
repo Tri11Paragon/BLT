@@ -9,7 +9,7 @@
 #define BLT_RANGES_H
 
 #include <blt/std/types.h>
-#include <blt/std/meta.h>
+#include <blt/meta/meta.h>
 #include <type_traits>
 #include <iterator>
 #include <memory>
