@@ -24,21 +24,21 @@
 namespace blt
 {
 #define BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
-    TYPE _##NAME{};
+    TYPE NAME{};
 
-#define INTERNAL_BLT_MAKE_GETTER(TYPE, NAME)                            \
-    TYPE& get_##NAME() { return _##NAME; }                              \
-    const TYPE& get_##NAME() const { return _##NAME; }
+#define BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)                            \
+    TYPE& get_##NAME() { return NAME; }                                 \
+    const TYPE& get_##NAME() const { return NAME; }
 
-#define INTERNAL_BLT_MAKE_SETTER(TYPE, NAME)                            \
+#define BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)                            \
     auto& set_##NAME(const TYPE& new_##NAME)                            \
     {                                                                   \
-        _##NAME = new_##NAME;                                           \
+        NAME = new_##NAME;                                              \
         return *this;                                                   \
     }                                                                   \
     auto& set_##NAME(TYPE new_##NAME)                                   \
     {                                                                   \
-        _##NAME = std::move(new_##NAME);                                \
+        NAME = std::move(new_##NAME);                                   \
         return *this;                                                   \
     }
 
@@ -46,13 +46,13 @@ namespace blt
     private:                                                            \
         BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
     public:                                                             \
-        INTERNAL_BLT_MAKE_GETTER(TYPE, NAME)
+        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)
 
 #define BLT_MAKE_SETTER(TYPE, NAME)                                     \
     private:                                                            \
         BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
     public:                                                             \
-        INTERNAL_BLT_MAKE_SETTER(TYPE, NAME)
+        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)
 
 #define BLT_MAKE_FRIEND(FRIEND) friend FRIEND;
 
@@ -65,8 +65,8 @@ namespace blt
     private:                                                            \
         BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
     public:                                                             \
-        INTERNAL_BLT_MAKE_GETTER(TYPE, NAME)                            \
-        INTERNAL_BLT_MAKE_SETTER(TYPE, NAME)
+        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)                            \
+        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)
 
 #define BLT_MAKE_CONFIG_TYPE(OBJECT, ...)                               \
     class OBJECT {                                                      \
