@@ -30,7 +30,7 @@ namespace blt
     TYPE& get_##NAME() { return NAME; }                                 \
     const TYPE& get_##NAME() const { return NAME; }
 
-#define BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)                            \
+#define BLT_INTERNAL_MAKE_SETTER(TYPE, NAME)                            \
     auto& set_##NAME(const TYPE& new_##NAME)                            \
     {                                                                   \
         NAME = new_##NAME;                                              \
@@ -52,7 +52,7 @@ namespace blt
     private:                                                            \
         BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
     public:                                                             \
-        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)
+        BLT_INTERNAL_MAKE_SETTER(TYPE, NAME)
 
 #define BLT_MAKE_FRIEND(FRIEND) friend FRIEND;
 
@@ -66,7 +66,7 @@ namespace blt
         BLT_MAKE_VARIABLE(TYPE, NAME)                                   \
     public:                                                             \
         BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)                            \
-        BLT_INTERNAL_MAKE_GETTER(TYPE, NAME)
+        BLT_INTERNAL_MAKE_SETTER(TYPE, NAME)
 
 #define BLT_MAKE_CONFIG_TYPE(OBJECT, ...)                               \
     class OBJECT {                                                      \
