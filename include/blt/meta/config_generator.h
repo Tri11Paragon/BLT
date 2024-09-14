@@ -33,7 +33,7 @@ namespace blt
         NAME = new_##NAME;                                              \
         return *this;                                                   \
     }                                                                   \
-    auto& set_##NAME(TYPE new_##NAME)                                   \
+    auto& set_##NAME(TYPE&& new_##NAME)                                 \
     {                                                                   \
         NAME = std::move(new_##NAME);                                   \
         return *this;                                                   \
