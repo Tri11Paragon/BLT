@@ -19,6 +19,132 @@
 namespace blt
 {
     
+    template<typename T, blt::u32 rows, blt::u32 columns>
+    class generalized_matrix
+    {
+            using matrix_t = generalized_matrix<T, rows, columns>;
+        public:
+            static matrix_t make_empty()
+            {
+                matrix_t mat;
+                return mat;
+            }
+            
+            static matrix_t make_identity()
+            {
+                static_assert(rows == columns && "Identity matrix must be square!");
+                matrix_t mat = make_empty();
+                for (blt::u32 i = 0; i < rows; i++)
+                    mat[i][i] = 1;
+                return mat;
+            }
+            
+            // adds the two mat4x4 left and right
+            inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
+            {
+                matrix_t ret = left;
+                for (int i = 0; i < columns; i++)
+                    ret[i] += right.data[i];
+                return ret;
+            }
+            
+            // subtracts the right mat4x4 from the left.
+            inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
+            {
+                matrix_t ret = left;
+                for (int i = 0; i < columns; i++)
+                    ret[i] -= right.data[i];
+                return ret;
+            }
+            
+            // multiples the left with the right
+            template<blt::u32 p, typename Ret = generalized_matrix<T, rows, p>>
+            inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, columns, p>& right)
+            {
+                Ret mat = Ret::make_empty();
+                
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j = 0; j < p; j++)
+                    {
+                        for (int k = 0; k < columns; k++)
+                            mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
+                    }
+                }
+                
+                return mat;
+            }
+            
+            inline friend vec<T, rows> operator*(const matrix_t& left, const vec<T, columns>& right)
+            {
+                vec<T, rows> ret;
+                
+                for (int r = 0; r < rows; r++)
+                {
+                    for (int c = 0; c < columns; c++)
+                        ret[r] = ret[r] + left.m(r, c) * right[c];
+                }
+                
+                return ret;
+            }
+            
+            // multiplies the const c with each element in the mat4x4 v
+            inline friend matrix_t operator*(float c, const matrix_t & v)
+            {
+                matrix_t mat{};
+                
+                for (int i = 0; i < columns; i++)
+                {
+                    mat.data[i] = c * v.data[i];
+                }
+                
+                return mat;
+            }
+            
+            // same as above but for right sided constants
+            inline friend matrix_t operator*(const matrix_t& v, float c)
+            {
+                matrix_t mat{};
+                
+                for (int i = 0; i < columns; i++)
+                {
+                    mat.data[i] = v.data[i] * c;
+                }
+                
+                return mat;
+            }
+            
+            // divides the mat4x4 by the constant c
+            inline friend matrix_t operator/(const matrix_t& v, float c)
+            {
+                matrix_t mat{};
+                
+                for (int i = 0; i < columns; i++)
+                {
+                    mat.data[i] = v.data[i] / c;
+                }
+                
+                return mat;
+            }
+            
+            // divides each element in the mat4x4 by over the constant
+            inline friend matrix_t operator/(float c, const mat4x4& v)
+            {
+                matrix_t mat{};
+                
+                for (int i = 0; i < columns; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                        mat.data[i][j] = c / v.data[i][j];
+                }
+                
+                return mat;
+            }
+        
+        private:
+            blt::vec<T, columns> data[rows];
+    };
+    
     class mat4x4
     {
             static_assert(std::is_trivially_copyable_v<blt::vec4> && "Vector must be trivially copyable!");
