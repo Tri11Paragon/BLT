@@ -10,6 +10,8 @@
 #include <blt/math/vectors.h>
 #include <cstring>
 #include <type_traits>
+#include <array>
+#include <initializer_list>
 
 #ifndef M_PI
 // MSVC does not have M_PI
@@ -62,16 +64,43 @@ namespace blt
                 return *this;
             }
             
+            generalized_matrix(std::initializer_list<T> list)
+            {
+                blt::size_t index = 0;
+                for (const auto& v : list)
+                {
+                    data[(index / rows)][(index % rows)] = v;
+                    index++;
+                }
+            }
+            
+            generalized_matrix(std::initializer_list<blt::vec<float, rows>> list)
+            {
+                blt::size_t index = 0;
+                for (const auto& v : list)
+                {
+                    data[index] = v;
+                    index++;
+                }
+            }
+            
+            explicit generalized_matrix(const std::array<T, rows * columns>& dat)
+            {
+                for (u32 i = 0; i < columns; i++)
+                    for (u32 j = 0; j < rows; j++)
+                        data[i][j] = dat[j + i * columns];
+            }
+            
             explicit generalized_matrix(const T dat[rows * columns])
             {
-                for (int i = 0; i < columns; i++)
-                    for (int j = 0; j < rows; j++)
-                        data[i][j] = dat[j + i * 4];
+                for (u32 i = 0; i < columns; i++)
+                    for (u32 j = 0; j < rows; j++)
+                        data[i][j] = dat[j + i * columns];
             }
             
             explicit generalized_matrix(const blt::vec<T, rows> dat[columns])
             {
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                     data[i] = dat[i];
             }
             
@@ -106,22 +135,22 @@ namespace blt
                 return mat;
             }
             
-            inline const blt::vec<T, rows>& operator[](int column) const
+            inline const blt::vec<T, rows>& operator[](u32 column) const
             {
                 return data[column];
             }
             
-            inline blt::vec<T, rows>& operator[](int column)
+            inline blt::vec<T, rows>& operator[](u32 column)
             {
                 return data[column];
             }
             
-            [[nodiscard]] inline T m(int row, int column) const
+            [[nodiscard]] inline T m(u32 row, u32 column) const
             {
                 return data[column][row];
             };
             
-            inline T m(int row, int column, T value)
+            inline T m(u32 row, u32 column, T value)
             {
                 return data[column][row] = value;
             };
@@ -130,7 +159,7 @@ namespace blt
             inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
             {
                 matrix_t ret = left;
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                     ret[i] += right.data[i];
                 return ret;
             }
@@ -139,7 +168,7 @@ namespace blt
             inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
             {
                 matrix_t ret = left;
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                     ret[i] -= right.data[i];
                 return ret;
             }
@@ -150,11 +179,11 @@ namespace blt
             {
                 Ret mat = Ret::make_empty();
                 
-                for (int i = 0; i < rows; i++)
+                for (u32 i = 0; i < rows; i++)
                 {
-                    for (int j = 0; j < p; j++)
+                    for (u32 j = 0; j < p; j++)
                     {
-                        for (int k = 0; k < columns; k++)
+                        for (u32 k = 0; k < columns; k++)
                             mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
                     }
                 }
@@ -162,13 +191,13 @@ namespace blt
                 return mat;
             }
             
-            inline friend vec <T, rows> operator*(const matrix_t& left, const vec <T, columns>& right)
+            inline friend vec<T, rows> operator*(const matrix_t& left, const vec<T, columns>& right)
             {
-                vec < T, rows > ret;
+                vec<T, rows> ret;
                 
-                for (int r = 0; r < rows; r++)
+                for (u32 r = 0; r < rows; r++)
                 {
-                    for (int c = 0; c < columns; c++)
+                    for (u32 c = 0; c < columns; c++)
                         ret[r] = ret[r] + left.m(r, c) * right[c];
                 }
                 
@@ -180,7 +209,7 @@ namespace blt
             {
                 matrix_t mat = make_empty();
                 
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                 {
                     mat.data[i] = c * v.data[i];
                 }
@@ -193,7 +222,7 @@ namespace blt
             {
                 matrix_t mat = make_empty();
                 
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                 {
                     mat.data[i] = v.data[i] * c;
                 }
@@ -206,7 +235,7 @@ namespace blt
             {
                 matrix_t mat = make_empty();
                 
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                 {
                     mat.data[i] = v.data[i] / c;
                 }
@@ -219,17 +248,32 @@ namespace blt
             {
                 matrix_t mat = make_empty();
                 
-                for (int i = 0; i < columns; i++)
+                for (u32 i = 0; i < columns; i++)
                 {
-                    for (int j = 0; j < rows; j++)
+                    for (u32 j = 0; j < rows; j++)
                         mat.data[i][j] = c / v.data[i][j];
                 }
                 
                 return mat;
             }
+            
+            inline friend bool operator==(const matrix_t& left, const matrix_t& right)
+            {
+                for (blt::u32 i = 0; i < columns; i++)
+                {
+                    if (left.data[i] != right.data[i])
+                        return false;
+                }
+                return true;
+            }
+            
+            inline friend bool operator!=(const matrix_t& left, const matrix_t& right)
+            {
+                return !(left == right);
+            }
         
         private:
-            blt::vec<T, columns> data[rows];
+            blt::vec<T, rows> data[columns];
     };
     
     class mat4x4

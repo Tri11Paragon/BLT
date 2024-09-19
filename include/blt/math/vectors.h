@@ -20,7 +20,7 @@ namespace blt
 
 #define MSVC_COMPILER (!defined(__GNUC__) && !defined(__clang__))
     
-    constexpr float EPSILON = 0.0001f;
+    constexpr float EPSILON = std::numeric_limits<float>::epsilon();
     
     static inline constexpr bool f_equal(float v1, float v2)
     {
@@ -381,9 +381,13 @@ namespace blt
     template<typename T, blt::u32 size>
     inline constexpr bool operator==(const vec<T, size>& left, const vec<T, size>& right)
     {
+        constexpr double E = std::numeric_limits<T>::epsilon();
         for (blt::u32 i = 0; i < size; i++)
-            if (left[i] != right[i])
+        {
+            auto diff = left[i] - right[i];
+            if (diff > E || diff < -E)
                 return false;
+        }
         return true;
     }
     
