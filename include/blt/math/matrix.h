@@ -122,7 +122,7 @@ namespace blt
                 return *this;
             }
             
-            generalized_matrix<T, columns, rows> transpose()
+            generalized_matrix<T, columns, rows> transpose() const
             {
                 generalized_matrix<T, columns, rows> mat;
                 

@@ -56,8 +56,8 @@ namespace blt
         return out;
     }
     
-    template<typename Writer = std::ostream, typename T, blt::u32 rows, blt::u32 columns>
-    inline Writer& operator<<(Writer& out, const generalized_matrix<T, rows, columns>& mat)
+    template<typename T, blt::u32 rows, blt::u32 columns, typename CharT, typename Traits>
+    inline std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& out, const generalized_matrix<T, rows, columns>& mat)
     {
         out << "Mat" << rows << 'x' << columns << "(\n";
         for (blt::u32 c = 0; c < columns; c++)
