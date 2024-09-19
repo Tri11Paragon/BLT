@@ -23,21 +23,108 @@ namespace blt
     class generalized_matrix
     {
             using matrix_t = generalized_matrix<T, rows, columns>;
+            enum class init_type
+            {
+                EMPTY,
+                IDENTITY
+            };
+            
+            explicit generalized_matrix(init_type type)
+            {
+                switch (type)
+                {
+                    case init_type::EMPTY:
+                        break;
+                    case init_type::IDENTITY:
+                        set_identity();
+                        break;
+                }
+            }
+        
         public:
+            generalized_matrix() = default;
+            
+            generalized_matrix(const matrix_t& copy)
+            {
+                std::memcpy(data, copy.data, sizeof(matrix_t));
+            }
+            
+            generalized_matrix(matrix_t&& move) noexcept
+            {
+                std::memcpy(data, move.data, sizeof(matrix_t));
+            }
+            
+            matrix_t& operator=(const matrix_t& copy)
+            {
+                if (&copy == this)
+                    return *this;
+                std::memcpy(data, copy.data, sizeof(matrix_t));
+                return *this;
+            }
+            
+            explicit generalized_matrix(const T dat[rows * columns])
+            {
+                for (int i = 0; i < columns; i++)
+                    for (int j = 0; j < rows; j++)
+                        data[i][j] = dat[j + i * 4];
+            }
+            
+            explicit generalized_matrix(const blt::vec<T, rows> dat[columns])
+            {
+                for (int i = 0; i < columns; i++)
+                    data[i] = dat[i];
+            }
+            
             static matrix_t make_empty()
             {
-                matrix_t mat;
-                return mat;
+                return matrix_t{init_type::EMPTY};
             }
             
             static matrix_t make_identity()
             {
                 static_assert(rows == columns && "Identity matrix must be square!");
-                matrix_t mat = make_empty();
+                return matrix_t{init_type::IDENTITY};
+            }
+            
+            auto& set_identity()
+            {
                 for (blt::u32 i = 0; i < rows; i++)
-                    mat[i][i] = 1;
+                    data[i][i] = 1;
+                return *this;
+            }
+            
+            generalized_matrix<T, columns, rows> transpose()
+            {
+                generalized_matrix<T, columns, rows> mat;
+                
+                for (blt::u32 i = 0; i < columns; i++)
+                {
+                    for (blt::u32 j = 0; j < rows; j++)
+                        mat[j][i] = data[i][j];
+                }
+                
                 return mat;
             }
+            
+            inline const blt::vec<T, rows>& operator[](int column) const
+            {
+                return data[column];
+            }
+            
+            inline blt::vec<T, rows>& operator[](int column)
+            {
+                return data[column];
+            }
+            
+            [[nodiscard]] inline T m(int row, int column) const
+            {
+                return data[column][row];
+            };
+            
+            inline T m(int row, int column, T value)
+            {
+                return data[column][row] = value;
+            };
             
             // adds the two mat4x4 left and right
             inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
@@ -75,9 +162,9 @@ namespace blt
                 return mat;
             }
             
-            inline friend vec<T, rows> operator*(const matrix_t& left, const vec<T, columns>& right)
+            inline friend vec <T, rows> operator*(const matrix_t& left, const vec <T, columns>& right)
             {
-                vec<T, rows> ret;
+                vec < T, rows > ret;
                 
                 for (int r = 0; r < rows; r++)
                 {
@@ -89,9 +176,9 @@ namespace blt
             }
             
             // multiplies the const c with each element in the mat4x4 v
-            inline friend matrix_t operator*(float c, const matrix_t & v)
+            inline friend matrix_t operator*(float c, const matrix_t& v)
             {
-                matrix_t mat{};
+                matrix_t mat = make_empty();
                 
                 for (int i = 0; i < columns; i++)
                 {
@@ -104,7 +191,7 @@ namespace blt
             // same as above but for right sided constants
             inline friend matrix_t operator*(const matrix_t& v, float c)
             {
-                matrix_t mat{};
+                matrix_t mat = make_empty();
                 
                 for (int i = 0; i < columns; i++)
                 {
@@ -117,7 +204,7 @@ namespace blt
             // divides the mat4x4 by the constant c
             inline friend matrix_t operator/(const matrix_t& v, float c)
             {
-                matrix_t mat{};
+                matrix_t mat = make_empty();
                 
                 for (int i = 0; i < columns; i++)
                 {
@@ -128,13 +215,13 @@ namespace blt
             }
             
             // divides each element in the mat4x4 by over the constant
-            inline friend matrix_t operator/(float c, const mat4x4& v)
+            inline friend matrix_t operator/(float c, const matrix_t& v)
             {
-                matrix_t mat{};
+                matrix_t mat = make_empty();
                 
                 for (int i = 0; i < columns; i++)
                 {
-                    for (int j = 0; j < 4; j++)
+                    for (int j = 0; j < rows; j++)
                         mat.data[i][j] = c / v.data[i][j];
                 }
                 
