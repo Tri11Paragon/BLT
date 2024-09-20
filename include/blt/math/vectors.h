@@ -140,12 +140,12 @@ namespace blt
                 return *this / mag;
             }
             
-            constexpr inline T& operator[](int index)
+            constexpr inline T& operator[](blt::size_t index)
             {
                 return elements[index];
             }
             
-            constexpr inline T operator[](int index) const
+            constexpr inline T operator[](blt::size_t index) const
             {
                 return elements[index];
             }

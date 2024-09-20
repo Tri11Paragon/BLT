@@ -137,7 +137,7 @@ namespace blt
             
             T magnitude() const
             {
-                T ret;
+                T ret{};
                 for (blt::u32 i = 0; i < columns; i++)
                 {
                     for (blt::u32 j = 0; j < rows; j++)
@@ -174,6 +174,49 @@ namespace blt
             {
                 return data[column][row] = value;
             };
+            
+            /**
+             * Assign to this matrix from the row information in each column of a matrix
+             * Where columns can be assigned directly from each-other, row stored data must be assigned this way
+             * this was hacked together for an assignment and a better way is a TODO;
+             * @param to_column column in this matrix to assign to
+             * @param row the row place that the value is store in to assign from. Defaults to the first element in each column
+             */
+            template<blt::u32 p>
+            constexpr inline matrix_t& assign_to_column_from_column_rows(generalized_matrix<T, p, rows> mat, blt::u32 to_column, blt::u32 row = 0)
+            {
+                for (blt::u32 j = 0; j < rows; j++)
+                    data[to_column][j] = mat[j][row];
+                return *this;
+            }
+            
+            constexpr inline matrix_t& operator+=(const matrix_t& other)
+            {
+                for (blt::u32 i = 0; i < columns; i++)
+                    data[i] += other[i];
+                return *this;
+            }
+            
+            constexpr inline matrix_t& operator-=(const matrix_t& other)
+            {
+                for (blt::u32 i = 0; i < columns; i++)
+                    data[i] -= other[i];
+                return *this;
+            }
+            
+            constexpr inline matrix_t& operator*=(const matrix_t& other)
+            {
+                for (blt::u32 i = 0; i < columns; i++)
+                    data[i] *= other[i];
+                return *this;
+            }
+            
+            constexpr inline matrix_t& operator/=(const matrix_t& other)
+            {
+                for (blt::u32 i = 0; i < columns; i++)
+                    data[i] /= other[i];
+                return *this;
+            }
             
             // adds the two mat4x4 left and right
             constexpr inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
