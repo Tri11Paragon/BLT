@@ -176,6 +176,18 @@ namespace blt
             };
             
             /**
+             * Takes a value stored across a row, taking one from each column in the specified row
+             * @param row the row to extract from. defaults to the first row
+             */
+            constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0)
+            {
+                vec<T, columns> ret;
+                for (blt::u32 j = 0; j < columns; j++)
+                    ret[j] = data[j][row];
+                return ret;
+            }
+            
+            /**
              * Assign to this matrix from the row information in each column of a matrix
              * Where columns can be assigned directly from each-other, row stored data must be assigned this way
              * this was hacked together for an assignment and a better way is a TODO;

@@ -16,8 +16,8 @@
 namespace blt
 {
     
-    template<typename Writer = blt::logging::logger, typename T, blt::u32 size>
-    static inline Writer& operator<<(Writer& log, const blt::vec<T, size>& vec)
+    template<typename T, blt::u32 size, typename CharT, typename Traits>
+    static inline std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& log, const blt::vec<T, size>& vec)
     {
         std::string type_string;
         const auto tstr = blt::type_string<T>();
@@ -45,8 +45,8 @@ namespace blt
         return log;
     }
     
-    template<typename Writer = std::ostream>
-    inline Writer& operator<<(Writer& out, const mat4x4& v)
+    template<typename CharT, typename Traits>
+    inline std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& out, const mat4x4& v)
     {
         out << "Mat4x4(";
         out << "{" << v.m00() << ", " << v.m01() << ", " << v.m02() << ", " << v.m03() << "},";
