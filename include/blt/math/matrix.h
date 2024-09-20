@@ -135,6 +135,26 @@ namespace blt
                 return mat;
             }
             
+            T magnitude() const
+            {
+                T ret;
+                for (blt::u32 i = 0; i < columns; i++)
+                {
+                    for (blt::u32 j = 0; j < rows; j++)
+                        ret += (data[i][j] * data[i][j]);
+                }
+                return std::sqrt(ret);
+            }
+            
+            matrix_t normalize() const
+            {
+                auto mag = magnitude();
+                matrix_t mat = *this;
+                if (mag == 0)
+                    return mat;
+                return mat / mag;
+            }
+            
             constexpr inline const blt::vec<T, rows>& operator[](u32 column) const
             {
                 return data[column];
