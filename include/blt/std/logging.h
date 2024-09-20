@@ -632,8 +632,9 @@ namespace blt::logging {
     
     void log_stream_internal(const std::string& str, const logger& logger) {
         auto& s = loggingStreamLines[std::this_thread::get_id()][logger.level];
-        s += str;
+//        s += str;
         for (char c : str){
+            s += c;
             if (c == '\n'){
                 log(s, logger.level, logger.file, logger.line);
                 s = "";
