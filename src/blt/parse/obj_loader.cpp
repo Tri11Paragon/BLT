@@ -141,10 +141,9 @@ namespace blt::parse
     obj_model_t obj_loader::parseFile(std::string_view file)
     {
         auto lines = blt::fs::getLinesFromFile(std::string(file));
-        for (auto line_e : blt::enumerate(lines))
+        for (const auto& [index, line] : blt::enumerate(lines))
         {
-            auto& line = line_e.second;
-            current_line = line_e.first;
+            current_line = index;
             char_tokenizer token(line);
             if (!token.has_next() || token.read_fully().empty())
                 continue;
@@ -220,9 +219,9 @@ namespace blt::parse
     
     void obj_loader::handle_face_vertex(const std::vector<std::string>& face_list, int32_t* arr)
     {
-        for (const auto& pair : blt::enumerate(face_list))
+        for (const auto& [e_index, value] : blt::enumerate(face_list))
         {
-            auto indices = blt::string::split(pair.second, '/');
+            auto indices = blt::string::split(value, '/');
             BLT_ASSERT(indices.size() == 3 && "Must have vertex, uv, and normal indices!!");
             
             auto vi = get<std::int32_t>(indices[0]) - 1;
@@ -242,14 +241,14 @@ namespace blt::parse
                 BLT_DEBUG("Vertex: (%f, %f, %f), UV: (%f, %f), Normal: (%f, %f, %f)", vertices[vi].x(), vertices[vi].y(), vertices[vi].z(),
                           uvs[ui].x(), uvs[ui].y(), normals[ni].x(), normals[ni].y(), normals[ni].z());
                 vertex_map.insert({face, index});
-                arr[pair.first] = index;
+                arr[e_index] = index;
             } else
             {
                 BLT_TRACE("Using cached data; %d; map size: %d", loc->second, vertex_data.size());
                 //const auto& d = vertex_data[loc->second];
                 BLT_TRACE("Vertex: (%f, %f, %f), UV: (%f, %f), Normal: (%f, %f, %f)", d.vertex.x(), d.vertex.y(), d.vertex.z(),
                           d.uv.x(), d.uv.y(), d.normal.x(), d.normal.y(), d.normal.z());
-                arr[pair.first] = loc->second;
+                arr[e_index] = loc->second;
             }
         }
     }

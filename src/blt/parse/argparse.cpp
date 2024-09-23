@@ -122,10 +122,10 @@ namespace blt
     {
         std::string result = "[";
         
-        for (const auto& value : blt::enumerate(vec))
+        for (const auto& [index, value] : blt::enumerate(vec))
         {
-            result += to_string(value.second);
-            if (value.first != vec.size() - 1)
+            result += to_string(value);
+            if (index != vec.size() - 1)
                 result += ", ";
         }
         result += "]";
