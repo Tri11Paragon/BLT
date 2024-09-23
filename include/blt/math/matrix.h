@@ -179,7 +179,7 @@ namespace blt
              * Takes a value stored across a row, taking one from each column in the specified row
              * @param row the row to extract from. defaults to the first row
              */
-            constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0)
+            constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0) const
             {
                 vec<T, columns> ret;
                 for (blt::u32 j = 0; j < columns; j++)
