@@ -44,26 +44,15 @@ namespace blt
         };
         
         template<typename TYPE_ITR>
-        class iterator_base
-        {
-            public:
-                using value_type = blt::meta::value_type_t<TYPE_ITR, std::remove_pointer_t<TYPE_ITR>>;
-                using difference_type = blt::meta::difference_t<TYPE_ITR, std::ptrdiff_t>;
-                using pointer = blt::meta::pointer_t<TYPE_ITR, TYPE_ITR>;
-                using reference = blt::meta::reference_t<TYPE_ITR, std::remove_pointer_t<TYPE_ITR>&>;
-                using const_reference = blt::meta::const_reference_t<TYPE_ITR, const std::remove_pointer_t<TYPE_ITR>&>;
-        };
-        
-        template<typename TYPE_ITR>
         class iterator
         {
             public:
-                using iterator_category = std::input_iterator_tag;
-                using value_type = typename iterator_base<TYPE_ITR>::value_type;
-                using difference_type = typename iterator_base<TYPE_ITR>::difference_type;
-                using pointer = typename iterator_base<TYPE_ITR>::pointer;
-                using reference = typename iterator_base<TYPE_ITR>::reference;
-                using const_reference = typename iterator_base<TYPE_ITR>::const_reference;
+                using iterator_category = std::forward_iterator_tag;
+                using value_type = typename std::iterator_traits<TYPE_ITR>::value_type;
+                using difference_type = typename std::iterator_traits<TYPE_ITR>::difference_type;
+                using pointer = typename std::iterator_traits<TYPE_ITR>::pointer;
+                using reference = typename std::iterator_traits<TYPE_ITR>::reference;
+                using const_reference = const reference;
             private:
                 blt::size_t index;
                 TYPE_ITR current;
@@ -104,16 +93,65 @@ namespace blt
                 };
         };
         
+        template<typename C1_TYPE, typename C2_TYPE>
+        class pair_iterator
+        {
+            public:
+                using c1_ref = typename std::iterator_traits<C1_TYPE>::reference;
+                using c2_ref = typename std::iterator_traits<C2_TYPE>::reference;
+                
+                using iterator_category = std::forward_iterator_tag;
+                using value_type = std::pair<c1_ref, c2_ref>;
+                using difference_type = blt::ptrdiff_t;
+                using pointer = void*;
+                using reference = value_type&;
+                using const_reference = const value_type&;
+                
+                explicit pair_iterator(C1_TYPE c1, C2_TYPE c2): current_c1_iter(c1), current_c2_iter(c2)
+                {}
+                
+                pair_iterator& operator++()
+                {
+                    ++current_c1_iter;
+                    ++current_c2_iter;
+                    return *this;
+                }
+                
+                bool operator==(pair_iterator other) const
+                {
+                    return current_c1_iter == other.current_c1_iter && current_c2_iter == other.current_c2_iter;
+                }
+                
+                bool operator!=(pair_iterator other) const
+                {
+                    return current_c1_iter != other.current_c1_iter || current_c2_iter != other.current_c2_iter;
+                }
+                
+                value_type operator*() const
+                {
+                    return {*current_c1_iter, *current_c2_iter};
+                };
+                
+                value_type operator*()
+                {
+                    return {*current_c1_iter, *current_c2_iter};
+                };
+            
+            private:
+                C1_TYPE current_c1_iter;
+                C2_TYPE current_c2_iter;
+        };
+        
         template<typename TYPE_ITR>
         class reverse_iterator
         {
             public:
-                using iterator_category = std::input_iterator_tag;
-                using value_type = typename iterator_base<TYPE_ITR>::value_type;
-                using difference_type = typename iterator_base<TYPE_ITR>::difference_type;
-                using pointer = typename iterator_base<TYPE_ITR>::pointer;
-                using reference = typename iterator_base<TYPE_ITR>::reference;
-                using const_reference = typename iterator_base<TYPE_ITR>::const_reference;
+                using iterator_category = std::forward_iterator_tag;
+                using value_type = typename std::iterator_traits<TYPE_ITR>::value_type;
+                using difference_type = typename std::iterator_traits<TYPE_ITR>::difference_type;
+                using pointer = typename std::iterator_traits<TYPE_ITR>::pointer;
+                using reference = typename std::iterator_traits<TYPE_ITR>::reference;
+                using const_reference = const reference;
             private:
                 blt::size_t index;
                 TYPE_ITR current;
@@ -153,6 +191,18 @@ namespace blt
                     return {index, *current};
                 };
         };
+    }
+    
+    template<typename Begin, typename End>
+    static inline auto iterate(Begin&& begin, End&& end)
+    {
+        return itr::itr_container<Begin, End>{std::forward<Begin>(begin), std::forward<End>(end)};
+    }
+    
+    template<typename Begin, typename End>
+    static inline auto reverse_iterate(Begin&& begin, End&& end)
+    {
+        return itr::itr_container{std::reverse_iterator(std::forward<Begin>(end)), std::reverse_iterator(std::forward<End>(begin))};
     }
     
     template<typename TYPE_ITR, template<typename> typename iterator = itr::iterator>
@@ -211,16 +261,62 @@ namespace blt
         return enumerator{container.begin(), container.end()};
     }
     
-    template<typename Begin, typename End>
-    static inline auto iterate(Begin&& begin, End&& end)
+    template<typename C1_ITER, typename C2_ITER, template<typename, typename> typename iterator = itr::pair_iterator>
+    class pair_enumerator
     {
-        return itr::itr_container<Begin, End>{std::forward<Begin>(begin), std::forward<End>(end)};
+        public:
+            explicit pair_enumerator(C1_ITER c1_begin, C1_ITER c1_end, C2_ITER c2_begin, C2_ITER c2_end):
+                    begin_(std::move(c1_begin), std::move(c2_begin)), end_(std::move(c1_end), std::move(c2_end))
+            {
+                auto size_c1 = c1_end - c1_begin;
+                auto size_c2 = c2_end - c2_begin;
+                if (size_c1 != size_c2)
+                    throw std::runtime_error("Iterator sizes don't match!");
+            }
+            
+            iterator<C1_ITER, C2_ITER> begin()
+            {
+                return begin_;
+            }
+            
+            iterator<C1_ITER, C2_ITER> end()
+            {
+                return end_;
+            }
+        
+        private:
+            iterator<C1_ITER, C2_ITER> begin_;
+            iterator<C1_ITER, C2_ITER> end_;
+    };
+    
+    template<typename T, typename G>
+    static inline auto in_pairs(const T& container1, const G& container2)
+    {
+        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
     }
     
-    template<typename Begin, typename End>
-    static inline auto reverse_iterate(Begin&& begin, End&& end)
+    template<typename T, typename G>
+    static inline auto in_pairs(T& container1, G& container2)
     {
-        return itr::itr_container{std::reverse_iterator(std::forward<Begin>(end)), std::reverse_iterator(std::forward<End>(begin))};
+        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
+    }
+    
+    template<typename T, typename G, blt::size_t size>
+    static inline auto in_pairs(const T(& container1)[size], const G(& container2)[size])
+    {
+        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
+    }
+    
+    template<typename T, typename G, blt::size_t size>
+    static inline auto in_pairs(T(& container1)[size], G(& container2)[size])
+    {
+        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
+    }
+    
+    template<typename T, typename G>
+    static inline auto in_pairs(T&& container1, G&& container2)
+    {
+        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
     }
     
     template<typename T>
