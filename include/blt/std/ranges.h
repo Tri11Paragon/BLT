@@ -287,7 +287,7 @@ namespace blt
             
             enumerator rev()
             {
-                return enumerator<Iter>{std::reverse_iterator{this->end_}, std::reverse_iterator{this->begin_}, container_size - 1, 0ul};
+                return enumerator{std::reverse_iterator{this->end_}, std::reverse_iterator{this->begin_}, container_size - 1, 0ul};
             }
         
         protected:
