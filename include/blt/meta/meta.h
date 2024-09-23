@@ -188,6 +188,38 @@ namespace blt::meta
     using reference_t = decltype(detail::reference_type_helper<Or>::template get<T>(0));
     template<typename T, typename Or>
     using const_reference_t = decltype(detail::const_reference_type_helper<Or>::template get<T>(0));
+    
+    template<typename T>
+    struct arrow_return
+    {
+        using type = typename std::result_of<decltype(&T::operator->)(T*)>::type;
+    };
+    
+    template<typename T>
+    struct arrow_return<T*>
+    {
+        using type = T*;
+    };
+    
+    // gets the return type for arrow operator
+    template<typename T>
+    using arrow_return_t = typename arrow_return<T>::type;
+    
+    template<typename T>
+    struct deref_return
+    {
+        using type = typename std::result_of<decltype(&T::operator*)(T*)>::type;
+    };
+    
+    template<typename T>
+    struct deref_return<T*>
+    {
+        using type = T&;
+    };
+    
+    // gets the return type for the reference operator
+    template<typename T>
+    using deref_return_t = typename deref_return<T>::type;
 
 #define BLT_META_MAKE_FUNCTION_CHECK(FUNC, ...)\
     template<typename T, typename = void> \

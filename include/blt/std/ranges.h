@@ -82,23 +82,24 @@ namespace blt
                     return current != other.current;
                 }
                 
-                std::pair<blt::size_t, const_reference> operator*() const
+                std::pair<blt::size_t, blt::meta::deref_return_t<TYPE_ITR>> operator*() const
                 {
                     return {index, *current};
                 };
                 
-                std::pair<blt::size_t, reference> operator*()
+                std::pair<blt::size_t, blt::meta::deref_return_t<TYPE_ITR>> operator*()
                 {
                     return {index, *current};
                 };
         };
         
+        // TODO: cleanup! all of this! add support for reversing
         template<typename C1_TYPE, typename C2_TYPE>
         class pair_iterator
         {
             public:
-                using c1_ref = typename std::iterator_traits<C1_TYPE>::reference;
-                using c2_ref = typename std::iterator_traits<C2_TYPE>::reference;
+                using c1_ref = blt::meta::deref_return_t<C1_TYPE>;
+                using c2_ref = blt::meta::deref_return_t<C2_TYPE>;
                 
                 using iterator_category = std::forward_iterator_tag;
                 using value_type = std::pair<c1_ref, c2_ref>;
