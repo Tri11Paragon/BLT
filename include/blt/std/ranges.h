@@ -18,6 +18,106 @@
 
 namespace blt
 {
+    
+    template<typename Iter>
+    class enumerate_base
+    {
+        public:
+            explicit enumerate_base(Iter iter): iter(std::move(iter))
+            {}
+        
+        protected:
+            Iter iter;
+    };
+    
+    template<typename Iter>
+    class enumerate_base_fwd : public enumerate_base<Iter>
+    {
+        public:
+            explicit enumerate_base_fwd(Iter iter): enumerate_base<Iter>(std::move(iter)), index(0)
+            {}
+            
+            explicit enumerate_base_fwd(Iter iter, blt::size_t place): enumerate_base<Iter>(std::move(iter)), index(place)
+            {}
+            
+            std::pair<blt::size_t, blt::meta::deref_return_t<Iter>> operator*() const
+            {
+                return {index, *this->iter};
+            }
+            
+            enumerate_base_fwd& operator++()
+            {
+                ++this->iter;
+                ++index;
+                return *this;
+            }
+            
+            enumerate_base_fwd operator++(int)
+            {
+                auto tmp = *this;
+                ++*this;
+                return tmp;
+            }
+            
+            bool operator==(const enumerate_base_fwd& other) const
+            {
+                return other.iter == this->iter;
+            }
+            
+            friend bool operator==(const enumerate_base_fwd& a, const enumerate_base_fwd& b)
+            {
+                return a.iter == b.iter;
+            }
+        
+        protected:
+            blt::size_t index;
+    };
+    
+    template<typename Iter>
+    class enumerate_base_bidirectional : public enumerate_base_fwd<Iter>
+    {
+            using enumerate_base_fwd<Iter>::enumerate_base_fwd;
+            
+            enumerate_base_bidirectional& operator--()
+            {
+                --this->iter;
+                --this->index;
+                return *this;
+            }
+            
+            enumerate_base_bidirectional operator--(int)
+            {
+                auto tmp = *this;
+                --*this;
+                return tmp;
+            }
+    };
+    
+    template<typename Iter, typename = std::void_t<>>
+    class enumerate_wrapper;
+    
+    template<typename Iter>
+    class enumerate_wrapper<Iter, std::void_t<std::enable_if_t<std::is_same_v<typename Iter::iterator_category, std::forward_iterator_tag>, bool>>>
+    {
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = typename std::iterator_traits<Iter>::value_type;
+            using difference_type = typename std::iterator_traits<Iter>::difference_type;
+            using pointer = typename std::iterator_traits<Iter>::pointer;
+            using reference = typename std::iterator_traits<Iter>::reference;
+        public:
+            explicit enumerate_wrapper(Iter iter): iter(std::move(iter)), index(0)
+            {}
+            
+            explicit enumerate_wrapper(Iter iter, blt::size_t place): iter(std::move(iter)), index(place)
+            {}
+        
+        
+        private:
+            Iter iter;
+            blt::size_t index;
+    };
+    
     namespace itr
     {
         
