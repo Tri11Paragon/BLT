@@ -10,6 +10,7 @@
 
 #include <blt/std/types.h>
 #include <blt/meta/meta.h>
+#include <blt/meta/iterator.h>
 #include <type_traits>
 #include <iterator>
 #include <memory>
@@ -18,14 +19,6 @@
 
 namespace blt
 {
-    template<typename Iter, typename Category = typename std::iterator_traits<Iter>::iterator_cateogry>
-    constexpr bool is_input_or_forward_only =
-            std::is_same_v<Category, std::forward_iterator_tag> || std::is_same_v<Category, std::input_iterator_tag>;
-    
-    template<typename Iter, typename Category = typename std::iterator_traits<Iter>::iterator_category>
-    constexpr bool is_bidirectional_or_better =
-            std::is_same_v<Category, std::bidirectional_iterator_tag> || std::is_same_v<Category, std::random_access_iterator_tag>;
-    
     template<typename T>
     struct enumerate_item
     {
@@ -34,33 +27,28 @@ namespace blt
     };
     
     template<typename Iter>
-    class enumerate_base
+    class enumerate_iterator_base
     {
         public:
-            explicit enumerate_base(Iter iter, blt::size_t place = 0): iter(std::move(iter)), index(place)
+            explicit enumerate_iterator_base(Iter iter, blt::size_t place = 0): iter(std::move(iter)), index(place)
             {}
-            
-            enumerate_item<blt::meta::deref_return_t<Iter>>* operator->() const
-            {
-                return &std::pair{index, *this->iter};
-            }
             
             enumerate_item<blt::meta::deref_return_t<Iter>> operator*() const
             {
                 return {index, *this->iter};
             }
             
-            friend bool operator==(const enumerate_base& a, const enumerate_base& b)
+            friend bool operator==(const enumerate_iterator_base& a, const enumerate_iterator_base& b)
             {
                 return a.iter == b.iter;
             }
             
-            friend bool operator!=(const enumerate_base& a, const enumerate_base& b)
+            friend bool operator!=(const enumerate_iterator_base& a, const enumerate_iterator_base& b)
             {
                 return a.iter != b.iter;
             }
             
-            auto get_iterator() const
+            auto base() const
             {
                 return iter;
             }
@@ -76,19 +64,19 @@ namespace blt
     };
     
     template<typename Iter>
-    class enumerate_fwd : public enumerate_base<Iter>
+    class enumerate_forward_iterator : public enumerate_iterator_base<Iter>
     {
         public:
-            using enumerate_base<Iter>::enumerate_base;
+            using enumerate_iterator_base<Iter>::enumerate_iterator_base;
             
-            enumerate_fwd& operator++()
+            enumerate_forward_iterator& operator++()
             {
                 ++this->iter;
                 ++this->index;
                 return *this;
             }
             
-            enumerate_fwd operator++(int)
+            enumerate_forward_iterator operator++(int)
             {
                 auto tmp = *this;
                 ++*this;
@@ -97,62 +85,19 @@ namespace blt
     };
     
     template<typename Iter>
-    class enumerate_bidirectional : public enumerate_fwd<Iter>
+    class enumerate_bidirectional_iterator : public enumerate_forward_iterator<Iter>
     {
         public:
-            using enumerate_fwd<Iter>::enumerate_fwd;
+            using enumerate_forward_iterator<Iter>::enumerate_forward_iterator;
             
-            enumerate_bidirectional& operator--()
+            enumerate_bidirectional_iterator& operator--()
             {
                 --this->iter;
                 --this->index;
                 return *this;
             }
             
-            enumerate_bidirectional operator--(int)
-            {
-                auto tmp = *this;
-                --*this;
-                return tmp;
-            }
-    };
-    
-    template<typename Iter>
-    class enumerate_rev_fwd : public enumerate_base<Iter>
-    {
-        public:
-            explicit enumerate_rev_fwd(Iter iter, blt::size_t place = 0): enumerate_base<Iter>(std::move(iter), place)
-            {}
-            
-            enumerate_rev_fwd& operator++()
-            {
-                --this->iter;
-                --this->index;
-                return *this;
-            }
-            
-            enumerate_rev_fwd operator++(int)
-            {
-                auto tmp = *this;
-                ++*this;
-                return tmp;
-            }
-    };
-    
-    template<typename Iter>
-    class enumerate_rev_bidirectional : public enumerate_rev_fwd<Iter>
-    {
-        public:
-            using enumerate_rev_fwd<Iter>::enumerate_rev_fwd;
-            
-            enumerate_rev_bidirectional& operator--()
-            {
-                ++this->iter;
-                ++this->index;
-                return *this;
-            }
-            
-            enumerate_rev_bidirectional operator--(int)
+            enumerate_bidirectional_iterator operator--(int)
             {
                 auto tmp = *this;
                 --*this;
@@ -164,65 +109,167 @@ namespace blt
     class enumerate_wrapper;
     
     template<typename Iter>
-    class enumerate_wrapper<Iter, std::enable_if_t<is_input_or_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerate_fwd<Iter>
+    class enumerate_wrapper<Iter, std::enable_if_t<blt::meta::is_forward_iterator<Iter>, std::void_t<std::forward_iterator_tag>>>
+            : public enumerate_forward_iterator<Iter>
     {
         public:
             using iterator_category = std::forward_iterator_tag;
-            using value_type = typename std::iterator_traits<Iter>::value_type;
+            using value_type = enumerate_item<blt::meta::deref_return_t<Iter>>;
             using difference_type = typename std::iterator_traits<Iter>::difference_type;
-            using pointer = typename std::iterator_traits<Iter>::pointer;
-            using reference = typename std::iterator_traits<Iter>::reference;
+            using pointer = value_type;
+            using reference = value_type;
             using iterator_type = Iter;
             
-            using enumerate_fwd<Iter>::enumerate_fwd;
+            using enumerate_forward_iterator<Iter>::enumerate_forward_iterator;
     };
     
     template<typename Iter>
-    class enumerate_wrapper<Iter, std::enable_if_t<is_bidirectional_or_better<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
-            : public enumerate_bidirectional<Iter>
+    class enumerate_wrapper<Iter, std::enable_if_t<blt::meta::is_bidirectional_or_better<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
+            : public enumerate_bidirectional_iterator<Iter>
     {
         public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = typename std::iterator_traits<Iter>::value_type;
+            using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+            using value_type = enumerate_item<blt::meta::deref_return_t<Iter>>;
             using difference_type = typename std::iterator_traits<Iter>::difference_type;
-            using pointer = typename std::iterator_traits<Iter>::pointer;
-            using reference = typename std::iterator_traits<Iter>::reference;
+            using pointer = value_type;
+            using reference = value_type;
             using iterator_type = Iter;
             
-            using enumerate_bidirectional<Iter>::enumerate_bidirectional;
+            using enumerate_bidirectional_iterator<Iter>::enumerate_bidirectional_iterator;
+    };
+    
+    template<typename Iter, typename IterWrapper>
+    class enumerator_base
+    {
+        public:
+            explicit enumerator_base(Iter begin, Iter end): begin_(std::move(begin)), end_(std::move(end))
+            {}
+            
+            explicit enumerator_base(IterWrapper begin, IterWrapper end): begin_(std::move(begin)), end_(std::move(end))
+            {}
+            
+            auto begin()
+            {
+                return begin_;
+            }
+            
+            auto end()
+            {
+                return end_;
+            }
+        
+        protected:
+            IterWrapper begin_;
+            IterWrapper end_;
+    };
+    
+    template<typename Iter, typename IterWrapper, typename Reverse>
+    class enumerator_reversible : public enumerator_base<Iter, IterWrapper>
+    {
+        public:
+            explicit enumerator_reversible(Iter begin, Iter end, blt::size_t container_size):
+                    enumerator_base<Iter, IterWrapper>(std::move(begin), std::move(end)), container_size(container_size)
+            {}
+            
+            explicit enumerator_reversible(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
+                    enumerator_base<Iter, IterWrapper>(IterWrapper(std::move(begin), begin_index),
+                                                       IterWrapper(std::move(end), end_index)),
+                    container_size(std::abs(static_cast<blt::ptrdiff_t>(end_index) - static_cast<blt::ptrdiff_t>(begin_index)))
+            {}
+            
+            auto rev()
+            {
+                return Reverse{this->end_.base(), this->begin_.base(), this->container_size, 0ul};
+            }
+        
+        protected:
+            blt::size_t container_size;
     };
     
     template<typename Iter, typename = std::void_t<>>
-    class enumerate_wrapper_rev;
+    class enumerator;
+    
+    template<typename Iter, typename = std::void_t<>>
+    class enumerator_rev;
     
     template<typename Iter>
-    class enumerate_wrapper_rev<Iter, std::enable_if_t<is_input_or_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerate_rev_fwd<Iter>
+    class enumerator<Iter, std::enable_if_t<blt::meta::is_forward_iterator<Iter>, std::void_t<std::forward_iterator_tag>>>
+            : public enumerator_base<Iter, enumerate_wrapper<Iter>>
     {
         public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = typename std::iterator_traits<Iter>::value_type;
-            using difference_type = typename std::iterator_traits<Iter>::difference_type;
-            using pointer = typename std::iterator_traits<Iter>::pointer;
-            using reference = typename std::iterator_traits<Iter>::reference;
-            using iterator_type = Iter;
-            
-            using enumerate_rev_fwd<Iter>::enumerate_rev_fwd;
+            using enumerator_base<Iter, enumerate_wrapper<Iter>>::enumerator_base;
     };
     
     template<typename Iter>
-    class enumerate_wrapper_rev<Iter, std::enable_if_t<is_bidirectional_or_better<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
-            : public enumerate_rev_bidirectional<Iter>
+    class enumerator<Iter, std::enable_if_t<blt::meta::is_bidirectional_iterator<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
+            : public enumerator_reversible<Iter, enumerate_wrapper<Iter>, enumerator_rev<Iter>>
     {
         public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = typename std::iterator_traits<Iter>::value_type;
-            using difference_type = typename std::iterator_traits<Iter>::difference_type;
-            using pointer = typename std::iterator_traits<Iter>::pointer;
-            using reference = typename std::iterator_traits<Iter>::reference;
-            using iterator_type = Iter;
-            
-            using enumerate_rev_bidirectional<Iter>::enumerate_rev_bidirectional;
+            using enumerator_reversible<Iter, enumerate_wrapper<Iter>, enumerator_rev<Iter>>::enumerator_reversible;
     };
+    
+    template<typename Iter>
+    class enumerator<Iter, std::enable_if_t<blt::meta::is_random_access_iterator<Iter>, std::void_t<std::random_access_iterator_tag>>>
+            : public enumerator_reversible<Iter, enumerate_wrapper<Iter>, enumerator_rev<Iter>>
+    {
+        public:
+            using enumerator_reversible<Iter, enumerate_wrapper<Iter>, enumerator_rev<Iter>>::enumerator_reversible;
+    };
+    
+    template<typename Iter>
+    class enumerator_rev<Iter, std::enable_if_t<blt::meta::is_bidirectional_iterator<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
+            : public enumerator_reversible<Iter, std::reverse_iterator<enumerate_wrapper<Iter>>, enumerator<Iter>>
+    {
+        public:
+            using enumerator_reversible<Iter, std::reverse_iterator<enumerate_wrapper<Iter>>, enumerator<Iter>>::enumerator_reversible;
+    };
+    
+    template<typename Iter>
+    class enumerator_rev<Iter, std::enable_if_t<blt::meta::is_random_access_iterator<Iter>, std::void_t<std::random_access_iterator_tag>>>
+            : public enumerator_reversible<Iter, std::reverse_iterator<enumerate_wrapper<Iter>>, enumerator<Iter>>
+    {
+        public:
+            using enumerator_reversible<Iter, std::reverse_iterator<enumerate_wrapper<Iter>>, enumerator<Iter>>::enumerator_reversible;
+    };
+    
+    template<typename Iter>
+    enumerator(Iter, Iter) -> enumerator<Iter>;
+    
+    template<typename Iter>
+    enumerator(Iter, Iter, blt::size_t) -> enumerator<Iter>;
+    
+    template<typename Iter>
+    enumerator(Iter, Iter, blt::size_t, blt::size_t) -> enumerator<Iter>;
+    
+    template<typename T>
+    static inline auto enumerate(const T& container)
+    {
+        return enumerator{container.begin(), container.end(), container.size()};
+    }
+    
+    template<typename T, blt::size_t size>
+    static inline auto enumerate(const T(& container)[size])
+    {
+        return enumerator{&container[0], &container[size], size};
+    }
+    
+    template<typename T, blt::size_t size>
+    static inline auto enumerate(T(& container)[size])
+    {
+        return enumerator{&container[0], &container[size], size};
+    }
+    
+    template<typename T>
+    static inline auto enumerate(T& container)
+    {
+        return enumerator{container.begin(), container.end(), container.size()};
+    }
+    
+    template<typename T>
+    static inline auto enumerate(T&& container)
+    {
+        return enumerator{container.begin(), container.end(), container.size()};
+    }
     
     namespace itr
     {
@@ -310,138 +357,6 @@ namespace blt
     static inline auto reverse_iterate(Begin&& begin, End&& end)
     {
         return itr::itr_container{std::reverse_iterator(std::forward<Begin>(end)), std::reverse_iterator(std::forward<End>(begin))};
-    }
-    
-    template<typename Iter, template<typename> typename Iter_type>
-    class enumerator_base
-    {
-        public:
-            explicit enumerator_base(Iter begin, Iter end): begin_(std::move(begin)), end_(std::move(end))
-            {}
-            
-            explicit enumerator_base(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
-                    begin_(std::move(begin), begin_index), end_(std::move(end), end_index)
-            {}
-            
-            auto begin()
-            {
-                return begin_;
-            }
-            
-            auto end()
-            {
-                return end_;
-            }
-        
-        protected:
-            Iter_type<Iter> begin_;
-            Iter_type<Iter> end_;
-    };
-    
-    template<typename Iter, typename = std::void_t<>>
-    class enumerator;
-    
-    template<typename Iter>
-    class enumerator_rev;
-    
-    template<typename Iter>
-    class enumerator<Iter, std::enable_if_t<is_input_or_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>>
-            : public enumerator_base<Iter, enumerate_wrapper>
-    {
-        public:
-            using enumerator_base<Iter, enumerate_wrapper>::enumerator_base;
-    };
-    
-    template<typename Iter>
-    class enumerator<Iter, std::enable_if_t<is_bidirectional_or_better<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
-            : public enumerator_base<Iter, enumerate_wrapper>
-    {
-        public:
-            explicit enumerator(Iter begin, Iter end, blt::size_t container_size):
-                    enumerator_base<Iter, enumerate_wrapper>(std::move(begin), std::move(end)), container_size(container_size)
-            {}
-            
-            explicit enumerator(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
-                    enumerator_base<Iter, enumerate_wrapper>(std::move(begin), std::move(end), begin_index, end_index),
-                    container_size(std::abs(static_cast<blt::ptrdiff_t>(end_index) - static_cast<blt::ptrdiff_t>(begin_index)))
-            {}
-            
-            auto rev()
-            {
-                auto end = this->end_.get_iterator();
-                auto begin = this->begin_.get_iterator();
-                --end;
-                --begin;
-                return enumerator_rev<Iter>{end, begin, this->container_size - 1, 0ul};
-            }
-        
-        protected:
-            blt::size_t container_size;
-    };
-    
-    template<typename Iter>
-    class enumerator_rev : public enumerator_base<Iter, enumerate_wrapper_rev>
-    {
-        public:
-            explicit enumerator_rev(Iter begin, Iter end, blt::size_t container_size):
-                    enumerator_base<Iter, enumerate_wrapper_rev>(std::move(begin), std::move(end)), container_size(container_size)
-            {}
-            
-            explicit enumerator_rev(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
-                    enumerator_base<Iter, enumerate_wrapper_rev>(std::move(begin), std::move(end), begin_index, end_index),
-                    container_size(std::abs(static_cast<blt::ptrdiff_t>(end_index) - static_cast<blt::ptrdiff_t>(begin_index)))
-            {}
-            
-            auto rev()
-            {
-                auto end = this->end_.get_iterator();
-                auto begin = this->begin_.get_iterator();
-                ++end;
-                ++begin;
-                return enumerator<Iter>{end, begin, container_size + 1};
-            }
-        
-        protected:
-            blt::size_t container_size;
-    };
-    
-    template<typename Iter>
-    enumerator(Iter, Iter) -> enumerator<Iter>;
-    
-    template<typename Iter>
-    enumerator(Iter, Iter, blt::size_t) -> enumerator<Iter>;
-    
-    template<typename Iter>
-    enumerator(Iter, Iter, blt::size_t, blt::size_t) -> enumerator<Iter>;
-    
-    template<typename T>
-    static inline auto enumerate(const T& container)
-    {
-        return enumerator{container.begin(), container.end(), container.size()};
-    }
-    
-    template<typename T, blt::size_t size>
-    static inline auto enumerate(const T(& container)[size])
-    {
-        return enumerator{&container[0], &container[size], size};
-    }
-    
-    template<typename T, blt::size_t size>
-    static inline auto enumerate(T(& container)[size])
-    {
-        return enumerator{&container[0], &container[size], size};
-    }
-    
-    template<typename T>
-    static inline auto enumerate(T& container)
-    {
-        return enumerator{container.begin(), container.end(), container.size()};
-    }
-    
-    template<typename T>
-    static inline auto enumerate(T&& container)
-    {
-        return enumerator{container.begin(), container.end(), container.size()};
     }
     
     template<typename C1_ITER, typename C2_ITER, template<typename, typename> typename iterator = itr::pair_iterator>

@@ -362,6 +362,7 @@ namespace blt::string
         private:
             std::string m_tableName;
             int m_columnPadding;
+            [[maybe_unused]]
             int m_maxColumnWidth;
             std::vector<TableColumn> columns;
             std::vector<TableRow> rows;
