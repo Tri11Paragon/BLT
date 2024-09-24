@@ -32,6 +32,11 @@ namespace blt
         public:
             explicit enumerate_base(Iter iter): iter(std::move(iter))
             {}
+            
+            auto get_iterator() const
+            {
+                return iter;
+            }
         
         protected:
             Iter iter;
@@ -104,20 +109,18 @@ namespace blt
     };
     
     template<typename Iter, typename Category = typename std::iterator_traits<Iter>::iterator_cateogry>
-    constexpr bool is_forward_only = std::is_same_v<Category, std::forward_iterator_tag>;
+    constexpr bool is_input_or_forward_only =
+            std::is_same_v<Category, std::forward_iterator_tag> || std::is_same_v<Category, std::input_iterator_tag>;
     
     template<typename Iter, typename Category = typename std::iterator_traits<Iter>::iterator_category>
     constexpr bool is_bidirectional_or_better =
             std::is_same_v<Category, std::bidirectional_iterator_tag> || std::is_same_v<Category, std::random_access_iterator_tag>;
     
     template<typename Iter, typename = std::void_t<>>
-    class enumerate_wrapper
-    {
-            static_assert("Unsupported iterator type!");
-    };
+    class enumerate_wrapper;
     
     template<typename Iter>
-    class enumerate_wrapper<Iter, std::enable_if_t<is_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerate_base_fwd<Iter>
+    class enumerate_wrapper<Iter, std::enable_if_t<is_input_or_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerate_base_fwd<Iter>
     {
         public:
             using iterator_category = std::forward_iterator_tag;
@@ -125,6 +128,7 @@ namespace blt
             using difference_type = typename std::iterator_traits<Iter>::difference_type;
             using pointer = typename std::iterator_traits<Iter>::pointer;
             using reference = typename std::iterator_traits<Iter>::reference;
+            using iterator_type = Iter;
             
             using enumerate_base_fwd<Iter>::enumerate_base_fwd;
     };
@@ -139,6 +143,7 @@ namespace blt
             using difference_type = typename std::iterator_traits<Iter>::difference_type;
             using pointer = typename std::iterator_traits<Iter>::pointer;
             using reference = typename std::iterator_traits<Iter>::reference;
+            using iterator_type = Iter;
             
             using enumerate_base_bidirectional<Iter>::enumerate_base_bidirectional;
     };
@@ -258,13 +263,10 @@ namespace blt
     };
     
     template<typename Iter, typename = std::void_t<>>
-    class enumerator
-    {
-            static_assert("Unsupported iterator type!");
-    };
+    class enumerator;
     
     template<typename Iter>
-    class enumerator<Iter, std::enable_if_t<is_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerator_base<Iter>
+    class enumerator<Iter, std::enable_if_t<is_input_or_forward_only<Iter>, std::void_t<std::forward_iterator_tag>>> : public enumerator_base<Iter>
     {
         public:
             using enumerator_base<Iter>::enumerator_base;
@@ -275,6 +277,8 @@ namespace blt
             : public enumerator_base<Iter>
     {
         public:
+            using iter = Iter;
+            using type = decltype(std::reverse_iterator{enumerator::end_});
             //using enumerator_base<Iter>::enumerator_base;
             
             explicit enumerator(Iter begin, Iter end, blt::size_t container_size):
@@ -282,12 +286,16 @@ namespace blt
             {}
             
             explicit enumerator(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
-                    enumerator_base<Iter>(std::move(begin), std::move(end), begin_index, end_index), container_size(end_index - begin_index)
+                    enumerator_base<Iter>(std::move(begin), std::move(end), begin_index, end_index),
+                    container_size(std::abs(static_cast<blt::ptrdiff_t>(end_index) - static_cast<blt::ptrdiff_t>(begin_index)))
             {}
             
-            enumerator rev()
+            auto rev()
             {
-                return enumerator{std::reverse_iterator{this->end_}, std::reverse_iterator{this->begin_}, container_size - 1, 0ul};
+                return enumerator<std::reverse_iterator<Iter>>{
+                        std::reverse_iterator{this->end_.get_iterator()},
+                        std::reverse_iterator{this->begin_.get_iterator()},
+                        this->container_size - 1, 0ul};
             }
         
         protected:
