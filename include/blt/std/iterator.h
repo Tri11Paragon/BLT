@@ -28,6 +28,7 @@
 namespace blt
 {
     
+    // forward declare useful types
     template<typename Iter, typename = std::void_t<>>
     class enumerator;
     
@@ -39,11 +40,44 @@ namespace blt
         template<typename Iter, typename = std::void_t<>>
         class enumerate_wrapper;
         
+        // struct which is returned by the enumerator
         template<typename T>
         struct enumerate_item
         {
             blt::size_t index;
             T value;
+        };
+        
+        template<typename Iter1, typename Iter2>
+        class pair_iterator_base
+        {
+            public:
+                explicit pair_iterator_base(Iter1 iter1, Iter2 iter2): m_iter1(std::move(iter1)), m_iter2(std::move(iter2))
+                {}
+                
+                friend bool operator==(const pair_iterator_base& a, const pair_iterator_base& b)
+                {
+                    return a.m_iter1 == b.m_iter1;
+                }
+                
+                friend bool operator!=(const pair_iterator_base& a, const pair_iterator_base& b)
+                {
+                    return a.m_iter1 != b.m_iter1;
+                }
+                
+                auto iter1() const
+                {
+                    return m_iter1;
+                }
+                
+                auto iter2() const
+                {
+                    return m_iter2;
+                }
+                
+            protected:
+                Iter1 m_iter1;
+                Iter2 m_iter2;
         };
         
         template<typename Iter>
@@ -198,8 +232,23 @@ namespace blt
                 
                 auto rev() const
                 {
-                    return enumerator_rev<Iter>{this->end_.base(), this->begin_.base(), this->container_size, this->begin_.get_index(),
+                    return enumerator_rev<Iter>{this->end_.base(),
+                                                this->begin_.base(),
+                                                this->end_.get_index(),
+                                                this->begin_.get_index(),
                                                 this->container_size};
+                }
+                
+                auto skip(blt::size_t offset)
+                {
+                    auto begin = this->begin();
+                    for (blt::size_t i = 0; i < offset; i++)
+                        ++begin;
+                    return enumerator<Iter>{begin.base(),
+                                            this->end_.base(),
+                                            begin.get_index(),
+                                            this->end_.get_index(),
+                                            this->container_size};
                 }
             
             protected:
@@ -214,8 +263,23 @@ namespace blt
                 
                 auto rev() const
                 {
-                    return enumerator<Iter>{this->end_.base().base(), this->begin_.base().base(), this->end_.base().get_index(),
-                                            this->begin_.base().get_index(), this->container_size};
+                    return enumerator<Iter>{this->end_.base().base(),
+                                            this->begin_.base().base(),
+                                            this->end_.base().get_index(),
+                                            this->begin_.base().get_index(),
+                                            this->container_size};
+                }
+                
+                auto skip(blt::size_t offset)
+                {
+                    auto begin = this->begin();
+                    for (blt::size_t i = 0; i < offset; i++)
+                        --begin;
+                    return enumerator<Iter>{begin.base(),
+                                            this->end_.base(),
+                                            begin.get_index(),
+                                            this->end_.get_index(),
+                                            this->container_size};
                 }
         };
     }
@@ -234,11 +298,6 @@ namespace blt
     {
         public:
             using iterator::enumerator_reversible<Iter, iterator::enumerate_wrapper<Iter>>::enumerator_reversible;
-            
-            auto skip(blt::size_t offset)
-            {
-            
-            }
     };
     
     template<typename Iter>
