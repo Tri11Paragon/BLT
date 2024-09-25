@@ -1,4 +1,4 @@
-# **BLT v0.16**
+# **BLT v0.20**
 A C++17 common utilities library to make thing easy! 
 
 ![Icon](icon_large.png)
