@@ -24,21 +24,43 @@
 
 namespace blt::meta
 {
+    // this is required! :/
+    
     
     template<typename Iter>
-    constexpr bool is_input_iterator = std::is_same_v<typename std::iterator_traits<Iter>::iterator_cateogry, std::input_iterator_tag>;
+    struct is_input_iterator {
+        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::input_iterator_tag>;
+    };
     
     template<typename Iter>
-    constexpr bool is_forward_iterator = std::is_same_v<typename std::iterator_traits<Iter>::iterator_cateogry, std::forward_iterator_tag>;
+    struct is_forward_iterator {
+        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::forward_iterator_tag>;
+    };
     
     template<typename Iter>
-    constexpr bool is_bidirectional_iterator = std::is_same_v<typename std::iterator_traits<Iter>::iterator_cateogry, std::bidirectional_iterator_tag>;
+    struct is_bidirectional_iterator {
+        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::bidirectional_iterator_tag>;
+    };
     
     template<typename Iter>
-    constexpr bool is_random_access_iterator = std::is_same_v<typename std::iterator_traits<Iter>::iterator_cateogry, std::random_access_iterator_tag>;
+    struct is_random_access_iterator {
+        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>;
+    };
     
     template<typename Iter>
-    constexpr bool is_bidirectional_or_better = is_bidirectional_iterator<Iter> || is_random_access_iterator<Iter>;
+    inline constexpr bool is_input_iterator_v = is_input_iterator<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_forward_iterator_v = is_forward_iterator<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_bidirectional_iterator_v = is_bidirectional_iterator<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_random_access_iterator_v = is_random_access_iterator<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_bidirectional_or_better_v = is_bidirectional_iterator_v<Iter> || is_random_access_iterator_v<Iter>;
 }
 
 #endif //BLT_META_ITERATOR_H
