@@ -22,6 +22,7 @@
     #include <limits>
     #include <vector>
     #include <blt/std/ranges.h>
+    #include <blt/std/iterator.h>
     #include <blt/std/utility.h>
     #include <blt/std/types.h>
     #include <blt/std/assert.h>

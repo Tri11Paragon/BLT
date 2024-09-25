@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 0.20.26)
+set(BLT_VERSION 0.21.0)
 set(BLT_TEST_VERSION 0.0.1)
 
 set(BLT_TARGET BLT)
@@ -69,7 +69,8 @@ if (${BUILD_FORMAT})
     message(STATUS "Building ${Yellow}format${ColourReset} cxx files")
     file(GLOB_RECURSE FORMAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/format/*.cpp")
 else ()
-    set(FORMAT_FILES "")
+    set(FORMAT_FILES ""
+            include/blt/std/iterator.h)
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
