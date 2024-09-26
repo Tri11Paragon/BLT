@@ -50,18 +50,18 @@ namespace blt
         };
         
         template<typename Iter1, typename Iter2>
-        class pair_iterator_base
+        class dual_iterator_base
         {
             public:
-                explicit pair_iterator_base(Iter1 iter1, Iter2 iter2): m_iter1(std::move(iter1)), m_iter2(std::move(iter2))
+                explicit dual_iterator_base(Iter1 iter1, Iter2 iter2): m_iter1(std::move(iter1)), m_iter2(std::move(iter2))
                 {}
                 
-                friend bool operator==(const pair_iterator_base& a, const pair_iterator_base& b)
+                friend bool operator==(const dual_iterator_base& a, const dual_iterator_base& b)
                 {
                     return a.m_iter1 == b.m_iter1;
                 }
                 
-                friend bool operator!=(const pair_iterator_base& a, const pair_iterator_base& b)
+                friend bool operator!=(const dual_iterator_base& a, const dual_iterator_base& b)
                 {
                     return a.m_iter1 != b.m_iter1;
                 }
@@ -82,11 +82,11 @@ namespace blt
         };
         
         template<typename Iter>
-        class enumerate_iterator_base : public pair_iterator_base<Iter, blt::size_t>
+        class enumerate_iterator_base : public dual_iterator_base<Iter, blt::size_t>
         {
             public:
                 explicit enumerate_iterator_base(Iter iter, blt::size_t place = 0):
-                        pair_iterator_base<Iter, blt::size_t>(std::move(iter), place)
+                        dual_iterator_base<Iter, blt::size_t>(std::move(iter), place)
                 {}
                 
                 enumerate_item<blt::meta::deref_return_t<Iter>> operator*() const
