@@ -24,27 +24,71 @@
 
 namespace blt::meta
 {
+    template<typename Category>
+    struct is_input_iterator_category
+    {
+        constexpr static bool value = std::is_same_v<Category, std::input_iterator_tag>;
+    };
+    
+    template<typename Category>
+    struct is_forward_iterator_category
+    {
+        constexpr static bool value = std::is_same_v<Category, std::forward_iterator_tag>;
+    };
+    
+    template<typename Category>
+    struct is_bidirectional_iterator_category
+    {
+        constexpr static bool value = std::is_same_v<Category, std::bidirectional_iterator_tag>;
+    };
+    
+    template<typename Category>
+    struct is_random_access_iterator_category
+    {
+        constexpr static bool value = std::is_same_v<Category, std::random_access_iterator_tag>;
+    };
+    
+    template<typename Iter>
+    inline constexpr bool is_input_iterator_category_v = is_input_iterator_category<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_forward_iterator_category_v = is_forward_iterator_category<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_bidirectional_iterator_category_v = is_bidirectional_iterator_category<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_random_access_iterator_category_v = is_random_access_iterator_category<Iter>::value;
+    
+    template<typename Iter>
+    inline constexpr bool is_bidirectional_or_better_category_v =
+            is_bidirectional_iterator_category_v<Iter> || is_random_access_iterator_category_v<Iter>;
+    
     // this is required! :/
     
     
     template<typename Iter>
-    struct is_input_iterator {
-        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::input_iterator_tag>;
+    struct is_input_iterator
+    {
+        constexpr static bool value = is_input_iterator_category_v<typename std::iterator_traits<Iter>::iterator_category>;
     };
     
     template<typename Iter>
-    struct is_forward_iterator {
-        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::forward_iterator_tag>;
+    struct is_forward_iterator
+    {
+        constexpr static bool value = is_forward_iterator_category_v<typename std::iterator_traits<Iter>::iterator_category>;
     };
     
     template<typename Iter>
-    struct is_bidirectional_iterator {
-        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::bidirectional_iterator_tag>;
+    struct is_bidirectional_iterator
+    {
+        constexpr static bool value = is_bidirectional_iterator_category_v<typename std::iterator_traits<Iter>::iterator_category>;
     };
     
     template<typename Iter>
-    struct is_random_access_iterator {
-        constexpr static bool value = std::is_same_v<typename std::iterator_traits<Iter>::iterator_category, std::random_access_iterator_tag>;
+    struct is_random_access_iterator
+    {
+        constexpr static bool value = is_random_access_iterator_category_v<typename std::iterator_traits<Iter>::iterator_category>;
     };
     
     template<typename Iter>
@@ -61,6 +105,12 @@ namespace blt::meta
     
     template<typename Iter>
     inline constexpr bool is_bidirectional_or_better_v = is_bidirectional_iterator_v<Iter> || is_random_access_iterator_v<Iter>;
+    
+    template<typename... Iter>
+    struct lowest_iterator_category
+    {
+        using type = std::common_type_t<typename std::iterator_traits<Iter>::iterator_category...>;
+    };
 }
 
 #endif //BLT_META_ITERATOR_H

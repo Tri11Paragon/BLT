@@ -41,6 +41,9 @@ namespace blt
         template<typename Iter, typename = std::void_t<>>
         class enumerate_wrapper;
         
+        template<typename Iter1, typename Iter2, typename = std::void_t<>>
+        class pair_wrapper;
+        
         /**
          * struct which is returned by the enumerator.
          * @tparam T type to store.
@@ -105,36 +108,38 @@ namespace blt
                 {
                     return {this->m_iter2, *this->m_iter1};
                 }
+        };
+        
+        template<typename Iter1, typename Iter2>
+        class pair_iterator_base : public dual_iterator_base<Iter1, Iter2>
+        {
+            public:
+                using dual_iterator_base<Iter1, Iter2>::dual_iterator_base;
                 
-                auto base() const
+                std::pair<blt::meta::deref_return_t<Iter1>, blt::meta::deref_return_t<Iter2>> operator*() const
                 {
-                    return this->iter1();
-                }
-                
-                auto get_index() const
-                {
-                    return this->iter2();
+                    return {*this->m_iter1, *this->m_iter2};
                 }
         };
         
         /**
-         * Forward iterator base class for the enumerator. Contains the ++ operator.
-         * @tparam Iter iterator type.
+         * Forward iterator base class. Contains the ++ operator.
+         * @tparam Base iterator base type.
          */
-        template<typename Iter>
-        class enumerate_forward_iterator : public enumerate_iterator_base<Iter>
+        template<typename Base>
+        class forward_iterator_base : public Base
         {
             public:
-                using enumerate_iterator_base<Iter>::enumerate_iterator_base;
+                using Base::Base;
                 
-                enumerate_forward_iterator& operator++()
+                forward_iterator_base& operator++()
                 {
                     ++this->m_iter1;
                     ++this->m_iter2;
                     return *this;
                 }
                 
-                enumerate_forward_iterator operator++(int)
+                forward_iterator_base operator++(int)
                 {
                     auto tmp = *this;
                     ++*this;
@@ -143,23 +148,23 @@ namespace blt
         };
         
         /**
-         * Bidirectional iterator base class for the enumerator. Contains the -- operator.
-         * @tparam Iter iterator type.
+         * Bidirectional iterator base class. Contains the -- operator.
+         * @tparam Base iterator base type.
          */
-        template<typename Iter>
-        class enumerate_bidirectional_iterator : public enumerate_forward_iterator<Iter>
+        template<typename Base>
+        class bidirectional_iterator_base : public Base
         {
             public:
-                using enumerate_forward_iterator<Iter>::enumerate_forward_iterator;
+                using Base::Base;
                 
-                enumerate_bidirectional_iterator& operator--()
+                bidirectional_iterator_base& operator--()
                 {
                     --this->m_iter1;
                     --this->m_iter2;
                     return *this;
                 }
                 
-                enumerate_bidirectional_iterator operator--(int)
+                bidirectional_iterator_base operator--(int)
                 {
                     auto tmp = *this;
                     --*this;
@@ -167,8 +172,20 @@ namespace blt
                 }
         };
         
+        template<typename Iter>
+        using enumerate_forward_iterator = forward_iterator_base<enumerate_iterator_base<Iter>>;
+        
+        template<typename Iter>
+        using enumerate_bidirectional_iterator = bidirectional_iterator_base<enumerate_forward_iterator<Iter>>;
+        
+        template<typename Iter1, typename Iter2>
+        using pair_forward_iterator = forward_iterator_base<pair_iterator_base<Iter1, Iter2>>;
+        
+        template<typename Iter1, typename Iter2>
+        using pair_bidirectional_iterator = bidirectional_iterator_base<pair_iterator_base<Iter1, Iter2>>;
+        
         /**
-         * Wrapper class specialization for forward iterators.
+         * Enumerator wrapper class specialization for forward iterators.
          * @tparam Iter iterator type
          */
         template<typename Iter>
@@ -181,13 +198,32 @@ namespace blt
                 using difference_type = typename std::iterator_traits<Iter>::difference_type;
                 using pointer = value_type;
                 using reference = value_type;
-                using iterator_type = Iter;
                 
                 using enumerate_forward_iterator<Iter>::enumerate_forward_iterator;
         };
         
         /**
-         * Wrapper class for bidirectional iterators or random access iterators.
+         * Pair wrapper class specialization for forward iterators.
+         * @tparam Iter iterator type
+         */
+        template<typename Iter1, typename Iter2>
+        class pair_wrapper<Iter1, Iter2, std::enable_if_t<
+                blt::meta::is_forward_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                std::void_t<std::forward_iterator_tag>
+        >> : public pair_forward_iterator<Iter1, Iter2>
+        {
+            public:
+                using iterator_category = std::forward_iterator_tag;
+                using value_type = std::pair<blt::meta::deref_return_t<Iter1>, blt::meta::deref_return_t<Iter2>>;
+                using difference_type = std::common_type_t<typename std::iterator_traits<Iter1>::difference_type, typename std::iterator_traits<Iter2>::difference_type>;
+                using pointer = value_type;
+                using reference = value_type;
+                
+                using pair_forward_iterator<Iter1, Iter2>::pair_forward_iterator;
+        };
+        
+        /**
+         * Enumerator wrapper class for bidirectional iterators or random access iterators.
          * @tparam Iter iterator type.
          */
         template<typename Iter>
@@ -200,24 +236,44 @@ namespace blt
                 using difference_type = typename std::iterator_traits<Iter>::difference_type;
                 using pointer = value_type;
                 using reference = value_type;
-                using iterator_type = Iter;
                 
                 using enumerate_bidirectional_iterator<Iter>::enumerate_bidirectional_iterator;
         };
         
         /**
-         * Base class for the enumerator. Holds the begin and end iterators.
+         * Pair wrapper class for bidirectional iterators or random access iterators.
          * @tparam Iter iterator type.
-         * @tparam IterWrapper wrapper used to iterate (enumerate_wrapper)
          */
-        template<typename Iter, typename IterWrapper>
-        class enumerator_base
+        template<typename Iter1, typename Iter2>
+        class pair_wrapper<Iter1, Iter2, std::enable_if_t<
+                blt::meta::is_bidirectional_or_better_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                std::void_t<std::bidirectional_iterator_tag>
+        >> : public pair_bidirectional_iterator<Iter1, Iter2>
         {
             public:
-                explicit enumerator_base(Iter begin, Iter end): begin_(std::move(begin)), end_(std::move(end))
+                using iterator_category = typename blt::meta::lowest_iterator_category<Iter1, Iter2>::type;
+                using value_type = std::pair<blt::meta::deref_return_t<Iter1>, blt::meta::deref_return_t<Iter2>>;
+                using difference_type = std::common_type_t<typename std::iterator_traits<Iter1>::difference_type, typename std::iterator_traits<Iter2>::difference_type>;
+                using pointer = value_type;
+                using reference = value_type;
+                
+                using pair_bidirectional_iterator<Iter1, Iter2>::pair_bidirectional_iterator;
+        };
+        
+        /**
+         * Base class for storing begin/end iterators.
+         * @tparam Iter iterator type.
+         * @tparam IterWrapper wrapper used to iterate
+         * @tparam CompleteClass completed class returned from skip/take methods
+         */
+        template<typename Iter, typename IterWrapper, typename CompleteClass>
+        class iterator_storage_base
+        {
+            public:
+                explicit iterator_storage_base(Iter begin, Iter end): begin_(std::move(begin)), end_(std::move(end))
                 {}
                 
-                explicit enumerator_base(IterWrapper begin, IterWrapper end): begin_(std::move(begin)), end_(std::move(end))
+                explicit iterator_storage_base(IterWrapper begin, IterWrapper end): begin_(std::move(begin)), end_(std::move(end))
                 {}
                 
                 auto begin()
@@ -239,10 +295,10 @@ namespace blt
                     auto begin = this->begin_;
                     for (blt::size_t i = 0; i < amount; i++)
                         ++begin;
-                    return enumerator<Iter>{begin.base(),
-                                            this->end_.base(),
-                                            begin.get_index(),
-                                            this->end_.get_index()};
+                    return CompleteClass{begin.iter1(),
+                                         this->end_.iter1(),
+                                         begin.iter2(),
+                                         this->end_.iter2()};
                 }
                 
                 /**
@@ -254,33 +310,36 @@ namespace blt
                     auto end = this->begin();
                     for (blt::size_t i = 0; i < amount; i++)
                         ++end;
-                    return enumerator<Iter>{this->begin_.base(),
-                                            end.base(),
-                                            this->begin_.get_index(),
-                                            end.get_index()};
+                    return CompleteClass{this->begin_.iter1(),
+                                         end.iter1(),
+                                         this->begin_.iter2(),
+                                         end.iter2()};
                 }
+            
             protected:
                 IterWrapper begin_;
                 IterWrapper end_;
         };
         
         /**
-         * Reversible (bidirectional) base class for the enumerator.
+         * Reversible (bidirectional) base class storing the begin / end iterators.
          * @tparam Iter iterator type.
-         * @tparam IterWrapper wrapper used to iterate (enumerate_wrapper).
+         * @tparam IterWrapper wrapper used to iterate.
+         * @tparam CompleteClass completed class returned from skip/take methods
+         * @tparam CompleteClassRev reverse version of CompleteClass, returned from rev
          */
-        template<typename Iter, typename IterWrapper>
-        class enumerator_reversible : public enumerator_base<Iter, IterWrapper>
+        template<typename Iter, typename IterWrapper, typename CompleteClass, typename CompleteClassRev>
+        class iterator_storage_reversible : public iterator_storage_base<Iter, IterWrapper, CompleteClass>
         {
             public:
-                explicit enumerator_reversible(Iter begin, Iter end, blt::size_t container_size):
-                        enumerator_base<Iter, IterWrapper>{IterWrapper{enumerate_wrapper<Iter>{std::move(begin), 0}},
-                                                           IterWrapper{enumerate_wrapper<Iter>{std::move(end), container_size}}}
+                explicit iterator_storage_reversible(Iter begin, Iter end, blt::size_t container_size):
+                        iterator_storage_base<Iter, IterWrapper, CompleteClass>{IterWrapper{enumerate_wrapper<Iter>{std::move(begin), 0}},
+                                                                                IterWrapper{enumerate_wrapper<Iter>{std::move(end), container_size}}}
                 {}
                 
-                explicit enumerator_reversible(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
-                        enumerator_base<Iter, IterWrapper>(IterWrapper{enumerate_wrapper<Iter>{std::move(begin), begin_index}},
-                                                           IterWrapper{enumerate_wrapper<Iter>{std::move(end), end_index}})
+                explicit iterator_storage_reversible(Iter begin, Iter end, blt::size_t begin_index, blt::size_t end_index):
+                        iterator_storage_base<Iter, IterWrapper, CompleteClass>(IterWrapper{enumerate_wrapper<Iter>{std::move(begin), begin_index}},
+                                                                                IterWrapper{enumerate_wrapper<Iter>{std::move(end), end_index}})
                 {}
                 
                 /**
@@ -288,58 +347,63 @@ namespace blt
                  */
                 auto rev() const
                 {
-                    return enumerator_rev<Iter>{this->end_.base(),
-                                                this->begin_.base(),
-                                                this->end_.get_index(),
-                                                this->begin_.get_index()};
+                    return CompleteClassRev{this->end_.iter1(),
+                                            this->begin_.iter1(),
+                                            this->end_.iter2(),
+                                            this->begin_.iter2()};
                 }
         };
         
         /**
-         * Random access base class for the enumerator. Has updated skip and take methods which make use of the random access nature of the iterator.
+         * Random access base class storage for begin/end iterators.
+         * Has updated skip and take methods which make use of the random access nature of the iterator.
          * @tparam Iter iterator type.
-         * @tparam IterWrapper wrapper used to iterate (enumerate_wrapper).
+         * @tparam IterWrapper wrapper used to iterate.
+         * @tparam CompleteClass completed class returned from skip/take methods
+         * @tparam CompleteClassRev reverse version of CompleteClass, returned from rev
          */
-        template<typename Iter, typename IterWrapper>
-        class enumerator_random_access : public enumerator_reversible<Iter, IterWrapper>
+        template<typename Iter, typename IterWrapper, typename CompleteClass, typename CompleteClassRev>
+        class iterator_storage_random_access : public iterator_storage_reversible<Iter, IterWrapper, CompleteClass, CompleteClassRev>
         {
             public:
-                using enumerator_reversible<Iter, IterWrapper>::enumerator_reversible;
+                using iterator_storage_reversible<Iter, IterWrapper, CompleteClass, CompleteClassRev>::iterator_storage_reversible;
                 
                 auto skip(blt::size_t amount)
                 {
-                    return enumerator<Iter>{this->begin_.base() + amount,
-                                            this->end_.base(),
-                                            this->begin_.get_index() + amount,
-                                            this->end_.get_index()};
+                    return CompleteClass{this->begin_.iter1() + amount,
+                                         this->end_.iter1(),
+                                         this->begin_.iter2() + amount,
+                                         this->end_.iter2()};
                 }
                 
                 auto take(blt::size_t amount)
                 {
-                    return enumerator<Iter>{this->begin_.base(),
-                                            this->begin_.base() + amount,
-                                            this->begin_.get_index(),
-                                            this->begin_.get_index() + amount};
+                    return CompleteClass{this->begin_.iter1(),
+                                         this->begin_.iter1() + amount,
+                                         this->begin_.iter2(),
+                                         this->begin_.iter2() + amount};
                 }
         };
         
         /**
-         * Reversible (bidirectional) base class for the enumerator, operates in reverse for reverse enumeration.
+         * Reversible (bidirectional) base class for storing the begin/end iterators, operates in reverse for reverse iteration.
          * @tparam Iter iterator type.
          * @tparam IterWrapper wrapper used to iterate (std::reverse_iterator<enumerate_wrapper>).
+         * @tparam CompleteClass completed class returned from skip/take methods
+         * @tparam CompleteClassRev reverse version of CompleteClass, returned from rev
          */
-        template<typename Iter, typename IterWrapper>
-        class enumerator_reversible_rev : public enumerator_reversible<Iter, IterWrapper>
+        template<typename Iter, typename IterWrapper, typename CompleteClass, typename CompleteClassRev>
+        class iterator_storage_reversible_rev : public iterator_storage_reversible<Iter, IterWrapper, CompleteClass, CompleteClassRev>
         {
             public:
-                using enumerator_reversible<Iter, IterWrapper>::enumerator_reversible;
+                using iterator_storage_reversible<Iter, IterWrapper, CompleteClass, CompleteClassRev>::iterator_storage_reversible;
                 
                 auto rev() const
                 {
-                    return enumerator<Iter>{this->end_.base().base(),
-                                            this->begin_.base().base(),
-                                            this->end_.base().get_index(),
-                                            this->begin_.base().get_index()};
+                    return CompleteClass{this->end_.base().iter1(),
+                                         this->begin_.base().iter1(),
+                                         this->end_.base().iter2(),
+                                         this->begin_.base().iter2()};
                 }
                 
                 auto skip(blt::size_t amount)
@@ -347,10 +411,10 @@ namespace blt
                     auto begin = this->begin_.base();
                     for (blt::size_t i = 0; i < amount; i++)
                         --begin;
-                    return enumerator_rev<Iter>{begin.base(),
-                                                this->end_.base().base(),
-                                                begin.get_index(),
-                                                this->end_.base().get_index()};
+                    return CompleteClassRev{begin.iter1(),
+                                            this->end_.base().iter1(),
+                                            begin.iter2(),
+                                            this->end_.base().iter2()};
                 }
                 
                 auto take(blt::size_t amount)
@@ -358,40 +422,43 @@ namespace blt
                     auto end = this->begin_.base();
                     for (blt::size_t i = 0; i < amount; i++)
                         --end;
-                    return enumerator_rev<Iter>{
-                            this->begin_.base().base(),
-                            end.base(),
-                            this->begin_.base().get_index(),
-                            end.get_index()};
+                    return CompleteClassRev{
+                            this->begin_.base().iter1(),
+                            end.iter1(),
+                            this->begin_.base().iter2(),
+                            end.iter2()};
                 }
         };
         
         /**
-         * Random access base class for the enumerator. Has updated skip and take methods which make use of the random access nature of the iterator.
-         * Operates in reverse for reverse enumeration.
+         * Random access base class for storing the begin/end iterator.
+         * Has updated skip and take methods which make use of the random access nature of the iterator.
+         * Operates in reverse for reverse iteration.
          * @tparam Iter iterator type.
          * @tparam IterWrapper wrapper used to iterate (std::reverse_iterator<enumerate_wrapper>).
+         * @tparam CompleteClass completed class returned from skip/take methods
+         * @tparam CompleteClassRev reverse version of CompleteClass, returned from rev
          */
-        template<typename Iter, typename IterWrapper>
-        class enumerator_random_access_rev : public enumerator_reversible_rev<Iter, IterWrapper>
+        template<typename Iter, typename IterWrapper, typename CompleteClass, typename CompleteClassRev>
+        class iterator_storage_random_access_rev : public iterator_storage_reversible_rev<Iter, IterWrapper, CompleteClass, CompleteClassRev>
         {
             public:
-                using enumerator_reversible_rev<Iter, IterWrapper>::enumerator_reversible_rev;
+                using iterator_storage_reversible_rev<Iter, IterWrapper, CompleteClass, CompleteClassRev>::iterator_storage_reversible_rev;
                 
                 auto skip(blt::size_t amount)
                 {
-                    return enumerator_rev<Iter>{this->begin_.base().base() - amount,
-                                                this->end_.base().base(),
-                                                this->begin_.base().get_index() - amount,
-                                                this->end_.base().get_index()};
+                    return CompleteClassRev{this->begin_.base().iter1() - amount,
+                                            this->end_.base().iter1(),
+                                            this->begin_.base().iter2() - amount,
+                                            this->end_.base().iter2()};
                 }
                 
                 auto take(blt::size_t amount)
                 {
-                    return enumerator_rev<Iter>{this->begin_.base().base(),
-                                                this->begin_.base().base() - amount,
-                                                this->begin_.base().get_index(),
-                                                this->begin_.base().get_index() - amount};
+                    return CompleteClassRev{this->begin_.base().iter1(),
+                                            this->begin_.base().iter1() - amount,
+                                            this->begin_.base().iter2(),
+                                            this->begin_.base().iter2() - amount};
                 }
         };
         
@@ -403,10 +470,10 @@ namespace blt
      */
     template<typename Iter>
     class enumerator<Iter, std::enable_if_t<blt::meta::is_forward_iterator_v<Iter>, std::void_t<std::forward_iterator_tag>>>
-            : public iterator::enumerator_base<Iter, iterator::enumerate_wrapper<Iter>>
+            : public iterator::iterator_storage_base<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>>
     {
         public:
-            using iterator::enumerator_base<Iter, iterator::enumerate_wrapper<Iter>>::enumerator_base;
+            using iterator::iterator_storage_base<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>>::iterator_storage_base;
     };
     
     /**
@@ -414,10 +481,10 @@ namespace blt
      */
     template<typename Iter>
     class enumerator<Iter, std::enable_if_t<blt::meta::is_bidirectional_iterator_v<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
-            : public iterator::enumerator_reversible<Iter, iterator::enumerate_wrapper<Iter>>
+            : public iterator::iterator_storage_reversible<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>, enumerator_rev<Iter>>
     {
         public:
-            using iterator::enumerator_reversible<Iter, iterator::enumerate_wrapper<Iter>>::enumerator_reversible;
+            using iterator::iterator_storage_reversible<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>, enumerator_rev<Iter>>::iterator_storage_reversible;
     };
     
     /**
@@ -425,10 +492,10 @@ namespace blt
      */
     template<typename Iter>
     class enumerator<Iter, std::enable_if_t<blt::meta::is_random_access_iterator_v<Iter>, std::void_t<std::random_access_iterator_tag>>>
-            : public iterator::enumerator_random_access<Iter, iterator::enumerate_wrapper<Iter>>
+            : public iterator::iterator_storage_random_access<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>, enumerator_rev<Iter>>
     {
         public:
-            using iterator::enumerator_random_access<Iter, iterator::enumerate_wrapper<Iter>>::enumerator_random_access;
+            using iterator::iterator_storage_random_access<Iter, iterator::enumerate_wrapper<Iter>, enumerator<Iter>, enumerator_rev<Iter>>::iterator_storage_random_access;
     };
     
     /**
@@ -436,10 +503,10 @@ namespace blt
      */
     template<typename Iter>
     class enumerator_rev<Iter, std::enable_if_t<blt::meta::is_bidirectional_iterator_v<Iter>, std::void_t<std::bidirectional_iterator_tag>>>
-            : public iterator::enumerator_reversible_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>>
+            : public iterator::iterator_storage_reversible_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>, enumerator<Iter>, enumerator_rev<Iter>>
     {
         public:
-            using iterator::enumerator_reversible_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>>::enumerator_reversible_rev;
+            using iterator::iterator_storage_reversible_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>, enumerator<Iter>, enumerator_rev<Iter>>::iterator_storage_reversible_rev;
     };
     
     /**
@@ -447,10 +514,10 @@ namespace blt
      */
     template<typename Iter>
     class enumerator_rev<Iter, std::enable_if_t<blt::meta::is_random_access_iterator_v<Iter>, std::void_t<std::random_access_iterator_tag>>>
-            : public iterator::enumerator_random_access_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>>
+            : public iterator::iterator_storage_random_access_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>, enumerator<Iter>, enumerator_rev<Iter>>
     {
         public:
-            using iterator::enumerator_random_access_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>>::enumerator_random_access_rev;
+            using iterator::iterator_storage_random_access_rev<Iter, std::reverse_iterator<iterator::enumerate_wrapper<Iter>>, enumerator<Iter>, enumerator_rev<Iter>>::iterator_storage_random_access_rev;
     };
     
     // CTAD for enumerators
