@@ -25,6 +25,7 @@
 #include <blt/meta/iterator.h>
 #include <type_traits>
 #include <iterator>
+#include <tuple>
 
 namespace blt
 {
@@ -42,6 +43,12 @@ namespace blt
     template<typename Iter, typename Iter2, typename = std::void_t<>>
     class pair_iterator_rev;
     
+    template<typename... Iter>
+    class zip_iterator;
+    
+    template<typename... Iter>
+    class zip_iterator_rev;
+    
     namespace iterator
     {
         template<typename Iter, typename = std::void_t<>>
@@ -49,6 +56,118 @@ namespace blt
         
         template<typename Iter1, typename Iter2, typename = std::void_t<>>
         class pair_wrapper;
+        
+        template<typename Tag, typename... Iter>
+        class zip_wrapper;
+        
+        template<typename Tag, typename... Iter>
+        class zip_iterator_storage;
+        
+        template<typename Tag, typename... Iter>
+        class zip_iterator_storage_rev;
+        
+        template<typename... Iter>
+        class zip_forward_iterator
+        {
+            public:
+                explicit zip_forward_iterator(Iter... iter): iter(std::make_tuple(iter...))
+                {}
+                
+                std::tuple<blt::meta::deref_return_t<Iter>...> operator*() const
+                {
+                    return std::apply([](auto& ... i) { return std::make_tuple(*i...); }, iter);
+                }
+                
+                friend bool operator==(const zip_forward_iterator& a, const zip_forward_iterator& b)
+                {
+                    return a.iter == b.iter;
+                }
+                
+                friend bool operator!=(const zip_forward_iterator& a, const zip_forward_iterator& b)
+                {
+                    return !(a.iter == b.iter);
+                }
+                
+                zip_forward_iterator& operator++()
+                {
+                    std::apply([](auto& ... i) { ((++i), ...); }, iter);
+                    return *this;
+                }
+                
+                zip_forward_iterator operator++(int)
+                {
+                    auto tmp = *this;
+                    ++*this;
+                    return tmp;
+                }
+                
+                auto base()
+                {
+                    return iter;
+                }
+            
+            protected:
+                std::tuple<Iter...> iter;
+        };
+        
+        template<typename... Iter>
+        class zip_bidirectional_iterator : public zip_forward_iterator<Iter...>
+        {
+            public:
+                using zip_forward_iterator<Iter...>::zip_forward_iterator;
+                
+                zip_bidirectional_iterator& operator--()
+                {
+                    std::apply([](auto& ... i) { ((--i), ...); }, this->iter);
+                    return *this;
+                }
+                
+                zip_bidirectional_iterator operator--(int)
+                {
+                    auto tmp = *this;
+                    --*this;
+                    return tmp;
+                }
+        };
+        
+        template<typename... Iter>
+        class zip_wrapper<std::forward_iterator_tag, Iter...> : public zip_forward_iterator<Iter...>
+        {
+            public:
+                using zip_forward_iterator<Iter...>::zip_forward_iterator;
+                
+                using iterator_category = std::forward_iterator_tag;
+                using value_type = std::tuple<blt::meta::deref_return_t<Iter>...>;
+                using difference_type = blt::ptrdiff_t;
+                using pointer = value_type;
+                using reference = value_type;
+        };
+        
+        template<typename... Iter>
+        class zip_wrapper<std::bidirectional_iterator_tag, Iter...> : public zip_bidirectional_iterator<Iter...>
+        {
+            public:
+                using zip_bidirectional_iterator<Iter...>::zip_bidirectional_iterator;
+                
+                using iterator_category = std::bidirectional_iterator_tag;
+                using value_type = std::tuple<blt::meta::deref_return_t<Iter>...>;
+                using difference_type = blt::ptrdiff_t;
+                using pointer = value_type;
+                using reference = value_type;
+        };
+        
+        template<typename... Iter>
+        class zip_wrapper<std::random_access_iterator_tag, Iter...> : public zip_bidirectional_iterator<Iter...>
+        {
+            public:
+                using zip_bidirectional_iterator<Iter...>::zip_bidirectional_iterator;
+                
+                using iterator_category = std::bidirectional_iterator_tag;
+                using value_type = std::tuple<blt::meta::deref_return_t<Iter>...>;
+                using difference_type = blt::ptrdiff_t;
+                using pointer = value_type;
+                using reference = value_type;
+        };
         
         /**
          * struct which is returned by the enumerator.
@@ -188,7 +307,7 @@ namespace blt
         using pair_forward_iterator = forward_iterator_base<pair_iterator_base<Iter1, Iter2>>;
         
         template<typename Iter1, typename Iter2>
-        using pair_bidirectional_iterator = bidirectional_iterator_base<pair_iterator_base<Iter1, Iter2>>;
+        using pair_bidirectional_iterator = bidirectional_iterator_base<pair_forward_iterator<Iter1, Iter2>>;
         
         /**
          * Enumerator wrapper class specialization for forward iterators.
@@ -214,7 +333,7 @@ namespace blt
          */
         template<typename Iter1, typename Iter2>
         class pair_wrapper<Iter1, Iter2, std::enable_if_t<
-                blt::meta::is_forward_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                blt::meta::is_forward_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                 std::void_t<std::forward_iterator_tag>>> : public pair_forward_iterator<Iter1, Iter2>
         {
             public:
@@ -236,7 +355,7 @@ namespace blt
                 : public enumerate_bidirectional_iterator<Iter>
         {
             public:
-                using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+                using iterator_category = std::bidirectional_iterator_tag;
                 using value_type = enumerate_item<blt::meta::deref_return_t<Iter>>;
                 using difference_type = typename std::iterator_traits<Iter>::difference_type;
                 using pointer = value_type;
@@ -251,11 +370,11 @@ namespace blt
          */
         template<typename Iter1, typename Iter2>
         class pair_wrapper<Iter1, Iter2, std::enable_if_t<
-                blt::meta::is_bidirectional_or_better_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                blt::meta::is_bidirectional_or_better_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                 std::void_t<std::bidirectional_iterator_tag>>> : public pair_bidirectional_iterator<Iter1, Iter2>
         {
             public:
-                using iterator_category = typename blt::meta::lowest_iterator_category<Iter1, Iter2>::type;
+                using iterator_category = std::bidirectional_iterator_tag;
                 using value_type = std::pair<blt::meta::deref_return_t<Iter1>, blt::meta::deref_return_t<Iter2>>;
                 using difference_type = std::common_type_t<typename std::iterator_traits<Iter1>::difference_type, typename std::iterator_traits<Iter2>::difference_type>;
                 using pointer = value_type;
@@ -456,6 +575,37 @@ namespace blt
                 }
         };
         
+        /**
+         * Base class for types which can be converted to an enumerator
+         */
+        template<typename Derived, typename CompleteEnumerator>
+        class enumerator_convertible
+        {
+            public:
+                auto enumerate()
+                {
+                    auto* b = static_cast<Derived*>(this);
+                    return CompleteEnumerator{b->begin(), b->end(), static_cast<blt::size_t>(std::distance(b->begin(), b->end()))};
+                }
+        };
+        
+        template<typename... Iter>
+        class zip_iterator_storage<std::forward_iterator_tag, Iter...>
+        {
+        
+        };
+        
+        template<typename... Iter>
+        class zip_iterator_storage<std::bidirectional_iterator_tag, Iter...>
+        {
+        
+        };
+        
+        template<typename... Iter>
+        class zip_iterator_storage<std::random_access_iterator_tag, Iter...>
+        {
+        
+        };
         
     }
     
@@ -582,9 +732,10 @@ namespace blt
     template<typename Iter1, typename Iter2>
     class pair_iterator<Iter1, Iter2,
             std::enable_if_t<
-                    blt::meta::is_forward_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                    blt::meta::is_forward_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                     std::void_t<std::forward_iterator_tag>>>
-            : public iterator::iterator_storage_base<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>>
+            : public iterator::iterator_storage_base<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>>,
+              public iterator::enumerator_convertible<pair_iterator<Iter1, Iter2>, enumerator<iterator::pair_wrapper<Iter1, Iter2>>>
     {
         public:
             explicit pair_iterator(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2):
@@ -597,9 +748,10 @@ namespace blt
     template<typename Iter1, typename Iter2>
     class pair_iterator<Iter1, Iter2,
             std::enable_if_t<
-                    blt::meta::is_bidirectional_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                    blt::meta::is_bidirectional_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                     std::void_t<std::bidirectional_iterator_tag>>>
-            : public iterator::iterator_storage_reversible<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
+            : public iterator::iterator_storage_reversible<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>,
+              public iterator::enumerator_convertible<pair_iterator<Iter1, Iter2>, enumerator<iterator::pair_wrapper<Iter1, Iter2>>>
     {
         public:
             explicit pair_iterator(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2):
@@ -612,9 +764,10 @@ namespace blt
     template<typename Iter1, typename Iter2>
     class pair_iterator<Iter1, Iter2,
             std::enable_if_t<
-                    blt::meta::is_random_access_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                    blt::meta::is_random_access_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                     std::void_t<std::random_access_iterator_tag>>>
-            : public iterator::iterator_storage_random_access<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
+            : public iterator::iterator_storage_random_access<iterator::pair_wrapper<Iter1, Iter2>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>,
+              public iterator::enumerator_convertible<pair_iterator<Iter1, Iter2>, enumerator<iterator::pair_wrapper<Iter1, Iter2>>>
     {
         public:
             explicit pair_iterator(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2):
@@ -627,30 +780,36 @@ namespace blt
     template<typename Iter1, typename Iter2>
     class pair_iterator_rev<Iter1, Iter2,
             std::enable_if_t<
-                    blt::meta::is_bidirectional_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                    blt::meta::is_bidirectional_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                     std::void_t<std::bidirectional_iterator_tag>>>
-            : public iterator::iterator_storage_reversible_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
+            : public iterator::iterator_storage_reversible_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>,
+              public iterator::enumerator_convertible<pair_iterator<Iter1, Iter2>, enumerator<iterator::pair_wrapper<Iter1, Iter2>>>
     {
         public:
             explicit pair_iterator_rev(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2):
                     iterator::iterator_storage_reversible_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
-                            {std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{iterator::pair_wrapper<Iter1, Iter2>{std::move(begin1), std::move(begin2)}},
-                             std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{iterator::pair_wrapper<Iter1, Iter2>{std::move(end1), std::move(end2)}}}
+                            {std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{
+                                    iterator::pair_wrapper<Iter1, Iter2>{std::move(begin1), std::move(begin2)}},
+                             std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{
+                                     iterator::pair_wrapper<Iter1, Iter2>{std::move(end1), std::move(end2)}}}
             {}
     };
     
     template<typename Iter1, typename Iter2>
     class pair_iterator_rev<Iter1, Iter2,
             std::enable_if_t<
-                    blt::meta::is_random_access_iterator_category_v<blt::meta::lowest_iterator_category<Iter1, Iter2>>,
+                    blt::meta::is_random_access_iterator_category_v<blt::meta::lowest_iterator_category_t<Iter1, Iter2>>,
                     std::void_t<std::random_access_iterator_tag>>>
-            : public iterator::iterator_storage_random_access_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
+            : public iterator::iterator_storage_random_access_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>,
+              public iterator::enumerator_convertible<pair_iterator<Iter1, Iter2>, enumerator<iterator::pair_wrapper<Iter1, Iter2>>>
     {
         public:
             explicit pair_iterator_rev(Iter1 begin1, Iter1 end1, Iter2 begin2, Iter2 end2):
                     iterator::iterator_storage_random_access_rev<std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>, pair_iterator<Iter1, Iter2>, pair_iterator_rev<Iter1, Iter2>>
-                        {std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{iterator::pair_wrapper<Iter1, Iter2>{std::move(begin1), std::move(begin2)}},
-                        std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{iterator::pair_wrapper<Iter1, Iter2>{std::move(end1), std::move(end2)}}}
+                            {std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{
+                                    iterator::pair_wrapper<Iter1, Iter2>{std::move(begin1), std::move(begin2)}},
+                             std::reverse_iterator<iterator::pair_wrapper<Iter1, Iter2>>{
+                                     iterator::pair_wrapper<Iter1, Iter2>{std::move(end1), std::move(end2)}}}
             {}
     };
     
@@ -688,31 +847,31 @@ namespace blt
     {
         return enumerator{container.begin(), container.end(), container.size()};
     }
-
+    
     template<typename T, typename G>
     static inline auto in_pairs(const T& container1, const G& container2)
     {
         return pair_iterator{container1.begin(), container1.end(), container2.begin(), container2.end()};
     }
-
+    
     template<typename T, typename G>
     static inline auto in_pairs(T& container1, G& container2)
     {
         return pair_iterator{container1.begin(), container1.end(), container2.begin(), container2.end()};
     }
-
+    
     template<typename T, typename G, blt::size_t size>
     static inline auto in_pairs(const T(& container1)[size], const G(& container2)[size])
     {
         return pair_iterator{&container1[0], &container1[size], &container2[0], &container2[size]};
     }
-
+    
     template<typename T, typename G, blt::size_t size>
     static inline auto in_pairs(T(& container1)[size], G(& container2)[size])
     {
         return pair_iterator{&container1[0], &container1[size], &container2[0], &container2[size]};
     }
-
+    
     template<typename T, typename G>
     static inline auto in_pairs(T&& container1, G&& container2)
     {

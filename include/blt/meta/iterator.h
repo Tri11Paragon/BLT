@@ -111,6 +111,9 @@ namespace blt::meta
     {
         using type = std::common_type_t<typename std::iterator_traits<Iter>::iterator_category...>;
     };
+    
+    template<typename... Iter>
+    using lowest_iterator_category_t = typename lowest_iterator_category<Iter...>::type;
 }
 
 #endif //BLT_META_ITERATOR_H
