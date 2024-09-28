@@ -7,7 +7,7 @@
 #include <blt/fs/nbt.h>
 #include <blt/profiling/profiler.h>
 #include <blt/std/logging.h>
-#include <blt/std/format.h>
+#include <blt/format/format.h>
 #include <blt/fs/filesystem.h>
 #include <filesystem>
 

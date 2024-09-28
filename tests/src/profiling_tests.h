@@ -10,7 +10,7 @@
 #include "blt/profiling/profiler_v2.h"
 #include "blt/std/logging.h"
 #include "blt/std/time.h"
-#include "blt/std/format.h"
+#include "blt/format/format.h"
 
 void print(const std::vector<std::string>& vtr) {
     for (const auto& line : vtr)

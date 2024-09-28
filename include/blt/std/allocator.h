@@ -22,7 +22,7 @@
     #include <limits>
     #include <vector>
     #include <blt/std/ranges.h>
-    #include <blt/std/iterator.h>
+    #include <blt/iterator/iterator.h>
     #include <blt/std/utility.h>
     #include <blt/std/types.h>
     #include <blt/std/assert.h>
@@ -159,10 +159,10 @@ namespace blt
              */
             inline std::optional<block_view> search_for_block(block_storage* blk, size_t n)
             {
-                for (auto kv : blt::enumerate(blk->unallocated_blocks))
+                for (auto [index, item] : blt::enumerate(blk->unallocated_blocks))
                 {
-                    if (kv.second.n >= n)
-                        return block_view{blk, kv.first, kv.second.n - n};
+                    if (item.n >= n)
+                        return block_view{blk, index, item.n - n};
                 }
                 return {};
             }

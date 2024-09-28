@@ -1,0 +1,123 @@
+/*
+ *  <Short Description>
+ *  Copyright (C) 2024  Brett Terpstra
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+#include <blt/std/logging.h>
+#include <blt/std/types.h>
+#include <blt/std/assert.h>
+#include <blt/math/vectors.h>
+#include <blt/math/log_util.h>
+#include <blt/iterator/zip.h>
+#include <blt/iterator/iterator.h>
+#include <blt/format/boxing.h>
+#include <array>
+
+constexpr auto increasing_reverse_pairs = [](blt::size_t i, blt::size_t index, blt::size_t size) { return i == 0 ? index : (size - 1) - index; };
+constexpr auto increasing_pairs = [](blt::size_t, blt::size_t index, blt::size_t) { return index; };
+constexpr auto decreasing_pairs = [](blt::size_t, blt::size_t index, blt::size_t size) { return size - index; };
+
+template<blt::size_t n, typename Func>
+std::array<blt::vec2, n> make_array(Func&& func)
+{
+    std::array<blt::vec2, n> array;
+    for (auto&& [index, value] : blt::enumerate(array))
+        value = blt::vec2(func(0, index, n), func(1, index, n));
+    return array;
+}
+
+constexpr blt::size_t array_size = 10;
+auto array_1 = make_array<array_size>(increasing_reverse_pairs);
+auto array_2 = make_array<array_size>(increasing_pairs);
+auto array_3 = make_array<array_size>(decreasing_pairs);
+
+void test_enumerate()
+{
+    blt::log_box_t box(std::cout, "Enumerate Tests", 25);
+    for (const auto& [index, item] : blt::enumerate(array_1))
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).rev())
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).take(3))
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index < 3);
+    }
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).take(3).rev())
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index < 3);
+    }
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).skip(3))
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index >= 3);
+    }
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).skip(3).rev())
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index >= 3);
+    }
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).skip(3).take(5))
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index >= 3 && index < (array_1.size() - 5) + 3);
+    }
+    
+    BLT_TRACE("");
+    
+    for (const auto& [index, item] : blt::enumerate(array_1).skip(3).rev().take(5))
+    {
+        BLT_TRACE_STREAM << index << " : " << item << "\n";
+        BLT_ASSERT(index >= 5);
+    }
+}
+
+void test_pairs()
+{
+    blt::log_box_t box(std::cout, "Pairs Tests", 25);
+}
+
+void test_zip()
+{
+    blt::log_box_t box(std::cout, "Zip Tests", 25);
+}
+
+int main()
+{
+    test_enumerate();
+    std::cout << std::endl;
+    test_pairs();
+    std::cout << std::endl;
+    test_zip();
+}

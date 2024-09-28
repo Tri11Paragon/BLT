@@ -42,8 +42,8 @@ namespace blt
             using pointer = T*;
             using const_reference = const T&;
             using const_pointer = const T*;
-            using iterator = blt::ptr_iterator<T>;
-            using const_iterator = blt::ptr_iterator<const T>;
+            using iterator = T*;
+            using const_iterator = const T*;
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         public:
@@ -131,24 +131,24 @@ namespace blt
                 return buffer_[index];
             }
             
-            constexpr inline pointer operator*()
+            constexpr inline reference operator*()
             {
-                return buffer_;
+                return *buffer_.data();
             }
             
-            constexpr inline const_pointer operator*() const
+            constexpr inline const_reference operator*() const
             {
-                return buffer_;
+                return *buffer_.data();
             }
             
             constexpr inline pointer data()
             {
-                return buffer_;
+                return buffer_.data();
             }
             
             constexpr inline const_pointer data() const
             {
-                return buffer_;
+                return buffer_.data();
             }
             
             constexpr inline reference front()
@@ -290,8 +290,8 @@ namespace blt
             using const_reference = const value_type&;
             using pointer = value_type*;
             using const_pointer = const pointer;
-            using iterator = blt::ptr_iterator<T>;
-            using const_iterator = blt::ptr_iterator<const T>;
+            using iterator = T*;
+            using const_iterator = const T*;
             using reverse_iterator = std::reverse_iterator<iterator>;
             using const_reverse_iterator = std::reverse_iterator<const_iterator>;
             
