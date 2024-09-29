@@ -114,6 +114,18 @@ namespace blt::meta
     
     template<typename... Iter>
     using lowest_iterator_category_t = typename lowest_iterator_category<Iter...>::type;
+    
+    template<typename Iter>
+    struct is_reverse_iterator : std::false_type
+    {
+    };
+    
+    template<typename Iter>
+    struct is_reverse_iterator<std::reverse_iterator<Iter>> : std::true_type
+    {};
+    
+    template<typename Iter>
+    inline constexpr bool is_reverse_iterator_v = is_reverse_iterator<Iter>::value;
 }
 
 #endif //BLT_META_ITERATOR_H

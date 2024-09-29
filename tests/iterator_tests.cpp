@@ -24,13 +24,17 @@
 #include <blt/iterator/iterator.h>
 #include <blt/format/boxing.h>
 #include <array>
+#include <forward_list>
 
-constexpr auto increasing_reverse_pairs = [](blt::size_t i, blt::size_t index, blt::size_t size) { return i == 0 ? index : (size - 1) - index; };
-constexpr auto increasing_pairs = [](blt::size_t, blt::size_t index, blt::size_t) { return index; };
-constexpr auto decreasing_pairs = [](blt::size_t, blt::size_t index, blt::size_t size) { return size - index; };
+constexpr auto increasing_reverse_pairs =
+        [](blt::size_t i, blt::size_t index, blt::size_t size) { return i == 0 ? index : (size - 1) - index; };
+constexpr auto increasing_pairs =
+        [](blt::size_t, blt::size_t index, blt::size_t) { return index; };
+constexpr auto decreasing_pairs =
+        [](blt::size_t, blt::size_t index, blt::size_t size) { return size - index; };
 
 template<blt::size_t n, typename Func>
-std::array<blt::vec2, n> make_array(Func&& func)
+std::array<blt::vec2, n> make_array(Func func)
 {
     std::array<blt::vec2, n> array;
     for (auto&& [index, value] : blt::enumerate(array))
@@ -38,10 +42,21 @@ std::array<blt::vec2, n> make_array(Func&& func)
     return array;
 }
 
+template<blt::size_t n, typename Func>
+std::forward_list<blt::vec2> make_list(Func func)
+{
+    std::forward_list<blt::vec2> array;
+    for (auto index : blt::range(0ul, n))
+        array.push_front(blt::vec2(func(0, index, n), func(1, index, n)));
+    return array;
+}
+
 constexpr blt::size_t array_size = 10;
 auto array_1 = make_array<array_size>(increasing_reverse_pairs);
 auto array_2 = make_array<array_size>(increasing_pairs);
 auto array_3 = make_array<array_size>(decreasing_pairs);
+
+auto list_1 = make_list<array_size>(increasing_reverse_pairs);
 
 void test_enumerate()
 {
@@ -111,6 +126,30 @@ void test_pairs()
 void test_zip()
 {
     blt::log_box_t box(std::cout, "Zip Tests", 25);
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take(3))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take(3).rev())
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take_or(13))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).rev().take(3))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
 }
 
 int main()
