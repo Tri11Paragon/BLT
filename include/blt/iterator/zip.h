@@ -29,7 +29,7 @@ namespace blt
     namespace iterator
     {
         template<typename... Iter>
-        class zip_wrapper : public wrapper_base<zip_wrapper<Iter...>>
+        struct zip_wrapper : public base_wrapper<zip_wrapper<Iter...>>
         {
             public:
                 using iterator_category = meta::lowest_iterator_category_t<Iter...>;
@@ -58,16 +58,18 @@ namespace blt
                     return *this;
                 }
                 
-                zip_wrapper& operator+=(blt::ptrdiff_t n)
+                friend zip_wrapper operator+(const zip_wrapper& a, blt::ptrdiff_t n)
                 {
-                    std::apply([n](auto& ... i) { ((i += n), ...); }, this->iter);
-                    return *this;
+                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+                                  "Iterator must allow random access");
+                    return std::apply([n](auto& ... i) { return zip_wrapper((i + n)...); }, a.iter);
                 }
                 
-                zip_wrapper& operator-=(blt::ptrdiff_t n)
+                friend zip_wrapper operator-(const zip_wrapper& a, blt::ptrdiff_t n)
                 {
-                    std::apply([n](auto& ... i) { ((i -= n), ...); }, this->iter);
-                    return *this;
+                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+                                  "Iterator must allow random access");
+                    return std::apply([n](auto& ... i) { return zip_wrapper((i - n)...); }, a.iter);
                 }
                 
                 friend blt::ptrdiff_t operator-(const zip_wrapper& a, const zip_wrapper& b)
@@ -93,112 +95,78 @@ namespace blt
                 }
         };
         
-        BLT_META_MAKE_FUNCTION_CHECK(base);
-        
-        template<typename Iter>
-        auto get_base(Iter iter)
+        template<typename Iter, bool checked>
+        struct skip_wrapper : public passthrough_wrapper<Iter, skip_wrapper<Iter, checked>>
         {
-            if constexpr (has_func_base_v<Iter>)
-            {
-                return std::move(iter).base();
-            } else
-            {
-                return std::move(iter);
-            }
-        }
-        
-        template<typename Derived>
-        class take_impl
-        {
-            private:
-                template<bool check>
-                auto take_base(blt::size_t n)
-                {
-                    static_assert(!std::is_same_v<typename Derived::iterator_category, std::input_iterator_tag>,
-                                  "Cannot .take() on an input iterator!");
-                    auto* d = static_cast<Derived*>(this);
-                    auto begin = d->begin();
-                    auto end = d->end();
-                    
-                    // take variant for forward and bidirectional iterators
-                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::forward_iterator_tag> ||
-                                  std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag>)
-                    {
-                        // with these guys we have to loop forward to move the iterators. an unfortunate inefficiency
-                        auto new_end = begin;
-                        for (blt::size_t i = 0; i < n; i++)
-                        {
-                            if constexpr (check)
-                            {
-                                if (new_end == end)
-                                    break;
-                            }
-                            ++new_end;
-                        }
-                        return Derived{get_base(std::move(begin)), get_base(std::move(new_end))};
-                    } else if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
-                    {
-                        // random access iterators can have math directly applied to them.
-                        if constexpr (check)
-                        {
-                            return Derived{get_base(begin),
-                                           get_base(begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)))};
-                        } else
-                        {
-                            return Derived{get_base(begin), get_base(begin + n)};
-                        }
-                    }
-                }
-            
             public:
-                auto take(blt::size_t n)
-                { return take_base<false>(n); }
+                using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+                using value_type = typename std::iterator_traits<Iter>::value_type;
+                using difference_type = typename std::iterator_traits<Iter>::difference_type;
+                using pointer = typename std::iterator_traits<Iter>::pointer;
+                using reference = typename std::iterator_traits<Iter>::reference;
                 
-                auto take_or(blt::size_t n)
-                { return take_base<true>(n); }
-        };
-        
-        template<typename Derived>
-        class skip_impl
-        {
-            private:
-                template<bool check>
-                auto skip_base(blt::size_t n)
+                explicit skip_wrapper(Iter iter, blt::size_t n): passthrough_wrapper<Iter, skip_wrapper<Iter, checked>>(std::move(iter)), skip(n)
+                {}
+                
+                skip_wrapper& operator++()
                 {
-                    auto* d = static_cast<Derived*>(this);
-                    auto begin = d->begin();
-                    auto end = d->end();
-                    
-                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
+                    if constexpr (std::is_same_v<iterator_category, std::random_access_iterator_tag>)
                     {
-                        if constexpr (check)
+                        if (skip > 0)
                         {
-                            return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end))};
-                        } else
-                        {
-                            return Derived{begin + n, end};
+                            this->base() += skip;
+                            skip = 0;
                         }
                     } else
                     {
-                        for (blt::size_t i = 0; i < n; i++)
+                        while (skip > 0)
                         {
-                            if constexpr (check)
-                            {
-                                if (begin == end)
-                                    break;
-                            }
-                            ++begin;
+                            ++this->base();
+                            --skip;
                         }
-                        return Derived{begin, end};
                     }
+                    
+                    ++this->base();
+                    return *this;
+                }
+                
+                skip_wrapper& operator--()
+                {
+                    if constexpr (std::is_same_v<iterator_category, std::random_access_iterator_tag>)
+                    {
+                        if (skip > 0)
+                        {
+                            this->base() -= skip;
+                            skip = 0;
+                        }
+                    } else
+                    {
+                        while (skip > 0)
+                        {
+                            --this->base();
+                            --skip;
+                        }
+                    }
+                    --this->base();
+                    return *this;
+                }
+                
+                friend skip_wrapper operator+(const skip_wrapper& a, blt::ptrdiff_t n)
+                {
+                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+                                  "Iterator must allow random access");
+                    return {a.base() + static_cast<blt::ptrdiff_t>(a.skip) + n, 0};
+                }
+                
+                friend skip_wrapper operator-(const skip_wrapper& a, blt::ptrdiff_t n)
+                {
+                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+                                  "Iterator must allow random access");
+                    return {a.base() - static_cast<blt::ptrdiff_t>(a.skip) - n, 0};
                 }
             
-            public:
-                void skip(blt::size_t n)
-                { return skip_base<false>(n); }
-                
-                void skip_or(blt::size_t n)
-                { return skip_base<true>(n); }
+            private:
+                blt::size_t skip;
         };
     }
     
@@ -221,7 +189,7 @@ namespace blt
     class zip_iterator_storage_rev;
     
     template<typename... Iter>
-    class zip_iterator_storage : public iterator::take_impl<zip_iterator_storage<Iter...>>
+    class zip_iterator_storage
     {
         public:
             using iterator_category = meta::lowest_iterator_category_t<Iter...>;
@@ -244,10 +212,7 @@ namespace blt
             
             auto skip(blt::size_t n)
             {
-                if constexpr (std::is_same_v<iterator_category, std::input_iterator_tag>)
-                {
-                
-                }
+            
             }
             
             auto begin() const
@@ -266,7 +231,7 @@ namespace blt
     };
     
     template<typename... Iter>
-    class zip_iterator_storage_rev : public iterator::take_impl<zip_iterator_storage_rev<Iter...>>
+    class zip_iterator_storage_rev
     {
         public:
             using iterator_category = meta::lowest_iterator_category_t<Iter...>;
@@ -329,7 +294,7 @@ namespace blt
     template<typename... Container>
     auto zip(Container& ... container)
     {
-        return blt::zip_iterator_storage{iterator_pair{container.begin(), container.end()}...};
+        return zip_iterator_storage{iterator_pair{container.begin(), container.end()}...};
     }
 }
 

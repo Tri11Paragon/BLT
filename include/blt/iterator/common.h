@@ -25,16 +25,16 @@
 namespace blt::iterator
 {
     template<typename Derived>
-    struct wrapper_base
+    struct base_wrapper
     {
-        wrapper_base operator++(int)
+        base_wrapper operator++(int)
         {
             auto tmp = *this;
             ++*this;
             return tmp;
         }
         
-        wrapper_base operator--(int)
+        base_wrapper operator--(int)
         {
             static_assert(std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag> ||
                           std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
@@ -51,79 +51,74 @@ namespace blt::iterator
             return *(*this + n);
         }
         
-        friend wrapper_base operator+(const wrapper_base& a, blt::ptrdiff_t n)
+        friend base_wrapper operator+(blt::ptrdiff_t n, const base_wrapper& a)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
-            auto copy = a;
-            copy += n;
-            return copy;
+            return a + n;
         }
         
-        friend wrapper_base operator+(blt::ptrdiff_t n, const wrapper_base& a)
-        {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
-            auto copy = a;
-            copy += n;
-            return copy;
-        }
-        
-        friend wrapper_base operator-(const wrapper_base& a, blt::ptrdiff_t n)
-        {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
-            auto copy = a;
-            copy -= n;
-            return copy;
-        }
-        
-        friend wrapper_base operator-(blt::ptrdiff_t n, const wrapper_base& a)
-        {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
-            auto copy = a;
-            copy -= n;
-            return copy;
-        }
-        
-        friend bool operator<(const wrapper_base& a, const wrapper_base& b)
+        friend bool operator<(const base_wrapper& a, const base_wrapper& b)
         {
             static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
                           "Iterator must allow random access");
             return b - a > 0;
         }
         
-        friend bool operator>(const wrapper_base& a, const wrapper_base& b)
+        friend bool operator>(const base_wrapper& a, const base_wrapper& b)
         {
             static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
                           "Iterator must allow random access");
             return b < a;
         }
         
-        friend bool operator>=(const wrapper_base& a, wrapper_base& b)
+        friend bool operator>=(const base_wrapper& a, base_wrapper& b)
         {
             static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
                           "Iterator must allow random access");
             return !(a < b); // NOLINT
         }
         
-        friend bool operator<=(const wrapper_base& a, const wrapper_base& b)
+        friend bool operator<=(const base_wrapper& a, const base_wrapper& b)
         {
             static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
                           "Iterator must allow random access");
             return !(a > b); // NOLINT
         }
         
-        friend bool operator==(const wrapper_base& a, const wrapper_base& b)
+        friend bool operator==(const base_wrapper& a, const base_wrapper& b)
         {
             return a.base() == b.base();
         }
         
-        friend bool operator!=(const wrapper_base& a, const wrapper_base& b)
+        friend bool operator!=(const base_wrapper& a, const base_wrapper& b)
         {
             return !(a.base() == b.base()); // NOLINT
         }
+    };
+    
+    template<typename Iter, typename Derived>
+    struct passthrough_wrapper : public base_wrapper<Derived>
+    {
+        public:
+            explicit passthrough_wrapper(Iter iter): iter(std::move(iter))
+            {}
+            
+            meta::deref_return_t<Iter> operator*() const
+            {
+                return *iter;
+            }
+            
+            auto base() const
+            {
+                return iter;
+            }
+            
+            friend blt::ptrdiff_t operator-(const passthrough_wrapper& a, const passthrough_wrapper& b)
+            {
+                return a.base() - b.base();
+            }
+        
+        protected:
+            Iter iter;
     };
 }
 
