@@ -72,7 +72,7 @@ namespace blt
                     return tmp;
                 }
                 
-                auto base()
+                auto raw_tuple()
                 {
                     return iter;
                 }
@@ -205,10 +205,12 @@ namespace blt
                 }
         };
         
+        BLT_META_MAKE_FUNCTION_CHECK(base);
+        
         template<typename Iter>
         auto get_base(Iter iter)
         {
-            if constexpr (meta::is_reverse_iterator_v<Iter>)
+            if constexpr (has_func_base_v<Iter>)
             {
                 return std::move(iter).base();
             } else
@@ -252,7 +254,7 @@ namespace blt
                         if constexpr (check)
                         {
                             return Derived{get_base(begin),
-                                           get_base(begin + std::min(n, static_cast<blt::size_t>(std::distance(begin, end))))};
+                                           get_base(begin + std::min(static_cast<blt::size_t>(n), std::distance(begin, end)))};
                         } else
                         {
                             return Derived{get_base(begin), get_base(begin + n)};
@@ -266,6 +268,48 @@ namespace blt
                 
                 auto take_or(blt::size_t n)
                 { return take_base<true>(n); }
+        };
+        
+        template<typename Derived>
+        class skip_impl
+        {
+            private:
+                template<bool check>
+                auto skip_base(blt::size_t n)
+                {
+                    auto* d = static_cast<Derived*>(this);
+                    auto begin = d->begin();
+                    auto end = d->end();
+                    
+                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
+                    {
+                        if constexpr (check)
+                        {
+                            return Derived{begin + std::min(static_cast<blt::size_t>(n), std::distance(begin, end))};
+                        } else
+                        {
+                            return Derived{begin + n, end};
+                        }
+                    } else
+                    {
+                        for (blt::size_t i = 0; i < n; i++)
+                        {
+                            if constexpr (check){
+                                if (begin == end)
+                                    break;
+                            }
+                            ++begin;
+                        }
+                        return Derived{begin, end};
+                    }
+                }
+            
+            public:
+                void skip(blt::size_t n)
+                { return skip_base<false>(n); }
+                
+                void skip_or(blt::size_t n)
+                { return skip_base<true>(n); }
         };
     }
     
