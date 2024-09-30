@@ -131,77 +131,49 @@ namespace blt::iterator
     
     namespace impls
     {
-        template<typename Iter>
-        struct skip_wrapper : public passthrough_wrapper<Iter, skip_wrapper<Iter>>
+        template<typename Derived>
+        class skip_t
         {
-            public:
-                using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-                using value_type = typename std::iterator_traits<Iter>::value_type;
-                using difference_type = typename std::iterator_traits<Iter>::difference_type;
-                using pointer = typename std::iterator_traits<Iter>::pointer;
-                using reference = typename std::iterator_traits<Iter>::reference;
-                
-                explicit skip_wrapper(Iter iter, blt::size_t n): passthrough_wrapper<Iter, skip_wrapper<Iter>>(std::move(iter)), skip(n)
-                {}
-                
-                meta::deref_return_t<Iter> operator*() const
-                {
-                    BLT_TRACE("Dereference Skip");
-                    forward_skip();
-                    return *this->iter;
-                }
-                
-                skip_wrapper& operator++()
-                {
-                    BLT_TRACE("Forward Skip");
-                    forward_skip();
-                    ++this->iter;
-                    return *this;
-                }
-                
-                skip_wrapper& operator--()
-                {
-                    BLT_TRACE("Backward Skip");
-                    forward_skip();
-                    --this->iter;
-                    return *this;
-                }
-                
-                friend skip_wrapper operator+(const skip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
-                    return {a.base() + static_cast<blt::ptrdiff_t>(a.skip) + n, 0};
-                }
-                
-                friend skip_wrapper operator-(const skip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
-                    return {a.base() - static_cast<blt::ptrdiff_t>(a.skip) - n, 0};
-                }
-            
             private:
-                void forward_skip() const
+                template<bool check>
+                auto skip_base(blt::size_t n)
                 {
-                    if constexpr (std::is_same_v<iterator_category, std::random_access_iterator_tag>)
+                    auto* d = static_cast<Derived*>(this);
+                    auto begin = d->begin();
+                    auto end = d->end();
+                    
+                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::forward_iterator_tag> ||
+                                  std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag>)
                     {
-                        if (skip > 0)
+                        for (blt::size_t i = 0; i < n; i++)
                         {
-                            this->iter = this->iter + skip;
-                            skip = 0;
+                            if constexpr (check)
+                            {
+                                if (begin == end)
+                                    break;
+                            }
+                            ++begin;
                         }
-                    } else
+                        return Derived{std::move(begin), std::move(end)};
+                    } else if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
                     {
-                        while (skip > 0)
+                        // random access iterators can have math directly applied to them.
+                        if constexpr (check)
                         {
-                            ++this->iter;
-                            --skip;
+                            return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)), end};
+                        } else
+                        {
+                            return Derived{begin + n, end};
                         }
                     }
                 }
+            
+            public:
+                auto skip(blt::size_t n)
+                { return skip_base<false>(n); }
                 
-                mutable blt::size_t skip;
+                auto skip_or(blt::size_t n)
+                { return skip_base<true>(n); }
         };
         
         template<typename Derived>
@@ -256,7 +228,7 @@ namespace blt::iterator
     }
     
     template<typename IterBase>
-    class iterator_container : public impls::take_t<iterator_container<IterBase>>
+    class iterator_container : public impls::take_t<iterator_container<IterBase>>, public impls::skip_t<iterator_container<IterBase>>
     {
         public:
             using iterator_category = typename IterBase::iterator_category;
@@ -275,12 +247,6 @@ namespace blt::iterator
                               ".rev() must be used with bidirectional (or better) iterators!");
                 return iterator_container<std::reverse_iterator<IterBase>>{std::reverse_iterator<IterBase>{end()},
                                                                            std::reverse_iterator<IterBase>{begin()}};
-            }
-            
-            auto skip(blt::size_t n)
-            {
-                return iterator_container<impls::skip_wrapper<IterBase>>{impls::skip_wrapper<IterBase>{begin(), n},
-                                                                         impls::skip_wrapper<IterBase>{end(), n}};
             }
             
             auto begin() const
