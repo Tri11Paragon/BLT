@@ -227,8 +227,10 @@ namespace blt::iterator
         };
     }
     
-    template<typename IterBase>
-    class iterator_container : public impls::take_t<iterator_container<IterBase>>, public impls::skip_t<iterator_container<IterBase>>
+    template<typename IterBase, typename... Base>
+    class iterator_container : public impls::take_t<iterator_container<IterBase, Base...>>,
+                               public impls::skip_t<iterator_container<IterBase, Base...>>,
+                               public Base ...
     {
         public:
             using iterator_category = typename IterBase::iterator_category;
@@ -245,8 +247,7 @@ namespace blt::iterator
                 static_assert((std::is_same_v<typename IterBase::iterator_category, std::bidirectional_iterator_tag> ||
                                std::is_same_v<typename IterBase::iterator_category, std::random_access_iterator_tag>),
                               ".rev() must be used with bidirectional (or better) iterators!");
-                return iterator_container<std::reverse_iterator<IterBase>>{std::reverse_iterator<IterBase>{end()},
-                                                                           std::reverse_iterator<IterBase>{begin()}};
+                return iterator_container < std::reverse_iterator<IterBase>, Base...>{std::reverse_iterator<IterBase>{end()}, std::reverse_iterator<IterBase>{begin()}};
             }
             
             auto begin() const

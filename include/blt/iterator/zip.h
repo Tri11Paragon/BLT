@@ -123,6 +123,18 @@ namespace blt
             {}
     };
     
+    template<typename Derived>
+    class zip_t
+    {
+        public:
+            template<typename... Iter>
+            auto zip(iterator_pair<Iter>... iterator_pairs)
+            {
+                iterator::iterator_container<iterator::zip_wrapper<Iter...>>(iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
+                                                                             iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...});
+            }
+    };
+    
     /*
      * CTAD for the zip containers
      */
