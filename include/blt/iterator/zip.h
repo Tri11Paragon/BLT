@@ -254,7 +254,7 @@ namespace blt
                         if constexpr (check)
                         {
                             return Derived{get_base(begin),
-                                           get_base(begin + std::min(static_cast<blt::size_t>(n), std::distance(begin, end)))};
+                                           get_base(begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)))};
                         } else
                         {
                             return Derived{get_base(begin), get_base(begin + n)};
@@ -285,7 +285,7 @@ namespace blt
                     {
                         if constexpr (check)
                         {
-                            return Derived{begin + std::min(static_cast<blt::size_t>(n), std::distance(begin, end))};
+                            return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end))};
                         } else
                         {
                             return Derived{begin + n, end};
