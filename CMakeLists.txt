@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 1.1.2)
+set(BLT_VERSION 1.1.3)
 
 set(BLT_TARGET BLT)
 
@@ -140,7 +140,7 @@ install(FILES ${CMAKE_BINARY_DIR}/config/blt/config.h DESTINATION ${CMAKE_INSTAL
 set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${BLT_VERSION})
 set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 if (NOT ${MOLD} STREQUAL MOLD-NOTFOUND)
-    target_compile_options(${BLT_TARGET} PUBLIC -fuse-ld=mold)
+    target_link_options(${BLT_TARGET} PUBLIC -fuse-ld=mold)
 endif ()
 
 install(TARGETS ${BLT_TARGET}
@@ -154,15 +154,15 @@ macro(blt_add_project name source type)
 
     add_executable(${name}-${type} ${source})
 
+    if (NOT ${MOLD} STREQUAL MOLD-NOTFOUND)
+        add_link_options(-fuse-ld=mold)
+    endif ()
+
     target_link_libraries(${name}-${type} PRIVATE BLT)
 
     target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
     target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
     target_compile_definitions(${name}-${type} PRIVATE BLT_DEBUG_LEVEL=${DEBUG_LEVEL})
-
-    if (NOT ${MOLD} STREQUAL MOLD-NOTFOUND)
-        target_compile_options(${name}-${type} PUBLIC -fuse-ld=mold)
-    endif ()
 
     if (${TRACK_ALLOCATIONS})
         target_compile_definitions(${name}-${type} PRIVATE BLT_TRACK_ALLOCATIONS=1)

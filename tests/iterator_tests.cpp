@@ -136,7 +136,7 @@ void test_zip()
         BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
     }
     BLT_TRACE("================================");
-    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, list_1).take(3).rev())
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take(3).rev())
     {
         BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
     }
@@ -147,6 +147,11 @@ void test_zip()
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).rev().take(3))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).skip(2).rev())
     {
         BLT_TRACE_STREAM << a1 << " : " << a2 << " : " << a3 << "\n";
     }

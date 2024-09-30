@@ -38,6 +38,9 @@ namespace blt
                 using pointer = value_type;
                 using reference = value_type;
                 
+                explicit zip_wrapper(std::tuple<Iter...> iter): iter(std::move(iter))
+                {}
+                
                 explicit zip_wrapper(Iter... iter): iter(std::make_tuple(iter...))
                 {}
                 
@@ -77,7 +80,7 @@ namespace blt
                     return sub(a, b, std::index_sequence_for<Iter...>());
                 }
                 
-                auto base()
+                auto base() const
                 {
                     return iter;
                 }
@@ -94,80 +97,6 @@ namespace blt
                     return min;
                 }
         };
-        
-        template<typename Iter, bool checked>
-        struct skip_wrapper : public passthrough_wrapper<Iter, skip_wrapper<Iter, checked>>
-        {
-            public:
-                using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-                using value_type = typename std::iterator_traits<Iter>::value_type;
-                using difference_type = typename std::iterator_traits<Iter>::difference_type;
-                using pointer = typename std::iterator_traits<Iter>::pointer;
-                using reference = typename std::iterator_traits<Iter>::reference;
-                
-                explicit skip_wrapper(Iter iter, blt::size_t n): passthrough_wrapper<Iter, skip_wrapper<Iter, checked>>(std::move(iter)), skip(n)
-                {}
-                
-                skip_wrapper& operator++()
-                {
-                    if constexpr (std::is_same_v<iterator_category, std::random_access_iterator_tag>)
-                    {
-                        if (skip > 0)
-                        {
-                            this->base() += skip;
-                            skip = 0;
-                        }
-                    } else
-                    {
-                        while (skip > 0)
-                        {
-                            ++this->base();
-                            --skip;
-                        }
-                    }
-                    
-                    ++this->base();
-                    return *this;
-                }
-                
-                skip_wrapper& operator--()
-                {
-                    if constexpr (std::is_same_v<iterator_category, std::random_access_iterator_tag>)
-                    {
-                        if (skip > 0)
-                        {
-                            this->base() -= skip;
-                            skip = 0;
-                        }
-                    } else
-                    {
-                        while (skip > 0)
-                        {
-                            --this->base();
-                            --skip;
-                        }
-                    }
-                    --this->base();
-                    return *this;
-                }
-                
-                friend skip_wrapper operator+(const skip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
-                    return {a.base() + static_cast<blt::ptrdiff_t>(a.skip) + n, 0};
-                }
-                
-                friend skip_wrapper operator-(const skip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
-                    return {a.base() - static_cast<blt::ptrdiff_t>(a.skip) - n, 0};
-                }
-            
-            private:
-                blt::size_t skip;
-        };
     }
     
     template<typename Iter>
@@ -183,92 +112,15 @@ namespace blt
     };
     
     template<typename... Iter>
-    class zip_iterator_storage;
-    
-    template<typename... Iter>
-    class zip_iterator_storage_rev;
-    
-    template<typename... Iter>
-    class zip_iterator_storage
+    class zip_iterator_storage : public iterator::iterator_container<iterator::zip_wrapper<Iter...>>
     {
         public:
-            using iterator_category = meta::lowest_iterator_category_t<Iter...>;
-        public:
-            zip_iterator_storage(iterator_pair<Iter>... iterator_pairs):
-                    m_begins(std::move(iterator_pairs.begin)...), m_ends(std::move(iterator_pairs.end)...)
+            using iterator::iterator_container<iterator::zip_wrapper<Iter...>>::iterator_container;
+            
+            explicit zip_iterator_storage(iterator_pair<Iter>... iterator_pairs):
+                    iterator::iterator_container<iterator::zip_wrapper<Iter...>>(iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
+                                                                                 iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...})
             {}
-            
-            zip_iterator_storage(iterator::zip_wrapper<Iter...> begins, iterator::zip_wrapper<Iter...> ends):
-                    m_begins(std::move(begins)), m_ends(std::move(ends))
-            {}
-            
-            auto rev()
-            {
-                static_assert((std::is_same_v<iterator_category, std::bidirectional_iterator_tag> ||
-                               std::is_same_v<iterator_category, std::random_access_iterator_tag>),
-                              ".rev() must be used with bidirectional (or better) iterators!");
-                return zip_iterator_storage_rev{m_ends, m_begins};
-            }
-            
-            auto skip(blt::size_t n)
-            {
-            
-            }
-            
-            auto begin() const
-            {
-                return m_begins;
-            }
-            
-            auto end() const
-            {
-                return m_ends;
-            }
-        
-        private:
-            iterator::zip_wrapper<Iter...> m_begins;
-            iterator::zip_wrapper<Iter...> m_ends;
-    };
-    
-    template<typename... Iter>
-    class zip_iterator_storage_rev
-    {
-        public:
-            using iterator_category = meta::lowest_iterator_category_t<Iter...>;
-        public:
-            zip_iterator_storage_rev(iterator_pair<Iter>... iterator_pairs): m_begins(iterator_pairs.begin...), m_ends(iterator_pairs.end...)
-            {
-                static_assert((std::is_same_v<iterator_category, std::bidirectional_iterator_tag> ||
-                               std::is_same_v<iterator_category, std::random_access_iterator_tag>),
-                              "reverse iteration is only supported on bidirectional or better iterators!");
-            }
-            
-            zip_iterator_storage_rev(iterator::zip_wrapper<Iter...> begins,
-                                     iterator::zip_wrapper<Iter...> ends): m_begins(std::move(begins)), m_ends(std::move(ends))
-            {
-                static_assert((std::is_same_v<iterator_category, std::bidirectional_iterator_tag> ||
-                               std::is_same_v<iterator_category, std::random_access_iterator_tag>),
-                              "reverse iteration is only supported on bidirectional or better iterators!");
-            }
-            
-            auto rev()
-            {
-                return zip_iterator_storage{m_ends.base(), m_begins.base()};
-            }
-            
-            auto begin() const
-            {
-                return m_begins;
-            }
-            
-            auto end() const
-            {
-                return m_ends;
-            }
-        
-        private:
-            std::reverse_iterator<iterator::zip_wrapper<Iter...>> m_begins;
-            std::reverse_iterator<iterator::zip_wrapper<Iter...>> m_ends;
     };
     
     /*
@@ -281,11 +133,6 @@ namespace blt
     template<typename... Iter>
     zip_iterator_storage(std::initializer_list<Iter>...) -> zip_iterator_storage<Iter...>;
     
-    template<typename... Iter>
-    zip_iterator_storage_rev(iterator_pair<Iter>...) -> zip_iterator_storage_rev<Iter...>;
-    
-    template<typename... Iter>
-    zip_iterator_storage_rev(std::initializer_list<Iter>...) -> zip_iterator_storage_rev<Iter...>;
     
     /*
      * Helper functions for creating zip containers
