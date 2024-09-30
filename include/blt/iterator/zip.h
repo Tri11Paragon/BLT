@@ -19,7 +19,7 @@
 #ifndef BLT_ITERATOR_ZIP
 #define BLT_ITERATOR_ZIP
 
-#include <blt/iterator/iter_common.h>
+#include <blt/iterator/common.h>
 #include <blt/meta/meta.h>
 #include <blt/meta/iterator.h>
 #include <tuple>
@@ -28,14 +28,11 @@ namespace blt
 {
     namespace iterator
     {
-        template<typename Tag, typename... Iter>
-        class zip_wrapper;
-        
         template<typename... Iter>
-        class zip_wrapper<std::input_iterator_tag, Iter...>
+        class zip_wrapper : public wrapper_base<zip_wrapper<Iter...>>
         {
             public:
-                using iterator_category = std::input_iterator_tag;
+                using iterator_category = meta::lowest_iterator_category_t<Iter...>;
                 using value_type = std::tuple<meta::deref_return_t<Iter>...>;
                 using difference_type = blt::ptrdiff_t;
                 using pointer = value_type;
@@ -49,98 +46,17 @@ namespace blt
                     return std::apply([](auto& ... i) { return std::tuple<meta::deref_return_t<Iter>...>{*i...}; }, iter);
                 }
                 
-                friend bool operator==(const zip_wrapper& a, const zip_wrapper& b)
-                {
-                    return a.iter == b.iter;
-                }
-                
-                friend bool operator!=(const zip_wrapper& a, const zip_wrapper& b)
-                {
-                    return !(a.iter == b.iter);
-                }
-                
                 zip_wrapper& operator++()
                 {
                     std::apply([](auto& ... i) { ((++i), ...); }, iter);
                     return *this;
                 }
                 
-                zip_wrapper operator++(int)
-                {
-                    auto tmp = *this;
-                    ++*this;
-                    return tmp;
-                }
-                
-                auto raw_tuple()
-                {
-                    return iter;
-                }
-            
-            protected:
-                std::tuple<Iter...> iter;
-        };
-        
-        template<typename... Iter>
-        class zip_wrapper<std::forward_iterator_tag, Iter...> : public zip_wrapper<std::input_iterator_tag, Iter...>
-        {
-            public:
-                using iterator_category = std::forward_iterator_tag;
-                using value_type = std::tuple<meta::deref_return_t<Iter>...>;
-                using difference_type = blt::ptrdiff_t;
-                using pointer = value_type;
-                using reference = value_type;
-                
-                using zip_wrapper<std::input_iterator_tag, Iter...>::zip_wrapper;
-        };
-        
-        template<typename... Iter>
-        class zip_wrapper<std::bidirectional_iterator_tag, Iter...> : public zip_wrapper<std::forward_iterator_tag, Iter...>
-        {
-            public:
-                using iterator_category = std::bidirectional_iterator_tag;
-                using value_type = std::tuple<meta::deref_return_t<Iter>...>;
-                using difference_type = blt::ptrdiff_t;
-                using pointer = value_type;
-                using reference = value_type;
-            public:
-                using zip_wrapper<std::forward_iterator_tag, Iter...>::zip_wrapper;
-                
                 zip_wrapper& operator--()
                 {
                     std::apply([](auto& ... i) { ((--i), ...); }, this->iter);
                     return *this;
                 }
-                
-                zip_wrapper operator--(int)
-                {
-                    auto tmp = *this;
-                    --*this;
-                    return tmp;
-                }
-        };
-        
-        template<typename... Iter>
-        class zip_wrapper<std::random_access_iterator_tag, Iter...> : public zip_wrapper<std::bidirectional_iterator_tag, Iter...>
-        {
-            public:
-                using iterator_category = std::random_access_iterator_tag;
-                using value_type = std::tuple<meta::deref_return_t<Iter>...>;
-                using difference_type = blt::ptrdiff_t;
-                using pointer = value_type;
-                using reference = value_type;
-            private:
-                template<typename T, T... n>
-                static blt::ptrdiff_t sub(const zip_wrapper& a, const zip_wrapper& b,
-                                          std::integer_sequence<T, n...>)
-                {
-                    blt::ptrdiff_t min = std::numeric_limits<blt::ptrdiff_t>::max();
-                    ((min = std::min(min, std::get<n>(a.iter) - std::get<n>(b.iter))), ...);
-                    return min;
-                }
-            
-            public:
-                using zip_wrapper<std::bidirectional_iterator_tag, Iter...>::zip_wrapper;
                 
                 zip_wrapper& operator+=(blt::ptrdiff_t n)
                 {
@@ -154,54 +70,26 @@ namespace blt
                     return *this;
                 }
                 
-                friend zip_wrapper operator+(const zip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    return std::apply([n](auto& ... i) { return zip_wrapper{(i + n)...}; }, a.iter);
-                }
-                
-                friend zip_wrapper operator+(blt::ptrdiff_t n, const zip_wrapper& a)
-                {
-                    return std::apply([n](auto& ... i) { return zip_wrapper{(i + n)...}; }, a.iter);
-                }
-                
-                friend zip_wrapper operator-(const zip_wrapper& a, blt::ptrdiff_t n)
-                {
-                    return std::apply([n](auto& ... i) { return zip_wrapper{(i - n)...}; }, a.iter);
-                }
-                
-                friend zip_wrapper operator-(blt::ptrdiff_t n, const zip_wrapper& a)
-                {
-                    return std::apply([n](auto& ... i) { return zip_wrapper{(i - n)...}; }, a.iter);
-                }
-                
                 friend blt::ptrdiff_t operator-(const zip_wrapper& a, const zip_wrapper& b)
                 {
                     return sub(a, b, std::index_sequence_for<Iter...>());
                 }
                 
-                auto operator[](blt::ptrdiff_t n) const
+                auto base()
                 {
-                    return *(*this + n);
+                    return iter;
                 }
+            
+            protected:
+                std::tuple<Iter...> iter;
                 
-                friend bool operator<(const zip_wrapper& a, const zip_wrapper& b)
+                template<typename T, T... n>
+                static blt::ptrdiff_t sub(const zip_wrapper& a, const zip_wrapper& b,
+                                          std::integer_sequence<T, n...>)
                 {
-                    return b - a > 0;
-                }
-                
-                friend bool operator>(const zip_wrapper& a, const zip_wrapper& b)
-                {
-                    return b < a;
-                }
-                
-                friend bool operator>=(const zip_wrapper& a, const zip_wrapper& b)
-                {
-                    return !(a < b); // NOLINT
-                }
-                
-                friend bool operator<=(const zip_wrapper& a, const zip_wrapper& b)
-                {
-                    return !(a > b); // NOLINT
+                    blt::ptrdiff_t min = std::numeric_limits<blt::ptrdiff_t>::max();
+                    ((min = std::min(min, std::get<n>(a.iter) - std::get<n>(b.iter))), ...);
+                    return min;
                 }
         };
         
@@ -294,7 +182,8 @@ namespace blt
                     {
                         for (blt::size_t i = 0; i < n; i++)
                         {
-                            if constexpr (check){
+                            if constexpr (check)
+                            {
                                 if (begin == end)
                                     break;
                             }
@@ -341,7 +230,7 @@ namespace blt
                     m_begins(std::move(iterator_pairs.begin)...), m_ends(std::move(iterator_pairs.end)...)
             {}
             
-            zip_iterator_storage(iterator::zip_wrapper<iterator_category, Iter...> begins, iterator::zip_wrapper<iterator_category, Iter...> ends):
+            zip_iterator_storage(iterator::zip_wrapper<Iter...> begins, iterator::zip_wrapper<Iter...> ends):
                     m_begins(std::move(begins)), m_ends(std::move(ends))
             {}
             
@@ -372,8 +261,8 @@ namespace blt
             }
         
         private:
-            iterator::zip_wrapper<iterator_category, Iter...> m_begins;
-            iterator::zip_wrapper<iterator_category, Iter...> m_ends;
+            iterator::zip_wrapper<Iter...> m_begins;
+            iterator::zip_wrapper<Iter...> m_ends;
     };
     
     template<typename... Iter>
@@ -389,8 +278,8 @@ namespace blt
                               "reverse iteration is only supported on bidirectional or better iterators!");
             }
             
-            zip_iterator_storage_rev(iterator::zip_wrapper<iterator_category, Iter...> begins,
-                                     iterator::zip_wrapper<iterator_category, Iter...> ends): m_begins(std::move(begins)), m_ends(std::move(ends))
+            zip_iterator_storage_rev(iterator::zip_wrapper<Iter...> begins,
+                                     iterator::zip_wrapper<Iter...> ends): m_begins(std::move(begins)), m_ends(std::move(ends))
             {
                 static_assert((std::is_same_v<iterator_category, std::bidirectional_iterator_tag> ||
                                std::is_same_v<iterator_category, std::random_access_iterator_tag>),
@@ -413,8 +302,8 @@ namespace blt
             }
         
         private:
-            std::reverse_iterator<iterator::zip_wrapper<iterator_category, Iter...>> m_begins;
-            std::reverse_iterator<iterator::zip_wrapper<iterator_category, Iter...>> m_ends;
+            std::reverse_iterator<iterator::zip_wrapper<Iter...>> m_begins;
+            std::reverse_iterator<iterator::zip_wrapper<Iter...>> m_ends;
     };
     
     /*

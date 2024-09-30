@@ -21,7 +21,7 @@
 
 #include <blt/std/types.h>
 #include <blt/std/logging.h>
-#include <blt/iterator/iter_common.h>
+#include <blt/iterator/common.h>
 #include <blt/iterator/zip.h>
 #include <blt/meta/meta.h>
 #include <blt/meta/iterator.h>
