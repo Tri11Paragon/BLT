@@ -122,7 +122,7 @@ namespace blt
                 return *this;
             }
             
-            constexpr generalized_matrix<T, columns, rows> transpose() const
+            [[nodiscard]] constexpr generalized_matrix<T, columns, rows> transpose() const
             {
                 generalized_matrix<T, columns, rows> mat;
                 
@@ -135,7 +135,7 @@ namespace blt
                 return mat;
             }
             
-            T magnitude() const
+            [[nodiscard]] constexpr T magnitude() const
             {
                 T ret{};
                 for (blt::u32 i = 0; i < columns; i++)
@@ -146,13 +146,21 @@ namespace blt
                 return std::sqrt(ret);
             }
             
-            matrix_t normalize() const
+            [[nodiscard]] constexpr matrix_t normalize() const
             {
                 auto mag = magnitude();
                 matrix_t mat = *this;
                 if (mag == 0)
                     return mat;
                 return mat / mag;
+            }
+            
+            [[nodiscard]] constexpr matrix_t abs() const
+            {
+                matrix_t copy = *this;
+                for (auto& v : copy.data)
+                    v = v.abs();
+                return copy;
             }
             
             constexpr inline const blt::vec<T, rows>& operator[](u32 column) const
@@ -179,27 +187,12 @@ namespace blt
              * Takes a value stored across a row, taking one from each column in the specified row
              * @param row the row to extract from. defaults to the first row
              */
-            constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0) const
+            [[nodiscard]] constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0) const
             {
                 vec<T, columns> ret;
                 for (blt::u32 j = 0; j < columns; j++)
                     ret[j] = data[j][row];
                 return ret;
-            }
-            
-            /**
-             * Assign to this matrix from the row information in each column of a matrix
-             * Where columns can be assigned directly from each-other, row stored data must be assigned this way
-             * this was hacked together for an assignment and a better way is a TODO;
-             * @param to_column column in this matrix to assign to
-             * @param row the row place that the value is store in to assign from. Defaults to the first element in each column
-             */
-            template<blt::u32 p>
-            constexpr inline matrix_t& assign_to_column_from_column_rows(generalized_matrix<T, p, rows> mat, blt::u32 to_column, blt::u32 row = 0)
-            {
-                for (blt::u32 j = 0; j < rows; j++)
-                    data[to_column][j] = mat[j][row];
-                return *this;
             }
             
             constexpr inline matrix_t& operator+=(const matrix_t& other)
@@ -362,6 +355,16 @@ namespace blt
             constexpr inline friend bool operator!=(const matrix_t& left, const matrix_t& right)
             {
                 return !(left == right);
+            }
+            
+            auto begin() const
+            {
+                return data.begin();
+            }
+            
+            auto end() const
+            {
+                return data.end();
             }
         
         private:

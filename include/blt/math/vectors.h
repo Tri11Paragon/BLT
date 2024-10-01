@@ -124,6 +124,14 @@ namespace blt
                 return elements[3];
             }
             
+            [[nodiscard]] constexpr inline vec<T, size> abs() const
+            {
+                auto copy = *this;
+                for (auto& v : copy.elements)
+                    v = std::abs(v);
+                return copy;
+            }
+            
             [[nodiscard]] constexpr inline T magnitude() const
             {
                 T total = 0;
