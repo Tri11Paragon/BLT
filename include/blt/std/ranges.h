@@ -134,35 +134,35 @@ namespace blt
             iterator<C1_ITER, C2_ITER> end_;
     };
     
-    template<typename T, typename G>
-    static inline auto in_pairs(const T& container1, const G& container2)
-    {
-        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
-    }
-    
-    template<typename T, typename G>
-    static inline auto in_pairs(T& container1, G& container2)
-    {
-        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
-    }
-    
-    template<typename T, typename G, blt::size_t size>
-    static inline auto in_pairs(const T(& container1)[size], const G(& container2)[size])
-    {
-        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
-    }
-    
-    template<typename T, typename G, blt::size_t size>
-    static inline auto in_pairs(T(& container1)[size], G(& container2)[size])
-    {
-        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
-    }
-    
-    template<typename T, typename G>
-    static inline auto in_pairs(T&& container1, G&& container2)
-    {
-        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
-    }
+//    template<typename T, typename G>
+//    static inline auto in_pairs(const T& container1, const G& container2)
+//    {
+//        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
+//    }
+//
+//    template<typename T, typename G>
+//    static inline auto in_pairs(T& container1, G& container2)
+//    {
+//        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
+//    }
+//
+//    template<typename T, typename G, blt::size_t size>
+//    static inline auto in_pairs(const T(& container1)[size], const G(& container2)[size])
+//    {
+//        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
+//    }
+//
+//    template<typename T, typename G, blt::size_t size>
+//    static inline auto in_pairs(T(& container1)[size], G(& container2)[size])
+//    {
+//        return pair_enumerator{&container1[0], &container1[size], &container2[0], &container2[size]};
+//    }
+//
+//    template<typename T, typename G>
+//    static inline auto in_pairs(T&& container1, G&& container2)
+//    {
+//        return pair_enumerator{container1.begin(), container1.end(), container2.begin(), container2.end()};
+//    }
     
     template<typename T>
     struct range

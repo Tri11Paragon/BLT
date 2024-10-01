@@ -174,6 +174,12 @@ namespace blt::random
                 return BLT_RANDOM_FUNCTION(seed, min, max);
             }
             
+            template<typename T>
+            constexpr T get(T min, T max)
+            {
+                return BLT_RANDOM_FUNCTION(seed, min, max);
+            }
+            
             constexpr bool choice()
             {
                 return BLT_RANDOM_DOUBLE(seed) < 0.5;

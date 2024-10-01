@@ -15,7 +15,7 @@ namespace blt::tests {
     template<typename T>
     T* generateRandomData(T* arr, size_t size, uint32_t seed = 0) {
         for (size_t i = 0; i < size; i++)
-            arr[i] = blt::random::randomInt_c(i * size + seed, std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+            arr[i] = blt::random::random_t(i * size + seed).get(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
         
         return arr;
     }

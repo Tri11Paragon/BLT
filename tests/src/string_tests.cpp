@@ -19,6 +19,7 @@
 #include <blt/std/utility.h>
 #include <blt/std/string.h>
 #include <blt/std/logging.h>
+#include <blt/iterator/iterator.h>
 
 namespace blt::test
 {
@@ -32,27 +33,27 @@ namespace blt::test
         auto sv_splits_c = blt::string::split_sv(str, ' ');
         auto sv_splits_s = blt::string::split_sv(str, "LOT");
         
-        for (auto v : blt::enumerate(s_splits_c))
+        for (auto [index, item] : blt::enumerate(s_splits_c))
         {
-            if (v.second != sv_splits_c[v.first])
+            if (item != sv_splits_c[index])
             {
-                BLT_WARN("THEY DO NOT MATCH!!! '%s' vs '%s'", v.second.c_str(), std::string(sv_splits_c[v.first]).c_str());
+                BLT_WARN("THEY DO NOT MATCH!!! '%s' vs '%s'", item.c_str(), std::string(sv_splits_c[index]).c_str());
             } else
             {
-                BLT_DEBUG(v.second);
+                BLT_DEBUG(item);
             }
         }
         
         BLT_INFO("");
         
-        for (auto v : blt::enumerate(s_splits_s))
+        for (auto [index, item] : blt::enumerate(s_splits_s))
         {
-            if (v.second != sv_splits_s[v.first])
+            if (item != sv_splits_s[index])
             {
-                BLT_WARN("THEY DO NOT MATCH!!! '%s' vs '%s'", v.second.c_str(), std::string(sv_splits_s[v.first]).c_str());
+                BLT_WARN("THEY DO NOT MATCH!!! '%s' vs '%s'", item.c_str(), std::string(sv_splits_s[index]).c_str());
             } else
             {
-                BLT_DEBUG(v.second);
+                BLT_DEBUG(item);
             }
         }
     }

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/std/utility.h>
-#include <blt/std/format.h>
+#include <blt/format/format.h>
 #include <blt/std/logging.h>
 #include <blt/profiling/profiler_v2.h>
 #include <utility_test.h>

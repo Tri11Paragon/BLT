@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 0.21.3)
-set(BLT_TEST_VERSION 0.0.1)
+set(BLT_VERSION 1.1.7)
 
 set(BLT_TARGET BLT)
 
@@ -33,6 +32,8 @@ option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
 if(${BLT_DISABLE_STATS})
     add_compile_definitions(BLT_DISABLE_STATS)
 endif ()
+
+find_program(MOLD "mold")
 
 configure_file(include/blt/config.h.in config/blt/config.h @ONLY)
 
@@ -138,28 +139,62 @@ install(FILES ${CMAKE_BINARY_DIR}/config/blt/config.h DESTINATION ${CMAKE_INSTAL
 
 set_target_properties(${BLT_TARGET} PROPERTIES VERSION ${BLT_VERSION})
 set_target_properties(${BLT_TARGET} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+if (NOT ${MOLD} STREQUAL MOLD-NOTFOUND)
+    target_link_options(${BLT_TARGET} PUBLIC -fuse-ld=mold)
+endif ()
 
 install(TARGETS ${BLT_TARGET}
         CONFIGURATIONS RelWithDebInfo
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+macro(blt_add_project name source type)
+
+    project(${name}-${type})
+
+    add_executable(${name}-${type} ${source})
+
+    if (NOT ${MOLD} STREQUAL MOLD-NOTFOUND)
+        add_link_options(-fuse-ld=mold)
+    endif ()
+
+    target_link_libraries(${name}-${type} PRIVATE BLT)
+
+    target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    target_compile_definitions(${name}-${type} PRIVATE BLT_DEBUG_LEVEL=${DEBUG_LEVEL})
+
+    if (${TRACK_ALLOCATIONS})
+        target_compile_definitions(${name}-${type} PRIVATE BLT_TRACK_ALLOCATIONS=1)
+    endif ()
+
+    if (${ENABLE_ADDRSAN} MATCHES ON)
+        target_compile_options(${name}-${type} PRIVATE -fsanitize=address)
+        target_link_options(${name}-${type} PRIVATE -fsanitize=address)
+    endif ()
+
+    if (${ENABLE_UBSAN} MATCHES ON)
+        target_compile_options(${name}-${type} PRIVATE -fsanitize=undefined)
+        target_link_options(${name}-${type} PRIVATE -fsanitize=undefined)
+    endif ()
+
+    if (${ENABLE_TSAN} MATCHES ON)
+        target_compile_options(${name}-${type} PRIVATE -fsanitize=thread)
+        target_link_options(${name}-${type} PRIVATE -fsanitize=thread)
+    endif ()
+
+    add_test(NAME ${name} COMMAND ${name}-${type})
+
+    set(failRegex "\\[WARN\\]" "FAIL" "ERROR" "FATAL" "exception")
+    set_property(TEST ${name} PROPERTY FAIL_REGULAR_EXPRESSION "${failRegex}")
+
+    project(${BLT_TARGET})
+endmacro()
+
 if (${BUILD_TESTS})
-    message("Building test version ${BLT_TEST_VERSION}")
-    project(BLT_TESTS VERSION ${BLT_TEST_VERSION})
+    message("Building tests for version ${BLT_VERSION}")
 
-    include_directories(tests/include)
-
-    file(GLOB_RECURSE TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tests/src/*.cpp")
-
-    message("Using files ${TEST_FILES}")
-
-    add_executable(BLT_TESTS ${TEST_FILES})
-
-    target_link_libraries(BLT_TESTS PRIVATE BLT)
-
-    include(cmake/warnings.cmake)
-    include(cmake/sanitizers.cmake)
+    blt_add_project(blt-iterator tests/iterator_tests.cpp test)
 
     message("Built tests")
 endif ()

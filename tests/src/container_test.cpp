@@ -28,8 +28,8 @@ namespace blt::test
     void print(const T& ref)
     {
         BLT_TRACE_STREAM << "(" << ref.size() << ") [";
-        for (auto v : blt::enumerate(ref))
-            BLT_TRACE_STREAM << v.second << ((v.first != ref.size()-1) ? ", " : "]\n");
+        for (auto [index, item] : blt::enumerate(ref))
+            BLT_TRACE_STREAM << item << ((index != ref.size()-1) ? ", " : "]\n");
     }
     
     void vector_run()
