@@ -122,32 +122,43 @@ namespace blt::iterator
         {
             return *this->iter;
         }
-
-//        your_class& operator++()
-//        {
-//            return *this;
-//        }
-//
-//        your_class& operator--()
-//        {
-//            return *this;
-//        }
-//
-//        friend your_class operator+(const your_class& a, blt::ptrdiff_t n)
-//        {
-//            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-//                          "Iterator must allow random access");
-//        }
-//
-//        friend your_class operator-(const your_class& a, blt::ptrdiff_t n)
-//        {
-//            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-//                          "Iterator must allow random access");
-//        }
+    };
+    
+    template<typename Iter, typename Derived>
+    class deref_only_wrapper : public passthrough_wrapper<Iter, Derived, false>
+    {
+        public:
+            using passthrough_wrapper<Iter, Derived, false>::passthrough_wrapper;
+            
+            deref_only_wrapper& operator++()
+            {
+                ++this->iter;
+                return *this;
+            }
+            
+            deref_only_wrapper& operator--()
+            {
+                --this->iter;
+                return *this;
+            }
+            
+            deref_only_wrapper& operator+(blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                this->iter = this->iter + n;
+                return *this;
+            }
+            
+            deref_only_wrapper& operator-(blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                this->iter = this->iter - n;
+                return *this;
+            }
     };
     
     template<typename Iter, typename Func>
-    class map_wrapper : public passthrough_wrapper<Iter, map_wrapper<Iter, Func>>
+    class map_wrapper : public deref_only_wrapper<Iter, map_wrapper<Iter, Func>>
     {
         public:
             using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
@@ -156,40 +167,37 @@ namespace blt::iterator
             using pointer = value_type;
             using reference = value_type;
             
-            map_wrapper(Iter iter, Func func): passthrough_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
+            map_wrapper(Iter iter, Func func): deref_only_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
             {}
             
             reference operator*() const
             {
                 return func(*this->iter);
             }
-            
-            map_wrapper& operator++()
-            {
-                ++this->iter;
-                return *this;
-            }
-            
-            map_wrapper& operator--()
-            {
-                --this->iter;
-                return *this;
-            }
-            
-            friend map_wrapper operator+(const map_wrapper& a, blt::ptrdiff_t n)
-            {
-                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
-                return {a.iter + n, a.func};
-            }
-            
-            friend map_wrapper operator-(const map_wrapper& a, blt::ptrdiff_t n)
-            {
-                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
-                return {a.iter - n, a.func};
-            }
-        
         private:
             Func func;
+    };
+    
+    template<typename Iter, typename Pred>
+    class filter_wrapper : public deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>
+    {
+        public:
+            using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+            using value_type = meta::deref_return_t<Iter>;
+            using difference_type = blt::ptrdiff_t;
+            using pointer = value_type;
+            using reference = value_type;
+            
+            filter_wrapper(Iter iter, Pred func): deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>(std::move(iter)), func(std::move(func))
+            {}
+            
+            reference operator*() const
+            {
+                
+                return func(*this->iter);
+            }
+        private:
+            Pred func;
     };
     
     namespace impl

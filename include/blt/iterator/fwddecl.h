@@ -44,6 +44,9 @@ namespace blt
         template<typename Iter, typename Func>
         class map_wrapper;
         
+        template<typename Iter, typename Pred>
+        class filter_wrapper;
+        
         namespace impl
         {
             template<typename Derived>
