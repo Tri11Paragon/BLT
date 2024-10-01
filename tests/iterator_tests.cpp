@@ -191,10 +191,10 @@ void test_iterate()
         BLT_TRACE_STREAM << "Zip: " << a << " " << b << "\n";
     }
     BLT_TRACE("================================");
-    for (auto [i, data] : blt::iterate(array_1).zip(list_1).skip(3).take(4).enumerate())
+    for (auto [i, data] : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); }).zip(list_1).skip(3).take(4).enumerate())
     {
         auto [a, b] = data;
-        BLT_TRACE_STREAM << "Zip (" << i << "): " << a << " " << b << "\n";
+        BLT_TRACE_STREAM << "Map + Zip + Skip + Take + Enumerate (Index: " << i << ")> " << a << " " << b << "\n";
     }
 }
 

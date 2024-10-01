@@ -41,6 +41,9 @@ namespace blt
         template<typename... Iter>
         struct zip_wrapper;
         
+        template<typename Iter, typename Func>
+        class map_wrapper;
+        
         namespace impl
         {
             template<typename Derived>
@@ -48,12 +51,6 @@ namespace blt
             
             template<typename Derived>
             class take_t;
-            
-            template<typename Derived>
-            class zip_t;
-            
-            template<typename Derived>
-            class enumerate_t;
         }
     }
 }

@@ -108,20 +108,6 @@ namespace blt
     template<typename Iter>
     enumerate_iterator_container(Iter, Iter, blt::size_t) -> enumerate_iterator_container<Iter>;
     
-    namespace iterator::impl
-    {
-        template<typename Derived>
-        class enumerate_t
-        {
-            public:
-                auto enumerate()
-                {
-                    auto* d = static_cast<Derived*>(this);
-                    return enumerate_iterator_container{d->begin(), d->end(), static_cast<blt::size_t>(std::distance(d->begin(), d->end()))};
-                }
-        };
-    }
-    
     template<typename T>
     static inline auto enumerate(T& container)
     {

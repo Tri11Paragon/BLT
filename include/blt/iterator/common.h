@@ -123,27 +123,73 @@ namespace blt::iterator
             return *this->iter;
         }
 
-//        zip_wrapper& operator++()
+//        your_class& operator++()
 //        {
 //            return *this;
 //        }
 //
-//        zip_wrapper& operator--()
+//        your_class& operator--()
 //        {
 //            return *this;
 //        }
 //
-//        friend zip_wrapper operator+(const zip_wrapper& a, blt::ptrdiff_t n)
+//        friend your_class operator+(const your_class& a, blt::ptrdiff_t n)
 //        {
 //            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
 //                          "Iterator must allow random access");
 //        }
 //
-//        friend zip_wrapper operator-(const zip_wrapper& a, blt::ptrdiff_t n)
+//        friend your_class operator-(const your_class& a, blt::ptrdiff_t n)
 //        {
 //            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
 //                          "Iterator must allow random access");
 //        }
+    };
+    
+    template<typename Iter, typename Func>
+    class map_wrapper : public passthrough_wrapper<Iter, map_wrapper<Iter, Func>>
+    {
+        public:
+            using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+            using value_type = std::invoke_result_t<Func, meta::deref_return_t<Iter>>;
+            using difference_type = blt::ptrdiff_t;
+            using pointer = value_type;
+            using reference = value_type;
+            
+            map_wrapper(Iter iter, Func func): passthrough_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
+            {}
+            
+            reference operator*() const
+            {
+                return func(*this->iter);
+            }
+            
+            map_wrapper& operator++()
+            {
+                ++this->iter;
+                return *this;
+            }
+            
+            map_wrapper& operator--()
+            {
+                --this->iter;
+                return *this;
+            }
+            
+            friend map_wrapper operator+(const map_wrapper& a, blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                return {a.iter + n, a.func};
+            }
+            
+            friend map_wrapper operator-(const map_wrapper& a, blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                return {a.iter - n, a.func};
+            }
+        
+        private:
+            Func func;
     };
     
     namespace impl
@@ -289,6 +335,14 @@ namespace blt::iterator
             auto enumerate() const
             {
                 return enumerate_iterator_container{begin(), end(), static_cast<blt::size_t>(std::distance(begin(), end()))};
+            }
+            
+            template<typename Func>
+            auto map(Func func)
+            {
+                return iterator_container<blt::iterator::map_wrapper<IterBase, Func>>{
+                        blt::iterator::map_wrapper<IterBase, Func>{m_begin, func},
+                        blt::iterator::map_wrapper<IterBase, Func>{m_end, func}};
             }
             
             auto begin() const

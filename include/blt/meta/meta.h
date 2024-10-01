@@ -95,104 +95,10 @@ namespace blt::meta
     template<class T>
     inline constexpr bool is_streamable_v = is_streamable<T>::value;
     
-    namespace detail
-    {
-        template<typename Or>
-        struct value_type_helper
-        {
-            template<typename Subs>
-            inline static constexpr auto get(int) -> typename Subs::value_type
-            {
-                return std::declval<Subs::value_type>();
-            }
-            
-            template<typename>
-            inline static constexpr Or get(...)
-            {
-                return std::declval<Or>();
-            }
-        };
-        
-        template<typename Or>
-        struct reference_type_helper
-        {
-            template<typename Subs>
-            inline static constexpr auto get(int) -> typename Subs::reference
-            {
-                return std::declval<typename Subs::reference>();
-            }
-            
-            template<typename>
-            inline static constexpr Or get(...)
-            {
-                return std::declval<Or>();
-            }
-        };
-        
-        template<typename Or>
-        struct const_reference_type_helper
-        {
-            template<typename Subs>
-            inline static constexpr auto get(int) -> typename Subs::const_reference
-            {
-                return std::declval<typename Subs::const_reference>();
-            }
-            
-            template<typename>
-            inline static constexpr Or get(...)
-            {
-                return std::declval<Or>();
-            }
-        };
-        
-        template<typename Or>
-        struct pointer_type_helper
-        {
-            template<typename Subs>
-            inline static constexpr auto get(int) -> typename Subs::pointer
-            {
-                return std::declval<typename Subs::pointer>();
-            }
-            
-            template<typename>
-            inline static constexpr Or get(...)
-            {
-                return std::declval<Or>();
-            }
-        };
-        
-        template<typename Or>
-        struct difference_type_helper
-        {
-            template<typename Subs>
-            inline static constexpr auto get(int) -> typename Subs::difference_type
-            {
-                return std::declval<typename Subs::difference_type>();
-            }
-            
-            template<typename>
-            inline static constexpr Or get(...)
-            {
-                return std::declval<Or>();
-            }
-        };
-    }
-    
-    template<typename T, typename Or>
-    using value_type_t = decltype(detail::value_type_helper<Or>::template get<T>(0));
-    template<typename T, typename Or>
-    using difference_t = decltype(detail::difference_type_helper<Or>::template get<T>(0));
-    template<typename T, typename Or>
-    using pointer_t = decltype(detail::pointer_type_helper<Or>::template get<T>(0));
-    template<typename T, typename Or>
-    using reference_t = decltype(detail::reference_type_helper<Or>::template get<T>(0));
-    template<typename T, typename Or>
-    using const_reference_t = decltype(detail::const_reference_type_helper<Or>::template get<T>(0));
-    
     template<typename T>
     struct arrow_return
     {
-        using type = typename std::result_of<decltype(&T::operator->)(T*)>::type;
+        using type = typename std::invoke_result_t<decltype(&T::operator->), T*>;
     };
     
     template<typename T>
@@ -208,7 +114,7 @@ namespace blt::meta
     template<typename T>
     struct deref_return
     {
-        using type = typename std::result_of<decltype(&T::operator*)(T*)>::type;
+        using type = typename std::invoke_result_t<decltype(&T::operator*), T&>;
     };
     
     template<typename T>
