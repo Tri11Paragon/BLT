@@ -21,7 +21,10 @@
 
 #include <type_traits>
 #include <iterator>
+#include <blt/std/types.h>
+#include <blt/iterator/fwddecl.h>
 #include <blt/meta/meta.h>
+#include <blt/meta/iterator.h>
 
 namespace blt::iterator
 {
@@ -37,10 +40,7 @@ namespace blt::iterator
         
         base_wrapper operator--(int)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag> ||
-                          std::is_same_v<typename Derived::iterator_category,
-                                  std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_bidirectional_or_better_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             auto tmp = *this;
             --*this;
             return tmp;
@@ -48,8 +48,7 @@ namespace blt::iterator
         
         auto operator[](blt::ptrdiff_t n) const
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return *(*this + n);
         }
         
@@ -60,29 +59,25 @@ namespace blt::iterator
         
         friend bool operator<(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return b - a > 0;
         }
         
         friend bool operator>(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return b < a;
         }
         
         friend bool operator>=(const base_wrapper& a, base_wrapper& b)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return !(a < b); // NOLINT
         }
         
         friend bool operator<=(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>,
-                          "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return !(a > b); // NOLINT
         }
         
@@ -127,6 +122,28 @@ namespace blt::iterator
         {
             return *this->iter;
         }
+
+//        zip_wrapper& operator++()
+//        {
+//            return *this;
+//        }
+//
+//        zip_wrapper& operator--()
+//        {
+//            return *this;
+//        }
+//
+//        friend zip_wrapper operator+(const zip_wrapper& a, blt::ptrdiff_t n)
+//        {
+//            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+//                          "Iterator must allow random access");
+//        }
+//
+//        friend zip_wrapper operator-(const zip_wrapper& a, blt::ptrdiff_t n)
+//        {
+//            static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
+//                          "Iterator must allow random access");
+//        }
     };
     
     namespace impl
@@ -142,8 +159,17 @@ namespace blt::iterator
                     auto begin = d->begin();
                     auto end = d->end();
                     
-                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::forward_iterator_tag> ||
-                                  std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag>)
+                    if constexpr (meta::is_random_access_iterator_category_v<typename Derived::iterator_category>)
+                    {
+                        // random access iterators can have math directly applied to them.
+                        if constexpr (check)
+                        {
+                            return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)), end};
+                        } else
+                        {
+                            return Derived{begin + n, end};
+                        }
+                    } else
                     {
                         for (blt::size_t i = 0; i < n; i++)
                         {
@@ -155,16 +181,6 @@ namespace blt::iterator
                             ++begin;
                         }
                         return Derived{std::move(begin), std::move(end)};
-                    } else if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
-                    {
-                        // random access iterators can have math directly applied to them.
-                        if constexpr (check)
-                        {
-                            return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)), end};
-                        } else
-                        {
-                            return Derived{begin + n, end};
-                        }
                     }
                 }
             
@@ -183,15 +199,15 @@ namespace blt::iterator
                 template<bool check>
                 auto take_base(blt::size_t n)
                 {
-                    static_assert(!std::is_same_v<typename Derived::iterator_category, std::input_iterator_tag>,
+                    static_assert(!meta::is_input_iterator_category_v<typename Derived::iterator_category>,
                                   "Cannot .take() on an input iterator!");
                     auto* d = static_cast<Derived*>(this);
                     auto begin = d->begin();
                     auto end = d->end();
                     
                     // take variant for forward and bidirectional iterators
-                    if constexpr (std::is_same_v<typename Derived::iterator_category, std::forward_iterator_tag> ||
-                                  std::is_same_v<typename Derived::iterator_category, std::bidirectional_iterator_tag>)
+                    if constexpr (meta::is_forward_iterator_category_v<typename Derived::iterator_category> ||
+                                  meta::is_bidirectional_iterator_category_v<typename Derived::iterator_category>)
                     {
                         // with these guys we have to loop forward to move the iterators. an unfortunate inefficiency
                         auto new_end = begin;
@@ -205,7 +221,7 @@ namespace blt::iterator
                             ++new_end;
                         }
                         return Derived{std::move(begin), std::move(new_end)};
-                    } else if constexpr (std::is_same_v<typename Derived::iterator_category, std::random_access_iterator_tag>)
+                    } else if constexpr (meta::is_random_access_iterator_category_v<typename Derived::iterator_category>)
                     {
                         // random access iterators can have math directly applied to them.
                         if constexpr (check)
@@ -232,7 +248,7 @@ namespace blt::iterator
                                public impl::skip_t<iterator_container<IterBase>>
     {
         public:
-            using iterator_category = typename IterBase::iterator_category;
+            using iterator_category = typename std::iterator_traits<IterBase>::iterator_category;
             using iterator = IterBase;
             
             iterator_container(IterBase begin, IterBase end): m_begin(std::move(begin)), m_end(std::move(end))
@@ -242,13 +258,37 @@ namespace blt::iterator
             iterator_container(Iter&& begin, Iter&& end): m_begin(std::forward<Iter>(begin)), m_end(std::forward<Iter>(end))
             {}
             
-            auto rev()
+            auto rev() const
             {
-                static_assert((std::is_same_v<typename IterBase::iterator_category, std::bidirectional_iterator_tag> ||
-                               std::is_same_v<typename IterBase::iterator_category, std::random_access_iterator_tag>),
+                static_assert(meta::is_bidirectional_or_better_category_v<iterator_category>,
                               ".rev() must be used with bidirectional (or better) iterators!");
                 return iterator_container<std::reverse_iterator<IterBase>>{std::reverse_iterator<IterBase>{end()},
                                                                            std::reverse_iterator<IterBase>{begin()}};
+            }
+            
+            template<typename... Iter>
+            auto zip(iterator_pair<Iter>... iterator_pairs) const
+            {
+                return zip_iterator_container(iterator_pair<decltype(begin())>{begin(), end()}, iterator_pairs...);
+            }
+            
+            template<typename... Container>
+            auto zip(Container& ... containers) const
+            {
+                return zip_iterator_container(iterator_pair<decltype(begin())>{begin(), end()},
+                                              iterator_pair{containers.begin(), containers.end()}...);
+            }
+            
+            template<typename... Container>
+            auto zip(const Container& ... containers) const
+            {
+                return zip_iterator_container(iterator_pair<decltype(begin())>{begin(), end()},
+                                              iterator_pair{containers.begin(), containers.end()}...);
+            }
+            
+            auto enumerate() const
+            {
+                return enumerate_iterator_container{begin(), end(), static_cast<blt::size_t>(std::distance(begin(), end()))};
             }
             
             auto begin() const

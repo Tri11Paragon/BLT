@@ -20,8 +20,6 @@
 #define BLT_ITERATOR_ZIP
 
 #include <blt/iterator/common.h>
-#include <blt/meta/meta.h>
-#include <blt/meta/iterator.h>
 #include <tuple>
 
 namespace blt
@@ -57,21 +55,20 @@ namespace blt
                 
                 zip_wrapper& operator--()
                 {
+                    static_assert(meta::is_bidirectional_or_better_category_v<iterator_category>, "Iterator must be bidirectional or better!");
                     std::apply([](auto& ... i) { ((--i), ...); }, this->iter);
                     return *this;
                 }
                 
                 friend zip_wrapper operator+(const zip_wrapper& a, blt::ptrdiff_t n)
                 {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
+                    static_assert(meta::is_random_access_iterator_category_v<iterator_category>, "Iterator must allow random access");
                     return std::apply([n](auto& ... i) { return zip_wrapper((i + n)...); }, a.iter);
                 }
                 
                 friend zip_wrapper operator-(const zip_wrapper& a, blt::ptrdiff_t n)
                 {
-                    static_assert(std::is_same_v<iterator_category, std::random_access_iterator_tag>,
-                                  "Iterator must allow random access");
+                    static_assert(meta::is_random_access_iterator_category_v<iterator_category>, "Iterator must allow random access");
                     return std::apply([n](auto& ... i) { return zip_wrapper((i - n)...); }, a.iter);
                 }
                 
@@ -97,31 +94,19 @@ namespace blt
                     return min;
                 }
         };
-
-//        template<typename Iter>
-//        struct zip_wrapper<Iter> : public Iter
-//        {
-//            using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-//            using value_type = typename std::iterator_traits<Iter>::value_type;
-//            using difference_type = typename std::iterator_traits<Iter>::difference_type;
-//            using pointer = typename std::iterator_traits<Iter>::pointer;
-//            using reference = typename std::iterator_traits<Iter>::reference;
-//
-//            using Iter::Iter;
-//        };
+        
+        template<typename Iter>
+        struct iterator_pair
+        {
+            using type = Iter;
+            
+            iterator_pair(Iter begin, Iter end): begin(std::move(begin)), end(std::move(end))
+            {}
+            
+            Iter begin;
+            Iter end;
+        };
     }
-    
-    template<typename Iter>
-    struct iterator_pair
-    {
-        using type = Iter;
-        
-        iterator_pair(Iter begin, Iter end): begin(std::move(begin)), end(std::move(end))
-        {}
-        
-        Iter begin;
-        Iter end;
-    };
     
     template<typename... Iter>
     class zip_iterator_container : public iterator::iterator_container<iterator::zip_wrapper<Iter...>>
@@ -129,24 +114,24 @@ namespace blt
         public:
             using iterator::iterator_container<iterator::zip_wrapper<Iter...>>::iterator_container;
             
-            explicit zip_iterator_container(iterator_pair<Iter>... iterator_pairs):
+            explicit zip_iterator_container(iterator::iterator_pair<Iter>... iterator_pairs):
                     iterator::iterator_container<iterator::zip_wrapper<Iter...>>(iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
                                                                                  iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...})
             {}
         
     };
     
-    namespace impl
+    namespace iterator::impl
     {
         template<typename Derived>
         class zip_t
         {
             public:
                 template<typename... Iter>
-                auto zip(iterator_pair<Iter>... iterator_pairs)
+                auto zip(iterator::iterator_pair<Iter>... iterator_pairs)
                 {
                     auto* d = static_cast<Derived*>(this);
-                    return zip_iterator_container(iterator_pair<decltype(d->begin())>{d->begin(), d->end()}, iterator_pairs...);
+                    return zip_iterator_container(iterator::iterator_pair<decltype(d->begin())>{d->begin(), d->end()}, iterator_pairs...);
                 }
         };
     }
@@ -156,7 +141,7 @@ namespace blt
      */
     
     template<typename... Iter>
-    zip_iterator_container(iterator_pair<Iter>...) -> zip_iterator_container<Iter...>;
+    zip_iterator_container(iterator::iterator_pair<Iter>...) -> zip_iterator_container<Iter...>;
     
     template<typename... Iter>
     zip_iterator_container(std::initializer_list<Iter>...) -> zip_iterator_container<Iter...>;
@@ -169,8 +154,43 @@ namespace blt
     template<typename... Container>
     auto zip(Container& ... container)
     {
-        return zip_iterator_container{iterator_pair{container.begin(), container.end()}...};
+        return zip_iterator_container{iterator::iterator_pair{std::begin(container), std::end(container)}...};
     }
+    
+    template<typename... Container>
+    auto zip(const Container& ... container)
+    {
+        return zip_iterator_container{iterator::iterator_pair{std::begin(container), std::end(container)}...};
+    }
+    
+    template<typename T, typename G>
+    static inline auto in_pairs(const T& container1, const G& container2)
+    {
+        return zip_iterator_container{iterator::iterator_pair{container1.begin(), container1.end()},
+                                      iterator::iterator_pair{container2.begin(), container2.end()}};
+    }
+    
+    template<typename T, typename G>
+    static inline auto in_pairs(T& container1, G& container2)
+    {
+        return zip_iterator_container{iterator::iterator_pair{container1.begin(), container1.end()},
+                                      iterator::iterator_pair{container2.begin(), container2.end()}};
+    }
+    
+    template<typename T, typename G, blt::size_t size>
+    static inline auto in_pairs(const T(& container1)[size], const G(& container2)[size])
+    {
+        return zip_iterator_container{iterator::iterator_pair{&container1[0], &container1[size]},
+                                      iterator::iterator_pair{&container2[0], &container2[size]}};
+    }
+    
+    template<typename T, typename G, blt::size_t size>
+    static inline auto in_pairs(T(& container1)[size], G(& container2)[size])
+    {
+        return zip_iterator_container{iterator::iterator_pair{&container1[0], &container1[size]},
+                                      iterator::iterator_pair{&container2[0], &container2[size]}};
+    }
+    
 }
 
 #endif //BLT_ITERATOR_ZIP

@@ -23,6 +23,7 @@
 #include <blt/iterator/zip.h>
 #include <blt/iterator/enumerate.h>
 #include <blt/iterator/iterator.h>
+#include <blt/std/ranges.h>
 #include <blt/format/boxing.h>
 #include <array>
 #include <forward_list>
@@ -122,6 +123,10 @@ void test_enumerate()
 void test_pairs()
 {
     blt::log_box_t box(std::cout, "Pairs Tests", 25);
+    for (auto [a1, a2] : blt::in_pairs(array_1, array_2))
+    {
+        BLT_TRACE_STREAM << a1 << " : " << a2 << "\n";
+    }
 }
 
 void test_zip()
@@ -158,6 +163,41 @@ void test_zip()
     }
 }
 
+void test_iterate()
+{
+    blt::log_box_t box(std::cout, "Iterate Tests", 25);
+    for (auto v : blt::iterate(array_1))
+    {
+        BLT_TRACE_STREAM << "Element: " << v << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto v : blt::iterate(array_1).skip(5))
+    {
+        BLT_TRACE_STREAM << "Element: " << v << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto v : blt::iterate(array_1).take(5))
+    {
+        BLT_TRACE_STREAM << "Element: " << v << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto v : blt::iterate(array_1).rev())
+    {
+        BLT_TRACE_STREAM << "Element: " << v << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [a, b] : blt::iterate(array_1).zip(list_1))
+    {
+        BLT_TRACE_STREAM << "Zip: " << a << " " << b << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto [i, data] : blt::iterate(array_1).zip(list_1).skip(3).take(4).enumerate())
+    {
+        auto [a, b] = data;
+        BLT_TRACE_STREAM << "Zip (" << i << "): " << a << " " << b << "\n";
+    }
+}
+
 int main()
 {
     test_enumerate();
@@ -165,4 +205,6 @@ int main()
     test_pairs();
     std::cout << std::endl;
     test_zip();
+    std::cout << std::endl;
+    test_iterate();
 }
