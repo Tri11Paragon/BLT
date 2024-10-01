@@ -199,6 +199,8 @@ def make_release(env: EnvData, name):
 		'X-GitHub-Api-Version': '2022-11-28'
 	}
 	for url in urls:
+		if not "github" in url:
+			continue
 		response = requests.post(url, headers=headers, data=json.dumps(data))
 		if response.status_code == 201:
 			print('Release created successfully!')
