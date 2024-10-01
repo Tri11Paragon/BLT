@@ -21,6 +21,7 @@
 #include <blt/math/vectors.h>
 #include <blt/math/log_util.h>
 #include <blt/iterator/zip.h>
+#include <blt/iterator/enumerate.h>
 #include <blt/iterator/iterator.h>
 #include <blt/format/boxing.h>
 #include <array>

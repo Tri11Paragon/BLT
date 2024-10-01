@@ -145,8 +145,8 @@ namespace blt
                 template<typename... Iter>
                 auto zip(iterator_pair<Iter>... iterator_pairs)
                 {
-                    zip_iterator_container(iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
-                                           iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...});
+                    auto* d = static_cast<Derived*>(this);
+                    return zip_iterator_container(iterator_pair<decltype(d->begin())>{d->begin(), d->end()}, iterator_pairs...);
                 }
         };
     }

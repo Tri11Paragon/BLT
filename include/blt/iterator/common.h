@@ -115,7 +115,7 @@ namespace blt::iterator
             }
         
         protected:
-            mutable Iter iter;
+            Iter iter;
     };
     
     template<typename Iter, typename Derived>
