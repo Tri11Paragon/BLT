@@ -196,6 +196,58 @@ void test_iterate()
         auto [a, b] = data;
         BLT_TRACE_STREAM << "Map + Zip + Skip + Take + Enumerate (Index: " << i << ")> " << a << " " << b << "\n";
     }
+    BLT_TRACE("================================");
+    for (auto [i, data] : blt::iterate(array_1).map(
+            [](const blt::vec2& in) {
+                return in.normalize();
+            }).zip(list_1).skip(3).take(4).enumerate())
+    {
+        auto [a, b] = data;
+        BLT_TRACE_STREAM << "Map + Zip + Skip + Take + Enumerate (Index: " << i << ")> " << a << " " << b << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto a : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); })
+                                       .filter([](const blt::vec2& f) { return f.x() > 0.5; }))
+    {
+        if (!a)
+            continue;
+        auto v = *a;
+        BLT_TRACE_STREAM << " So this one works? " << v << "\n";
+    }
+    BLT_TRACE("================================");
+    for (auto a : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); })
+                                       .enumerate().filter([](const auto& f) { return f.value.x() > 0.5; }))
+    {
+        if (!a)
+            continue;
+        auto [index, v] = *a;
+        BLT_TRACE_STREAM << " So this one works? (" << index << ")" << v << "\n";
+    }
+    BLT_TRACE("================================");
+//    for (auto a : blt::iterate(array_1).filter([](const auto& f) { return f.x() > 3 && f.y() < 6; }).take(2))
+//    {
+//        if (!a)
+//            continue;
+//        auto v = *a;
+//        BLT_TRACE_STREAM << " How about this one?? " << v.get() << "\n";
+//    }
+    for (auto a : blt::iterate(array_1).map([](const auto& f) { return f.x() > 3 && f.y() < 6; }))
+    {
+        BLT_TRACE_STREAM << " How about this one?? " << a << "\n";
+    }
+
+//    for (auto [value, a] : blt::iterate(array_1).map(
+//            [](const blt::vec2& in) {
+//                return in.normalize();
+//            }).enumerate().filter([](const auto& v) {
+//                return v.index % 2 == 0;
+//            }).zip(array_2).skip(3))
+//    {
+//        if (!value)
+//            continue;
+//        auto [i, v] = *value;
+//        BLT_TRACE_STREAM << "Enumerate Filter (Index: " << i << ")> " << v << "\n";
+//    }
 }
 
 int main()

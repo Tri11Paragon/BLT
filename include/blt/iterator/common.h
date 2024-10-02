@@ -25,6 +25,8 @@
 #include <blt/iterator/fwddecl.h>
 #include <blt/meta/meta.h>
 #include <blt/meta/iterator.h>
+#include <functional>
+#include <optional>
 
 namespace blt::iterator
 {
@@ -110,7 +112,7 @@ namespace blt::iterator
             }
         
         protected:
-            Iter iter;
+            mutable Iter iter;
     };
     
     template<typename Iter, typename Derived>
@@ -167,13 +169,15 @@ namespace blt::iterator
             using pointer = value_type;
             using reference = value_type;
             
-            map_wrapper(Iter iter, Func func): deref_only_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
+            map_wrapper(Iter iter, Func func):
+                    deref_only_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
             {}
             
             reference operator*() const
             {
                 return func(*this->iter);
             }
+        
         private:
             Func func;
     };
@@ -183,19 +187,27 @@ namespace blt::iterator
     {
         public:
             using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-            using value_type = meta::deref_return_t<Iter>;
+            using value_type = std::conditional_t<
+                    std::is_reference_v<meta::deref_return_t<Iter>>,
+                    std::optional<std::reference_wrapper<std::remove_reference_t<meta::deref_return_t<Iter>>>>,
+                    std::optional<meta::deref_return_t<Iter>>>;
             using difference_type = blt::ptrdiff_t;
             using pointer = value_type;
             using reference = value_type;
             
-            filter_wrapper(Iter iter, Pred func): deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>(std::move(iter)), func(std::move(func))
+            filter_wrapper(Iter iter, Pred func):
+                    deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>(std::move(iter)), func(std::move(func))
             {}
             
             reference operator*() const
             {
-                
-                return func(*this->iter);
+                if (!func(*this->iter))
+                {
+                    return {};
+                }
+                return *this->iter;
             }
+        
         private:
             Pred func;
     };
@@ -346,11 +358,19 @@ namespace blt::iterator
             }
             
             template<typename Func>
-            auto map(Func func)
+            auto map(Func func) const
             {
                 return iterator_container<blt::iterator::map_wrapper<IterBase, Func>>{
                         blt::iterator::map_wrapper<IterBase, Func>{m_begin, func},
                         blt::iterator::map_wrapper<IterBase, Func>{m_end, func}};
+            }
+            
+            template<typename Pred>
+            auto filter(Pred pred) const
+            {
+                return iterator_container<blt::iterator::filter_wrapper<IterBase, Pred>>{
+                        blt::iterator::filter_wrapper<IterBase, Pred>{m_begin, pred},
+                        blt::iterator::filter_wrapper<IterBase, Pred>{m_end, pred}};
             }
             
             auto begin() const
