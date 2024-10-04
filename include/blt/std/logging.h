@@ -154,7 +154,7 @@ namespace blt::logging
         inline auto BRIGHT_WHITE_BACKGROUND = "107";
         
         template<typename... Args>
-        inline auto MAKE_COLOR(Args... colors)
+        inline auto make_color(Args... colors)
         {
             std::string mode;
             ((mode + std::string(colors) + ";"), ...);
