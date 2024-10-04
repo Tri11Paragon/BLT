@@ -12,6 +12,7 @@
 #include <functional>
 #include <sstream>
 #include <blt/config.h>
+#include <blt/std/types.h>
 #include <iostream>
 #include <cstdarg>
 
