@@ -263,6 +263,14 @@ namespace blt::logging
     void log_stream_internal(const std::string& str, const logger& logger);
     
     template<typename T>
+    inline std::string to_string_stream(const T& t)
+    {
+        std::stringstream stream;
+        stream << t;
+        return stream.str();
+    }
+    
+    template<typename T>
     inline static void log_stream(const T& t, const logger& logger)
     {
         if constexpr (std::is_arithmetic_v<T> && !std::is_same_v<T, char>)
@@ -273,9 +281,7 @@ namespace blt::logging
             log_stream_internal(t, logger);
         } else
         {
-            std::stringstream stream;
-            stream << t;
-            log_stream_internal(stream.str(), logger);
+            log_stream_internal(to_string_stream(t), logger);
         }
     }
     
@@ -295,9 +301,7 @@ namespace blt::logging
             log_internal(std::string(t), level, file, line, args);
         } else
         {
-            std::stringstream stream;
-            stream << t;
-            log_internal(stream.str(), level, file, line, args);
+            log_internal(to_string_stream(t), level, file, line, args);
         }
         va_end(args);
     }
