@@ -157,7 +157,7 @@ namespace blt::logging
         inline auto make_color(Args... colors)
         {
             std::string mode;
-            ((mode + std::string(colors) + ";"), ...);
+            ((mode += std::string(colors) + ";"), ...);
             return ESC("[" + mode.substr(0, mode.size() - 1) + "m");
         }
     }
