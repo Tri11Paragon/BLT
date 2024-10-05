@@ -25,6 +25,10 @@ namespace blt
     template<typename T, blt::u32 rows, blt::u32 columns>
     class generalized_matrix
     {
+        public:
+            static constexpr auto data_rows = rows;
+            static constexpr auto data_columns = columns;
+        private:
             using matrix_t = generalized_matrix<T, rows, columns>;
             enum class init_type
             {
