@@ -168,10 +168,7 @@ namespace blt
             {
                 matrix_t copy = *this;
                 for (auto& v : copy.data)
-                {
-                    for (auto& d : blt::iterate(v.begin(), v.end()))
-                        d = d >= 0 ? 1 : -1;
-                }
+                    v = v.bipolar();
                 return copy;
             }
             

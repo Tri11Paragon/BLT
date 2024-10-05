@@ -134,6 +134,14 @@ namespace blt
                 return copy;
             }
             
+            [[nodiscard]] constexpr inline vec<T, size> bipolar() const
+            {
+                auto copy = *this;
+                for (auto& v : copy.elements)
+                    v = v >= 0 ? 1 : -1;
+                return copy;
+            }
+            
             [[nodiscard]] constexpr inline T magnitude() const
             {
                 T total = 0;
