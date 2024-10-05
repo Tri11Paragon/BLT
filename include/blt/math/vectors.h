@@ -266,22 +266,22 @@ namespace blt
                 return elements.data();
             }
             
-            constexpr auto begin()
+            [[nodiscard]] constexpr auto begin() const
             {
                 return elements.begin();
             }
             
-            constexpr auto end()
+            [[nodiscard]] constexpr auto end() const
             {
                 return elements.end();
             }
             
-            constexpr auto rbegin()
+            [[nodiscard]] constexpr auto rbegin() const
             {
                 return elements.rbegin();
             }
             
-            constexpr auto rend()
+            [[nodiscard]] constexpr auto rend() const
             {
                 return elements.rend();
             }
