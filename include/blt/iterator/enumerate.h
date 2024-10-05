@@ -111,13 +111,15 @@ namespace blt
     template<typename T>
     static inline auto enumerate(T& container)
     {
-        return enumerate_iterator_container{container.begin(), container.end(), container.size()};
+        return enumerate_iterator_container{container.begin(), container.end(),
+                                            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))};
     }
     
     template<typename T>
     static inline auto enumerate(const T& container)
     {
-        return enumerate_iterator_container{container.begin(), container.end(), container.size()};
+        return enumerate_iterator_container{container.begin(), container.end(),
+                                            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))};
     }
     
     template<typename T, blt::size_t size>
