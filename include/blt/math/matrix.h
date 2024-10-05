@@ -12,6 +12,7 @@
 #include <type_traits>
 #include <array>
 #include <initializer_list>
+#include "blt/iterator/iterator.h"
 
 #ifndef M_PI
 // MSVC does not have M_PI
@@ -160,6 +161,17 @@ namespace blt
                 matrix_t copy = *this;
                 for (auto& v : copy.data)
                     v = v.abs();
+                return copy;
+            }
+            
+            [[nodiscard]] constexpr matrix_t bipolar() const
+            {
+                matrix_t copy = *this;
+                for (auto& v : copy.data)
+                {
+                    for (auto& d : blt::iterate(v.begin(), v.end()))
+                        d = d >= 0 ? 1 : -1;
+                }
                 return copy;
             }
             

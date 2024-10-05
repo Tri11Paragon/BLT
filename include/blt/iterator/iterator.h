@@ -30,6 +30,12 @@ namespace blt
 {
     
     template<typename T>
+    static inline auto iterate(T begin, T end)
+    {
+        return iterator::iterator_container<T>{std::move(begin), std::move(end)};
+    }
+    
+    template<typename T>
     static inline auto iterate(T& container)
     {
         return iterator::iterator_container<decltype(container.begin())>{container.begin(), container.end()};

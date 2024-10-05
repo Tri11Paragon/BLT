@@ -34,6 +34,8 @@ namespace blt
         private:
             std::array<T, size> elements;
         public:
+            constexpr static blt::u32 data_size = size;
+            
             constexpr vec()
             {
                 for (auto& v : elements)
