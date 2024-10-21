@@ -252,6 +252,22 @@ namespace blt::string
 #endif
     }
     
+    inline std::string ensure_ends_with_path_separator(std::string_view string)
+    {
+        if (ends_with(string, '/'))
+            return std::string(string);
+        else
+            return std::string(string) += '/';
+    }
+    
+    inline std::string ensure_ends_with_path_separator(std::string&& string)
+    {
+        if (ends_with(string, '/'))
+            return string;
+        else
+            return (std::move(string) + '/');
+    }
+    
     class match
     {
         private:

@@ -130,10 +130,13 @@ namespace blt
         {
             auto size = pos - from;
             auto token = s.substr(from, size);
-            tokens.emplace_back(token);
+            if (!token.empty())
+                tokens.emplace_back(token);
             from += size + delim.length();
         }
-        tokens.emplace_back(s.substr(from));
+        auto str = s.substr(from);
+        if (!str.empty())
+            tokens.emplace_back(str);
         return tokens;
     }
     
@@ -146,10 +149,13 @@ namespace blt
         {
             auto size = pos - from;
             auto token = s.substr(from, size);
-            tokens.emplace_back(token);
+            if (!token.empty())
+                tokens.emplace_back(token);
             from += size + 1;
         }
-        tokens.emplace_back(s.substr(from));
+        auto str = s.substr(from);
+        if (!str.empty())
+            tokens.emplace_back(str);
         return tokens;
     }
     
@@ -162,10 +168,13 @@ namespace blt
         {
             auto size = pos - from;
             auto token = s.substr(from, size);
-            tokens.push_back(token);
+            if (!token.empty())
+                tokens.push_back(token);
             from += size + delim.length();
         }
-        tokens.push_back(s.substr(from));
+        auto str = s.substr(from);
+        if (!str.empty())
+            tokens.push_back(str);
         return tokens;
     }
     
@@ -178,10 +187,13 @@ namespace blt
         {
             auto size = pos - from;
             auto token = s.substr(from, size);
-            tokens.push_back(token);
+            if (!token.empty())
+                tokens.push_back(token);
             from += size + 1;
         }
-        tokens.push_back(s.substr(from));
+        auto str = s.substr(from);
+        if (!str.empty())
+            tokens.push_back(str);
         return tokens;
     }
     
