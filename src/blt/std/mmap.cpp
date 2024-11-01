@@ -21,6 +21,8 @@
     
     #include <sys/mman.h>
 
+#else
+#include <blt/std/assert.h>
 #endif
 
 namespace blt
@@ -99,16 +101,23 @@ namespace blt
         }
         return buffer;
 #else
+        (void)page_type;
+        (void)bytes;
         BLT_ABORT("Platform not supported for huge page allocation!");
 #endif
     }
     
     void mmap_free(void* ptr, blt::size_t bytes)
     {
+#ifdef __unix__
         if (munmap(ptr, bytes))
         {
             BLT_ERROR_STREAM << "Failed to deallocate\n";
             throw bad_alloc_t(handle_mmap_error());
         }
+#else
+        (void)ptr;
+        (void)bytes;
+#endif
     }
 }

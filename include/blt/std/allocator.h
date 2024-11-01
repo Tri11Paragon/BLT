@@ -546,6 +546,7 @@ namespace blt
     template<typename T, bool WARN_ON_FAIL = false>
     static inline T* allocate_huge_page(blt::size_t BLOCK_SIZE, blt::size_t HUGE_PAGE_SIZE = BLT_2MB_SIZE)
     {
+#ifdef __unix__
         BLT_ASSERT((BLOCK_SIZE & (HUGE_PAGE_SIZE - 1)) == 0 && "Must be multiple of the huge page size!");
         T* buffer = static_cast<T*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE,
                                          MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0));
@@ -578,6 +579,8 @@ namespace blt
                 BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
         }
         return buffer;
+#endif
+        return malloc(BLOCK_SIZE);
     }
     
     /**
@@ -701,7 +704,7 @@ namespace blt
                 } else
                     buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
 #else
-                buffer = reinterpret_cast<block*>(std::aligned_alloc(BLOCK_SIZE, BLOCK_SIZE));
+                buffer = static_cast<block*>(_aligned_malloc(BLOCK_SIZE, BLOCK_SIZE));
 #endif
                 construct(buffer);
 #ifndef BLT_DISABLE_STATS

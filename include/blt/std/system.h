@@ -146,7 +146,7 @@ namespace blt::system
         std::uint64_t dt;
     };
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(WIN32)
     using suseconds_t = std::size_t;
 #endif
     

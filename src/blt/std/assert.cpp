@@ -13,7 +13,7 @@
 #include <exception>
 #include <cstring>
 
-struct abort_exception : public std::exception
+struct abort_exception final : public std::exception
 {
     public:
         explicit abort_exception(const char* what)
@@ -42,14 +42,18 @@ struct abort_exception : public std::exception
         char* error{nullptr};
 };
 
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if defined(__GNUC__) && !defined(__EMSCRIPTEN__) && !defined(WIN32)
+    #define IS_GNU_BACKTRACE
+#endif
+
+#ifdef IS_GNU_BACKTRACE
     
     #include <execinfo.h>
     #include <cstdlib>
 
 #endif
 
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
     #define BLT_STACK_TRACE(number) void* ptrs[number]; \
             int size = backtrace(ptrs, number);         \
             char** messages = backtrace_symbols(ptrs, size);
@@ -64,7 +68,7 @@ struct abort_exception : public std::exception
 namespace blt
 {
 
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
     
     static inline std::string _macro_filename(const std::string& path)
     {
@@ -79,7 +83,7 @@ namespace blt
     
     void b_throw(const char* what, const char* path, int line)
     {
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
         
         BLT_ERROR("An exception '%s' has occurred in file '%s:%d'", what, path, line);
@@ -96,7 +100,7 @@ namespace blt
     
     void b_assert_failed(const char* expression, const char* msg, const char* path, int line)
     {
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
         
         BLT_ERROR("The assertion '%s' has failed in file '%s:%d'", expression, path, line);
@@ -122,7 +126,7 @@ namespace blt
     {
         if (messages == nullptr)
             return;
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
         for (int i = 1; i < size; i++)
         {
             int tabs = i - 1;
@@ -167,13 +171,13 @@ namespace blt
     
     void b_abort(const char* what, const char* path, int line)
     {
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+#if IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
 #endif
         BLT_FATAL("----{BLT ABORT}----");
         BLT_FATAL("\tWhat: %s", what);
-        BLT_FATAL("\tcalled from %s:%d", path, line);
-#if defined(__GNUC__) && !defined(__EMSCRIPTEN__)
+        BLT_FATAL("\tCalled from %s:%d", path, line);
+#if IS_GNU_BACKTRACE
         printStacktrace(messages, size, path, line);
         
         BLT_FREE_STACK_TRACE();

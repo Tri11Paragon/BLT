@@ -6,7 +6,7 @@
 #include <blt/std/system.h>
 #include <blt/std/logging.h>
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(WIN32)
 #include <sys/time.h>            /* for struct timeval */
 #include <sys/resource.h>
 #else

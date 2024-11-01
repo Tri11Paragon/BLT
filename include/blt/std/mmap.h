@@ -95,7 +95,11 @@ namespace blt
         public:
             void* allocate(blt::size_t bytes) // NOLINT
             {
+#ifdef WIN32
+                return _aligned_malloc(bytes, BLT_2MB_SIZE);
+#else
                 return std::aligned_alloc(BLT_2MB_SIZE, bytes);
+#endif
             }
             
             void deallocate(void* ptr, blt::size_t) // NOLINT
