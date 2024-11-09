@@ -213,15 +213,18 @@ namespace blt
             {}
             
             template<class R, class RCV = std::remove_cv_t<std::remove_reference_t<R>>, typename std::enable_if_t<
-                    extent != dynamic_extent && span_detail::is_cont_v<RCV> &&
-                    std::is_convertible_v<std::remove_pointer_t<decltype(std::data(std::declval<R>()))>(*)[], T(*)[]>, bool> = true>
+                    extent != dynamic_extent && span_detail::is_cont_v<RCV>, bool> = true>
             explicit constexpr span(R&& range): size_(std::size(range)), data_(std::data(range))
             {}
             
             template<class R, class RCV = std::remove_cv_t<std::remove_reference_t<R>>, typename std::enable_if_t<
-                    extent == dynamic_extent && span_detail::is_cont_v<RCV> &&
-                    std::is_convertible_v<std::remove_pointer_t<decltype(std::data(std::declval<R>()))>(*)[], T(*)[]>, bool> = true>
-            constexpr span(R&& range): size_(std::size(range)), data_(std::data(range)) // NOLINT
+                    extent == dynamic_extent && span_detail::is_cont_v<RCV>, bool> = true>
+            constexpr span(R& range): size_(std::size(range)), data_(range.data()) // NOLINT
+            {}
+            
+            template<class R, class RCV = std::remove_cv_t<std::remove_reference_t<R>>, typename std::enable_if_t<
+                    extent == dynamic_extent && span_detail::is_cont_v<RCV>, bool> = true>
+            constexpr span(const R& range): size_(std::size(range)), data_(range.data()) // NOLINT
             {}
             
             template<size_type SIZE, typename std::enable_if_t<
@@ -359,6 +362,9 @@ namespace blt
     span(T (&)[N]) -> span<T, N>;
     
     template<class T, std::size_t N>
+    span(const T (&)[N]) -> span<T, N>;
+    
+    template<class T, std::size_t N>
     span(std::array<T, N>&) -> span<T, N>;
     
     template<class T, std::size_t N>
@@ -366,7 +372,7 @@ namespace blt
     
     template<class Cont>
     span(Cont&) -> span<typename Cont::value_type>;
-    
+
     template<class Cont>
     span(const Cont&) -> span<const typename Cont::value_type>;
 }
