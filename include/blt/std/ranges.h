@@ -227,14 +227,14 @@ namespace blt
             constexpr span(const R& range): size_(std::size(range)), data_(range.data()) // NOLINT
             {}
             
-            template<size_type SIZE, typename std::enable_if_t<
+            template<blt::size_t SIZE, typename std::enable_if_t<
                     extent != dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
             explicit constexpr span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin()) // NOLINT
             {}
             
-            template<size_type SIZE, typename std::enable_if_t<
-                    extent == dynamic_extent && SIZE == extent && std::is_const_v<element_type>, bool> = true>
-            explicit span(std::initializer_list<value_type> il) noexcept: size_(il.size()), data_(&il.begin()) // NOLINT
+//            template<blt::size_t SIZE, typename std::enable_if_t<
+//                    extent == dynamic_extent && SIZE == extent && std::is_const_v<pointer>, bool> = true>
+            span(std::initializer_list<T> il) noexcept: size_(il.size()), data_(std::data(il)) // NOLINT
             {}
             
             template<class U, std::size_t N, typename std::enable_if_t<
@@ -358,23 +358,27 @@ namespace blt
         
     };
     
-    template<class T, std::size_t N>
+    template<typename T, std::size_t N>
     span(T (&)[N]) -> span<T, N>;
     
-    template<class T, std::size_t N>
+    template<typename T, std::size_t N>
     span(const T (&)[N]) -> span<T, N>;
     
-    template<class T, std::size_t N>
+    template<typename T, std::size_t N>
     span(std::array<T, N>&) -> span<T, N>;
     
-    template<class T, std::size_t N>
+    template<typename T, std::size_t N>
     span(const std::array<T, N>&) -> span<const T, N>;
     
-    template<class Cont>
+    template<typename Cont>
     span(Cont&) -> span<typename Cont::value_type>;
-
-    template<class Cont>
+    
+    template<typename Cont>
     span(const Cont&) -> span<const typename Cont::value_type>;
+    
+    template<typename T>
+    span(std::initializer_list<T>) -> span<const T>;
+    
 }
 
 #endif //BLT_RANGES_H
