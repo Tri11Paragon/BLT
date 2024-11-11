@@ -288,26 +288,6 @@ namespace blt
                 }
                 return {};
             }
-            
-            std::optional<V> search_min(const K& min)
-            {
-                auto point = nodes.begin();
-                while (point != nodes.end())
-                {
-                    if (point->children == 0)
-                        return {};
-                    auto parent = point;
-                    ++point;
-                    auto is_min = point->k < parent->k;
-                    if (k >= parent->k)
-                    {
-                        if (is_min)
-                            point = skip_children(point);
-                    }
-                    
-                }
-                return {};
-            }
         
         private:
             auto skip_children(typename std::vector<node_t>::iterator begin)
