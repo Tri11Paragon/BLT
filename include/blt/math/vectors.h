@@ -297,107 +297,107 @@ namespace blt
             }
     };
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator+(const vec<T, size>& left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() + std::declval<G>())>
+    inline constexpr vec<R, size> operator+(const vec<T, size>& left, const vec<G, size>& right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + right[i];
+            initializer[i] = static_cast<R>(left[i]) + static_cast<R>(right[i]);
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator-(const vec<T, size>& left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() - std::declval<G>())>
+    inline constexpr vec<R, size> operator-(const vec<T, size>& left, const vec<G, size>& right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] - right[i];
+            initializer[i] = static_cast<R>(left[i]) - static_cast<R>(right[i]);
         return initializer;
     }
     
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator+(const vec<T, size>& left, G right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() + std::declval<G>())>
+    inline constexpr vec<R, size> operator+(const vec<T, size>& left, G right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + static_cast<T>(right);
+            initializer[i] = static_cast<R>(left[i]) + static_cast<R>(right);
         return initializer;
     }
     
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator-(const vec<T, size>& left, G right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() - std::declval<G>())>
+    inline constexpr vec<R, size> operator-(const vec<T, size>& left, G right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] + static_cast<T>(right);
+            initializer[i] = static_cast<R>(left[i]) - static_cast<R>(right);
         return initializer;
     }
     
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator+(G left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() + std::declval<G>())>
+    inline constexpr vec<R, size> operator+(G left, const vec<T, size>& right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = static_cast<T>(left) + right[i];
+            initializer[i] = static_cast<R>(left) + static_cast<R>(right[i]);
         return initializer;
     }
     
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator-(G left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() - std::declval<G>())>
+    inline constexpr vec<R, size> operator-(G left, const vec<T, size>& right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
             initializer[i] = static_cast<T>(left) - right[i];
         return initializer;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr vec<T, size> operator*(const vec<T, size>& left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() * std::declval<G>())>
+    inline constexpr vec<R, size> operator*(const vec<T, size>& left, const vec<G, size>& right)
     {
-        vec<T, size> initializer{};
+        vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] * right[i];
+            initializer[i] = static_cast<R>(left[i]) * static_cast<R>(right[i]);
+        return initializer;
+    }
+    
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() * std::declval<G>())>
+    inline constexpr vec<R, size> operator*(const vec<T, size>& left, G right)
+    {
+        vec<R, size> initializer{};
+        for (blt::u32 i = 0; i < size; i++)
+            initializer[i] = static_cast<R>(left[i]) * static_cast<R>(right);
+        return initializer;
+    }
+    
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() * std::declval<G>())>
+    inline constexpr vec<R, size> operator*(G left, const vec<T, size>& right)
+    {
+        vec<R, size> initializer{};
+        for (blt::u32 i = 0; i < size; i++)
+            initializer[i] = static_cast<R>(left) * static_cast<R>(right[i]);
+        return initializer;
+    }
+    
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() / std::declval<G>())>
+    inline constexpr vec<R, size> operator/(const vec<T, size>& left, G right)
+    {
+        vec<R, size> initializer{};
+        for (blt::u32 i = 0; i < size; i++)
+            initializer[i] = static_cast<R>(left[i]) / static_cast<R>(right);
+        return initializer;
+    }
+    
+    template<typename T, typename G, blt::u32 size, typename R = decltype(std::declval<T>() / std::declval<G>())>
+    inline constexpr vec<R, size> operator/(G left, const vec<T, size>& right)
+    {
+        vec<R, size> initializer{};
+        for (blt::u32 i = 0; i < size; i++)
+            initializer[i] = static_cast<R>(left) / static_cast<R>(right[i]);
         return initializer;
     }
     
     template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator*(const vec<T, size>& left, G right)
-    {
-        vec<T, size> initializer{};
-        for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] * static_cast<T>(right);
-        return initializer;
-    }
-    
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator*(G left, const vec<T, size>& right)
-    {
-        vec<T, size> initializer{};
-        for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = static_cast<T>(left) * right[i];
-        return initializer;
-    }
-    
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator/(const vec<T, size>& left, G right)
-    {
-        vec<T, size> initializer{};
-        for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = left[i] / static_cast<T>(right);
-        return initializer;
-    }
-    
-    template<typename T, typename G, blt::u32 size>
-    inline constexpr vec<T, size> operator/(G left, const vec<T, size>& right)
-    {
-        vec<T, size> initializer{};
-        for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = static_cast<T>(left) / right[i];
-        return initializer;
-    }
-    
-    template<typename T, blt::u32 size>
-    inline constexpr bool operator==(const vec<T, size>& left, const vec<T, size>& right)
+    inline constexpr bool operator==(const vec<T, size>& left, const vec<G, size>& right)
     {
         constexpr double E = std::numeric_limits<T>::epsilon();
         for (blt::u32 i = 0; i < size; i++)
@@ -409,19 +409,19 @@ namespace blt
         return true;
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr bool operator!=(const vec<T, size>& left, const vec<T, size>& right)
+    template<typename T, typename G, blt::u32 size>
+    inline constexpr bool operator!=(const vec<T, size>& left, const vec<G, size>& right)
     {
         return !(left == right);
     }
     
-    template<typename T, blt::u32 size>
-    inline constexpr bool operator&&(const vec<T, size>& left, const vec<T, size>& right)
+    template<typename Ret, typename T, blt::u32 size>
+    inline constexpr vec<Ret, size> vec_cast(const vec<T, size>& conv)
     {
+        vec<Ret, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            if (!f_equal(left[i], right[i]))
-                return false;
-        return true;
+            initializer[i] = static_cast<Ret>(conv[i]);
+        return initializer;
     }
     
     using vec2f = vec<float, 2>;
