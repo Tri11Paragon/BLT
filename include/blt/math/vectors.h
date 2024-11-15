@@ -347,7 +347,7 @@ namespace blt
     {
         vec<R, size> initializer{};
         for (blt::u32 i = 0; i < size; i++)
-            initializer[i] = static_cast<T>(left) - right[i];
+            initializer[i] = static_cast<R>(left) - static_cast<R>(right[i]);
         return initializer;
     }
     
