@@ -89,11 +89,6 @@ namespace blt
         profiler.cycle_intervals.clear();
     }
     
-    void writeProfile(std::ifstream&, const profile_t&)
-    {
-        BLT_WARN("Write profile for V2 is currently a TODO");
-    }
-    
     void sort_intervals(std::vector<interval_t*>& intervals, sort_by sort, bool)
     {
         std::function<bool(const interval_t* a, const interval_t* b)> sort_func;
@@ -136,27 +131,22 @@ namespace blt
             container.thread = unit::S;
         return container;
     }
-    
-    inline void println(const std::vector<std::string>&& lines, logging::log_level level) {
-        for (const auto& line : lines)
-            BLT_LOG_STREAM(level) << line << "\n";
-    }
-    
-    void printProfile(profile_t& profiler, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
+
+    void writeProfile(std::ostream& stream, profile_t& profiler, std::uint32_t flags, sort_by sort)
     {
         bool printHistory = flags & AVERAGE_HISTORY;
         bool printCycles = flags & PRINT_CYCLES;
         bool printThread = flags & PRINT_THREAD;
         bool printWall = flags & PRINT_WALL;
-        
+
         sort_intervals(profiler.intervals, sort, printHistory);
-        
+
         auto units = determine_max_unit(profiler.intervals, printHistory);
         std::string thread_unit_string = units.thread == unit::MS ? "ms" : units.thread == unit::NS ? "ns" : "s";
         std::string wall_unit_string = units.wall == unit::MS ? "ms" : units.wall == unit::NS ? "ns" : "s";
         auto thread_unit_divide = units.thread == unit::MS ? 1e6 : units.thread == unit::NS ? 1 : 1e9;
         auto wall_unit_divide = units.wall == unit::MS ? 1e6 : units.wall == unit::NS ? 1 : 1e9;
-        
+
         string::TableFormatter formatter{profiler.name};
         formatter.addColumn("Order");
         if (printHistory)
@@ -168,17 +158,17 @@ namespace blt
             formatter.addColumn("CPU Time (" + thread_unit_string += ")");
         if (printWall)
             formatter.addColumn("Wall Time (" + wall_unit_string += ")");
-        
+
         for (size_t i = 0; i < profiler.intervals.size(); i++)
         {
             blt::string::TableRow row;
             auto interval = profiler.intervals[i];
-            
+
             if (interval->count == 0)
                 continue;
-            
+
             INTERVAL_DIFFERENCE_MACRO(printHistory, interval);
-            
+
             row.rowValues.push_back(std::to_string(i + 1));
             if (printHistory)
                 row.rowValues.push_back(std::to_string(interval->count));
@@ -191,8 +181,17 @@ namespace blt
                 row.rowValues.push_back(std::to_string(wall / static_cast<double>(wall_unit_divide)));
             formatter.addRow(row);
         }
-        
-        println(formatter.createTable(true, true), log_level);
+
+        auto lines = formatter.createTable(true, true);
+        for (const auto& line : lines)
+            stream << line << "\n";
+    }
+    
+    void printProfile(profile_t& profiler, const std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
+    {
+        std::stringstream stream;
+        writeProfile(stream, profiler, flags, sort);
+        BLT_LOG_STREAM(log_level) << stream.str();
     }
     
     profile_t::~profile_t()
@@ -226,7 +225,7 @@ namespace blt
         blt::endInterval(profiles[profile_name].at(interval_name));
     }
     
-    void _internal::writeProfile(std::ifstream& stream, const std::string& profile_name)
+    void _internal::writeProfile(std::ostream& stream, const std::string& profile_name, std::uint32_t flags, sort_by sort)
     {
         if (profiles.find(profile_name) == profiles.end())
             return;
@@ -234,7 +233,7 @@ namespace blt
         profile_t profile{profile_name};
         for (const auto& i : pref)
             profile.intervals.push_back(i.second);
-        blt::writeProfile(stream, profile);
+        blt::writeProfile(stream, profile, flags, sort);
         profiles.erase(profile_name);
     }
     
