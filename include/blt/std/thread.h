@@ -62,11 +62,11 @@ namespace blt
                 // (unique_lock acquires lock)
                 std::unique_lock lock(count_mutex);
                 std::size_t current_uses = use_count;
-                
+
                 if (++threads_waiting == thread_count)
                 {
                     threads_waiting = 0;
-                    use_count++;
+                    ++use_count;
                     cv.notify_all();
                 } else
                 {
