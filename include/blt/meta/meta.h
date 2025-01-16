@@ -137,6 +137,15 @@ namespace blt::meta
     template<typename T> \
     inline constexpr bool has_func_##FUNC##_v = has_func_##FUNC<T>::value;
 
+#define BLT_META_MAKE_STATIC_FUNCTION_CHECK(FUNC, ...)\
+    template<typename T, typename = void> \
+    class has_static_func_##FUNC : public std::false_type \
+    {}; \
+    template<typename T> \
+    class has_static_func_##FUNC<T, std::void_t<decltype(T::FUNC(,##__VA_ARGS__))>> : public std::true_type \
+    {}; \
+    template<typename T> \
+    inline constexpr bool has_static_func_##FUNC##_v = has_static_func_##FUNC<T>::value;
 
 #define BLT_META_MAKE_MEMBER_CHECK(MEMBER)\
     template<typename T, typename = void> \
