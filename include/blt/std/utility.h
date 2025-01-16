@@ -19,9 +19,6 @@
 #ifndef BLT_UTILITY_H
 #define BLT_UTILITY_H
 
-#include <blt/compatibility.h>
-#include <blt/std/ranges.h>
-#include <blt/std/expected.h>
 #include <string>
 #include <utility>
 
@@ -59,13 +56,13 @@ namespace blt
 namespace blt
 {
     template<typename T>
-    static BLT_CPP20_CONSTEXPR inline std::string type_string()
+    static std::string type_string()
     {
         return demangle(typeid(T).name());
     }
     
     template<typename T>
-    static BLT_CPP20_CONSTEXPR inline std::string type_string_raw()
+    static std::string type_string_raw()
     {
         return typeid(T).name();
     }

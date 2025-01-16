@@ -11,13 +11,9 @@
 #include <initializer_list>
 #include <iterator>
 #include <cstring>
-#include "queue.h"
-#include "utility.h"
 #include <blt/std/assert.h>
-#include <cstdint>
 #include <type_traits>
 #include <utility>
-#include <cstring>
 
 namespace blt
 {
@@ -37,11 +33,14 @@ namespace blt
     {
         public:
             using element_type = T;
-            using value_type = std::remove_cv_t<T>;
-            using pointer = T*;
-            using const_pointer = const T*;
-            using reference = T&;
-            using const_reference = const T&;
+            using value_type = typename std::iterator_traits<T>::value_type;
+            using pointer = typename std::iterator_traits<T>::pointer;
+            using const_pointer = const typename std::iterator_traits<T>::pointer;
+            using reference = typename std::iterator_traits<T>::reference;
+            using const_reference = const typename std::iterator_traits<T>::reference;
+            using difference_type = typename std::iterator_traits<T>::difference_type;
+            using iterator_category = typename std::iterator_traits<T>::iterator_category;
+
             using iterator = ptr_iterator<T>;
             using const_iterator = ptr_iterator<const T>;
             using reverse_iterator = std::reverse_iterator<iterator>;

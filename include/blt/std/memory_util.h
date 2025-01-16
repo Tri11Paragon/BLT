@@ -19,12 +19,14 @@
 #ifndef BLT_MEMORY_UTIL_H
 #define BLT_MEMORY_UTIL_H
 
-#include <blt/std/types.h>
 #include <type_traits>
 #include <array>
+#include <string>
 #include <cstring>
 #include <algorithm>
 #include <cstdint>
+#include <climits>
+#include <cmath>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
 
@@ -62,7 +64,7 @@
 namespace blt::mem
 {
     template <typename R, typename T>
-    inline static R type_cast(T type)
+    static R type_cast(T type)
     {
         static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable to be type casted!");
         static_assert(sizeof(T) == sizeof(R));
@@ -72,16 +74,16 @@ namespace blt::mem
     }
 
     template <typename T>
-    inline void reverse(T& out)
+    void reverse(T& out)
     {
         static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable to be reversible!");
         // if we need to swap find the best way to do so
-        if constexpr (std::is_same_v<T, int16_t> || std::is_same_v<T, uint16_t>)
-            out = type_cast<T>(SWAP16(type_cast<uint16_t>(out)));
-        else if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, f32>)
-            out = type_cast<T>(SWAP32(type_cast<uint32_t>(out)));
-        else if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t> || std::is_same_v<T, f64>)
-            out = type_cast<T>(SWAP64(type_cast<uint64_t>(out)));
+        if constexpr (std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>)
+            out = type_cast<T>(SWAP16(type_cast<std::uint16_t>(out)));
+        else if constexpr (std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> || std::is_same_v<T, float>)
+            out = type_cast<T>(SWAP32(type_cast<std::uint32_t>(out)));
+        else if constexpr (std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t> || std::is_same_v<T, double>)
+            out = type_cast<T>(SWAP64(type_cast<std::uint64_t>(out)));
         else
         {
             std::array<std::byte, sizeof(T)> data;
@@ -93,7 +95,7 @@ namespace blt::mem
 
     // Used to grab the byte-data of any T element. Defaults to Big Endian, however can be configured to use little endian
     template <bool little_endian = false, typename BYTE_TYPE, typename T>
-    inline int toBytes(const T& in, BYTE_TYPE* out)
+    int toBytes(const T& in, BYTE_TYPE* out)
     {
         if constexpr (!(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>))
             static_assert("Must provide a signed/unsigned int8 type");
@@ -111,7 +113,7 @@ namespace blt::mem
 
     // Used to cast the binary data of any T object, into a T object. Assumes data is in big ending (configurable)
     template <bool little_endian = false, typename BYTE_TYPE, typename T>
-    inline int fromBytes(const BYTE_TYPE* in, T& out)
+    int fromBytes(const BYTE_TYPE* in, T& out)
     {
         if constexpr (!(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>))
             static_assert("Must provide a signed/unsigned int8 type");
@@ -126,18 +128,93 @@ namespace blt::mem
     }
 
     template <bool little_endian = false, typename BYTE_TYPE, typename T>
-    inline static int fromBytes(const BYTE_TYPE* in, T* out)
+    static int fromBytes(const BYTE_TYPE* in, T* out)
     {
-        return fromBytes(in, *out);
+        return fromBytes<little_endian>(in, *out);
     }
 
-    inline static size_t next_byte_allocation(size_t prev_size, size_t default_allocation_block = 8192, size_t default_size = 16)
+    static std::size_t next_byte_allocation(std::size_t prev_size, std::size_t default_allocation_block = 8192, std::size_t default_size = 16)
     {
         if (prev_size < default_size)
             return default_size;
         if (prev_size < default_allocation_block)
             return prev_size * 2;
         return prev_size + default_allocation_block;
+    }
+
+    template <typename Ptr, typename Storage>
+    struct pointer_storage
+    {
+        static_assert(sizeof(Storage) * CHAR_BIT <= 16, "Storage type max size is 16 bits");
+
+        explicit pointer_storage(Ptr* ptr): ptr(ptr)
+        {
+        }
+
+        Ptr* get()
+        {
+            Ptr* l_ptr;
+            std::memcpy(&l_ptr, &ptr, 6);
+            return l_ptr;
+        }
+
+        const Ptr* get() const
+        {
+            Ptr* l_ptr;
+            std::memcpy(&l_ptr, &ptr, 6);
+            return l_ptr;
+        }
+
+    private:
+        Ptr* ptr;
+    };
+
+    template <bool bits = true, typename OStream, typename Value>
+    void print_bytes(OStream& stream, const Value& value)
+    {
+        constexpr auto size = sizeof(Value);
+
+        std::string line;
+        for (std::size_t i = 0; i < size; i++)
+        {
+            std::uint8_t byte;
+            std::memcpy(&byte, reinterpret_cast<const char*>(&value) + i, 1);
+            if constexpr (bits)
+            {
+                for (std::ptrdiff_t j = CHAR_BIT - 1; j >= 0; j--)
+                {
+                    const auto bit = (byte >> j) & 1;
+                    line += std::to_string(bit);
+                }
+            }
+            else
+            {
+                const auto byte_str = std::to_string(byte);
+                const auto amount = CHAR_BIT - byte_str.size();
+                for (std::size_t j = 0; j < static_cast<std::size_t>(std::ceil(static_cast<double>(amount) / 2.0)); j++)
+                    line += ' ';
+                line += byte_str;
+                for (std::size_t j = 0; j < static_cast<std::size_t>(std::floor(static_cast<double>(amount) / 2.0)); j++)
+                    line += ' ';
+            }
+            if (i != size - 1)
+                line += " : ";
+        }
+        for (std::size_t i = 0; i < size; i++)
+        {
+            auto index = std::to_string(i);
+            const auto amount = CHAR_BIT - index.size();
+            for (std::size_t j = 0; j < static_cast<std::size_t>(std::ceil(static_cast<double>(amount) / 2.0)); j++)
+                stream << ' ';
+            stream << index;
+            for (std::size_t j = 0; j < static_cast<std::size_t>(std::floor(static_cast<double>(amount) / 2.0)); j++)
+                stream << ' ';
+            if (i != size - 1)
+                stream << " | ";
+        }
+        stream << '\n';
+        stream << line;
+        stream << '\n';
     }
 }
 
@@ -146,9 +223,8 @@ namespace blt
     template <typename V>
     struct ptr_iterator
     {
-    public:
         using iterator_category = std::random_access_iterator_tag;
-        using difference_type = blt::ptrdiff_t;
+        using difference_type = std::ptrdiff_t;
         using value_type = V;
         using pointer = value_type*;
         using reference = value_type&;
@@ -211,7 +287,7 @@ namespace blt
             return *(_v + index);
         }
 
-        reference operator[](blt::size_t index)
+        reference operator[](std::size_t index)
         {
             return *(_v + index);
         }
