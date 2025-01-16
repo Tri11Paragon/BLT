@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-<<<<<<< HEAD
 set(BLT_VERSION 2.1.16)
-=======
-set(BLT_VERSION 2.1.14)
->>>>>>> cf6cbbd (make write profile work)
 
 set(BLT_TARGET BLT)
 
