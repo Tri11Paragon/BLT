@@ -149,9 +149,10 @@ namespace blt::mem
         static_assert(std::is_trivially_copyable_v<Storage>, "Storage type must be trivially copyable!");
         static_assert(alignof(Storage) <= 2, "Storage type must have an alignment of 2 or less!");
 
+        // we should not default initialize storage when only providing a pointer, mostly because we will want to take already stored pointers and use them.
         explicit pointer_storage(Ptr* ptr): ptr(ptr)
         {
-            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{};
+            // new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{};
         }
 
         explicit pointer_storage(Ptr* ptr, const Storage& storage): ptr(ptr)
