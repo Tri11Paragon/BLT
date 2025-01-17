@@ -265,8 +265,8 @@ namespace blt::mem
         {
             if (index >= bit_storage::END_BIT)
                 return *this;
-            ptr_bits &= ~(1ul << bit_storage::START_BIT + index);
-            ptr_bits |= (static_cast<std::uintptr_t>(b) << bit_storage::START_BIT + index);
+            ptr_bits &= ~(1ul << (bit_storage::START_BIT + index));
+            ptr_bits |= (static_cast<std::uintptr_t>(b) << (bit_storage::START_BIT + index));
             return *this;
         }
 
