@@ -142,57 +142,110 @@ namespace blt::mem
         return prev_size + default_allocation_block;
     }
 
-    template <typename Ptr, typename Storage>
+    // TODO: check if the platform actually has enough room in their pointers for this. plus endianness
+
+    struct bit_storage
+    {
+        static constexpr std::size_t START_BIT = 48;
+        static constexpr std::size_t END_BIT = sizeof(std::uintptr_t) * CHAR_BIT;
+        static constexpr std::size_t AVAILABLE_BITS = END_BIT - START_BIT;
+
+        static constexpr std::size_t make_storage_ones()
+        {
+            std::size_t result = 0;
+            for (std::size_t i = START_BIT; i < END_BIT; i++)
+                result |= 1ul << i;
+            return result;
+        }
+
+        static constexpr std::size_t make_ptr_ones()
+        {
+            std::size_t result = 0;
+            for (std::size_t i = 0; i < START_BIT; i++)
+                result |= 1ul << i;
+            return result;
+        }
+
+        std::uint16_t bits : AVAILABLE_BITS;
+    };
+
+    template <typename Ptr>
     struct pointer_storage
     {
-        static_assert(sizeof(Storage) * CHAR_BIT <= 16, "Storage type max size is 16 bits");
-        static_assert(std::is_trivially_copyable_v<Storage>, "Storage type must be trivially copyable!");
-        static_assert(alignof(Storage) <= 2, "Storage type must have an alignment of 2 or less!");
+        static constexpr std::size_t STORAGE_ALL_ONES = bit_storage::make_storage_ones();
+        static constexpr std::size_t PTR_ALL_ONES = bit_storage::make_ptr_ones();
 
-        // we should not default initialize storage when only providing a pointer, mostly because we will want to take already stored pointers and use them.
-        explicit pointer_storage(Ptr* ptr): ptr(ptr)
+        explicit pointer_storage(Ptr* ptr): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
         {
-            // new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{};
         }
 
-        explicit pointer_storage(Ptr* ptr, const Storage& storage): ptr(ptr)
+        explicit pointer_storage(Ptr* ptr, const bit_storage bits): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
         {
-            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{storage};
+            storage(bits);
         }
 
-        explicit pointer_storage(Ptr* ptr, Storage&& storage): ptr(ptr)
+        [[nodiscard]] bit_storage storage() const noexcept
         {
-            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{std::move(storage)};
+            bit_storage storage{};
+            storage.bits = ptr_bits & STORAGE_ALL_ONES;
+            return storage;
         }
 
-        Storage& storage()
+        pointer_storage& storage(const bit_storage bits) noexcept
         {
-            auto offset_ptr = reinterpret_cast<char*>(&this->ptr) + 6;
-            return *std::launder(reinterpret_cast<Storage*>(offset_ptr));
+            ptr_bits |= (ptr_bits & PTR_ALL_ONES) | (bits.bits << bit_storage::START_BIT);
+            return *this;
         }
 
-        const Storage& storage() const
+        pointer_storage& operator=(const bit_storage bits) noexcept
         {
-            const auto offset_ptr = reinterpret_cast<char const*>(&this->ptr) + 6;
-            return *std::launder(reinterpret_cast<Storage const*>(offset_ptr));
+            storage(bits);
+            return *this;
         }
 
-        Ptr* get()
+        pointer_storage& clear_storage() noexcept
         {
-            Ptr* l_ptr;
-            std::memcpy(&l_ptr, &ptr, 6);
-            return l_ptr;
+            ptr_bits &= PTR_ALL_ONES;
+            return *this;
         }
 
-        const Ptr* get() const
+        // changes pointer without changing the tag bits
+        pointer_storage& pointer(Ptr* ptr) noexcept
         {
-            Ptr* l_ptr;
-            std::memcpy(&l_ptr, &ptr, 6);
-            return l_ptr;
+            const bit_storage old_storage = storage();
+            ptr_bits = (reinterpret_cast<std::uintptr_t>(ptr) & PTR_ALL_ONES) | old_storage.bits;
+            return *this;
+        }
+
+        pointer_storage& operator=(Ptr* ptr) noexcept
+        {
+            pointer(ptr);
+            return *this;
+        }
+
+        pointer_storage& clear_pointer() noexcept
+        {
+            ptr_bits &= STORAGE_ALL_ONES;
+            return *this;
+        }
+
+        Ptr* get() const noexcept
+        {
+            return reinterpret_cast<Ptr*>(ptr_bits & PTR_ALL_ONES);
+        }
+
+        Ptr& operator*() const noexcept
+        {
+            return *get();
+        }
+
+        Ptr* operator->() const noexcept
+        {
+            return get();
         }
 
     private:
-        Ptr* ptr;
+        std::uintptr_t ptr_bits;
     };
 
     template <bool bits = true, typename OStream, typename Value>
