@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <climits>
 #include <cmath>
+#include <iostream>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
 
@@ -142,112 +143,6 @@ namespace blt::mem
         return prev_size + default_allocation_block;
     }
 
-    // TODO: check if the platform actually has enough room in their pointers for this. plus endianness
-
-    struct bit_storage
-    {
-        static constexpr std::size_t START_BIT = 48;
-        static constexpr std::size_t END_BIT = sizeof(std::uintptr_t) * CHAR_BIT;
-        static constexpr std::size_t AVAILABLE_BITS = END_BIT - START_BIT;
-
-        static constexpr std::size_t make_storage_ones()
-        {
-            std::size_t result = 0;
-            for (std::size_t i = START_BIT; i < END_BIT; i++)
-                result |= 1ul << i;
-            return result;
-        }
-
-        static constexpr std::size_t make_ptr_ones()
-        {
-            std::size_t result = 0;
-            for (std::size_t i = 0; i < START_BIT; i++)
-                result |= 1ul << i;
-            return result;
-        }
-
-        std::uint16_t bits : AVAILABLE_BITS;
-    };
-
-    template <typename Ptr>
-    struct pointer_storage
-    {
-        static constexpr std::size_t STORAGE_ALL_ONES = bit_storage::make_storage_ones();
-        static constexpr std::size_t PTR_ALL_ONES = bit_storage::make_ptr_ones();
-
-        explicit pointer_storage(Ptr* ptr): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
-        {
-        }
-
-        explicit pointer_storage(Ptr* ptr, const bit_storage bits): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
-        {
-            storage(bits);
-        }
-
-        [[nodiscard]] bit_storage storage() const noexcept
-        {
-            bit_storage storage{};
-            storage.bits = ptr_bits & STORAGE_ALL_ONES;
-            return storage;
-        }
-
-        pointer_storage& storage(const bit_storage bits) noexcept
-        {
-            ptr_bits |= (ptr_bits & PTR_ALL_ONES) | (bits.bits << bit_storage::START_BIT);
-            return *this;
-        }
-
-        pointer_storage& operator=(const bit_storage bits) noexcept
-        {
-            storage(bits);
-            return *this;
-        }
-
-        pointer_storage& clear_storage() noexcept
-        {
-            ptr_bits &= PTR_ALL_ONES;
-            return *this;
-        }
-
-        // changes pointer without changing the tag bits
-        pointer_storage& pointer(Ptr* ptr) noexcept
-        {
-            const bit_storage old_storage = storage();
-            ptr_bits = (reinterpret_cast<std::uintptr_t>(ptr) & PTR_ALL_ONES) | old_storage.bits;
-            return *this;
-        }
-
-        pointer_storage& operator=(Ptr* ptr) noexcept
-        {
-            pointer(ptr);
-            return *this;
-        }
-
-        pointer_storage& clear_pointer() noexcept
-        {
-            ptr_bits &= STORAGE_ALL_ONES;
-            return *this;
-        }
-
-        Ptr* get() const noexcept
-        {
-            return reinterpret_cast<Ptr*>(ptr_bits & PTR_ALL_ONES);
-        }
-
-        Ptr& operator*() const noexcept
-        {
-            return *get();
-        }
-
-        Ptr* operator->() const noexcept
-        {
-            return get();
-        }
-
-    private:
-        std::uintptr_t ptr_bits;
-    };
-
     template <bool bits = true, typename OStream, typename Value>
     void print_bytes(OStream& stream, const Value& value)
     {
@@ -295,6 +190,162 @@ namespace blt::mem
         stream << line;
         stream << '\n';
     }
+
+    // TODO: check if the platform actually has enough room in their pointers for this. plus endianness
+
+    struct bit_storage
+    {
+        static constexpr std::size_t START_BIT = 48;
+        static constexpr std::size_t END_BIT = sizeof(std::uintptr_t) * CHAR_BIT;
+        static constexpr std::size_t AVAILABLE_BITS = END_BIT - START_BIT;
+
+        static constexpr std::size_t make_storage_ones()
+        {
+            std::size_t result = 0;
+            for (std::size_t i = START_BIT; i < END_BIT; i++)
+                result |= 1ul << i;
+            return result;
+        }
+
+        static constexpr std::size_t make_ptr_ones()
+        {
+            std::size_t result = 0;
+            for (std::size_t i = 0; i < START_BIT; i++)
+                result |= 1ul << i;
+            return result;
+        }
+
+        bit_storage(): bits(0)
+        {
+        }
+
+        explicit bit_storage(const std::uint16_t bits): bits(bits)
+        {
+        }
+
+        std::uint16_t bits : AVAILABLE_BITS;
+    };
+
+    template <typename Ptr>
+    struct pointer_storage
+    {
+        static constexpr std::size_t STORAGE_ALL_ONES = bit_storage::make_storage_ones();
+        static constexpr std::size_t PTR_ALL_ONES = bit_storage::make_ptr_ones();
+
+        explicit pointer_storage(Ptr* ptr): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        {
+        }
+
+        explicit pointer_storage(Ptr* ptr, const bit_storage bits): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        {
+            storage(bits);
+        }
+
+        template <typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
+        explicit pointer_storage(Ptr* ptr, const T& type): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        {
+            storage(type);
+        }
+
+        [[nodiscard]] bit_storage storage() const noexcept
+        {
+            bit_storage storage{};
+            storage.bits = (ptr_bits & STORAGE_ALL_ONES) >> bit_storage::START_BIT;
+            return storage;
+        }
+
+        [[nodiscard]] bool bit(const std::size_t index) const noexcept
+        {
+            if (index >= bit_storage::END_BIT)
+                return false;
+            return (ptr_bits >> (bit_storage::START_BIT + index)) & 1;
+        }
+
+        pointer_storage& bit(const std::size_t index, const bool b) noexcept
+        {
+            if (index >= bit_storage::END_BIT)
+                return *this;
+            ptr_bits &= ~(1ul << bit_storage::START_BIT + index);
+            ptr_bits |= (static_cast<std::uintptr_t>(b) << bit_storage::START_BIT + index);
+            return *this;
+        }
+
+        template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
+        pointer_storage& storage(const T& type)
+        {
+            static_assert(sizeof(T) <= sizeof(std::uintptr_t), "Type takes too many bits to be stored!");
+            static constexpr std::uintptr_t store_bits = (2 << (bit_storage::AVAILABLE_BITS - 1)) - 1;
+            std::uintptr_t bit_store = 0;
+            bit_storage store{};
+            std::memcpy(&bit_store, &type, sizeof(T));
+            store.bits |= bit_store & store_bits;
+            storage(store);
+            return *this;
+        }
+
+        pointer_storage& storage(const bit_storage bits) noexcept
+        {
+            ptr_bits = ((ptr_bits & PTR_ALL_ONES) | (static_cast<std::uintptr_t>(bits.bits) << bit_storage::START_BIT));
+            return *this;
+        }
+
+        pointer_storage& operator=(const bit_storage bits) noexcept
+        {
+            storage(bits);
+            return *this;
+        }
+
+        template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
+        pointer_storage& operator=(const T& type)
+        {
+            storage(type);
+            return *this;
+        }
+
+        pointer_storage& clear_storage() noexcept
+        {
+            ptr_bits &= PTR_ALL_ONES;
+            return *this;
+        }
+
+        // changes pointer without changing the tag bits
+        pointer_storage& pointer(Ptr* ptr) noexcept
+        {
+            const bit_storage old_storage = storage();
+            ptr_bits = (reinterpret_cast<std::uintptr_t>(ptr) & PTR_ALL_ONES) | old_storage.bits;
+            return *this;
+        }
+
+        pointer_storage& operator=(Ptr* ptr) noexcept
+        {
+            pointer(ptr);
+            return *this;
+        }
+
+        pointer_storage& clear_pointer() noexcept
+        {
+            ptr_bits &= STORAGE_ALL_ONES;
+            return *this;
+        }
+
+        Ptr* get() const noexcept
+        {
+            return reinterpret_cast<Ptr*>(ptr_bits & PTR_ALL_ONES);
+        }
+
+        Ptr& operator*() const noexcept
+        {
+            return *get();
+        }
+
+        Ptr* operator->() const noexcept
+        {
+            return get();
+        }
+
+    private:
+        std::uintptr_t ptr_bits;
+    };
 }
 
 namespace blt
