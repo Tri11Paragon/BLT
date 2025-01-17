@@ -146,9 +146,34 @@ namespace blt::mem
     struct pointer_storage
     {
         static_assert(sizeof(Storage) * CHAR_BIT <= 16, "Storage type max size is 16 bits");
+        static_assert(std::is_trivially_copyable_v<Storage>, "Storage type must be trivially copyable!");
+        static_assert(alignof(Storage) <= 2, "Storage type must have an alignment of 2 or less!");
 
         explicit pointer_storage(Ptr* ptr): ptr(ptr)
         {
+            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{};
+        }
+
+        explicit pointer_storage(Ptr* ptr, const Storage& storage): ptr(ptr)
+        {
+            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{storage};
+        }
+
+        explicit pointer_storage(Ptr* ptr, Storage&& storage): ptr(ptr)
+        {
+            new (reinterpret_cast<char*>(&this->ptr) + 6) Storage{std::move(storage)};
+        }
+
+        Storage& storage()
+        {
+            auto offset_ptr = reinterpret_cast<char*>(&this->ptr) + 6;
+            return *std::launder(reinterpret_cast<Storage*>(offset_ptr));
+        }
+
+        const Storage& storage() const
+        {
+            const auto offset_ptr = reinterpret_cast<char const*>(&this->ptr) + 6;
+            return *std::launder(reinterpret_cast<Storage const*>(offset_ptr));
         }
 
         Ptr* get()
