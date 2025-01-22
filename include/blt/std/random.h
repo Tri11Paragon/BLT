@@ -191,13 +191,7 @@ namespace blt::random
             }
             
             template<typename Container>
-            constexpr auto& select(Container& container)
-            {
-                return container[get_u64(0, container.size())];
-            }
-            
-            template<typename Container>
-            constexpr const auto& select(const Container& container)
+            constexpr decltype(auto) select(Container& container)
             {
                 return container[get_u64(0, container.size())];
             }
