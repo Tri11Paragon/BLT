@@ -375,12 +375,12 @@ namespace blt
     };
     
     template<typename T, typename E>
-    class expected<T, E, false>
+    class expected<T, E, false> : public expected<T, E, true>
     {
         public:
             using expected<T, E, true>::expected;
             
-            constexpr expected(const expected<T, E, false>& copy) = delete;
+            constexpr expected(const expected& copy) = delete;
             
             expected& operator=(const expected& copy) = delete;
     };
