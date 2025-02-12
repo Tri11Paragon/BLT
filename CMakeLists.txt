@@ -148,8 +148,9 @@ install(TARGETS ${BLT_TARGET}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-macro(blt_add_project name source type)
+macro(blt_add_test name source type)
 
+    message("Adding project ${name} of type ${type}" DEBUG)
     project(${name}-${type})
 
     add_executable(${name}-${type} ${source})
@@ -194,7 +195,8 @@ endmacro()
 if (${BUILD_TESTS})
     message("Building tests for version ${BLT_VERSION}")
 
-    blt_add_project(blt-iterator tests/iterator_tests.cpp test)
+    blt_add_test(blt_iterator tests/iterator_tests.cpp test)
+    blt_add_test(blt_argparse tests/argparse_tests.cpp test)
 
     message("Built tests")
 endif ()
