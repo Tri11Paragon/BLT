@@ -76,8 +76,6 @@ namespace blt::argparse
         {
             if (input == nullptr)
                 throw detail::bad_flag("Argument cannot be null!");
-            if (m_argument.size() == 1)
-                throw detail::bad_flag("Argument cannot be a single character!");
         }
 
         [[nodiscard]] std::string_view get_flag() const
@@ -114,11 +112,14 @@ namespace blt::argparse
     private:
         void process_argument() const
         {
-            size_t start = 0;
-            for (start = 0; start < m_argument.size(); ++start)
+            size_t start = m_argument.size();
+            for (auto [i, c] : enumerate(m_argument))
             {
-                if (std::isalnum(m_argument[start]))
+                if (std::isalnum(c))
+                {
+                    start = i;
                     break;
+                }
             }
             m_is_flag = (start != 0);
             flag_section = {m_argument.data(), start};
@@ -126,7 +127,8 @@ namespace blt::argparse
 
             if (!flag_section->empty() && !detail::allowed_flag_prefixes.contains(*flag_section))
                 throw detail::bad_flag(
-                    "Invalid flag detected, flag is not in allowed list of flags! Must be one of " + detail::flag_prefix_list_string);
+                    "Invalid flag " + std::string(*flag_section) + " detected, flag is not in allowed list of flags! Must be one of " +
+                    detail::flag_prefix_list_string);
         }
 
         std::string_view m_argument;

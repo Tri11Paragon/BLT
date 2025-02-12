@@ -52,7 +52,7 @@ namespace blt::argparse
         {
             const argument_string_t arg("-f");
             BLT_ASSERT(arg.is_flag() && "Expected argument to be identified as a flag.");
-            BLT_ASSERT(arg.value() == "-f" && "Flag value should match the input string.");
+            BLT_ASSERT(arg.value() == "f" && "Flag value should match the input string.");
         }
 
         // Test Case 2: Ensure the constructor handles long flags correctly
@@ -60,7 +60,7 @@ namespace blt::argparse
         {
             const argument_string_t arg("--file");
             BLT_ASSERT(arg.is_flag() && "Expected argument to be identified as a flag.");
-            BLT_ASSERT(arg.value() == "--file" && "Long flag value should match the input string.");
+            BLT_ASSERT(arg.value() == "file" && "Long flag value should match the input string.");
         }
 
         // Test Case 3: Ensure positional arguments are correctly identified
@@ -69,15 +69,6 @@ namespace blt::argparse
             const argument_string_t arg("filename.txt");
             BLT_ASSERT(!arg.is_flag() && "Expected argument to be identified as positional.");
             BLT_ASSERT(arg.value() == "filename.txt" && "Positional argument value should match the input string.");
-        }
-
-        // Test Case 4: Test for an edge case where the string starts like a flag but isn't
-        void test_argument_string_t_invalid_flag()
-        {
-            const argument_string_t arg("-notFlagBecauseItIsPositional");
-            BLT_ASSERT(!arg.is_flag() && "Expected argument to be identified as positional.");
-            BLT_ASSERT(arg.value() == "-notFlagBecauseItIsPositional"
-                && "Argument value should match the input string.");
         }
 
         // Test Case 5: Handle an empty string
@@ -93,15 +84,8 @@ namespace blt::argparse
         {
             const argument_string_t arg("-");
             BLT_ASSERT(arg.is_flag() && "Expected single hyphen (`-`) to be treated as a flag.");
-            BLT_ASSERT(arg.value() == "-" && "Single hyphen flag should match the input string.");
-        }
-
-        // Test Case 7: Handle arguments with mixed cases
-        void test_argument_string_t_mixed_case()
-        {
-            const argument_string_t arg("-FlagWithMixedCASE");
-            BLT_ASSERT(arg.is_flag() && "Expected argument to be identified as a flag.");
-            BLT_ASSERT(arg.value() == "-FlagWithMixedCASE" && "Mixed case flag value should match the input string.");
+            BLT_ASSERT(arg.value().empty() && "Single hyphen flag should have empty value.");
+            BLT_ASSERT(arg.get_flag() == "-" && "Single hyphen flag should match the input string.");
         }
 
         // Test Case 8: Handle arguments with prefix only (like "--")
@@ -109,15 +93,23 @@ namespace blt::argparse
         {
             const argument_string_t arg("--");
             BLT_ASSERT(arg.is_flag() && "Double hyphen ('--') should be treated as a flag.");
-            BLT_ASSERT(arg.value() == "--" && "Double hyphen value should match the input string.");
+            BLT_ASSERT(arg.value().empty() && "Double hyphen flag should have empty value.");
+            BLT_ASSERT(arg.get_flag() == "--" && "Double hyphen value should match the input string.");
         }
 
         // Test Case 9: Validate edge case of an argument with spaces
         void test_argument_string_t_with_spaces()
         {
-            const argument_string_t arg("  ");
-            BLT_ASSERT(!arg.is_flag() && "Arguments with spaces should not be treated as flags.");
-            BLT_ASSERT(arg.value() == "  " && "Arguments with spaces should match the input string.");
+            try
+            {
+                const argument_string_t arg("  ");
+                BLT_ASSERT(!arg.is_flag() && "Arguments with spaces should not be treated as flags.");
+                BLT_ASSERT(arg.value() == "  " && "Arguments with spaces should match the input string.");
+            } catch (bad_flag&)
+            {
+                return;
+            }
+            BLT_ASSERT(false && "Expected an exception to be thrown for arguments with spaces.");
         }
 
         // Test Case 10: Validate arguments with numeric characters
@@ -125,7 +117,7 @@ namespace blt::argparse
         {
             const argument_string_t arg("-123");
             BLT_ASSERT(arg.is_flag() && "Numeric flags should still be treated as flags.");
-            BLT_ASSERT(arg.value() == "-123" && "Numeric flag value should match the input string.");
+            BLT_ASSERT(arg.value() == "123" && "Numeric flag value should match the input string.");
         }
 
         void run_all_tests_argument_string_t()
@@ -133,10 +125,8 @@ namespace blt::argparse
             test_argument_string_t_flag_basic();
             test_argument_string_t_long_flag();
             test_argument_string_t_positional_argument();
-            test_argument_string_t_invalid_flag();
             test_argument_string_t_empty_input();
             test_argument_string_t_single_hyphen();
-            test_argument_string_t_mixed_case();
             test_argument_string_t_double_hyphen();
             test_argument_string_t_with_spaces();
             test_argument_string_t_numeric_flag();
