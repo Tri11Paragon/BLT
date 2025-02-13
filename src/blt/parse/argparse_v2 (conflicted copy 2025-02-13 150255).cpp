@@ -15,18 +15,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <iostream>
 #include <blt/parse/argparse_v2.h>
 #include <blt/std/assert.h>
 
 namespace blt::argparse
 {
-    namespace detail
-    {
-
-    }
-
-
     namespace detail
     {
         // Unit Tests for class argument_string_t
@@ -122,8 +115,6 @@ namespace blt::argparse
             BLT_ASSERT(arg.get_flag() == "++" && "Double plus value should match the input string.");
         }
 
-        
-
         void run_all_tests_argument_string_t()
         {
             const hashset_t<char> prefixes = {'-', '+'};
@@ -140,72 +131,35 @@ namespace blt::argparse
             test_argument_string_t_double_plus(prefixes);
         }
 
+        std::string subparse_error::error_string() const
+        {
+            std::string message = "Subparser Error: ";
+            message += m_found_string;
+            message += " is not a valid command. Allowed commands are: {";
+            for (const auto [i, allowed_string] : enumerate(m_allowed_strings))
+            {
+                message += allowed_string;
+                if (i != m_allowed_strings.size() - 1)
+                    message += ' ';
+            }
+            message += "}";
+            return message;
+        }
+
         void test()
         {
             run_all_tests_argument_string_t();
         }
     }
 
-    argument_subparser_t& argument_parser_t::add_subparser(const std::string_view dest)
+    void argument_string_t::process_argument()
     {
-        m_subparsers.emplace_back(dest, argument_subparser_t{*this});
-        return m_subparsers.back().second;
-    }
-
-    void argument_parser_t::parse(argument_consumer_t& consumer)
-    {
-        if (!consumer.has_next())
+        size_t start = 0;
+        for (; start < m_argument.size() && allowed_flag_prefix->contains(m_argument[start]); start++)
         {
-            if (m_subparsers.size() > 0)
-            {
-                std::cout << ""
-                print_help();
-                return;
-            }
         }
-    }
 
-    void argument_parser_t::print_help()
-    {
-
-    }
-
-    argument_string_t argument_subparser_t::parse(argument_consumer_t& consumer)
-    {
-        if (!consumer.has_next())
-            throw detail::missing_argument_error("Subparser requires an argument.");
-        const auto key = consumer.consume();
-        if (key.is_flag())
-            throw detail::subparse_error(key.get_argument(), get_allowed_strings());
-        const auto it = m_parsers.find(key.get_name());
-        if (it == m_parsers.end())
-        {
-            const auto it2 = m_aliases.find(key.get_name());
-            if (it2 == m_aliases.end())
-                throw detail::subparse_error(key.get_argument(), get_allowed_strings());
-            it2->second->m_name = m_parent->m_name;
-            it2->second->parse(consumer);
-            return key;
-        }
-        it->second.m_name = m_parent->m_name;
-        it->second.parse(consumer);
-        return key;
-    }
-
-    std::vector<std::vector<std::string_view>> argument_subparser_t::get_allowed_strings() const
-    {
-        std::vector<std::vector<std::string_view>> vec;
-        for (const auto& [key, value] : m_parsers)
-        {
-            std::vector<std::string_view> aliases;
-            aliases.push_back(key);
-            for (const auto& [alias, parser] : m_aliases)
-            {
-                if (parser == &value)
-                    aliases.push_back(alias);
-            }
-            vec.emplace_back(std::move(aliases));
-        }
-        return vec;
+        m_flag_section = {m_argument.data(), start};
+        m_name_section = {m_argument.data() + start, m_argument.size() - start};
     }
 }
