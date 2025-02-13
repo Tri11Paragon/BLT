@@ -41,6 +41,15 @@ namespace blt::argparse
             }
             return result;
         }
+
+        hashset_t<char> prefix_characters()
+        {
+            hashset_t<char> result;
+            for (auto [i, v] : enumerate(allowed_flag_prefixes))
+                for (auto c : v)
+                    result.insert(c);
+            return result;
+        }
     }
 
 
@@ -100,16 +109,9 @@ namespace blt::argparse
         // Test Case 9: Validate edge case of an argument with spaces
         void test_argument_string_t_with_spaces()
         {
-            try
-            {
-                const argument_string_t arg("  ");
-                BLT_ASSERT(!arg.is_flag() && "Arguments with spaces should not be treated as flags.");
-                BLT_ASSERT(arg.value() == "  " && "Arguments with spaces should match the input string.");
-            } catch (bad_flag&)
-            {
-                return;
-            }
-            BLT_ASSERT(false && "Expected an exception to be thrown for arguments with spaces.");
+            const argument_string_t arg("  ");
+            BLT_ASSERT(!arg.is_flag() && "Arguments with spaces should not be treated as flags.");
+            BLT_ASSERT(arg.value() == "  " && "Arguments with spaces should match the input string.");
         }
 
         // Test Case 10: Validate arguments with numeric characters
@@ -118,6 +120,33 @@ namespace blt::argparse
             const argument_string_t arg("-123");
             BLT_ASSERT(arg.is_flag() && "Numeric flags should still be treated as flags.");
             BLT_ASSERT(arg.value() == "123" && "Numeric flag value should match the input string.");
+        }
+
+
+        // Test Case 11: Ensure the constructor handles '+' flag correctly
+        void test_argument_string_t_plus_flag_basic()
+        {
+            const argument_string_t arg("+f");
+            BLT_ASSERT(arg.is_flag() && "Expected argument to be identified as a flag.");
+            BLT_ASSERT(arg.value() == "f" && "Plus flag value should match the input string.");
+        }
+
+        // Test Case 13: Handle edge case of a single plus (`+`) which might be ambiguous
+        void test_argument_string_t_single_plus()
+        {
+            const argument_string_t arg("+");
+            BLT_ASSERT(arg.is_flag() && "Expected single plus (`+`) to be treated as a flag.");
+            BLT_ASSERT(arg.value().empty() && "Single plus flag should have empty value.");
+            BLT_ASSERT(arg.get_flag() == "+" && "Single plus flag should match the input string.");
+        }
+
+        // Test Case 14: Handle arguments with prefix only (like '++')
+        void test_argument_string_t_double_plus()
+        {
+            const argument_string_t arg("++");
+            BLT_ASSERT(arg.is_flag() && "Double plus ('++') should be treated as a flag.");
+            BLT_ASSERT(arg.value().empty() && "Double plus flag should have empty value.");
+            BLT_ASSERT(arg.get_flag() == "++" && "Double plus value should match the input string.");
         }
 
         void run_all_tests_argument_string_t()
@@ -130,7 +159,11 @@ namespace blt::argparse
             test_argument_string_t_double_hyphen();
             test_argument_string_t_with_spaces();
             test_argument_string_t_numeric_flag();
+            test_argument_string_t_plus_flag_basic();
+            test_argument_string_t_single_plus();
+            test_argument_string_t_double_plus();
         }
+
         void test()
         {
             run_all_tests_argument_string_t();

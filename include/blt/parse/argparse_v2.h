@@ -26,7 +26,10 @@
 #include <vector>
 #include <variant>
 #include <optional>
+#include <type_traits>
 #include <blt/iterator/enumerate.h>
+#include <blt/std/ranges.h>
+#include <blt/std/utility.h>
 
 namespace blt::argparse
 {
@@ -35,8 +38,10 @@ namespace blt::argparse
         inline hashset_t<std::string_view> allowed_flag_prefixes = {"-", "--", "+"};
 
         std::string flag_prefixes_as_string();
+        hashset_t<char> prefix_characters();
 
         inline std::string flag_prefix_list_string = flag_prefixes_as_string();
+        inline auto prefix_characters_set = prefix_characters();
 
         class bad_flag final : public std::runtime_error
         {
@@ -64,7 +69,42 @@ namespace blt::argparse
         using arg_data_t = std::variant<arg_primitive_data_t, arg_list_data_t>;
 
         template <typename T>
-        class arg_type_t;
+        struct arg_type_t
+        {
+            static T convert(const std::string_view value)
+            {
+                const std::string temp{value};
+
+                if constexpr (std::is_same_v<T, i8> || std::is_same_v<T, i16> || std::is_same_v<T, i32>)
+                {
+                    return static_cast<T>(std::stoi(temp));
+                }
+                else if constexpr (std::is_same_v<T, i64>)
+                {
+                    return static_cast<i64>(std::stoll(temp));
+                }
+                else if constexpr (std::is_same_v<T, u8> || std::is_same_v<T, u16> || std::is_same_v<T, u32>)
+                {
+                    return static_cast<T>(std::stoul(temp));
+                }
+                else if constexpr (std::is_same_v<T, u64>)
+                {
+                    return static_cast<u64>(std::stoull(temp));
+                }
+                else if constexpr (std::is_same_v<T, float>)
+                {
+                    return std::stof(temp);
+                }
+                else if constexpr (std::is_same_v<T, double>)
+                {
+                    return std::stod(temp);
+                } else
+                {
+                    static_assert(std::is_arithmetic_v<T>, "Unsupported type for this specialization");
+                }
+                BLT_UNREACHABLE;
+            }
+        };
 
         void test();
     }
@@ -115,7 +155,7 @@ namespace blt::argparse
             size_t start = m_argument.size();
             for (auto [i, c] : enumerate(m_argument))
             {
-                if (std::isalnum(c))
+                if (!detail::prefix_characters_set.contains(c))
                 {
                     start = i;
                     break;
@@ -140,38 +180,37 @@ namespace blt::argparse
     class argument_consumer_t
     {
     public:
-        argument_consumer_t(const i32 argc, const char** argv): argv(argv), argc(argc)
+        explicit argument_consumer_t(const span<argument_string_t>& args): args(args)
         {
         }
 
-        [[nodiscard]] std::string_view peek(const i32 offset = 0) const
+        [[nodiscard]] argument_string_t peek(const i32 offset = 0) const
         {
-            return argv[forward_index + offset];
+            return args[forward_index + offset];
         }
 
-        std::string_view consume()
+        argument_string_t consume()
         {
-            return argv[forward_index++];
+            return args[forward_index++];
         }
 
         [[nodiscard]] i32 position() const
         {
-            return argc;
+            return forward_index;
         }
 
         [[nodiscard]] i32 remaining() const
         {
-            return argc - forward_index;
+            return static_cast<i32>(args.size()) - forward_index;
         }
 
         [[nodiscard]] bool has_next(const i32 offset = 0) const
         {
-            return (offset + forward_index) < argc;
+            return (offset + forward_index) < args.size();
         }
 
     private:
-        const char** argv;
-        i32 argc;
+        span<argument_string_t> args;
         i32 forward_index = 0;
     };
 }
