@@ -56,6 +56,49 @@ namespace blt::argparse
             }
         };
 
+        class subparse_error final : public std::exception
+        {
+        public:
+            explicit subparse_error(const std::string_view found_string, std::vector<std::string_view> allowed_strings): m_found_string(found_string),
+                m_allowed_strings(std::move(allowed_strings))
+            {
+            }
+
+            [[nodiscard]] const std::vector<std::string_view>& get_allowed_strings() const
+            {
+                return m_allowed_strings;
+            }
+
+            [[nodiscard]] std::string_view get_found_string() const
+            {
+                return m_found_string;
+            }
+
+            [[nodiscard]] std::string error_string() const
+            {
+                std::string message = "Subparser Error: ";
+                message += m_found_string;
+                message += " is not a valid command. Allowed commands are: {";
+                for (const auto [i, allowed_string] : enumerate(m_allowed_strings))
+                {
+                    message += allowed_string;
+                    if (i != m_allowed_strings.size() - 1)
+                        message += ' ';
+                }
+                message += "}";
+                return message;
+            }
+
+            [[nodiscard]] const char* what() const override
+            {
+                return "Please use error_string() method instead of what(). This exception should *always* be caught!";
+            }
+
+        private:
+            std::string_view m_found_string;
+            std::vector<std::string_view> m_allowed_strings;
+        };
+
         template <typename... Args>
         struct arg_data_helper_t
         {
@@ -207,6 +250,8 @@ namespace blt::argparse
 
     class argument_parser_t
     {
+        friend argument_subparser_t;
+
     public:
         explicit argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {}):
             m_name(name), m_usage(usage)
@@ -219,6 +264,10 @@ namespace blt::argparse
             return *this;
         }
 
+        void parse(argument_consumer_t& consumer) // NOLINT
+        {
+        }
+
     private:
         std::optional<std::string> m_name;
         std::optional<std::string> m_usage;
@@ -229,17 +278,51 @@ namespace blt::argparse
     class argument_subparser_t
     {
     public:
-
-        argument_parser_t add_subparser(const std::string_view dest)
+        explicit argument_subparser_t(const argument_parser_t& parent): m_parent(&parent)
         {
-
         }
 
-        argument_parser_t add_subparser(std::string& dest)
+        argument_parser_t& add_parser(const std::string_view name)
         {
-
+            m_parsers.emplace(name);
+            return m_parsers[name];
         }
+
+
+        /**
+         * Parses the next argument using the provided argument consumer.
+         *
+         * This function uses an argument consumer to extract and process the next argument.
+         * If the argument is a flag or if it cannot be matched against the available parsers,
+         * an exception is thrown.
+         *
+         * @param consumer Reference to an argument_consumer_t object, which handles argument parsing.
+         *                  The consumer provides the next argument to be parsed.
+         *
+         * @throws detail::subparse_error If the argument is a flag or does not match any known parser.
+         */
+        void parse(argument_consumer_t& consumer) // NOLINT
+        {
+            const auto key = consumer.consume();
+            if (key.is_flag())
+                throw detail::subparse_error(key.get_argument(), get_allowed_strings());
+            const auto it = m_parsers.find(key.get_name());
+            if (it == m_parsers.end())
+                throw detail::subparse_error(key.get_argument(), get_allowed_strings());
+            it->second.parse(consumer);
+        }
+
     private:
+        [[nodiscard]] std::vector<std::string_view> get_allowed_strings() const
+        {
+            std::vector<std::string_view> vec;
+            for (const auto& [key, value] : m_parsers)
+                vec.push_back(key);
+            return vec;
+        }
+
+        const argument_parser_t* m_parent;
+        hashmap_t<std::string_view, argument_parser_t> m_parsers;
     };
 }
 
