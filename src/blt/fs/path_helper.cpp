@@ -35,6 +35,7 @@ namespace blt::fs
     std::string_view base_name_sv(const std::string_view str)
     {
         const auto parts = string::split_sv(str, delim);
-        return parts.back();
+        const auto file_parts = string::split_sv(parts.back(), '.');
+        return file_parts.front();
     }
 }
