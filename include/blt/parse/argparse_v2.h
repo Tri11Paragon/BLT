@@ -253,8 +253,9 @@ namespace blt::argparse
         friend argument_subparser_t;
 
     public:
-        explicit argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {}):
-            m_name(name), m_usage(usage)
+        explicit argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {},
+                                   const std::optional<std::string_view> description = {}, const std::optional<std::string_view> epilogue = {}):
+            m_name(name), m_usage(usage), m_description(description), m_epilogue(epilogue)
         {
         }
 
@@ -278,13 +279,21 @@ namespace blt::argparse
     class argument_subparser_t
     {
     public:
-        explicit argument_subparser_t(const argument_parser_t& parent): m_parent(&parent)
+        explicit argument_subparser_t(const argument_parser_t& parent): m_parent(&parent), m_usage(parent.m_usage),
+                                                                          m_description(parent.m_description), m_epilogue(parent.m_epilogue)
+        {
+        }
+
+        explicit argument_subparser_t(const argument_parser_t& parent, const std::optional<std::string_view> usage = {},
+                                      const std::optional<std::string_view> description = {},
+                                      const std::optional<std::string_view> epilogue = {}): m_parent(&parent), m_usage(usage),
+                                                                                            m_description(description), m_epilogue(epilogue)
         {
         }
 
         argument_parser_t& add_parser(const std::string_view name)
         {
-            m_parsers.emplace(name);
+            m_parsers.emplace(name, {}, m_usage, m_description, m_epilogue);
             return m_parsers[name];
         }
 
@@ -309,6 +318,7 @@ namespace blt::argparse
             const auto it = m_parsers.find(key.get_name());
             if (it == m_parsers.end())
                 throw detail::subparse_error(key.get_argument(), get_allowed_strings());
+            it->second.m_name = m_parent->m_name;
             it->second.parse(consumer);
         }
 
@@ -322,6 +332,9 @@ namespace blt::argparse
         }
 
         const argument_parser_t* m_parent;
+        std::optional<std::string> m_usage;
+        std::optional<std::string> m_description;
+        std::optional<std::string> m_epilogue;
         hashmap_t<std::string_view, argument_parser_t> m_parsers;
     };
 }
