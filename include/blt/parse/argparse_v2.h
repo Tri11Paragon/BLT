@@ -21,11 +21,13 @@
 
 #include <blt/std/types.h>
 #include <blt/std/hashmap.h>
+#include <blt/fs/path_helper.h>
 #include <string>
 #include <string_view>
 #include <vector>
 #include <variant>
 #include <optional>
+#include <memory>
 #include <type_traits>
 #include <blt/iterator/enumerate.h>
 #include <blt/std/ranges.h>
@@ -33,6 +35,13 @@
 
 namespace blt::argparse
 {
+    class argument_string_t;
+    class argument_consumer_t;
+    class argument_parser_t;
+    class argument_subparser_t;
+    class parsed_argset_t;
+    class argument_builder_t;
+
     namespace detail
     {
         inline hashset_t<std::string_view> allowed_flag_prefixes = {"-", "--", "+"};
@@ -73,34 +82,24 @@ namespace blt::argparse
         {
             static T convert(const std::string_view value)
             {
+                static_assert(std::is_arithmetic_v<T>, "Type must be arithmetic!");
                 const std::string temp{value};
 
-                if constexpr (std::is_same_v<T, i8> || std::is_same_v<T, i16> || std::is_same_v<T, i32>)
-                {
-                    return static_cast<T>(std::stoi(temp));
-                }
-                else if constexpr (std::is_same_v<T, i64>)
-                {
-                    return static_cast<i64>(std::stoll(temp));
-                }
-                else if constexpr (std::is_same_v<T, u8> || std::is_same_v<T, u16> || std::is_same_v<T, u32>)
-                {
-                    return static_cast<T>(std::stoul(temp));
-                }
-                else if constexpr (std::is_same_v<T, u64>)
-                {
-                    return static_cast<u64>(std::stoull(temp));
-                }
-                else if constexpr (std::is_same_v<T, float>)
+                if constexpr (std::is_same_v<T, float>)
                 {
                     return std::stof(temp);
                 }
                 else if constexpr (std::is_same_v<T, double>)
                 {
                     return std::stod(temp);
-                } else
+                }
+                else if constexpr (std::is_unsigned_v<T>)
                 {
-                    static_assert(std::is_arithmetic_v<T>, "Unsupported type for this specialization");
+                    return static_cast<T>(std::stoull(temp));
+                }
+                else if constexpr (std::is_signed_v<T>)
+                {
+                    return static_cast<T>(std::stoll(temp));
                 }
                 BLT_UNREACHABLE;
             }
@@ -120,16 +119,16 @@ namespace blt::argparse
 
         [[nodiscard]] std::string_view get_flag() const
         {
-            if (!flag_section)
+            if (!m_flag_section)
                 process_argument();
-            return *flag_section;
+            return *m_flag_section;
         }
 
         [[nodiscard]] std::string_view get_name() const
         {
-            if (!name_section)
+            if (!m_name_section)
                 process_argument();
-            return *name_section;
+            return *m_name_section;
         }
 
         [[nodiscard]] std::string_view value() const
@@ -162,56 +161,99 @@ namespace blt::argparse
                 }
             }
             m_is_flag = (start != 0);
-            flag_section = {m_argument.data(), start};
-            name_section = {m_argument.data() + start, m_argument.size() - start};
+            m_flag_section = {m_argument.data(), start};
+            m_name_section = {m_argument.data() + start, m_argument.size() - start};
 
-            if (!flag_section->empty() && !detail::allowed_flag_prefixes.contains(*flag_section))
+            if (!m_flag_section->empty() && !detail::allowed_flag_prefixes.contains(*m_flag_section))
                 throw detail::bad_flag(
-                    "Invalid flag " + std::string(*flag_section) + " detected, flag is not in allowed list of flags! Must be one of " +
+                    "Invalid flag " + std::string(*m_flag_section) + " detected, flag is not in allowed list of flags! Must be one of " +
                     detail::flag_prefix_list_string);
         }
 
         std::string_view m_argument;
         mutable std::optional<bool> m_is_flag;
-        mutable std::optional<std::string_view> flag_section;
-        mutable std::optional<std::string_view> name_section;
+        mutable std::optional<std::string_view> m_flag_section;
+        mutable std::optional<std::string_view> m_name_section;
     };
 
     class argument_consumer_t
     {
     public:
-        explicit argument_consumer_t(const span<argument_string_t>& args): args(args)
+        explicit argument_consumer_t(const span<argument_string_t>& args): m_args(args)
         {
         }
 
         [[nodiscard]] argument_string_t peek(const i32 offset = 0) const
         {
-            return args[forward_index + offset];
+            return m_args[m_forward_index + offset];
         }
 
         argument_string_t consume()
         {
-            return args[forward_index++];
+            return m_args[m_forward_index++];
         }
 
         [[nodiscard]] i32 position() const
         {
-            return forward_index;
+            return m_forward_index;
         }
 
         [[nodiscard]] i32 remaining() const
         {
-            return static_cast<i32>(args.size()) - forward_index;
+            return static_cast<i32>(m_args.size()) - m_forward_index;
         }
 
         [[nodiscard]] bool has_next(const i32 offset = 0) const
         {
-            return (offset + forward_index) < args.size();
+            return (offset + m_forward_index) < m_args.size();
         }
 
     private:
-        span<argument_string_t> args;
-        i32 forward_index = 0;
+        span<argument_string_t> m_args;
+        i32 m_forward_index = 0;
+    };
+
+    class argument_builder_t
+    {
+    public:
+
+    private:
+    };
+
+    class parsed_argset_t
+    {
+    public:
+
+    private:
+    };
+
+    class argument_parser_t
+    {
+    public:
+        argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {}):
+            m_name(name.value_or(std::optional<std::string>{})), m_usage(usage.value_or(std::optional<std::string>{}))
+        {
+        }
+
+        argument_parser_t& set_name(const std::string_view name)
+        {
+            m_name = name;
+            return *this;
+        }
+
+    private:
+        std::optional<std::string> m_name;
+        std::optional<std::string> m_usage;
+        std::optional<std::string> m_description;
+        std::optional<std::string> m_epilogue;
+    };
+
+    class argument_subparser_t
+    {
+    public:
+
+    private:
+
     };
 }
 
