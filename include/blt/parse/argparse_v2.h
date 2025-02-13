@@ -44,14 +44,6 @@ namespace blt::argparse
 
     namespace detail
     {
-        inline hashset_t<std::string_view> allowed_flag_prefixes = {"-", "--", "+"};
-
-        std::string flag_prefixes_as_string();
-        hashset_t<char> prefix_characters();
-
-        inline std::string flag_prefix_list_string = flag_prefixes_as_string();
-        inline auto prefix_characters_set = prefix_characters();
-
         class bad_flag final : public std::runtime_error
         {
         public:
@@ -111,24 +103,22 @@ namespace blt::argparse
     class argument_string_t
     {
     public:
-        explicit argument_string_t(const char* input): m_argument(input)
+        explicit argument_string_t(const char* input, const hashset_t<char>& allowed_flag_prefix): m_argument(input),
+                                                                                                   allowed_flag_prefix(&allowed_flag_prefix)
         {
             if (input == nullptr)
                 throw detail::bad_flag("Argument cannot be null!");
+            process_argument();
         }
 
         [[nodiscard]] std::string_view get_flag() const
         {
-            if (!m_flag_section)
-                process_argument();
-            return *m_flag_section;
+            return m_flag_section;
         }
 
         [[nodiscard]] std::string_view get_name() const
         {
-            if (!m_name_section)
-                process_argument();
-            return *m_name_section;
+            return m_name_section;
         }
 
         [[nodiscard]] std::string_view value() const
@@ -138,9 +128,7 @@ namespace blt::argparse
 
         [[nodiscard]] bool is_flag() const
         {
-            if (!m_is_flag)
-                process_argument();
-            return *m_is_flag;
+            return !m_flag_section.empty();
         }
 
         [[nodiscard]] std::string_view get_argument() const
@@ -149,31 +137,21 @@ namespace blt::argparse
         }
 
     private:
-        void process_argument() const
+        void process_argument()
         {
-            size_t start = m_argument.size();
-            for (auto [i, c] : enumerate(m_argument))
+            size_t start = 0;
+            for (; start < m_argument.size() && allowed_flag_prefix->contains(m_argument[start]); start++)
             {
-                if (!detail::prefix_characters_set.contains(c))
-                {
-                    start = i;
-                    break;
-                }
             }
-            m_is_flag = (start != 0);
+
             m_flag_section = {m_argument.data(), start};
             m_name_section = {m_argument.data() + start, m_argument.size() - start};
-
-            if (!m_flag_section->empty() && !detail::allowed_flag_prefixes.contains(*m_flag_section))
-                throw detail::bad_flag(
-                    "Invalid flag " + std::string(*m_flag_section) + " detected, flag is not in allowed list of flags! Must be one of " +
-                    detail::flag_prefix_list_string);
         }
 
         std::string_view m_argument;
-        mutable std::optional<bool> m_is_flag;
-        mutable std::optional<std::string_view> m_flag_section;
-        mutable std::optional<std::string_view> m_name_section;
+        std::string_view m_flag_section;
+        std::string_view m_name_section;
+        const hashset_t<char>* allowed_flag_prefix;
     };
 
     class argument_consumer_t
@@ -230,8 +208,8 @@ namespace blt::argparse
     class argument_parser_t
     {
     public:
-        argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {}):
-            m_name(name.value_or(std::optional<std::string>{})), m_usage(usage.value_or(std::optional<std::string>{}))
+        explicit argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {}):
+            m_name(name), m_usage(usage)
         {
         }
 
@@ -252,8 +230,16 @@ namespace blt::argparse
     {
     public:
 
-    private:
+        argument_parser_t add_subparser(const std::string_view dest)
+        {
 
+        }
+
+        argument_parser_t add_subparser(std::string& dest)
+        {
+
+        }
+    private:
     };
 }
 
