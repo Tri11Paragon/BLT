@@ -155,7 +155,7 @@ namespace blt::argparse
     void argument_string_t::process_argument()
     {
         size_t start = 0;
-        for (; start < m_argument.size() && allowed_flag_prefix->contains(m_argument[start]); start++)
+        for (; start < m_argument.size() && m_allowed_flag_prefix->contains(m_argument[start]); start++)
         {
         }
 

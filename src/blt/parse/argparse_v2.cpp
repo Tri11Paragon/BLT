@@ -23,12 +23,6 @@ namespace blt::argparse
 {
     namespace detail
     {
-
-    }
-
-
-    namespace detail
-    {
         // Unit Tests for class argument_string_t
         // Test Case 1: Ensure the constructor handles flags correctly
         void test_argument_string_t_flag_basic(const hashset_t<char>& prefixes)
@@ -122,7 +116,6 @@ namespace blt::argparse
             BLT_ASSERT(arg.get_flag() == "++" && "Double plus value should match the input string.");
         }
 
-        
 
         void run_all_tests_argument_string_t()
         {
@@ -144,6 +137,32 @@ namespace blt::argparse
         {
             run_all_tests_argument_string_t();
         }
+
+        [[nodiscard]] std::string subparse_error::error_string() const
+        {
+            std::string message = "Subparser Error: ";
+            message += m_found_string;
+            message += " is not a valid command. Allowed commands are: {";
+            for (const auto [i, allowed_string] : enumerate(m_allowed_strings))
+            {
+                if (allowed_string.size() > 1)
+                    message += '[';
+                for (const auto [j, alias] : enumerate(allowed_string))
+                {
+                    message += alias;
+                    if (j < alias.size() - 2)
+                        message += ", ";
+                    else if (j < alias.size())
+                        message += ", or ";
+                }
+                if (allowed_string.size() > 1)
+                    message += ']';
+                if (i != m_allowed_strings.size() - 1)
+                    message += ' ';
+            }
+            message += "}";
+            return message;
+        }
     }
 
     argument_subparser_t& argument_parser_t::add_subparser(const std::string_view dest)
@@ -152,44 +171,162 @@ namespace blt::argparse
         return m_subparsers.back().second;
     }
 
-    void argument_parser_t::parse(argument_consumer_t& consumer)
+    argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
     {
-        if (!consumer.has_next())
+        hashset_t<std::string_view> found_flags;
+        hashset_t<std::string_view> found_positional;
+        argument_storage_t parsed_args;
+        // first, we consume flags which may be part of this parser
+        while (consumer.can_consume() && consumer.peek().is_flag())
         {
-            if (m_subparsers.size() > 0)
+            const auto key = consumer.consume();
+            const auto flag = m_flag_arguments.find(key.get_argument());
+            if (flag == m_flag_arguments.end())
             {
-                std::cout << ""
-                print_help();
-                return;
+                std::cerr << "Error: Unknown flag: " << key.get_argument() << std::endl;
+                exit(1);
+            }
+            found_flags.insert(key.get_argument());
+            parse_flag(parsed_args, consumer, key.get_argument());
+        }
+        try
+        {
+            for (auto& [key, subparser] : m_subparsers)
+            {
+                auto [parsed_subparser, storage] = subparser.parse(consumer);
+                storage.m_data.insert({key, detail::arg_data_t{parsed_subparser.get_argument()}});
+                parsed_args.add(storage);
             }
         }
+        catch (const detail::missing_argument_error& e)
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+            print_usage();
+            exit(1);
+        } catch (const detail::subparse_error& e)
+        {
+            std::cerr << e.error_string() << std::endl;
+            exit(1);
+        }
+        while (consumer.can_consume())
+        {
+            const auto key = consumer.consume();
+            if (key.is_flag())
+            {
+                const auto flag = m_flag_arguments.find(key.get_argument());
+                if (flag == m_flag_arguments.end())
+                {
+                    std::cerr << "Error: Unknown flag: " << key.get_argument() << std::endl;
+                    exit(1);
+                }
+                found_flags.insert(key.get_argument());
+                parse_flag(parsed_args, consumer, key.get_argument());
+            }
+            else
+            {
+                const auto pos = m_positional_arguments.find(key.get_argument());
+                if (pos == m_positional_arguments.end())
+                {
+                    std::cerr << "Error: Unknown positional argument: " << key.get_argument() << std::endl;
+                    exit(1);
+                }
+                found_positional.insert(key.get_argument());
+                parse_positional(parsed_args, consumer, key.get_argument());
+            }
+        }
+        handle_missing_and_default_args(m_flag_arguments, found_flags, parsed_args, "flag");
+        handle_missing_and_default_args(m_positional_arguments, found_positional, parsed_args, "positional");
+
+        return parsed_args;
     }
 
     void argument_parser_t::print_help()
     {
-
     }
 
-    argument_string_t argument_subparser_t::parse(argument_consumer_t& consumer)
+    void argument_parser_t::print_usage()
     {
-        if (!consumer.has_next())
+    }
+
+    void argument_parser_t::parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
+    {
+        auto& flag = m_flag_arguments[arg];
+        auto dest = flag->m_dest.value_or(arg);
+        std::visit(lambda_visitor{
+                       [&parsed_args, &consumer, &dest, &flag, arg](const nargs_t arg_enum)
+                       {
+                           switch (arg_enum)
+                           {
+                           case nargs_t::IF_POSSIBLE:
+                               if (consumer.can_consume() && !consumer.peek().is_flag())
+                                   flag->m_dest_func(dest, parsed_args, consumer.consume().get_argument());
+                               else
+                               {
+                                   if (flag->m_const_value)
+                                       parsed_args.m_data.insert({dest, *flag->m_const_value});
+                               }
+                               break;
+                           [[fallthrough]] case nargs_t::ALL_AT_LEAST_ONE:
+                               if (!consumer.can_consume())
+                                   std::cout << "Error expected at least one argument to be consumed by '" << arg << '\'' << std::endl;
+                           case nargs_t::ALL:
+                               std::vector<std::string_view> args;
+                               while (consumer.can_consume() && !consumer.peek().is_flag())
+                                   args.emplace_back(consumer.consume().get_argument());
+                               flag->m_dest_vec_func(dest, parsed_args, args);
+                               break;
+                           }
+                       },
+                       [](const i32 argc)
+                       {
+                       }
+                   }, flag->m_nargs);
+    }
+
+    void argument_parser_t::parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
+    {
+    }
+
+    void argument_parser_t::handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
+                                                            const hashset_t<std::string_view>& found, argument_storage_t& parsed_args,
+                                                            const std::string_view type)
+    {
+        for (const auto& [key, value] : arguments)
+        {
+            if (!found.contains(key))
+            {
+                if (value->m_required)
+                {
+                    std::cerr << "Error: " << type << " argument '" << key << "' was not found but is required by the program" << std::endl;
+                    exit(1);
+                }
+                auto dest = value->m_dest.value_or(key);
+                if (value->m_default_value && !parsed_args.contains(dest))
+                    parsed_args.m_data.insert({dest, *value->m_default_value});
+            }
+        }
+    }
+
+    std::pair<argument_string_t, argument_storage_t> argument_subparser_t::parse(argument_consumer_t& consumer)
+    {
+        if (!consumer.can_consume())
             throw detail::missing_argument_error("Subparser requires an argument.");
         const auto key = consumer.consume();
         if (key.is_flag())
             throw detail::subparse_error(key.get_argument(), get_allowed_strings());
         const auto it = m_parsers.find(key.get_name());
+        argument_parser_t* parser;
         if (it == m_parsers.end())
         {
             const auto it2 = m_aliases.find(key.get_name());
             if (it2 == m_aliases.end())
                 throw detail::subparse_error(key.get_argument(), get_allowed_strings());
-            it2->second->m_name = m_parent->m_name;
-            it2->second->parse(consumer);
-            return key;
+            parser = it2->second;
         }
-        it->second.m_name = m_parent->m_name;
-        it->second.parse(consumer);
-        return key;
+        else
+            parser = &it->second;
+        parser->m_name = m_parent->m_name;
+        return {key, parser->parse(consumer)};
     }
 
     std::vector<std::vector<std::string_view>> argument_subparser_t::get_allowed_strings() const
