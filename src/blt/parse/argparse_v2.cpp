@@ -255,7 +255,7 @@ namespace blt::argparse
     void argument_parser_t::parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
         auto& flag = m_flag_arguments[arg];
-        auto dest = flag->m_dest.value_or(arg);
+        auto dest = flag->m_dest.value_or(std::string{arg});
         std::visit(lambda_visitor{
                        [&parsed_args, &consumer, &dest, &flag, arg](const nargs_t arg_enum)
                        {
@@ -270,9 +270,10 @@ namespace blt::argparse
                                        parsed_args.m_data.insert({dest, *flag->m_const_value});
                                }
                                break;
-                               [[fallthrough]] case nargs_t::ALL_AT_LEAST_ONE:
+                           case nargs_t::ALL_AT_LEAST_ONE:
                                if (!consumer.can_consume())
                                    std::cerr << "Error expected at least one argument to be consumed by '" << arg << '\'' << std::endl;
+                               [[fallthrough]];
                            case nargs_t::ALL:
                                std::vector<std::string_view> args;
                                while (consumer.can_consume() && !consumer.peek().is_flag())
@@ -300,7 +301,7 @@ namespace blt::argparse
                                }
                                args.push_back(consumer.consume().get_argument());
                            }
-                           if (args.size() != argc)
+                           if (args.size() != static_cast<size_t>(argc))
                            {
                                std::cerr <<
                                    "This error condition should not be possible. "
@@ -338,12 +339,12 @@ namespace blt::argparse
                                            std::cerr << "Constant value for flag '" << arg << "' type doesn't values already present!" << std::endl;
                                            std::exit(1);
                                        }
-
+                                       auto visitor = detail::arg_meta_type_helper_t::make_lists_only_visitor_on_vec([&flag](auto& vec)
+                                       {
+                                           vec.push_back(std::get<typename std::remove_const<std::remove_reference_t<decltype(vec)>>::value_type>(*flag->m_const_value));
+                                       });
+                                       std::visit(visitor, data);
                                    }
-                               // if (parsed_args.contains(dest))
-                               // {
-                               // std::visit(detail::arg_meta_type_helper_t::make_lists_only_visitor(handle_insert), parsed_args.m_data[dest]);
-                               // }
                                case action_t::STORE_CONST:
                                    std::cerr << "Store const flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
@@ -391,7 +392,7 @@ namespace blt::argparse
                     std::cerr << "Error: " << type << " argument '" << key << "' was not found but is required by the program" << std::endl;
                     exit(1);
                 }
-                auto dest = value->m_dest.value_or(key);
+                auto dest = value->m_dest.value_or(std::string{key});
                 if (value->m_default_value && !parsed_args.contains(dest))
                     parsed_args.m_data.insert({dest, *value->m_default_value});
             }

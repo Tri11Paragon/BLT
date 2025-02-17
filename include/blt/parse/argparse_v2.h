@@ -110,7 +110,7 @@ namespace blt::argparse
 
             [[nodiscard]] std::string error_string() const;
 
-            [[nodiscard]] const char* what() const override
+            [[nodiscard]] const char* what() const noexcept override
             {
                 return "Please use error_string() method instead of what(). This exception should *always* be caught!";
             }
@@ -134,21 +134,40 @@ namespace blt::argparse
             using arg_t = meta::arg_helper<Args...>;
             using arg_vec_t = meta::arg_helper<std::vector<Args>...>;
 
-            template <template<typename> typename... Defaults>
-            static auto make_lists_only_visitor(Defaults<std::vector<Args>>&&... d)
+            template <typename PerObjectAction>
+            static auto make_lists_only_visitor_per_object_in_vec(const PerObjectAction& action)
             {
                 return lambda_visitor{
                     invalid_option_lambda<Args...>,
-                    std::forward<Defaults>(d)...
+                    ([&action](std::vector<Args> arg_vec)
+                    {
+                        for (const auto& arg : arg_vec)
+                            action(arg_vec, arg);
+                    })...
                 };
             }
 
-            template <template<typename> typename... Defaults>
-            static auto make_reject_lists_visitor_t(Defaults<Args>&&... d)
+            template <typename DefaultAction>
+            static auto make_lists_only_visitor_on_vec(const DefaultAction& action)
+            {
+                return lambda_visitor{
+                    invalid_option_lambda<Args>...,
+                    ([&action](std::vector<Args> arg_vec)
+                    {
+                        action(arg_vec);
+                    })...
+                };
+            }
+
+            template <typename DefaultAction>
+            static auto make_reject_lists_visitor_t(const DefaultAction& action)
             {
                 return lambda_visitor{
                     invalid_option_lambda<std::vector<Args>...>,
-                    std::forward<Defaults>(d)...
+                    ([&action](Args arg)
+                    {
+                        action(arg);
+                    })...
                 };
             }
         };
@@ -346,7 +365,7 @@ namespace blt::argparse
     private:
         void add(const argument_storage_t& values)
         {
-            for (const auto value : values)
+            for (const auto& value : values.m_data)
                 m_data.insert(value);
         }
 
