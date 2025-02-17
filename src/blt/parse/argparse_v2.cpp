@@ -21,7 +21,6 @@
 
 namespace blt::argparse
 {
-
     namespace detail
     {
         // Unit Tests for class argument_string_t
@@ -325,10 +324,26 @@ namespace blt::argparse
                                        break;
                                    }
                                case action_t::APPEND_CONST:
-                                   // if (parsed_args.contains(dest))
-                                   // {
-                                       // std::visit(detail::arg_meta_type_helper_t::make_lists_only_visitor(handle_insert), parsed_args.m_data[dest]);
-                                   // }
+                                   if (flag->m_const_value)
+                                   {
+                                       std::cerr << "Append const chosen as an action but const value not provided for flag '" << arg << '\'' <<
+                                           std::endl;
+                                       std::exit(1);
+                                   }
+                                   if (parsed_args.contains(dest))
+                                   {
+                                       auto& data = parsed_args.m_data[dest];
+                                       if (data.index() != flag->m_const_value->index())
+                                       {
+                                           std::cerr << "Constant value for flag '" << arg << "' type doesn't values already present!" << std::endl;
+                                           std::exit(1);
+                                       }
+
+                                   }
+                               // if (parsed_args.contains(dest))
+                               // {
+                               // std::visit(detail::arg_meta_type_helper_t::make_lists_only_visitor(handle_insert), parsed_args.m_data[dest]);
+                               // }
                                case action_t::STORE_CONST:
                                    std::cerr << "Store const flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
