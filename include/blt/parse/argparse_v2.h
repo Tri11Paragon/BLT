@@ -22,6 +22,7 @@
 #include <blt/std/types.h>
 #include <blt/std/hashmap.h>
 #include <blt/fs/path_helper.h>
+#include <blt/meta/meta.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -51,11 +52,10 @@ namespace blt::argparse
         STORE_FALSE,
         APPEND,
         APPEND_CONST,
+        EXTEND,
         COUNT,
         HELP,
-        VERSION,
-        EXTEND,
-        SUBCOMMAND
+        VERSION
     };
 
     enum class nargs_t
@@ -120,13 +120,41 @@ namespace blt::argparse
             std::vector<std::vector<std::string_view>> m_allowed_strings;
         };
 
+        template <typename T>
+        constexpr auto invalid_option_lambda = [](const T)
+        {
+            std::cerr << "Invalid type - expected list type, found '" << blt::type_string<T>() << "'" << std::endl;
+            std::exit(1);
+        };
+
         template <typename... Args>
         struct arg_data_helper_t
         {
             using variant_t = std::variant<Args..., std::vector<Args>...>;
+            using arg_t = meta::arg_helper<Args...>;
+            using arg_vec_t = meta::arg_helper<std::vector<Args>...>;
+
+            template <template<typename> typename... Defaults>
+            static auto make_lists_only_visitor(Defaults<std::vector<Args>>&&... d)
+            {
+                return lambda_visitor{
+                    invalid_option_lambda<Args...>,
+                    std::forward<Defaults>(d)...
+                };
+            }
+
+            template <template<typename> typename... Defaults>
+            static auto make_reject_lists_visitor_t(Defaults<Args>&&... d)
+            {
+                return lambda_visitor{
+                    invalid_option_lambda<std::vector<Args>...>,
+                    std::forward<Defaults>(d)...
+                };
+            }
         };
 
-        using arg_data_t = arg_data_helper_t<i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string_view>::variant_t;
+        using arg_meta_type_helper_t = arg_data_helper_t<i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string_view>;
+        using arg_data_t = arg_meta_type_helper_t::variant_t;
 
         template <typename T>
         struct arg_string_converter_t
@@ -414,6 +442,8 @@ namespace blt::argparse
 
         void print_usage();
 
+        void print_version();
+
         argument_parser_t& set_name(const std::string_view name)
         {
             m_name = name;
@@ -456,8 +486,9 @@ namespace blt::argparse
     private:
         void parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
         void parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
-        static void handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments, const hashset_t<std::string_view>& found,
-                                             argument_storage_t& parsed_args, std::string_view type);
+        static void handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
+                                                    const hashset_t<std::string_view>& found,
+                                                    argument_storage_t& parsed_args, std::string_view type);
 
         std::optional<std::string> m_name;
         std::optional<std::string> m_usage;

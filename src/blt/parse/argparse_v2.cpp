@@ -21,6 +21,7 @@
 
 namespace blt::argparse
 {
+
     namespace detail
     {
         // Unit Tests for class argument_string_t
@@ -248,6 +249,10 @@ namespace blt::argparse
     {
     }
 
+    void argument_parser_t::print_version()
+    {
+    }
+
     void argument_parser_t::parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
         auto& flag = m_flag_arguments[arg];
@@ -266,9 +271,9 @@ namespace blt::argparse
                                        parsed_args.m_data.insert({dest, *flag->m_const_value});
                                }
                                break;
-                           [[fallthrough]] case nargs_t::ALL_AT_LEAST_ONE:
+                               [[fallthrough]] case nargs_t::ALL_AT_LEAST_ONE:
                                if (!consumer.can_consume())
-                                   std::cout << "Error expected at least one argument to be consumed by '" << arg << '\'' << std::endl;
+                                   std::cerr << "Error expected at least one argument to be consumed by '" << arg << '\'' << std::endl;
                            case nargs_t::ALL:
                                std::vector<std::string_view> args;
                                while (consumer.can_consume() && !consumer.peek().is_flag())
@@ -277,8 +282,79 @@ namespace blt::argparse
                                break;
                            }
                        },
-                       [](const i32 argc)
+                       [&parsed_args, &consumer, &dest, &flag, arg, this](const i32 argc)
                        {
+                           std::vector<std::string_view> args;
+                           for (i32 i = 0; i < argc; ++i)
+                           {
+                               if (!consumer.can_consume())
+                               {
+                                   std::cerr << "Error expected " << argc << " arguments to be consumed by '" << arg << "' but found " << i <<
+                                       std::endl;
+                                   std::exit(1);
+                               }
+                               if (consumer.peek().is_flag())
+                               {
+                                   std::cerr << "Error expected " << argc << " arguments to be consumed by '" << arg << "' but found a flag '" <<
+                                       consumer.peek().get_argument() << "' instead!" << std::endl;
+                                   std::exit(1);
+                               }
+                               args.push_back(consumer.consume().get_argument());
+                           }
+                           if (args.size() != argc)
+                           {
+                               std::cerr <<
+                                   "This error condition should not be possible. "
+                                   "Args consumed didn't equal the arguments requested and previous checks didn't fail. "
+                                   "Please report as an issue on the GitHub"
+                                   << std::endl;
+                               std::exit(1);
+                           }
+                           if (argc == 0)
+                           {
+                           }
+                           else if (argc == 1)
+                           {
+                               switch (flag->m_action)
+                               {
+                               case action_t::STORE:
+                                   break;
+                               case action_t::APPEND:
+                               case action_t::EXTEND:
+                                   {
+                                       break;
+                                   }
+                               case action_t::APPEND_CONST:
+                                   // if (parsed_args.contains(dest))
+                                   // {
+                                       // std::visit(detail::arg_meta_type_helper_t::make_lists_only_visitor(handle_insert), parsed_args.m_data[dest]);
+                                   // }
+                               case action_t::STORE_CONST:
+                                   std::cerr << "Store const flag called with an argument. This condition doesn't make sense." << std::endl;
+                                   print_usage();
+                                   std::exit(1);
+                               case action_t::STORE_TRUE:
+                                   std::cerr << "Store true flag called with an argument. This condition doesn't make sense." << std::endl;
+                                   print_usage();
+                                   std::exit(1);
+                               case action_t::STORE_FALSE:
+                                   std::cerr << "Store false flag called with an argument. This condition doesn't make sense." << std::endl;
+                                   print_usage();
+                                   std::exit(1);
+                               case action_t::COUNT:
+                                   parsed_args.m_data.insert({dest, args.size()});
+                                   break;
+                               case action_t::HELP:
+                                   print_help();
+                                   std::exit(1);
+                               case action_t::VERSION:
+                                   print_version();
+                                   break;
+                               }
+                               flag->m_dest_func(dest, parsed_args, args.front());
+                           }
+                           else
+                               flag->m_dest_vec_func(dest, parsed_args, args);
                        }
                    }, flag->m_nargs);
     }
