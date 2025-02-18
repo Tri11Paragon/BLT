@@ -18,6 +18,7 @@
 #include <iostream>
 #include <blt/parse/argparse_v2.h>
 #include <blt/std/assert.h>
+#include <blt/meta/type_traits.h>
 
 namespace blt::argparse
 {
@@ -318,10 +319,12 @@ namespace blt::argparse
                                switch (flag->m_action)
                                {
                                case action_t::STORE:
+                                    flag->m_dest_func(dest, parsed_args, args.front());
                                    break;
                                case action_t::APPEND:
                                case action_t::EXTEND:
                                    {
+
                                        break;
                                    }
                                case action_t::APPEND_CONST:
@@ -334,17 +337,44 @@ namespace blt::argparse
                                    if (parsed_args.contains(dest))
                                    {
                                        auto& data = parsed_args.m_data[dest];
-                                       if (data.index() != flag->m_const_value->index())
-                                       {
-                                           std::cerr << "Constant value for flag '" << arg << "' type doesn't values already present!" << std::endl;
-                                           std::exit(1);
-                                       }
-                                       auto visitor = detail::arg_meta_type_helper_t::make_lists_only_visitor_on_vec([&flag](auto& vec)
-                                       {
-                                           vec.push_back(std::get<typename std::remove_const<std::remove_reference_t<decltype(vec)>>::value_type>(*flag->m_const_value));
-                                       });
+                                       auto visitor = detail::arg_meta_type_helper_t::make_visitor(
+                                           [arg](auto& primitive)
+                                           {
+                                               std::cerr << "Invalid type - '" << arg << "' expected list type, found '"
+                                                   << blt::type_string<decltype(primitive)>() << "' with value " << primitive << std::endl;
+                                               std::exit(1);
+                                           },
+                                           [&flag, arg](auto& vec)
+                                           {
+                                               using type = typename meta::remove_cvref_t<decltype(vec)>::value_type;
+                                               if (!std::holds_alternative<type>(*flag->m_const_value))
+                                               {
+                                                   std::cerr << "Constant value for flag '" << arg <<
+                                                       "' type doesn't match values already present! Expected to be of type '" <<
+                                                       blt::type_string<type>() << "'!" << std::endl;
+                                                   std::exit(1);
+                                               }
+                                               vec.push_back(std::get<type>(*flag->m_const_value));
+                                           });
                                        std::visit(visitor, data);
                                    }
+                                   else
+                                   {
+                                       auto visitor = detail::arg_meta_type_helper_t::make_visitor(
+                                           [&flag, &parsed_args, &dest](auto& primitive)
+                                           {
+                                               std::vector<meta::remove_cvref_t<decltype(primitive)>> vec;
+                                               vec.push_back(primitive);
+                                               parsed_args.m_data.insert({dest, std::move(vec)});
+                                           },
+                                           [](auto&)
+                                           {
+                                               std::cerr << "Append const should not be a list type!" << std::endl;
+                                               std::exit(1);
+                                           });
+                                       std::visit(visitor, *flag->m_const_value);
+                                   }
+                                   break;
                                case action_t::STORE_CONST:
                                    std::cerr << "Store const flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
@@ -358,7 +388,31 @@ namespace blt::argparse
                                    print_usage();
                                    std::exit(1);
                                case action_t::COUNT:
-                                   parsed_args.m_data.insert({dest, args.size()});
+                                   if (parsed_args.m_data.contains(dest))
+                                   {
+                                       auto visitor = detail::arg_meta_type_helper_t::make_visitor(
+                                           [&args](auto& primitive) -> detail::arg_data_t
+                                           {
+                                               using type = meta::remove_cvref_t<decltype(primitive)>;
+                                               if constexpr (std::is_convertible_v<decltype(args.size()), type>)
+                                               {
+                                                   return primitive + static_cast<type>(args.size());
+                                               } else
+                                               {
+                                                   std::cerr << "Error: count called but stored type is " << blt::type_string<type>() << std::endl;
+                                                   std::exit(1);
+                                               }
+                                           },
+                                           [](auto&) -> detail::arg_data_t
+                                           {
+                                               std::cerr << "List present on count. This condition doesn't make any sense! (How did we get here, please report this!)";
+                                               std::exit(1);
+                                           }
+                                       );
+                                       parsed_args.m_data[dest] = std::visit(visitor, parsed_args.m_data[dest]);
+                                   }
+                                   else
+                                       parsed_args.m_data.insert({dest, args.size()});
                                    break;
                                case action_t::HELP:
                                    print_help();
