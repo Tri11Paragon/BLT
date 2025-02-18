@@ -150,7 +150,7 @@ namespace blt::argparse
             }
         };
 
-        using arg_meta_type_helper_t = arg_data_helper_t<i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string_view>;
+        using arg_meta_type_helper_t = arg_data_helper_t<bool, i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string_view>;
         using arg_data_t = arg_meta_type_helper_t::variant_t;
 
         template <typename T>
