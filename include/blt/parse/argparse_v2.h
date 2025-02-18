@@ -376,10 +376,26 @@ namespace blt::argparse
             };
             m_dest_vec_func = [](const std::string_view dest, argument_storage_t& storage, const std::vector<std::string_view>& values)
             {
-                std::vector<T> converted_values;
-                for (const auto& value : values)
-                    converted_values.push_back(detail::arg_string_converter_t<T>::convert(value));
-                storage.m_data.insert({dest, converted_values});
+                if (storage.m_data.contains(dest))
+                {
+                    auto& data = storage.m_data[dest];
+                    if (!std::holds_alternative<std::vector<T>>(data))
+                    {
+                        std::cerr << "Invalid type conversion. Trying to add type " << blt::type_string<T>() <<
+                            " but this does not match existing type index '" << data.index() << "'!" << std::endl;
+                        std::exit(1);
+                    }
+                    std::vector<T>& converted_values = std::get<std::vector<T>>(data);
+                    for (const auto& value : values)
+                        converted_values.push_back(detail::arg_string_converter_t<T>::convert(value));
+                }
+                else
+                {
+                    std::vector<T> converted_values;
+                    for (const auto& value : values)
+                        converted_values.push_back(detail::arg_string_converter_t<T>::convert(value));
+                    storage.m_data.insert({dest, converted_values});
+                }
             };
             return *this;
         }

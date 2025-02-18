@@ -313,24 +313,23 @@ namespace blt::argparse
                            }
                            if (argc == 0)
                            {
+
                            }
                            else if (argc == 1)
                            {
                                switch (flag->m_action)
                                {
                                case action_t::STORE:
-                                    flag->m_dest_func(dest, parsed_args, args.front());
+                                   flag->m_dest_func(dest, parsed_args, args.front());
                                    break;
                                case action_t::APPEND:
                                case action_t::EXTEND:
-                                   {
-
-                                       break;
-                                   }
+                                   flag->m_dest_vec_func(dest, parsed_args, args);
+                                   break;
                                case action_t::APPEND_CONST:
                                    if (flag->m_const_value)
                                    {
-                                       std::cerr << "Append const chosen as an action but const value not provided for flag '" << arg << '\'' <<
+                                       std::cerr << "Append const chosen as an action but const value not provided for argument '" << arg << '\'' <<
                                            std::endl;
                                        std::exit(1);
                                    }
@@ -340,7 +339,7 @@ namespace blt::argparse
                                        auto visitor = detail::arg_meta_type_helper_t::make_visitor(
                                            [arg](auto& primitive)
                                            {
-                                               std::cerr << "Invalid type - '" << arg << "' expected list type, found '"
+                                               std::cerr << "Invalid type for argument '" << arg << "' expected list type, found '"
                                                    << blt::type_string<decltype(primitive)>() << "' with value " << primitive << std::endl;
                                                std::exit(1);
                                            },
@@ -349,7 +348,7 @@ namespace blt::argparse
                                                using type = typename meta::remove_cvref_t<decltype(vec)>::value_type;
                                                if (!std::holds_alternative<type>(*flag->m_const_value))
                                                {
-                                                   std::cerr << "Constant value for flag '" << arg <<
+                                                   std::cerr << "Constant value for argument '" << arg <<
                                                        "' type doesn't match values already present! Expected to be of type '" <<
                                                        blt::type_string<type>() << "'!" << std::endl;
                                                    std::exit(1);
@@ -397,7 +396,8 @@ namespace blt::argparse
                                                if constexpr (std::is_convertible_v<decltype(args.size()), type>)
                                                {
                                                    return primitive + static_cast<type>(args.size());
-                                               } else
+                                               }
+                                               else
                                                {
                                                    std::cerr << "Error: count called but stored type is " << blt::type_string<type>() << std::endl;
                                                    std::exit(1);
@@ -405,7 +405,8 @@ namespace blt::argparse
                                            },
                                            [](auto&) -> detail::arg_data_t
                                            {
-                                               std::cerr << "List present on count. This condition doesn't make any sense! (How did we get here, please report this!)";
+                                               std::cerr <<
+                                                   "List present on count. This condition doesn't make any sense! (How did we get here, please report this!)";
                                                std::exit(1);
                                            }
                                        );
