@@ -19,9 +19,49 @@
 #include <blt/parse/argparse_v2.h>
 #include <blt/std/assert.h>
 #include <blt/meta/type_traits.h>
+#include <blt/std/logging.h>
 
 namespace blt::argparse
 {
+    template <typename T>
+    size_t get_const_char_size(const T& t)
+    {
+        if constexpr (std::is_convertible_v<T, const char*>)
+        {
+            return std::char_traits<char>::length(t);
+        }
+        else if constexpr (std::is_same_v<T, char> || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>)
+        {
+            return 1;
+        }
+        else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<T, std::string>)
+        {
+            return t.size();
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    template<typename T>
+    auto ensure_is_string(T&& t)
+    {
+        if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>>)
+            return std::to_string(std::forward<T>(t));
+        else
+            return std::forward<T>(t);
+    }
+
+    template <typename... Strings>
+    std::string make_string(Strings&&... strings)
+    {
+        std::string out;
+        out.reserve((get_const_char_size(strings) + ...));
+        ((out += ensure_is_string(std::forward<Strings>(strings))), ...);
+        return out;
+    }
+
     namespace detail
     {
         // Unit Tests for class argument_string_t
@@ -134,9 +174,113 @@ namespace blt::argparse
             test_argument_string_t_double_plus(prefixes);
         }
 
+        void test_argparse_empty()
+        {
+            std::vector<std::string> const argv;
+            argument_parser_t parser;
+            const auto args = parser.parse(argv);
+            BLT_ASSERT(args.size() == 0 && "Empty argparse should have no args on output");
+        }
+
+        void test_single_flag_prefixes()
+        {
+            argument_parser_t parser;
+            parser.add_flag("-a").set_action(action_t::STORE_TRUE);
+            parser.add_flag("+b").set_action(action_t::STORE_FALSE);
+            parser.add_flag("/c").as_type<int>().set_action(action_t::STORE);
+
+            const std::vector<std::string> args = {"-a", "+b", "/c", "42"};
+            const auto parsed_args = parser.parse(args);
+
+            BLT_ASSERT(parsed_args.get<bool>("-a") == true && "Flag '-a' should store `true`");
+            BLT_ASSERT(parsed_args.get<bool>("+b") == false && "Flag '+b' should store `false`");
+            BLT_ASSERT(parsed_args.get<int>("/c") == 42 && "Flag '/c' should store the value 42");
+        }
+
+        // Test: Invalid flag prefixes
+        void test_invalid_flag_prefixes()
+        {
+            argument_parser_t parser;
+            parser.add_flag("-a");
+            parser.add_flag("+b");
+            parser.add_flag("/c");
+
+            const std::vector<std::string> args = {"!d", "-a"};
+            try
+            {
+                parser.parse(args);
+                BLT_ASSERT(false && "Parsing should fail with invalid flag prefix '!'");
+            }
+            catch (const bad_flag& _)
+            {
+                BLT_ASSERT(true && "Correctly threw on bad flag prefix");
+            }
+        }
+
+        void test_compound_flags()
+        {
+            argument_parser_t parser;
+            parser.add_flag("-v").as_type<int>().set_action(action_t::COUNT);
+
+            const std::vector<std::string> args = {"-vvv"};
+            const auto parsed_args = parser.parse(args);
+
+            BLT_ASSERT(parsed_args.get<int>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
+        }
+
+        void test_combination_of_valid_and_invalid_flags()
+        {
+            using namespace argparse;
+
+            argument_parser_t parser;
+            parser.add_flag("-x").as_type<int>();
+            parser.add_flag("/y").as_type<std::string_view>();
+
+            const std::vector<std::string> args = {"-x", "10", "!z", "/y", "value"};
+            try
+            {
+                parser.parse(args);
+                BLT_ASSERT(false && "Parsing should fail due to invalid flag '!z'");
+            }
+            catch (const bad_flag& _)
+            {
+                BLT_ASSERT(true && "Correctly threw an exception for invalid flag");
+            }
+        }
+
+        void test_flags_with_different_actions()
+        {
+            using namespace argparse;
+
+            argument_parser_t parser;
+            parser.add_flag("-k").as_type<int>().set_action(action_t::STORE); // STORE action
+            parser.add_flag("-t").as_type<int>().set_action(action_t::STORE_CONST).set_const(999); // STORE_CONST action
+            parser.add_flag("-f").set_action(action_t::STORE_FALSE); // STORE_FALSE action
+            parser.add_flag("-c").set_action(action_t::STORE_TRUE); // STORE_TRUE action
+
+            const std::vector<std::string> args = {"-k", "100", "-t", "-f", "-c"};
+            const auto parsed_args = parser.parse(args);
+
+            BLT_ASSERT(parsed_args.get<int>("-k") == 100 && "Flag '-k' should store 100");
+            BLT_ASSERT(parsed_args.get<int>("-t") == 999 && "Flag '-t' should store a const value of 999");
+            BLT_ASSERT(parsed_args.get<bool>("-f") == false && "Flag '-f' should store `false`");
+            BLT_ASSERT(parsed_args.get<bool>("-c") == true && "Flag '-c' should store `true`");
+        }
+
+        void run_argparse_flag_tests()
+        {
+            test_single_flag_prefixes();
+            test_invalid_flag_prefixes();
+            test_compound_flags();
+            test_combination_of_valid_and_invalid_flags();
+            test_flags_with_different_actions();
+        }
+
         void test()
         {
             run_all_tests_argument_string_t();
+            test_argparse_empty();
+            run_argparse_flag_tests();
         }
 
         [[nodiscard]] std::string subparse_error::error_string() const
@@ -183,10 +327,7 @@ namespace blt::argparse
             const auto key = consumer.consume();
             const auto flag = m_flag_arguments.find(key.get_argument());
             if (flag == m_flag_arguments.end())
-            {
-                std::cerr << "Error: Unknown flag: " << key.get_argument() << std::endl;
-                exit(1);
-            }
+                throw detail::bad_flag(make_string("Error: Unknown flag: ", key.get_argument()));
             found_flags.insert(key.get_argument());
             parse_flag(parsed_args, consumer, key.get_argument());
         }
@@ -255,7 +396,7 @@ namespace blt::argparse
 
     void argument_parser_t::parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
-        auto& flag = m_flag_arguments[arg];
+        auto flag = m_flag_arguments[arg];
         auto dest = flag->m_dest.value_or(std::string{arg});
         std::visit(lambda_visitor{
                        [&parsed_args, &consumer, &dest, &flag, arg](const nargs_t arg_enum)
@@ -273,7 +414,8 @@ namespace blt::argparse
                                break;
                            case nargs_t::ALL_AT_LEAST_ONE:
                                if (!consumer.can_consume())
-                                   std::cerr << "Error expected at least one argument to be consumed by '" << arg << '\'' << std::endl;
+                                   throw detail::missing_argument_error(
+                                       make_string("Error expected at least one argument to be consumed by '", arg, '\''));
                                [[fallthrough]];
                            case nargs_t::ALL:
                                std::vector<std::string_view> args;
@@ -290,68 +432,56 @@ namespace blt::argparse
                            {
                                if (!consumer.can_consume())
                                {
-                                   std::cerr << "Error expected " << argc << " arguments to be consumed by '" << arg << "' but found " << i <<
-                                       std::endl;
-                                   std::exit(1);
+                                   throw detail::missing_argument_error(
+                                       make_string("Expected ", argc, " arguments to be consumed by '", arg, "' but found ", i));
                                }
                                if (consumer.peek().is_flag())
                                {
-                                   std::cerr << "Error expected " << argc << " arguments to be consumed by '" << arg << "' but found a flag '" <<
-                                       consumer.peek().get_argument() << "' instead!" << std::endl;
-                                   std::exit(1);
+                                   throw detail::unexpected_argument_error(make_string(
+                                       "Expected ", argc, " arguments to be consumed by '", arg, "' but found a flag '",
+                                       consumer.peek().get_argument(), "' instead!"
+                                   ));
                                }
                                args.push_back(consumer.consume().get_argument());
                            }
                            if (args.size() != static_cast<size_t>(argc))
                            {
-                               std::cerr <<
+                               throw std::runtime_error(
                                    "This error condition should not be possible. "
                                    "Args consumed didn't equal the arguments requested and previous checks didn't fail. "
-                                   "Please report as an issue on the GitHub"
-                                   << std::endl;
-                               std::exit(1);
+                                   "Please report as an issue on the GitHub");
                            }
+
+                            BLT_TRACE("Running action %d on dest %s", static_cast<int>(flag->m_action), dest.c_str());
 
                            switch (flag->m_action)
                            {
                            case action_t::STORE:
                                if (argc == 0)
-                               {
-                                   std::cerr << "Error: argument '" << arg <<
-                                       "' action is store but takes in no arguments. This condition is invalid!" << std::endl;
-                                   std::exit(1);
-                               }
+                                   throw detail::missing_argument_error(
+                                       make_string("Argument '", arg, "'s action is store but takes in no arguments?"));
                                if (argc == 1)
                                    flag->m_dest_func(dest, parsed_args, args.front());
                                else
-                               {
-                                   std::cerr << "Error: argument '" << arg << "' action is store but takes in more than one argument. " <<
-                                       "This condition is invalid, did you mean to use action_t::APPEND or action_t::EXTEND?" << std::endl;
-                                   std::exit(1);
-                               }
+                                   throw detail::unexpected_argument_error(make_string("Argument '", arg,
+                                                                                       "'s action is store but takes in more than one argument. "
+                                                                                       "Did you mean to use action_t::APPEND or action_t::EXTEND?"));
                                break;
                            case action_t::APPEND:
                            case action_t::EXTEND:
                                if (argc == 0)
-                               {
-                                   std::cerr << "Error: argument '" << arg <<
-                                       "' action is append or extend but takes in no arguments. This condition is invalid!" << std::endl;
-                                   std::exit(1);
-                               }
+                                   throw detail::missing_argument_error(
+                                       make_string("Argument '", arg, "'s action is append or extend but takes in no arguments."));
                                flag->m_dest_vec_func(dest, parsed_args, args);
                                break;
                            case action_t::APPEND_CONST:
                                if (argc != 0)
-                               {
-                                   std::cerr << "Error: argument '" << arg << "' action is append const but takes in arguments. "
-                                       "This condition is invalid!" << std::endl;
-                                   std::exit(1);
-                               }
+                                   throw detail::unexpected_argument_error(
+                                       make_string("Argument '", arg, "'s action is append const but takes in arguments."));
                                if (flag->m_const_value)
                                {
-                                   std::cerr << "Append const chosen as an action but const value not provided for argument '" << arg << '\'' <<
-                                       std::endl;
-                                   std::exit(1);
+                                   throw detail::missing_value_error(
+                                       make_string("Append const chosen as an action but const value not provided for argument '", arg, '\''));
                                }
                                if (parsed_args.contains(dest))
                                {
@@ -359,19 +489,17 @@ namespace blt::argparse
                                    auto visitor = detail::arg_meta_type_helper_t::make_visitor(
                                        [arg](auto& primitive)
                                        {
-                                           std::cerr << "Invalid type for argument '" << arg << "' expected list type, found '"
-                                               << blt::type_string<decltype(primitive)>() << "' with value " << primitive << std::endl;
-                                           std::exit(1);
+                                           throw detail::type_error(make_string("Invalid type for argument '", arg, "' expected list type, found '",
+                                                                                blt::type_string<decltype(primitive)>(), "' with value ", primitive));
                                        },
                                        [&flag, arg](auto& vec)
                                        {
                                            using type = typename meta::remove_cvref_t<decltype(vec)>::value_type;
                                            if (!std::holds_alternative<type>(*flag->m_const_value))
                                            {
-                                               std::cerr << "Constant value for argument '" << arg <<
-                                                   "' type doesn't match values already present! Expected to be of type '" <<
-                                                   blt::type_string<type>() << "'!" << std::endl;
-                                               std::exit(1);
+                                               throw detail::type_error(make_string("Constant value for argument '", arg,
+                                                                                    "' type doesn't match values already present! Expected to be of type '",
+                                                                                    blt::type_string<type>(), "'!"));
                                            }
                                            vec.push_back(std::get<type>(*flag->m_const_value));
                                        });
@@ -388,8 +516,7 @@ namespace blt::argparse
                                        },
                                        [](auto&)
                                        {
-                                           std::cerr << "Append const should not be a list type!" << std::endl;
-                                           std::exit(1);
+                                           throw detail::type_error("Append const should not be a list type!");
                                        });
                                    std::visit(visitor, *flag->m_const_value);
                                }
@@ -397,32 +524,29 @@ namespace blt::argparse
                            case action_t::STORE_CONST:
                                if (argc != 0)
                                {
-                                   std::cerr << "Store const flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
-                                   std::exit(1);
+                                   throw detail::unexpected_argument_error("Store const flag called with an argument.");
                                }
                                if (!flag->m_const_value)
-                               {
-                                   std::cerr << "Store const flag called with no value. This condition doesn't make sense." << std::endl;
-                                   std::exit(1);
-                               }
+                                   throw detail::missing_value_error("Store const flag called with no value. ");
                                parsed_args.m_data.insert({dest, *flag->m_const_value});
+                               break;
                            case action_t::STORE_TRUE:
                                if (argc != 0)
                                {
-                                   std::cerr << "Store true flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
-                                   std::exit(1);
+                                   throw detail::unexpected_argument_error("Store true flag called with an argument.");
                                }
                                parsed_args.m_data.insert({dest, true});
+                               break;
                            case action_t::STORE_FALSE:
                                if (argc != 0)
                                {
-                                   std::cerr << "Store false flag called with an argument. This condition doesn't make sense." << std::endl;
                                    print_usage();
-                                   std::exit(1);
+                                   throw detail::unexpected_argument_error("Store false flag called with an argument.");
                                }
                                parsed_args.m_data.insert({dest, false});
+                               break;
                            case action_t::COUNT:
                                if (parsed_args.m_data.contains(dest))
                                {
@@ -435,16 +559,12 @@ namespace blt::argparse
                                                return primitive + static_cast<type>(args.size());
                                            }
                                            else
-                                           {
-                                               std::cerr << "Error: count called but stored type is " << blt::type_string<type>() << std::endl;
-                                               std::exit(1);
-                                           }
+                                               throw detail::type_error("Error: count called but stored type is " + blt::type_string<type>());
                                        },
                                        [](auto&) -> detail::arg_data_t
                                        {
-                                           std::cerr <<
-                                               "List present on count. This condition doesn't make any sense! (How did we get here, please report this!)";
-                                           std::exit(1);
+                                           throw detail::type_error("List present on count. This condition doesn't make any sense! "
+                                               "(How did we get here, please report this!)");
                                        }
                                    );
                                    parsed_args.m_data[dest] = std::visit(visitor, parsed_args.m_data[dest]);

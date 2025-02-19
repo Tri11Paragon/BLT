@@ -19,6 +19,7 @@
 #ifndef BLT_PARSE_ARGPARSE_V2_H
 #define BLT_PARSE_ARGPARSE_V2_H
 
+#include <complex>
 #include <blt/std/types.h>
 #include <blt/std/hashmap.h>
 #include <blt/fs/path_helper.h>
@@ -89,6 +90,30 @@ namespace blt::argparse
             }
         };
 
+        class missing_value_error final : public std::runtime_error
+        {
+        public:
+            explicit missing_value_error(const std::string& message): std::runtime_error(message)
+            {
+            }
+        };
+
+        class type_error final : public std::runtime_error
+        {
+        public:
+            explicit type_error(const std::string& message): std::runtime_error(message)
+            {
+            }
+        };
+
+        class unexpected_argument_error final : public std::runtime_error
+        {
+        public:
+            explicit unexpected_argument_error(const std::string& message): std::runtime_error(message)
+            {
+            }
+        };
+
         class subparse_error final : public std::exception
         {
         public:
@@ -120,19 +145,15 @@ namespace blt::argparse
             std::vector<std::vector<std::string_view>> m_allowed_strings;
         };
 
-        template <typename T>
-        constexpr auto invalid_option_lambda = [](const T)
-        {
-            std::cerr << "Invalid type - expected list type, found '" << blt::type_string<T>() << "'" << std::endl;
-            std::exit(1);
-        };
-
         template <typename... Args>
         struct arg_data_helper_t
         {
             using variant_t = std::variant<Args..., std::vector<Args>...>;
             using arg_t = meta::arg_helper<Args...>;
             using arg_vec_t = meta::arg_helper<std::vector<Args>...>;
+
+            template <typename T>
+            constexpr static bool is_type_stored_v = std::disjunction_v<std::is_same<T, Args>...>;
 
             template <typename DefaultPrimitiveAction, typename DefaultListAction>
             static auto make_visitor(const DefaultPrimitiveAction& primitive_action, const DefaultListAction& list_action)
@@ -196,13 +217,12 @@ namespace blt::argparse
     class argument_string_t
     {
     public:
-        explicit argument_string_t(const char* input, const hashset_t<char>& allowed_flag_prefix): m_argument(input),
-                                                                                                   m_allowed_flag_prefix(&allowed_flag_prefix)
+        explicit argument_string_t(const std::string_view input, const hashset_t<char>& allowed_flag_prefix): m_argument(input),
+            m_allowed_flag_prefix(&allowed_flag_prefix)
         {
-            if (input == nullptr)
-                throw detail::bad_flag("Argument cannot be null!");
             process_argument();
         }
+
 
         [[nodiscard]] std::string_view get_flag() const
         {
@@ -325,19 +345,24 @@ namespace blt::argparse
 
     public:
         template <typename T>
-        const T& get(const std::string_view key)
+        [[nodiscard]] const T& get(const std::string_view key) const
         {
-            return std::get<T>(m_data[key]);
+            return std::get<T>(m_data.at(key));
         }
 
-        std::string_view get(const std::string_view key)
+        [[nodiscard]] std::string_view get(const std::string_view key) const
         {
-            return std::get<std::string_view>(m_data[key]);
+            return std::get<std::string_view>(m_data.at(key));
         }
 
         bool contains(const std::string_view key)
         {
             return m_data.find(key) != m_data.end();
+        }
+
+        [[nodiscard]] size_t size() const
+        {
+            return m_data.size();
         }
 
     private:
@@ -370,6 +395,7 @@ namespace blt::argparse
         template <typename T>
         argument_builder_t& as_type()
         {
+            static_assert(detail::arg_data_helper_t<T>::template is_type_stored_v<T>, "Type is not valid to be stored/converted as an argument");
             m_dest_func = [](const std::string_view dest, argument_storage_t& storage, std::string_view value)
             {
                 storage.m_data.insert({dest, detail::arg_string_converter_t<T>::convert(value)});
@@ -381,9 +407,8 @@ namespace blt::argparse
                     auto& data = storage.m_data[dest];
                     if (!std::holds_alternative<std::vector<T>>(data))
                     {
-                        std::cerr << "Invalid type conversion. Trying to add type " << blt::type_string<T>() <<
-                            " but this does not match existing type index '" << data.index() << "'!" << std::endl;
-                        std::exit(1);
+                        throw detail::type_error("Invalid type conversion. Trying to add type " + blt::type_string<T>() +
+                            " but this does not match existing type index '" + std::to_string(data.index()) + "'!");
                     }
                     std::vector<T>& converted_values = std::get<std::vector<T>>(data);
                     for (const auto& value : values)
@@ -397,6 +422,75 @@ namespace blt::argparse
                     storage.m_data.insert({dest, converted_values});
                 }
             };
+            return *this;
+        }
+
+        argument_builder_t& set_action(const action_t action)
+        {
+            m_action = action;
+            switch (m_action)
+            {
+            case action_t::STORE_TRUE:
+                set_nargs(0);
+                as_type<bool>();
+                set_default(false);
+                break;
+            case action_t::STORE_FALSE:
+                set_nargs(0);
+                as_type<bool>();
+                set_default(true);
+                break;
+            default:
+                break;
+            }
+            return *this;
+        }
+
+        argument_builder_t& set_required(const bool required)
+        {
+            m_required = required;
+            return *this;
+        }
+
+        argument_builder_t& set_nargs(const nargs_v nargs)
+        {
+            m_nargs = nargs;
+            return *this;
+        }
+
+        argument_builder_t& set_metavar(const std::string& metavar)
+        {
+            m_metavar = metavar;
+            return *this;
+        }
+
+        argument_builder_t& set_help(const std::string& help)
+        {
+            m_help = help;
+            return *this;
+        }
+
+        argument_builder_t& set_choices(const std::vector<std::string>& choices)
+        {
+            m_choices = choices;
+            return *this;
+        }
+
+        argument_builder_t& set_default(const detail::arg_data_t& default_value)
+        {
+            m_default_value = default_value;
+            return *this;
+        }
+
+        argument_builder_t& set_const(const detail::arg_data_t& const_value)
+        {
+            m_const_value = const_value;
+            return *this;
+        }
+
+        argument_builder_t& set_dest(const std::string& dest)
+        {
+            m_dest = dest;
             return *this;
         }
 
@@ -436,7 +530,7 @@ namespace blt::argparse
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
             m_argument_builders.emplace_back();
             m_flag_arguments.insert({arg, &m_argument_builders.back()});
-            ((m_flag_arguments[std::string_view{aliases}] = &m_argument_builders.back()), ...);
+            (m_flag_arguments.insert({std::string_view{aliases}, &m_argument_builders.back()}), ...);
             return m_argument_builders.back();
         }
 
@@ -450,6 +544,24 @@ namespace blt::argparse
         argument_subparser_t& add_subparser(std::string_view dest);
 
         argument_storage_t parse(argument_consumer_t& consumer); // NOLINT
+
+        argument_storage_t parse(const std::vector<std::string>& args)
+        {
+            std::vector<argument_string_t> arg_strings;
+            for (const auto& arg : args)
+                arg_strings.emplace_back(arg, allowed_flag_prefixes);
+            argument_consumer_t consumer{arg_strings};
+            return parse(consumer);
+        }
+
+        argument_storage_t parse(const int argc, const char** argv)
+        {
+            std::vector<argument_string_t> arg_strings;
+            for (int i = 0; i < argc; ++i)
+                arg_strings.emplace_back(argv[i], allowed_flag_prefixes);
+            argument_consumer_t consumer{arg_strings};
+            return parse(consumer);
+        }
 
         void print_help();
 
@@ -511,6 +623,7 @@ namespace blt::argparse
         std::vector<argument_builder_t> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;
         hashmap_t<std::string_view, argument_builder_t*> m_positional_arguments;
+        hashset_t<char> allowed_flag_prefixes = {'-', '+', '/'};
     };
 
     class argument_subparser_t
