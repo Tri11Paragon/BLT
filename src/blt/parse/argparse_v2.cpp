@@ -23,6 +23,25 @@
 
 namespace blt::argparse
 {
+    constexpr static auto printer_primitive = [](const auto& v)
+    {
+        std::cout << v;
+    };
+
+    constexpr static auto printer_vector = [](const auto& v)
+    {
+        std::cout << "[";
+        for (const auto& [i, a] : enumerate(v))
+        {
+            std::cout << a;
+            if (i != v.size() - 1)
+                std::cout << ", ";
+        }
+        std::cout << "]";
+    };
+
+    auto print_visitor = detail::arg_meta_type_helper_t::make_visitor(printer_primitive, printer_vector);
+
     template <typename T>
     size_t get_const_char_size(const T& t)
     {
@@ -44,7 +63,7 @@ namespace blt::argparse
         }
     }
 
-    template<typename T>
+    template <typename T>
     auto ensure_is_string(T&& t)
     {
         if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>>)
@@ -211,7 +230,7 @@ namespace blt::argparse
                 parser.parse(args);
                 BLT_ASSERT(false && "Parsing should fail with invalid flag prefix '!'");
             }
-            catch (const bad_flag& _)
+            catch (...)
             {
                 BLT_ASSERT(true && "Correctly threw on bad flag prefix");
             }
@@ -225,7 +244,7 @@ namespace blt::argparse
             const std::vector<std::string> args = {"-vvv"};
             const auto parsed_args = parser.parse(args);
 
-            BLT_ASSERT(parsed_args.get<int>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
+            BLT_ASSERT(parsed_args.get<size_t>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
         }
 
         void test_combination_of_valid_and_invalid_flags()
@@ -242,7 +261,7 @@ namespace blt::argparse
                 parser.parse(args);
                 BLT_ASSERT(false && "Parsing should fail due to invalid flag '!z'");
             }
-            catch (const bad_flag& _)
+            catch (...)
             {
                 BLT_ASSERT(true && "Correctly threw an exception for invalid flag");
             }
@@ -318,61 +337,31 @@ namespace blt::argparse
 
     argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
     {
-        hashset_t<std::string_view> found_flags;
-        hashset_t<std::string_view> found_positional;
+        hashset_t<std::string> found_flags;
+        hashset_t<std::string> found_positional;
         argument_storage_t parsed_args;
         // first, we consume flags which may be part of this parser
         while (consumer.can_consume() && consumer.peek().is_flag())
+            handle_compound_flags(found_flags, parsed_args, consumer, consumer.consume());
+
+        for (auto& [key, subparser] : m_subparsers)
         {
-            const auto key = consumer.consume();
-            const auto flag = m_flag_arguments.find(key.get_argument());
-            if (flag == m_flag_arguments.end())
-                throw detail::bad_flag(make_string("Error: Unknown flag: ", key.get_argument()));
-            found_flags.insert(key.get_argument());
-            parse_flag(parsed_args, consumer, key.get_argument());
+            auto [parsed_subparser, storage] = subparser.parse(consumer);
+            storage.m_data.emplace(std::string{key}, detail::arg_data_t{parsed_subparser.get_argument()});
+            parsed_args.add(storage);
         }
-        try
-        {
-            for (auto& [key, subparser] : m_subparsers)
-            {
-                auto [parsed_subparser, storage] = subparser.parse(consumer);
-                storage.m_data.insert({key, detail::arg_data_t{parsed_subparser.get_argument()}});
-                parsed_args.add(storage);
-            }
-        }
-        catch (const detail::missing_argument_error& e)
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-            print_usage();
-            exit(1);
-        } catch (const detail::subparse_error& e)
-        {
-            std::cerr << e.error_string() << std::endl;
-            exit(1);
-        }
+
         while (consumer.can_consume())
         {
             const auto key = consumer.consume();
             if (key.is_flag())
-            {
-                const auto flag = m_flag_arguments.find(key.get_argument());
-                if (flag == m_flag_arguments.end())
-                {
-                    std::cerr << "Error: Unknown flag: " << key.get_argument() << std::endl;
-                    exit(1);
-                }
-                found_flags.insert(key.get_argument());
-                parse_flag(parsed_args, consumer, key.get_argument());
-            }
+                handle_compound_flags(found_flags, parsed_args, consumer, key);
             else
             {
                 const auto pos = m_positional_arguments.find(key.get_argument());
                 if (pos == m_positional_arguments.end())
-                {
-                    std::cerr << "Error: Unknown positional argument: " << key.get_argument() << std::endl;
-                    exit(1);
-                }
-                found_positional.insert(key.get_argument());
+                    throw detail::bad_positional(make_string("Error: Unknown positional argument: ", key.get_argument()));
+                found_positional.insert(std::string{key.get_argument()});
                 parse_positional(parsed_args, consumer, key.get_argument());
             }
         }
@@ -394,10 +383,37 @@ namespace blt::argparse
     {
     }
 
+    void argument_parser_t::handle_compound_flags(hashset_t<std::string>& found_flags, argument_storage_t& parsed_args,
+                                                  argument_consumer_t& consumer, const argument_string_t& arg)
+    {
+        // i kinda hate this, TODO?
+        std::vector<std::string> compound_flags;
+        if (arg.get_flag().size() == 1)
+        {
+            for (const auto c : arg.get_name())
+                compound_flags.emplace_back(std::string{arg.get_flag()} + c);
+        }
+        else
+        {
+            if (arg.get_flag().size() > 2)
+                throw detail::bad_flag(make_string("Error: Flag '", arg.get_argument(), "' is too long!"));
+            compound_flags.emplace_back(arg.get_argument());
+        }
+
+        for (const auto& flag_key : compound_flags)
+        {
+            const auto flag = m_flag_arguments.find(flag_key);
+            if (flag == m_flag_arguments.end())
+                throw detail::bad_flag(make_string("Error: Unknown flag: ", flag_key));
+            found_flags.insert(flag_key);
+            parse_flag(parsed_args, consumer, flag_key);
+        }
+    }
+
     void argument_parser_t::parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
-        auto flag = m_flag_arguments[arg];
-        auto dest = flag->m_dest.value_or(std::string{arg});
+        auto flag = m_flag_arguments.find(arg)->second;
+        const auto dest = flag->m_dest.value_or(std::string{arg});
         std::visit(lambda_visitor{
                        [&parsed_args, &consumer, &dest, &flag, arg](const nargs_t arg_enum)
                        {
@@ -444,6 +460,26 @@ namespace blt::argparse
                                }
                                args.push_back(consumer.consume().get_argument());
                            }
+                           if (flag->m_choices)
+                           {
+                               auto& choices = *flag->m_choices;
+                               for (const auto str : args)
+                               {
+                                   if (!choices.contains(str))
+                                   {
+                                       std::string valid_choices = "{";
+                                       for (const auto& [i, choice] : enumerate(choices))
+                                       {
+                                           valid_choices += choice;
+                                           if (i != choices.size() - 1)
+                                               valid_choices += ", ";
+                                       }
+                                       valid_choices += "}";
+                                       throw detail::bad_choice_error(make_string('\'', str, "' is not a valid choice for argument '", arg,
+                                                                                  "'! Expected one of ", valid_choices));
+                                   }
+                               }
+                           }
                            if (args.size() != static_cast<size_t>(argc))
                            {
                                throw std::runtime_error(
@@ -451,8 +487,6 @@ namespace blt::argparse
                                    "Args consumed didn't equal the arguments requested and previous checks didn't fail. "
                                    "Please report as an issue on the GitHub");
                            }
-
-                            BLT_TRACE("Running action %d on dest %s", static_cast<int>(flag->m_action), dest.c_str());
 
                            switch (flag->m_action)
                            {
@@ -508,7 +542,7 @@ namespace blt::argparse
                                else
                                {
                                    auto visitor = detail::arg_meta_type_helper_t::make_visitor(
-                                       [&flag, &parsed_args, &dest](auto& primitive)
+                                       [&parsed_args, &dest](auto& primitive)
                                        {
                                            std::vector<meta::remove_cvref_t<decltype(primitive)>> vec;
                                            vec.push_back(primitive);
@@ -525,11 +559,13 @@ namespace blt::argparse
                                if (argc != 0)
                                {
                                    print_usage();
-                                   throw detail::unexpected_argument_error("Store const flag called with an argument.");
+                                   throw detail::unexpected_argument_error(
+                                       make_string("Argument '", arg, "' is store const but called with an argument."));
                                }
                                if (!flag->m_const_value)
-                                   throw detail::missing_value_error("Store const flag called with no value. ");
-                               parsed_args.m_data.insert({dest, *flag->m_const_value});
+                                   throw detail::missing_value_error(
+                                       make_string("Argument '", arg, "' is store const, but const storage has no value."));
+                               parsed_args.m_data.emplace(dest, *flag->m_const_value);
                                break;
                            case action_t::STORE_TRUE:
                                if (argc != 0)
@@ -537,7 +573,7 @@ namespace blt::argparse
                                    print_usage();
                                    throw detail::unexpected_argument_error("Store true flag called with an argument.");
                                }
-                               parsed_args.m_data.insert({dest, true});
+                               parsed_args.m_data.emplace(dest, true);
                                break;
                            case action_t::STORE_FALSE:
                                if (argc != 0)
@@ -551,12 +587,12 @@ namespace blt::argparse
                                if (parsed_args.m_data.contains(dest))
                                {
                                    auto visitor = detail::arg_meta_type_helper_t::make_visitor(
-                                       [&args](auto& primitive) -> detail::arg_data_t
+                                       [](auto& primitive) -> detail::arg_data_t
                                        {
                                            using type = meta::remove_cvref_t<decltype(primitive)>;
-                                           if constexpr (std::is_convertible_v<decltype(args.size()), type>)
+                                           if constexpr (std::is_convertible_v<decltype(1), type>)
                                            {
-                                               return primitive + static_cast<type>(args.size());
+                                               return primitive + static_cast<type>(1);
                                            }
                                            else
                                                throw detail::type_error("Error: count called but stored type is " + blt::type_string<type>());
@@ -569,8 +605,8 @@ namespace blt::argparse
                                    );
                                    parsed_args.m_data[dest] = std::visit(visitor, parsed_args.m_data[dest]);
                                }
-                               else
-                                   parsed_args.m_data.insert({dest, args.size()});
+                               else // I also hate this!
+                                   flag->m_dest_func(dest, parsed_args, "1");
                                break;
                            case action_t::HELP:
                                print_help();
@@ -588,7 +624,7 @@ namespace blt::argparse
     }
 
     void argument_parser_t::handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
-                                                            const hashset_t<std::string_view>& found, argument_storage_t& parsed_args,
+                                                            const hashset_t<std::string>& found, argument_storage_t& parsed_args,
                                                             const std::string_view type)
     {
         for (const auto& [key, value] : arguments)
@@ -596,13 +632,11 @@ namespace blt::argparse
             if (!found.contains(key))
             {
                 if (value->m_required)
-                {
-                    std::cerr << "Error: " << type << " argument '" << key << "' was not found but is required by the program" << std::endl;
-                    exit(1);
-                }
+                    throw detail::missing_argument_error(make_string("Error: ", type, " argument '", key,
+                                                                     "' was not found but is required by the program"));
                 auto dest = value->m_dest.value_or(std::string{key});
                 if (value->m_default_value && !parsed_args.contains(dest))
-                    parsed_args.m_data.insert({dest, *value->m_default_value});
+                    parsed_args.m_data.emplace(dest, *value->m_default_value);
             }
         }
     }

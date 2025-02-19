@@ -134,7 +134,7 @@ namespace blt::mem
         return fromBytes<little_endian>(in, *out);
     }
 
-    static std::size_t next_byte_allocation(std::size_t prev_size, std::size_t default_allocation_block = 8192, std::size_t default_size = 16)
+    inline std::size_t next_byte_allocation(std::size_t prev_size, std::size_t default_allocation_block = 8192, std::size_t default_size = 16)
     {
         if (prev_size < default_size)
             return default_size;
