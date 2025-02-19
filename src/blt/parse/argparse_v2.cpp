@@ -453,10 +453,9 @@ namespace blt::argparse
                                }
                                if (consumer.peek().is_flag())
                                {
-                                   throw detail::unexpected_argument_error(make_string(
-                                       "Expected ", argc, " arguments to be consumed by '", arg, "' but found a flag '",
-                                       consumer.peek().get_argument(), "' instead!"
-                                   ));
+                                   std::cout << "Warning: arg '" << arg << "' expects " << argc <<
+                                       " arguments to be consumed but we found a flag '" << consumer.peek().
+                                       get_argument() << "'. We will comply as this may be desired if this argument is a file." << std::endl;
                                }
                                args.push_back(consumer.consume().get_argument());
                            }
