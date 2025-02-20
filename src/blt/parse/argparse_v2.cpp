@@ -434,58 +434,18 @@ namespace blt::argparse
                                        make_string("Error expected at least one argument to be consumed by '", arg, '\''));
                                [[fallthrough]];
                            case nargs_t::ALL:
-                               std::vector<std::string_view> args;
-                               while (consumer.can_consume() && !consumer.peek().is_flag())
-                                   args.emplace_back(consumer.consume().get_argument());
-                               flag->m_dest_vec_func(dest, parsed_args, args);
+                               auto result = consume_until_flag_or_end(consumer, flag->m_choices ? &*flag->m_choices : nullptr);
+                               if (!result)
+                                   throw detail::bad_choice_error(make_string('\'', consumer.peek().get_argument(),
+                                                                              "' is not a valid choice for argument '", arg,
+                                                                              "'! Expected one of ", result.error()));
+                               flag->m_dest_vec_func(dest, parsed_args, result.value());
                                break;
                            }
                        },
                        [&parsed_args, &consumer, &dest, &flag, arg, this](const i32 argc)
                        {
-                           std::vector<std::string_view> args;
-                           for (i32 i = 0; i < argc; ++i)
-                           {
-                               if (!consumer.can_consume())
-                               {
-                                   throw detail::missing_argument_error(
-                                       make_string("Expected ", argc, " arguments to be consumed by '", arg, "' but found ", i));
-                               }
-                               if (consumer.peek().is_flag())
-                               {
-                                   std::cout << "Warning: arg '" << arg << "' expects " << argc <<
-                                       " arguments to be consumed but we found a flag '" << consumer.peek().
-                                       get_argument() << "'. We will comply as this may be desired if this argument is a file." << std::endl;
-                               }
-                               args.push_back(consumer.consume().get_argument());
-                           }
-                           if (flag->m_choices)
-                           {
-                               auto& choices = *flag->m_choices;
-                               for (const auto str : args)
-                               {
-                                   if (!choices.contains(str))
-                                   {
-                                       std::string valid_choices = "{";
-                                       for (const auto& [i, choice] : enumerate(choices))
-                                       {
-                                           valid_choices += choice;
-                                           if (i != choices.size() - 1)
-                                               valid_choices += ", ";
-                                       }
-                                       valid_choices += "}";
-                                       throw detail::bad_choice_error(make_string('\'', str, "' is not a valid choice for argument '", arg,
-                                                                                  "'! Expected one of ", valid_choices));
-                                   }
-                               }
-                           }
-                           if (args.size() != static_cast<size_t>(argc))
-                           {
-                               throw std::runtime_error(
-                                   "This error condition should not be possible. "
-                                   "Args consumed didn't equal the arguments requested and previous checks didn't fail. "
-                                   "Please report as an issue on the GitHub");
-                           }
+                           const auto args = consume_argc(argc, consumer, flag->m_choices ? &*flag->m_choices : nullptr, arg);
 
                            switch (flag->m_action)
                            {
@@ -514,7 +474,8 @@ namespace blt::argparse
                                if (flag->m_const_value)
                                {
                                    throw detail::missing_value_error(
-                                       make_string("Append const chosen as an action but const value not provided for argument '", arg, '\''));
+                                       make_string("Append const chosen as an action but const value not provided for argument '", arg,
+                                                   '\''));
                                }
                                if (parsed_args.contains(dest))
                                {
@@ -522,8 +483,9 @@ namespace blt::argparse
                                    auto visitor = detail::arg_meta_type_helper_t::make_visitor(
                                        [arg](auto& primitive)
                                        {
-                                           throw detail::type_error(make_string("Invalid type for argument '", arg, "' expected list type, found '",
-                                                                                blt::type_string<decltype(primitive)>(), "' with value ", primitive));
+                                           throw detail::type_error(make_string(
+                                               "Invalid type for argument '", arg, "' expected list type, found '",
+                                               blt::type_string<decltype(primitive)>(), "' with value ", primitive));
                                        },
                                        [&flag, arg](auto& vec)
                                        {
@@ -594,7 +556,8 @@ namespace blt::argparse
                                                return primitive + static_cast<type>(1);
                                            }
                                            else
-                                               throw detail::type_error("Error: count called but stored type is " + blt::type_string<type>());
+                                               throw detail::type_error(
+                                                   "Error: count called but stored type is " + blt::type_string<type>());
                                        },
                                        [](auto&) -> detail::arg_data_t
                                        {
@@ -609,10 +572,10 @@ namespace blt::argparse
                                break;
                            case action_t::HELP:
                                print_help();
-                               std::exit(1);
+                               std::exit(0);
                            case action_t::VERSION:
                                print_version();
-                               break;
+                               std::exit(0);
                            }
                        }
                    }, flag->m_nargs);
@@ -620,6 +583,75 @@ namespace blt::argparse
 
     void argument_parser_t::parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
+        auto positional = m_positional_arguments.find(arg)->second;
+        const auto dest = positional->m_dest.value_or(std::string{arg});
+        std::visit(lambda_visitor{
+                       [&consumer, &positional, &dest, &parsed_args, arg](const nargs_t arg_enum)
+                       {
+                           switch (arg_enum)
+                           {
+                           case nargs_t::IF_POSSIBLE:
+                               throw detail::bad_positional(
+                                   "Positional argument asked to consume if possible. We do not consider this to be a valid ask.");
+                           case nargs_t::ALL_AT_LEAST_ONE:
+                               if (!consumer.can_consume())
+                                   throw detail::missing_argument_error(
+                                       make_string("Error expected at least one argument to be consumed by '", arg, '\''));
+                               [[fallthrough]];
+                           case nargs_t::ALL:
+                               auto result = consume_until_flag_or_end(
+                                   consumer, positional->m_choices ? &*positional->m_choices : nullptr);
+                               if (!result)
+                                   throw detail::bad_choice_error(make_string('\'', consumer.peek().get_argument(),
+                                                                              "' is not a valid choice for argument '", arg,
+                                                                              "'! Expected one of ", result.error()));
+                               positional->m_dest_vec_func(dest, parsed_args, result.value());
+                               break;
+                           }
+                       },
+                       [this, &consumer, &positional, &dest, &parsed_args, arg](const i32 argc)
+                       {
+                           const auto args = consume_argc(argc, consumer, positional->m_choices ? &*positional->m_choices : nullptr, arg);
+
+                           switch (positional->m_action)
+                           {
+                           case action_t::STORE:
+                               if (argc == 0)
+                                   throw detail::missing_argument_error(
+                                       make_string("Argument '", arg, "'s action is store but takes in no arguments?"));
+                               if (argc == 1)
+                                   positional->m_dest_func(dest, parsed_args, args.front());
+                               else
+                                   throw detail::unexpected_argument_error(make_string("Argument '", arg,
+                                                                                       "'s action is store but takes in more than one argument. "
+                                                                                       "Did you mean to use action_t::APPEND or action_t::EXTEND?"));
+                               break;
+                           case action_t::APPEND:
+                           case action_t::EXTEND:
+                               if (argc == 0)
+                                   throw detail::missing_argument_error(
+                                       make_string("Argument '", arg, "'s action is append or extend but takes in no arguments."));
+                               positional->m_dest_vec_func(dest, parsed_args, args);
+                               break;
+                           case action_t::APPEND_CONST:
+                               throw detail::bad_positional("action_t::APPEND_CONST does not make sense for positional arguments");
+                           case action_t::STORE_CONST:
+                               throw detail::bad_positional("action_t::STORE_CONST does not make sense for positional arguments");
+                           case action_t::STORE_TRUE:
+                               throw detail::bad_positional("action_t::STORE_TRUE does not make sense for positional arguments");
+                           case action_t::STORE_FALSE:
+                               throw detail::bad_positional("action_t::STORE_FALSE does not make sense for positional arguments");
+                           case action_t::COUNT:
+                               throw detail::bad_positional("action_t::COUNT does not make sense for positional arguments");
+                           case action_t::HELP:
+                               print_help();
+                               std::exit(0);
+                           case action_t::VERSION:
+                               print_version();
+                               std::exit(0);
+                           }
+                       }
+                   }, positional->m_nargs);
     }
 
     void argument_parser_t::handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
@@ -638,6 +670,74 @@ namespace blt::argparse
                     parsed_args.m_data.emplace(dest, *value->m_default_value);
             }
         }
+    }
+
+    expected<std::vector<std::string_view>, std::string> argument_parser_t::consume_until_flag_or_end(argument_consumer_t& consumer,
+        hashset_t<std::string>* allowed_choices)
+    {
+        std::vector<std::string_view> args;
+        while (consumer.can_consume() && !consumer.peek().is_flag())
+        {
+            if (allowed_choices != nullptr && !allowed_choices->contains(consumer.peek().get_argument()))
+            {
+                std::string valid_choices = "{";
+                for (const auto& [i, choice] : enumerate(*allowed_choices))
+                {
+                    valid_choices += choice;
+                    if (i != allowed_choices->size() - 1)
+                        valid_choices += ", ";
+                }
+                valid_choices += "}";
+                return unexpected(valid_choices);
+            }
+            args.emplace_back(consumer.consume().get_argument());
+        }
+        return args;
+    }
+
+    std::vector<std::string_view> argument_parser_t::consume_argc(const int argc, argument_consumer_t& consumer,
+                                                                  hashset_t<std::string>* allowed_choices,
+                                                                  const std::string_view arg)
+    {
+        std::vector<std::string_view> args;
+        for (i32 i = 0; i < argc; ++i)
+        {
+            if (!consumer.can_consume())
+            {
+                throw detail::missing_argument_error(
+                    make_string("Expected ", argc, " arguments to be consumed by '", arg, "' but found ", i));
+            }
+            if (consumer.peek().is_flag())
+            {
+                std::cout << "Warning: arg '" << arg << "' expects " << argc <<
+                    " arguments to be consumed but we found a flag '" << consumer.peek().
+                                                                                  get_argument() <<
+                    "'. We will comply as this may be desired if this argument is a file." << std::endl;
+            }
+            if (allowed_choices != nullptr && !allowed_choices->contains(consumer.peek().get_argument()))
+            {
+                std::string valid_choices = "{";
+                for (const auto& [i, choice] : enumerate(*allowed_choices))
+                {
+                    valid_choices += choice;
+                    if (i != allowed_choices->size() - 1)
+                        valid_choices += ", ";
+                }
+                valid_choices += "}";
+                throw detail::bad_choice_error(make_string('\'', consumer.peek().get_argument(),
+                                                           "' is not a valid choice for argument '", arg,
+                                                           "'! Expected one of ", valid_choices));
+            }
+            args.push_back(consumer.consume().get_argument());
+        }
+        if (args.size() != static_cast<size_t>(argc))
+        {
+            throw std::runtime_error(
+                "This error condition should not be possible. "
+                "Args consumed didn't equal the arguments requested and previous checks didn't fail. "
+                "Please report as an issue on the GitHub");
+        }
+        return args;
     }
 
     std::pair<argument_string_t, argument_storage_t> argument_subparser_t::parse(argument_consumer_t& consumer)

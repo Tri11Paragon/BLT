@@ -33,6 +33,7 @@
 #include <functional>
 #include <type_traits>
 #include <blt/iterator/enumerate.h>
+#include <blt/std/expected.h>
 #include <blt/std/ranges.h>
 #include <blt/std/utility.h>
 
@@ -455,11 +456,16 @@ namespace blt::argparse
                 set_default(true);
                 break;
             case action_t::STORE_CONST:
+            case action_t::APPEND_CONST:
                 set_nargs(0);
                 break;
             case action_t::COUNT:
                 set_nargs(0);
                 as_type<size_t>();
+                break;
+            case action_t::HELP:
+            case action_t::VERSION:
+                set_nargs(0);
                 break;
             default:
                 break;
@@ -643,8 +649,11 @@ namespace blt::argparse
         void parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
         void parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
         static void handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
-                                                    const hashset_t<std::string>& found,
-                                                    argument_storage_t& parsed_args, std::string_view type);
+                                                    const hashset_t<std::string>& found, argument_storage_t& parsed_args, std::string_view type);
+        static expected<std::vector<std::string_view>, std::string> consume_until_flag_or_end(argument_consumer_t& consumer,
+                                                                                              hashset_t<std::string>* allowed_choices);
+        static std::vector<std::string_view> consume_argc(i32 argc, argument_consumer_t& consumer, hashset_t<std::string>* allowed_choices,
+                                                   std::string_view arg);
 
         std::optional<std::string> m_name;
         std::optional<std::string> m_usage;
