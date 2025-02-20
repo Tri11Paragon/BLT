@@ -32,7 +32,7 @@
 #include <memory>
 #include <functional>
 #include <type_traits>
-#include <blt/iterator/enumerate.h>
+#include <blt/std/assert.h>
 #include <blt/std/expected.h>
 #include <blt/std/ranges.h>
 #include <blt/std/utility.h>
@@ -308,8 +308,16 @@ namespace blt::argparse
     class argument_consumer_t
     {
     public:
-        explicit argument_consumer_t(const span<argument_string_t>& args): m_begin(args.data()), m_end(args.data() + args.size())
+        explicit argument_consumer_t(const span<argument_string_t>& args): m_absolute_begin(args.data()), m_begin(args.data() + 1),
+                                                                           m_end(args.data() + args.size())
         {
+            BLT_ASSERT(!args.empty() &&
+                       "Argument consumer must have at least one argument allocated to it. First argument is always assumed to be program");
+        }
+
+        [[nodiscard]] const argument_string_t& absolute_first() const
+        {
+            return *m_absolute_begin;
         }
 
         [[nodiscard]] argument_string_t peek(const i32 offset = 0) const
@@ -348,6 +356,7 @@ namespace blt::argparse
             return m_end - m_begin;
         }
 
+        argument_string_t* m_absolute_begin;
         argument_string_t* m_begin;
         argument_string_t* m_end;
     };
@@ -580,9 +589,20 @@ namespace blt::argparse
 
         argument_storage_t parse(argument_consumer_t& consumer); // NOLINT
 
+        argument_storage_t parse(const std::vector<std::string_view>& args)
+        {
+            std::vector<argument_string_t> arg_strings;
+            arg_strings.reserve(args.size());
+            for (const auto& arg : args)
+                arg_strings.emplace_back(arg, allowed_flag_prefixes);
+            argument_consumer_t consumer{arg_strings};
+            return parse(consumer);
+        }
+
         argument_storage_t parse(const std::vector<std::string>& args)
         {
             std::vector<argument_string_t> arg_strings;
+            arg_strings.reserve(args.size());
             for (const auto& arg : args)
                 arg_strings.emplace_back(arg, allowed_flag_prefixes);
             argument_consumer_t consumer{arg_strings};
@@ -592,6 +612,7 @@ namespace blt::argparse
         argument_storage_t parse(const int argc, const char** argv)
         {
             std::vector<argument_string_t> arg_strings;
+            arg_strings.reserve(argc);
             for (int i = 0; i < argc; ++i)
                 arg_strings.emplace_back(argv[i], allowed_flag_prefixes);
             argument_consumer_t consumer{arg_strings};
@@ -643,6 +664,11 @@ namespace blt::argparse
             return m_epilogue;
         }
 
+        [[nodiscard]] const hashset_t<char>& get_allowed_flag_prefixes() const
+        {
+            return allowed_flag_prefixes;
+        }
+
     private:
         void handle_compound_flags(hashset_t<std::string>& found_flags, argument_storage_t& parsed_args, argument_consumer_t& consumer,
                                    const argument_string_t& arg);
@@ -653,7 +679,7 @@ namespace blt::argparse
         static expected<std::vector<std::string_view>, std::string> consume_until_flag_or_end(argument_consumer_t& consumer,
                                                                                               hashset_t<std::string>* allowed_choices);
         static std::vector<std::string_view> consume_argc(i32 argc, argument_consumer_t& consumer, hashset_t<std::string>* allowed_choices,
-                                                   std::string_view arg);
+                                                          std::string_view arg);
 
         std::optional<std::string> m_name;
         std::optional<std::string> m_usage;

@@ -20,6 +20,7 @@
 #include <blt/std/assert.h>
 #include <blt/meta/type_traits.h>
 #include <blt/std/logging.h>
+#include <blt/iterator/enumerate.h>
 
 namespace blt::argparse
 {
@@ -195,7 +196,7 @@ namespace blt::argparse
 
         void test_argparse_empty()
         {
-            std::vector<std::string> const argv;
+            const std::vector<std::string> argv{"./program"};
             argument_parser_t parser;
             const auto args = parser.parse(argv);
             BLT_ASSERT(args.size() == 0 && "Empty argparse should have no args on output");
@@ -208,7 +209,7 @@ namespace blt::argparse
             parser.add_flag("+b").set_action(action_t::STORE_FALSE);
             parser.add_flag("/c").as_type<int>().set_action(action_t::STORE);
 
-            const std::vector<std::string> args = {"-a", "+b", "/c", "42"};
+            const std::vector<std::string> args = {"./program", "-a", "+b", "/c", "42"};
             const auto parsed_args = parser.parse(args);
 
             BLT_ASSERT(parsed_args.get<bool>("-a") == true && "Flag '-a' should store `true`");
@@ -224,7 +225,7 @@ namespace blt::argparse
             parser.add_flag("+b");
             parser.add_flag("/c");
 
-            const std::vector<std::string> args = {"!d", "-a"};
+            const std::vector<std::string> args = {"./program", "!d", "-a"};
             try
             {
                 parser.parse(args);
@@ -241,7 +242,7 @@ namespace blt::argparse
             argument_parser_t parser;
             parser.add_flag("-v").as_type<int>().set_action(action_t::COUNT);
 
-            const std::vector<std::string> args = {"-vvv"};
+            const std::vector<std::string> args = {"./program", "-vvv"};
             const auto parsed_args = parser.parse(args);
 
             BLT_ASSERT(parsed_args.get<size_t>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
@@ -255,7 +256,7 @@ namespace blt::argparse
             parser.add_flag("-x").as_type<int>();
             parser.add_flag("/y").as_type<std::string_view>();
 
-            const std::vector<std::string> args = {"-x", "10", "!z", "/y", "value"};
+            const std::vector<std::string> args = {"./program", "-x", "10", "!z", "/y", "value"};
             try
             {
                 parser.parse(args);
@@ -277,13 +278,97 @@ namespace blt::argparse
             parser.add_flag("-f").set_action(action_t::STORE_FALSE); // STORE_FALSE action
             parser.add_flag("-c").set_action(action_t::STORE_TRUE); // STORE_TRUE action
 
-            const std::vector<std::string> args = {"-k", "100", "-t", "-f", "-c"};
+            const std::vector<std::string> args = {"./program", "-k", "100", "-t", "-f", "-c"};
             const auto parsed_args = parser.parse(args);
 
             BLT_ASSERT(parsed_args.get<int>("-k") == 100 && "Flag '-k' should store 100");
             BLT_ASSERT(parsed_args.get<int>("-t") == 999 && "Flag '-t' should store a const value of 999");
             BLT_ASSERT(parsed_args.get<bool>("-f") == false && "Flag '-f' should store `false`");
             BLT_ASSERT(parsed_args.get<bool>("-c") == true && "Flag '-c' should store `true`");
+        }
+
+        // Helper function to simulate argument parsing for nargs tests
+        bool parse_arguments(const std::vector<std::string_view>& args, int expected_nargs)
+        {
+            argument_parser_t parser;
+
+            std::vector<argument_string_t> arg_strings;
+            arg_strings.reserve(args.size());
+            for (const auto& arg : args)
+                arg_strings.emplace_back(arg, parser.get_allowed_flag_prefixes());
+            argument_consumer_t consumer{arg_strings};
+
+            parser.add_positional("positional").set_nargs(expected_nargs);
+            try
+            {
+                auto parsed_args = parser.parse(consumer);
+                return consumer.remaining() == 0;
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << e.what() << std::endl;
+                return false;
+            }
+        }
+
+        // Test case for nargs = 0
+        void test_nargs_0()
+        {
+            std::cout << "[Running Test: test_nargs_0]\n";
+
+            // Valid case: No arguments
+            const std::vector<std::string_view> valid_args = {"./program"};
+            BLT_ASSERT(parse_arguments(valid_args, 0) && "nargs=0: Should accept no arguments");
+
+            // Invalid case: 1 argument
+            const std::vector<std::string_view> invalid_args = {"./program", "arg1"};
+            BLT_ASSERT(!parse_arguments(invalid_args, 0) && "nargs=0: Should not accept any arguments");
+
+            std::cout << "Success: test_nargs_0\n";
+        }
+
+        // Test case for nargs = 1
+        void test_nargs_1()
+        {
+            std::cout << "[Running Test: test_nargs_1]\n";
+
+            // Valid case: 1 argument
+            const std::vector<std::string_view> valid_args = {"./program", "arg1"};
+            BLT_ASSERT(parse_arguments(valid_args, 1) && "nargs=1: Should accept exactly 1 argument");
+
+            // Invalid case: 0 arguments
+            const std::vector<std::string_view> invalid_args_0 = {"./program"};
+            BLT_ASSERT(!parse_arguments(invalid_args_0, 1) && "nargs=1: Should not accept 0 arguments");
+
+            // Invalid case: 2 arguments
+            const std::vector<std::string_view> invalid_args_2 = {"./program", "arg1", "arg2"};
+            BLT_ASSERT(!parse_arguments(invalid_args_2, 1) && "nargs=1: Should not accept more than 1 argument");
+
+            std::cout << "Success: test_nargs_1\n";
+        }
+
+        // Test case for nargs = 2
+        void test_nargs_2()
+        {
+            std::cout << "[Running Test: test_nargs_2]\n";
+
+            // Valid case: 2 arguments
+            const std::vector<std::string_view> valid_args = {"./program", "arg1", "arg2"};
+            BLT_ASSERT(parse_arguments(valid_args, 2) && "nargs=2: Should accept exactly 2 arguments");
+
+            // Invalid case: 0 arguments
+            const std::vector<std::string_view> invalid_args_0 = {"./program"};
+            BLT_ASSERT(!parse_arguments(invalid_args_0, 2) && "nargs=2: Should not accept 0 arguments");
+
+            // Invalid case: 1 argument
+            const std::vector<std::string_view> invalid_args_1 = {"./program", "arg1"};
+            BLT_ASSERT(!parse_arguments(invalid_args_1, 2) && "nargs=2: Should not accept less than 2 arguments");
+
+            // Invalid case: 3 arguments
+            const std::vector<std::string_view> invalid_args_3 = {"./program", "arg1", "arg2", "arg3"};
+            BLT_ASSERT(!parse_arguments(invalid_args_3, 2) && "nargs=2: Should not accept more than 2 arguments");
+
+            std::cout << "Success: test_nargs_2\n";
         }
 
         void run_argparse_flag_tests()
@@ -295,11 +380,20 @@ namespace blt::argparse
             test_flags_with_different_actions();
         }
 
+        void run_all_nargs_tests()
+        {
+            test_nargs_0();
+            test_nargs_1();
+            test_nargs_2();
+            std::cout << "All nargs tests passed successfully.\n";
+        }
+
         void test()
         {
             run_all_tests_argument_string_t();
             test_argparse_empty();
             run_argparse_flag_tests();
+            run_all_nargs_tests();
         }
 
         [[nodiscard]] std::string subparse_error::error_string() const
@@ -337,6 +431,8 @@ namespace blt::argparse
 
     argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
     {
+        if (!m_name)
+            m_name = consumer.absolute_first().get_argument();
         hashset_t<std::string> found_flags;
         hashset_t<std::string> found_positional;
         argument_storage_t parsed_args;
