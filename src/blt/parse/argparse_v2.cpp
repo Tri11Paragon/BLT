@@ -288,7 +288,7 @@ namespace blt::argparse
         }
 
         // Helper function to simulate argument parsing for nargs tests
-        bool parse_arguments(const std::vector<std::string_view>& args, int expected_nargs)
+        bool parse_arguments(const std::vector<std::string_view>& args, const nargs_v expected_nargs)
         {
             argument_parser_t parser;
 
@@ -371,6 +371,49 @@ namespace blt::argparse
             std::cout << "Success: test_nargs_2\n";
         }
 
+        void test_nargs_all() {
+            std::cout << "[Running Test: test_nargs_all]\n";
+
+            // Valid case: No arguments
+            const std::vector<std::string_view> valid_args_0 = {"./program"};
+            BLT_ASSERT(parse_arguments(valid_args_0, argparse::nargs_t::ALL),
+                       "nargs=ALL: Should accept all remaining arguments (even if none left)");
+
+            // Valid case: Multiple arguments
+            const std::vector<std::string_view> valid_args_2 = {"./program", "arg1", "arg2"};
+            BLT_ASSERT(parse_arguments(valid_args_2, argparse::nargs_t::ALL),
+                       "nargs=ALL: Should accept all remaining arguments");
+
+            // Valid case: Many arguments
+            const std::vector<std::string_view> valid_args_many = {"./program", "arg1", "arg2", "arg3", "arg4"};
+            BLT_ASSERT(parse_arguments(valid_args_many, argparse::nargs_t::ALL),
+                       "nargs=ALL: Should accept all remaining arguments");
+
+            std::cout << "Success: test_nargs_all\n";
+        }
+
+        // Test case for nargs_t::ALL_AT_LEAST_ONE
+        void test_nargs_all_at_least_one() {
+            std::cout << "[Running Test: test_nargs_all_at_least_one]\n";
+
+            // Valid case: 1 argument
+            const std::vector<std::string_view> valid_args_1 = {"arg1"};
+            BLT_ASSERT(parse_arguments(valid_args_1, argparse::nargs_t::ALL_AT_LEAST_ONE),
+                       "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume it");
+
+            // Valid case: Multiple arguments
+            const std::vector<std::string_view> valid_args_3 = {"arg1", "arg2", "arg3"};
+            BLT_ASSERT(parse_arguments(valid_args_3, argparse::nargs_t::ALL_AT_LEAST_ONE),
+                       "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume all remaining arguments");
+
+            // Invalid case: No arguments
+            const std::vector<std::string_view> invalid_args_0 = {};
+            BLT_ASSERT(!parse_arguments(invalid_args_0, argparse::nargs_t::ALL_AT_LEAST_ONE),
+                       "nargs=ALL_AT_LEAST_ONE: Should reject if no arguments are provided");
+
+            std::cout << "Success: test_nargs_all_at_least_one\n";
+        }
+
         void run_argparse_flag_tests()
         {
             test_single_flag_prefixes();
@@ -385,6 +428,8 @@ namespace blt::argparse
             test_nargs_0();
             test_nargs_1();
             test_nargs_2();
+            test_nargs_all();
+            test_nargs_all_at_least_one();
             std::cout << "All nargs tests passed successfully.\n";
         }
 
