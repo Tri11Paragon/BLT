@@ -67,7 +67,8 @@ namespace blt::argparse
     template <typename T>
     auto ensure_is_string(T&& t)
     {
-        if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>>)
+        if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>> && !(std::is_same_v<T, char>
+            || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>))
             return std::to_string(std::forward<T>(t));
         else
             return std::forward<T>(t);
@@ -80,6 +81,12 @@ namespace blt::argparse
         out.reserve((get_const_char_size(strings) + ...));
         ((out += ensure_is_string(std::forward<Strings>(strings))), ...);
         return out;
+    }
+
+    template <typename... Strings>
+    std::vector<std::string_view> make_arguments(Strings... strings)
+    {
+        return std::vector<std::string_view>{"./program", strings...};
     }
 
     namespace detail
@@ -254,7 +261,7 @@ namespace blt::argparse
 
             argument_parser_t parser;
             parser.add_flag("-x").as_type<int>();
-            parser.add_flag("/y").as_type<std::string_view>();
+            parser.add_flag("/y").as_type<std::string>();
 
             const std::vector<std::string> args = {"./program", "-x", "10", "!z", "/y", "value"};
             try
@@ -415,6 +422,102 @@ namespace blt::argparse
             std::cout << "Success: test_nargs_all_at_least_one\n";
         }
 
+        void run_combined_flag_test()
+        {
+            std::cout << "[Running Test: run_combined_flag_test]\n";
+            argument_parser_t parser;
+
+            parser.add_flag("-a").set_action(action_t::STORE_TRUE);
+            parser.add_flag("--deep").set_action(action_t::STORE_FALSE);
+            parser.add_flag("-b", "--combined").set_action(action_t::STORE_CONST).set_const(50);
+            parser.add_flag("--append").set_action(action_t::APPEND).as_type<int>();
+            parser.add_flag("--required").set_required(true);
+            parser.add_flag("--default").set_default("I am a default value");
+            parser.add_flag("-t").set_action(action_t::APPEND_CONST).set_dest("test").set_const(5);
+            parser.add_flag("-g").set_action(action_t::APPEND_CONST).set_dest("test").set_const(10);
+            parser.add_flag("-e").set_action(action_t::APPEND_CONST).set_dest("test").set_const(15);
+            parser.add_flag("-f").set_action(action_t::APPEND_CONST).set_dest("test").set_const(20);
+            parser.add_flag("-d").set_action(action_t::APPEND_CONST).set_dest("test").set_const(25);
+            parser.add_flag("--end").set_action(action_t::EXTEND).set_dest("wow").as_type<float>();
+
+            const auto a1 = make_arguments("-a", "--required", "hello");
+            const auto r1 = parser.parse(a1);
+            BLT_ASSERT(r1.get<bool>("-a") == true && "Flag '-a' should store true");
+            BLT_ASSERT(r1.get<std::string>("--default") == "I am a default value" && "Flag '--default' should store default value");
+            BLT_ASSERT(r1.get("--required") == "hello" && "Flag '--required' should store 'hello'");
+
+            const auto a2 = make_arguments("-a", "--deep", "--required", "soft");
+            const auto r2 = parser.parse(a2);
+            BLT_ASSERT(r2.get<bool>("-a") == true && "Flag '-a' should store true");
+            BLT_ASSERT(r2.get<bool>("--deep") == false && "Flag '--deep' should store false");
+            BLT_ASSERT(r2.get("--required") == "soft" && "Flag '--required' should store 'soft'");
+
+            const auto a3 = make_arguments("--required", "silly", "--combined", "-t", "-f", "-e");
+            const auto r3 = parser.parse(a3);
+            BLT_ASSERT((r3.get<std::vector<int>>("test") == std::vector{5, 20, 15}) && "Flags should add to vector of {5, 20, 15}");
+            BLT_ASSERT(r3.get<int>("-b") == 50 && "Combined flag should store const of 50");
+
+            const auto a4 = make_arguments("--required", "crazy", "--end", "10", "12.05", "68.11", "100.00", "200532", "-d", "-t", "-g", "-e", "-f");
+            const auto r4 = parser.parse(a4);
+            BLT_ASSERT(
+                (r4.get<std::vector<int>>("test") == std::vector{25, 5, 10, 15, 20}) &&
+                "Expected test vector to be filled with all arguments in order of flags");
+            BLT_ASSERT(
+                (r4.get<std::vector<float>>("wow") == std::vector<float>{10, 12.05, 68.11, 100.00, 200532}) &&
+                "Extend vector expected to contain all elements");
+
+            std::cout << "Success: run_combined_flag_test\n";
+        }
+
+        void run_subparser_test()
+        {
+            std::cout << "[Running Test: run_subparser_test]\n";
+            argument_parser_t parser;
+
+            parser.add_flag("--open").set_flag();
+
+            auto& subparser = parser.add_subparser("mode");
+            auto& n1 = subparser.add_parser("n1");
+            n1.add_flag("--silly").set_flag();
+            n1.add_positional("path");
+
+            auto& n2 = subparser.add_parser("n2");
+            n2.add_flag("--crazy").set_flag();
+            n2.add_positional("path");
+            n2.add_positional("output");
+
+            auto& n3 = subparser.add_parser("n3");
+            n3.add_flag("--deep").set_flag();
+
+            const auto a1 = make_arguments("n1", "--silly");
+            try
+            {
+                parser.parse(a1);
+                BLT_ASSERT(false && "Subparser should throw an error when positional not supplied");
+            }
+            catch (...)
+            {
+            }
+
+            const auto a2 = make_arguments("--open");
+            try
+            {
+                parser.parse(a2);
+                BLT_ASSERT(false && "Subparser should throw an error when no subparser is supplied");
+            }
+            catch (...)
+            {
+            }
+
+            const auto a3 = make_arguments("n1", "--silly", "path");
+            const auto r3 = parser.parse(a3);
+            BLT_ASSERT(r3.get<bool>("--open") == false && "Flag '--open' should default to false");
+            BLT_ASSERT(r3.get("mode") == "n1" && "Subparser should store 'n1'");
+            BLT_ASSERT(r3.get("path") == "path" && "Subparser path should be 'path'");
+
+            std::cout << "Success: run_subparser_test\n";
+        }
+
         void run_argparse_flag_tests()
         {
             test_single_flag_prefixes();
@@ -422,6 +525,8 @@ namespace blt::argparse
             test_compound_flags();
             test_combination_of_valid_and_invalid_flags();
             test_flags_with_different_actions();
+            run_combined_flag_test();
+            run_subparser_test();
         }
 
         void run_all_nargs_tests()
@@ -488,7 +593,7 @@ namespace blt::argparse
         for (auto& [key, subparser] : m_subparsers)
         {
             auto [parsed_subparser, storage] = subparser.parse(consumer);
-            storage.m_data.emplace(std::string{key}, detail::arg_data_t{parsed_subparser.get_argument()});
+            storage.m_data.emplace(std::string{key}, detail::arg_data_t{std::string{parsed_subparser.get_argument()}});
             parsed_args.add(storage);
         }
 
@@ -623,7 +728,7 @@ namespace blt::argparse
                                if (argc != 0)
                                    throw detail::unexpected_argument_error(
                                        make_string("Argument '", arg, "'s action is append const but takes in arguments."));
-                               if (flag->m_const_value)
+                               if (!flag->m_const_value)
                                {
                                    throw detail::missing_value_error(
                                        make_string("Append const chosen as an action but const value not provided for argument '", arg,
@@ -632,40 +737,38 @@ namespace blt::argparse
                                if (parsed_args.contains(dest))
                                {
                                    auto& data = parsed_args.m_data[dest];
-                                   auto visitor = detail::arg_meta_type_helper_t::make_visitor(
-                                       [arg](auto& primitive)
-                                       {
-                                           throw detail::type_error(make_string(
-                                               "Invalid type for argument '", arg, "' expected list type, found '",
-                                               blt::type_string<decltype(primitive)>(), "' with value ", primitive));
-                                       },
-                                       [&flag, arg](auto& vec)
-                                       {
-                                           using type = typename meta::remove_cvref_t<decltype(vec)>::value_type;
-                                           if (!std::holds_alternative<type>(*flag->m_const_value))
-                                           {
-                                               throw detail::type_error(make_string("Constant value for argument '", arg,
-                                                                                    "' type doesn't match values already present! Expected to be of type '",
-                                                                                    blt::type_string<type>(), "'!"));
-                                           }
-                                           vec.push_back(std::get<type>(*flag->m_const_value));
-                                       });
-                                   std::visit(visitor, data);
+                                   std::visit(detail::arg_meta_type_helper_t::make_visitor(
+                                                  [arg](auto& primitive)
+                                                  {
+                                                      throw detail::type_error(make_string(
+                                                          "Invalid type for argument '", arg, "' expected list type, found '",
+                                                          blt::type_string<decltype(primitive)>(), "' with value ", primitive));
+                                                  },
+                                                  [&flag, arg](auto& vec)
+                                                  {
+                                                      using type = typename meta::remove_cvref_t<decltype(vec)>::value_type;
+                                                      if (!std::holds_alternative<type>(*flag->m_const_value))
+                                                      {
+                                                          throw detail::type_error(make_string("Constant value for argument '", arg,
+                                                                                               "' type doesn't match values already present! Expected to be of type '",
+                                                                                               blt::type_string<type>(), "'!"));
+                                                      }
+                                                      vec.push_back(std::get<type>(*flag->m_const_value));
+                                                  }), data);
                                }
                                else
                                {
-                                   auto visitor = detail::arg_meta_type_helper_t::make_visitor(
-                                       [&parsed_args, &dest](auto& primitive)
-                                       {
-                                           std::vector<meta::remove_cvref_t<decltype(primitive)>> vec;
-                                           vec.push_back(primitive);
-                                           parsed_args.m_data.insert({dest, std::move(vec)});
-                                       },
-                                       [](auto&)
-                                       {
-                                           throw detail::type_error("Append const should not be a list type!");
-                                       });
-                                   std::visit(visitor, *flag->m_const_value);
+                                   std::visit(detail::arg_meta_type_helper_t::make_visitor(
+                                                  [&parsed_args, &dest](auto& primitive)
+                                                  {
+                                                      std::vector<meta::remove_cvref_t<decltype(primitive)>> vec;
+                                                      vec.emplace_back(primitive);
+                                                      parsed_args.m_data.emplace(dest, std::move(vec));
+                                                  },
+                                                  [](auto&)
+                                                  {
+                                                      throw detail::type_error("Append const should not be a list type!");
+                                                  }), *flag->m_const_value);
                                }
                                break;
                            case action_t::STORE_CONST:
@@ -826,10 +929,10 @@ namespace blt::argparse
         }
     }
 
-    expected<std::vector<std::string_view>, std::string> argument_parser_t::consume_until_flag_or_end(argument_consumer_t& consumer,
-        hashset_t<std::string>* allowed_choices)
+    expected<std::vector<std::string>, std::string> argument_parser_t::consume_until_flag_or_end(argument_consumer_t& consumer,
+                                                                                                 hashset_t<std::string>* allowed_choices)
     {
-        std::vector<std::string_view> args;
+        std::vector<std::string> args;
         while (consumer.can_consume() && !consumer.peek().is_flag())
         {
             if (allowed_choices != nullptr && !allowed_choices->contains(consumer.peek().get_argument()))
@@ -849,11 +952,11 @@ namespace blt::argparse
         return args;
     }
 
-    std::vector<std::string_view> argument_parser_t::consume_argc(const int argc, argument_consumer_t& consumer,
-                                                                  hashset_t<std::string>* allowed_choices,
-                                                                  const std::string_view arg)
+    std::vector<std::string> argument_parser_t::consume_argc(const int argc, argument_consumer_t& consumer,
+                                                             hashset_t<std::string>* allowed_choices,
+                                                             const std::string_view arg)
     {
-        std::vector<std::string_view> args;
+        std::vector<std::string> args;
         for (i32 i = 0; i < argc; ++i)
         {
             if (!consumer.can_consume())
@@ -882,7 +985,7 @@ namespace blt::argparse
                                                            "' is not a valid choice for argument '", arg,
                                                            "'! Expected one of ", valid_choices));
             }
-            args.push_back(consumer.consume().get_argument());
+            args.push_back(std::string{consumer.consume().get_argument()});
         }
         if (args.size() != static_cast<size_t>(argc))
         {

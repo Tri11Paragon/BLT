@@ -188,7 +188,7 @@ namespace blt::argparse
             }
         };
 
-        using arg_meta_type_helper_t = arg_data_helper_t<bool, i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string_view>;
+        using arg_meta_type_helper_t = arg_data_helper_t<bool, i8, i16, i32, i64, u8, u16, u32, u64, float, double, std::string>;
         using arg_data_t = arg_meta_type_helper_t::variant_t;
 
         template <typename T>
@@ -376,9 +376,9 @@ namespace blt::argparse
             return std::get<T>(m_data.at(key));
         }
 
-        [[nodiscard]] std::string_view get(const std::string_view key) const
+        [[nodiscard]] const std::string& get(const std::string_view key) const
         {
-            return std::get<std::string_view>(m_data.at(key));
+            return std::get<std::string>(m_data.at(key));
         }
 
         bool contains(const std::string_view key)
@@ -410,9 +410,9 @@ namespace blt::argparse
         {
             m_dest_func = [](const std::string_view dest, argument_storage_t& storage, std::string_view value)
             {
-                storage.m_data.emplace(std::string{dest}, value);
+                storage.m_data.emplace(std::string{dest}, std::string{value});
             };
-            m_dest_vec_func = [](const std::string_view dest, argument_storage_t& storage, const std::vector<std::string_view>& values)
+            m_dest_vec_func = [](const std::string_view dest, argument_storage_t& storage, const std::vector<std::string>& values)
             {
                 storage.m_data.emplace(std::string{dest}, values);
             };
@@ -426,7 +426,7 @@ namespace blt::argparse
             {
                 storage.m_data.emplace(std::string{dest}, detail::arg_string_converter_t<T>::convert(value));
             };
-            m_dest_vec_func = [](const std::string_view dest, argument_storage_t& storage, const std::vector<std::string_view>& values)
+            m_dest_vec_func = [](const std::string_view dest, argument_storage_t& storage, const std::vector<std::string>& values)
             {
                 if (storage.m_data.contains(dest))
                 {
@@ -451,6 +451,11 @@ namespace blt::argparse
             return *this;
         }
 
+        argument_builder_t& set_flag()
+        {
+            return set_action(action_t::STORE_TRUE);
+        }
+
         argument_builder_t& set_action(const action_t action)
         {
             m_action = action;
@@ -473,6 +478,9 @@ namespace blt::argparse
             case action_t::COUNT:
                 set_nargs(0);
                 as_type<size_t>();
+                break;
+            case action_t::EXTEND:
+                set_nargs(nargs_t::ALL);
                 break;
             case action_t::HELP:
             case action_t::VERSION:
@@ -553,7 +561,7 @@ namespace blt::argparse
         // dest, storage, value input
         std::function<void(std::string_view, argument_storage_t&, std::string_view)> m_dest_func;
         // dest, storage, value input
-        std::function<void(std::string_view, argument_storage_t&, const std::vector<std::string_view>& values)> m_dest_vec_func;
+        std::function<void(std::string_view, argument_storage_t&, const std::vector<std::string>& values)> m_dest_vec_func;
     };
 
     class argument_positional_storage_t
@@ -611,6 +619,7 @@ namespace blt::argparse
                                                         std::string, Aliases>>...>,
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
             m_argument_builders.emplace_back(std::make_unique<argument_builder_t>());
+            m_argument_builders.back()->set_dest(arg);
             m_flag_arguments.emplace(arg, m_argument_builders.back().get());
             (m_flag_arguments.emplace(aliases, m_argument_builders.back().get()), ...);
             return *m_argument_builders.back().get();
@@ -716,9 +725,9 @@ namespace blt::argparse
         void parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
         static void handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
                                                     const hashset_t<std::string>& found, argument_storage_t& parsed_args, std::string_view type);
-        static expected<std::vector<std::string_view>, std::string> consume_until_flag_or_end(argument_consumer_t& consumer,
+        static expected<std::vector<std::string>, std::string> consume_until_flag_or_end(argument_consumer_t& consumer,
                                                                                               hashset_t<std::string>* allowed_choices);
-        static std::vector<std::string_view> consume_argc(i32 argc, argument_consumer_t& consumer, hashset_t<std::string>* allowed_choices,
+        static std::vector<std::string> consume_argc(i32 argc, argument_consumer_t& consumer, hashset_t<std::string>* allowed_choices,
                                                           std::string_view arg);
 
         std::optional<std::string> m_name;
@@ -746,7 +755,7 @@ namespace blt::argparse
                 std::conjunction_v<std::disjunction<std::is_convertible<Aliases, std::string_view>, std::is_constructible<
                                                         std::string_view, Aliases>>...>,
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
-            m_parsers.emplace(name);
+            m_parsers.emplace(name, argument_parser_t{});
             ((m_aliases[std::string_view{aliases}] = &m_parsers[name]), ...);
             return m_parsers[name];
         }
