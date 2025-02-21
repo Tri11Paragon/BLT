@@ -32,6 +32,7 @@
 #include <memory>
 #include <functional>
 #include <type_traits>
+#include <blt/iterator/iterator.h>
 #include <blt/std/assert.h>
 #include <blt/std/expected.h>
 #include <blt/std/ranges.h>
@@ -45,6 +46,7 @@ namespace blt::argparse
     class argument_subparser_t;
     class argument_builder_t;
     class argument_storage_t;
+    class argument_positional_storage_t;
 
     enum class action_t
     {
@@ -532,7 +534,7 @@ namespace blt::argparse
             return *this;
         }
 
-        argument_builder_t& set_dest(const std::string& dest)
+        argument_builder_t& set_dest(const std::string_view& dest)
         {
             m_dest = dest;
             return *this;
@@ -552,6 +554,42 @@ namespace blt::argparse
         std::function<void(std::string_view, argument_storage_t&, std::string_view)> m_dest_func;
         // dest, storage, value input
         std::function<void(std::string_view, argument_storage_t&, const std::vector<std::string_view>& values)> m_dest_vec_func;
+    };
+
+    class argument_positional_storage_t
+    {
+    public:
+        argument_positional_storage_t() = default;
+
+        argument_builder_t& add(const std::string_view name)
+        {
+            positional_arguments.emplace_back(name, argument_builder_t{});
+            return positional_arguments.back().second;
+        }
+
+        argument_builder_t& peek()
+        {
+            return positional_arguments[current_positional].second;
+        }
+
+        argument_builder_t& next()
+        {
+            return positional_arguments[current_positional++].second;
+        }
+
+        [[nodiscard]] bool has_positional() const
+        {
+            return current_positional < positional_arguments.size();
+        }
+
+        [[nodiscard]] auto remaining() const
+        {
+            return iterate(positional_arguments).skip(current_positional);
+        }
+
+    private:
+        std::vector<std::pair<std::string, argument_builder_t>> positional_arguments;
+        size_t current_positional = 0;
     };
 
     class argument_parser_t
@@ -580,9 +618,11 @@ namespace blt::argparse
 
         argument_builder_t& add_positional(const std::string_view arg)
         {
-            m_argument_builders.emplace_back(std::make_unique<argument_builder_t>());
-            m_positional_arguments.emplace(arg, m_argument_builders.back().get());
-            return *m_argument_builders.back();
+            auto& b = m_positional_arguments.add(arg);
+            b.set_dest(std::string{arg});
+            b.set_required(true);
+            b.set_nargs(1);
+            return b;
         }
 
         argument_subparser_t& add_subparser(std::string_view dest);
@@ -688,7 +728,7 @@ namespace blt::argparse
         std::vector<std::pair<std::string_view, argument_subparser_t>> m_subparsers;
         std::vector<std::unique_ptr<argument_builder_t>> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;
-        hashmap_t<std::string_view, argument_builder_t*> m_positional_arguments;
+        argument_positional_storage_t m_positional_arguments;
         hashset_t<char> allowed_flag_prefixes = {'-', '+', '/'};
     };
 

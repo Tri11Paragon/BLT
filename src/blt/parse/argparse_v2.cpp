@@ -306,7 +306,6 @@ namespace blt::argparse
             }
             catch (const std::exception& e)
             {
-                std::cerr << e.what() << std::endl;
                 return false;
             }
         }
@@ -318,7 +317,7 @@ namespace blt::argparse
 
             // Valid case: No arguments
             const std::vector<std::string_view> valid_args = {"./program"};
-            BLT_ASSERT(parse_arguments(valid_args, 0) && "nargs=0: Should accept no arguments");
+            BLT_ASSERT(!parse_arguments(valid_args, 0) && "nargs=0: Should fail");
 
             // Invalid case: 1 argument
             const std::vector<std::string_view> invalid_args = {"./program", "arg1"};
@@ -354,7 +353,7 @@ namespace blt::argparse
 
             // Valid case: 2 arguments
             const std::vector<std::string_view> valid_args = {"./program", "arg1", "arg2"};
-            BLT_ASSERT(parse_arguments(valid_args, 2) && "nargs=2: Should accept exactly 2 arguments");
+            BLT_ASSERT(!parse_arguments(valid_args, 2) && "nargs=2: Should fail as action is store");
 
             // Invalid case: 0 arguments
             const std::vector<std::string_view> invalid_args_0 = {"./program"};
@@ -371,45 +370,47 @@ namespace blt::argparse
             std::cout << "Success: test_nargs_2\n";
         }
 
-        void test_nargs_all() {
+        void test_nargs_all()
+        {
             std::cout << "[Running Test: test_nargs_all]\n";
 
             // Valid case: No arguments
             const std::vector<std::string_view> valid_args_0 = {"./program"};
-            BLT_ASSERT(parse_arguments(valid_args_0, argparse::nargs_t::ALL),
-                       "nargs=ALL: Should accept all remaining arguments (even if none left)");
+            BLT_ASSERT(!parse_arguments(valid_args_0, argparse::nargs_t::ALL) &&
+                "nargs=ALL: No arguments present. Should fail.)");
 
             // Valid case: Multiple arguments
             const std::vector<std::string_view> valid_args_2 = {"./program", "arg1", "arg2"};
-            BLT_ASSERT(parse_arguments(valid_args_2, argparse::nargs_t::ALL),
-                       "nargs=ALL: Should accept all remaining arguments");
+            BLT_ASSERT(parse_arguments(valid_args_2, argparse::nargs_t::ALL) &&
+                "nargs=ALL: Should accept all remaining arguments");
 
             // Valid case: Many arguments
             const std::vector<std::string_view> valid_args_many = {"./program", "arg1", "arg2", "arg3", "arg4"};
-            BLT_ASSERT(parse_arguments(valid_args_many, argparse::nargs_t::ALL),
-                       "nargs=ALL: Should accept all remaining arguments");
+            BLT_ASSERT(parse_arguments(valid_args_many, argparse::nargs_t::ALL) &&
+                "nargs=ALL: Should accept all remaining arguments");
 
             std::cout << "Success: test_nargs_all\n";
         }
 
         // Test case for nargs_t::ALL_AT_LEAST_ONE
-        void test_nargs_all_at_least_one() {
+        void test_nargs_all_at_least_one()
+        {
             std::cout << "[Running Test: test_nargs_all_at_least_one]\n";
 
             // Valid case: 1 argument
-            const std::vector<std::string_view> valid_args_1 = {"arg1"};
-            BLT_ASSERT(parse_arguments(valid_args_1, argparse::nargs_t::ALL_AT_LEAST_ONE),
-                       "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume it");
+            const std::vector<std::string_view> valid_args_1 = {"./program", "arg1"};
+            BLT_ASSERT(parse_arguments(valid_args_1, argparse::nargs_t::ALL_AT_LEAST_ONE) &&
+                "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume it");
 
             // Valid case: Multiple arguments
-            const std::vector<std::string_view> valid_args_3 = {"arg1", "arg2", "arg3"};
-            BLT_ASSERT(parse_arguments(valid_args_3, argparse::nargs_t::ALL_AT_LEAST_ONE),
-                       "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume all remaining arguments");
+            const std::vector<std::string_view> valid_args_3 = {"./program", "arg1", "arg2", "arg3"};
+            BLT_ASSERT(parse_arguments(valid_args_3, argparse::nargs_t::ALL_AT_LEAST_ONE) &&
+                "nargs=ALL_AT_LEAST_ONE: Should accept at least one argument and consume all remaining arguments");
 
             // Invalid case: No arguments
-            const std::vector<std::string_view> invalid_args_0 = {};
-            BLT_ASSERT(!parse_arguments(invalid_args_0, argparse::nargs_t::ALL_AT_LEAST_ONE),
-                       "nargs=ALL_AT_LEAST_ONE: Should reject if no arguments are provided");
+            const std::vector<std::string_view> invalid_args_0 = {"./program"};
+            BLT_ASSERT(!parse_arguments(invalid_args_0, argparse::nargs_t::ALL_AT_LEAST_ONE) &&
+                "nargs=ALL_AT_LEAST_ONE: Should reject if no arguments are provided");
 
             std::cout << "Success: test_nargs_all_at_least_one\n";
         }
@@ -479,7 +480,6 @@ namespace blt::argparse
         if (!m_name)
             m_name = consumer.absolute_first().get_argument();
         hashset_t<std::string> found_flags;
-        hashset_t<std::string> found_positional;
         argument_storage_t parsed_args;
         // first, we consume flags which may be part of this parser
         while (consumer.can_consume() && consumer.peek().is_flag())
@@ -494,20 +494,31 @@ namespace blt::argparse
 
         while (consumer.can_consume())
         {
-            const auto key = consumer.consume();
-            if (key.is_flag())
-                handle_compound_flags(found_flags, parsed_args, consumer, key);
+            if (consumer.peek().is_flag())
+                handle_compound_flags(found_flags, parsed_args, consumer, consumer.consume());
             else
-            {
-                const auto pos = m_positional_arguments.find(key.get_argument());
-                if (pos == m_positional_arguments.end())
-                    throw detail::bad_positional(make_string("Error: Unknown positional argument: ", key.get_argument()));
-                found_positional.insert(std::string{key.get_argument()});
-                parse_positional(parsed_args, consumer, key.get_argument());
-            }
+                parse_positional(parsed_args, consumer, consumer.peek().get_argument());
         }
         handle_missing_and_default_args(m_flag_arguments, found_flags, parsed_args, "flag");
-        handle_missing_and_default_args(m_positional_arguments, found_positional, parsed_args, "positional");
+
+        for (auto& [name, value] : m_positional_arguments.remaining())
+        {
+            std::visit(lambda_visitor{
+                           [](const nargs_t)
+                           {
+                           },
+                           [](const int argc)
+                           {
+                               if (argc == 0)
+                                   throw detail::bad_positional("Positional Argument takes no values, this is invalid!");
+                           }
+                       }, value.m_nargs);
+
+            if (value.m_required)
+                throw detail::missing_argument_error(make_string("Error: argument '", name, "' was not found but is required by the program"));
+            if (value.m_default_value && !parsed_args.contains(value.m_dest.value_or(name)))
+                parsed_args.m_data.emplace(value.m_dest.value_or(name), *value.m_default_value);
+        }
 
         return parsed_args;
     }
@@ -724,8 +735,10 @@ namespace blt::argparse
 
     void argument_parser_t::parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, const std::string_view arg)
     {
-        auto positional = m_positional_arguments.find(arg)->second;
-        const auto dest = positional->m_dest.value_or(std::string{arg});
+        if (!m_positional_arguments.has_positional())
+            throw detail::missing_argument_error(make_string("Error: No positional arguments were defined for this parser!"));
+        auto& positional = m_positional_arguments.next();
+        const auto dest = positional.m_dest.value_or(std::string{arg});
         std::visit(lambda_visitor{
                        [&consumer, &positional, &dest, &parsed_args, arg](const nargs_t arg_enum)
                        {
@@ -741,27 +754,27 @@ namespace blt::argparse
                                [[fallthrough]];
                            case nargs_t::ALL:
                                auto result = consume_until_flag_or_end(
-                                   consumer, positional->m_choices ? &*positional->m_choices : nullptr);
+                                   consumer, positional.m_choices ? &*positional.m_choices : nullptr);
                                if (!result)
                                    throw detail::bad_choice_error(make_string('\'', consumer.peek().get_argument(),
                                                                               "' is not a valid choice for argument '", arg,
                                                                               "'! Expected one of ", result.error()));
-                               positional->m_dest_vec_func(dest, parsed_args, result.value());
+                               positional.m_dest_vec_func(dest, parsed_args, result.value());
                                break;
                            }
                        },
                        [this, &consumer, &positional, &dest, &parsed_args, arg](const i32 argc)
                        {
-                           const auto args = consume_argc(argc, consumer, positional->m_choices ? &*positional->m_choices : nullptr, arg);
+                           const auto args = consume_argc(argc, consumer, positional.m_choices ? &*positional.m_choices : nullptr, arg);
 
-                           switch (positional->m_action)
+                           switch (positional.m_action)
                            {
                            case action_t::STORE:
                                if (argc == 0)
                                    throw detail::missing_argument_error(
                                        make_string("Argument '", arg, "'s action is store but takes in no arguments?"));
                                if (argc == 1)
-                                   positional->m_dest_func(dest, parsed_args, args.front());
+                                   positional.m_dest_func(dest, parsed_args, args.front());
                                else
                                    throw detail::unexpected_argument_error(make_string("Argument '", arg,
                                                                                        "'s action is store but takes in more than one argument. "
@@ -772,7 +785,7 @@ namespace blt::argparse
                                if (argc == 0)
                                    throw detail::missing_argument_error(
                                        make_string("Argument '", arg, "'s action is append or extend but takes in no arguments."));
-                               positional->m_dest_vec_func(dest, parsed_args, args);
+                               positional.m_dest_vec_func(dest, parsed_args, args);
                                break;
                            case action_t::APPEND_CONST:
                                throw detail::bad_positional("action_t::APPEND_CONST does not make sense for positional arguments");
@@ -792,7 +805,7 @@ namespace blt::argparse
                                std::exit(0);
                            }
                        }
-                   }, positional->m_nargs);
+                   }, positional.m_nargs);
     }
 
     void argument_parser_t::handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
