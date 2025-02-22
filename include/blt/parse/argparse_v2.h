@@ -314,7 +314,7 @@ namespace blt::argparse
                                                                            m_end(args.data() + args.size())
         {
             BLT_ASSERT(!args.empty() &&
-                       "Argument consumer must have at least one argument allocated to it. First argument is always assumed to be program");
+                "Argument consumer must have at least one argument allocated to it. First argument is always assumed to be program");
         }
 
         [[nodiscard]] const argument_string_t& absolute_first() const
@@ -567,12 +567,9 @@ namespace blt::argparse
     class argument_positional_storage_t
     {
     public:
-        argument_positional_storage_t() = default;
-
-        argument_builder_t& add(const std::string_view name)
+        explicit argument_positional_storage_t(std::vector<std::pair<std::string, argument_builder_t>> storage): positional_arguments(
+            std::move(storage))
         {
-            positional_arguments.emplace_back(name, argument_builder_t{});
-            return positional_arguments.back().second;
         }
 
         argument_builder_t& peek()
@@ -627,7 +624,7 @@ namespace blt::argparse
 
         argument_builder_t& add_positional(const std::string_view arg)
         {
-            auto& b = m_positional_arguments.add(arg);
+            auto& b = m_positional_arguments.emplace_back(arg, argument_builder_t{}).second;
             b.set_dest(std::string{arg});
             b.set_required(true);
             b.set_nargs(1);
@@ -722,13 +719,14 @@ namespace blt::argparse
         void handle_compound_flags(hashset_t<std::string>& found_flags, argument_storage_t& parsed_args, argument_consumer_t& consumer,
                                    const argument_string_t& arg);
         void parse_flag(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
-        void parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, std::string_view arg);
+        void parse_positional(argument_storage_t& parsed_args, argument_consumer_t& consumer, argument_positional_storage_t& storage,
+                              std::string_view arg);
         static void handle_missing_and_default_args(hashmap_t<std::string_view, argument_builder_t*>& arguments,
                                                     const hashset_t<std::string>& found, argument_storage_t& parsed_args, std::string_view type);
         static expected<std::vector<std::string>, std::string> consume_until_flag_or_end(argument_consumer_t& consumer,
-                                                                                              hashset_t<std::string>* allowed_choices);
+                                                                                         hashset_t<std::string>* allowed_choices);
         static std::vector<std::string> consume_argc(i32 argc, argument_consumer_t& consumer, hashset_t<std::string>* allowed_choices,
-                                                          std::string_view arg);
+                                                     std::string_view arg);
 
         std::optional<std::string> m_name;
         std::optional<std::string> m_usage;
@@ -737,7 +735,7 @@ namespace blt::argparse
         std::vector<std::pair<std::string_view, argument_subparser_t>> m_subparsers;
         std::vector<std::unique_ptr<argument_builder_t>> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;
-        argument_positional_storage_t m_positional_arguments;
+        std::vector<std::pair<std::string, argument_builder_t>> m_positional_arguments;
         hashset_t<char> allowed_flag_prefixes = {'-', '+', '/'};
     };
 
