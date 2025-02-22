@@ -22,7 +22,6 @@
 #include <complex>
 #include <blt/std/types.h>
 #include <blt/std/hashmap.h>
-#include <blt/fs/path_helper.h>
 #include <blt/meta/meta.h>
 #include <string>
 #include <string_view>
@@ -432,10 +431,8 @@ namespace blt::argparse
                 {
                     auto& data = storage.m_data[dest];
                     if (!std::holds_alternative<std::vector<T>>(data))
-                    {
                         throw detail::type_error("Invalid type conversion. Trying to add type " + blt::type_string<T>() +
                             " but this does not match existing type index '" + std::to_string(data.index()) + "'!");
-                    }
                     auto& converted_values = std::get<std::vector<T>>(data);
                     for (const auto& value : values)
                         converted_values.push_back(detail::arg_string_converter_t<T>::convert(value));
@@ -456,41 +453,7 @@ namespace blt::argparse
             return set_action(action_t::STORE_TRUE);
         }
 
-        argument_builder_t& set_action(const action_t action)
-        {
-            m_action = action;
-            switch (m_action)
-            {
-            case action_t::STORE_TRUE:
-                set_nargs(0);
-                as_type<bool>();
-                set_default(false);
-                break;
-            case action_t::STORE_FALSE:
-                set_nargs(0);
-                as_type<bool>();
-                set_default(true);
-                break;
-            case action_t::STORE_CONST:
-            case action_t::APPEND_CONST:
-                set_nargs(0);
-                break;
-            case action_t::COUNT:
-                set_nargs(0);
-                as_type<size_t>();
-                break;
-            case action_t::EXTEND:
-                set_nargs(nargs_t::ALL);
-                break;
-            case action_t::HELP:
-            case action_t::VERSION:
-                set_nargs(0);
-                break;
-            default:
-                break;
-            }
-            return *this;
-        }
+        argument_builder_t& set_action(action_t action);
 
         argument_builder_t& set_required(const bool required)
         {
@@ -602,9 +565,10 @@ namespace blt::argparse
         friend argument_subparser_t;
 
     public:
-        explicit argument_parser_t(const std::optional<std::string_view> name = {}, const std::optional<std::string_view> usage = {},
-                                   const std::optional<std::string_view> description = {}, const std::optional<std::string_view> epilogue = {}):
-            m_name(name), m_usage(usage), m_description(description), m_epilogue(epilogue)
+        explicit argument_parser_t(const std::optional<std::string_view> description = {}, const std::optional<std::string_view> epilogue = {},
+                                    const std::optional<std::string_view> version = {},
+                                   const std::optional<std::string_view> usage = {}, const std::optional<std::string_view> name = {}):
+            m_name(name), m_usage(usage), m_description(description), m_epilogue(epilogue), m_version(version)
         {
         }
 
@@ -632,6 +596,18 @@ namespace blt::argparse
         }
 
         argument_subparser_t& add_subparser(std::string_view dest);
+
+        argument_parser_t& with_help()
+        {
+            add_flag("--help", "-h").set_action(action_t::HELP);
+            return *this;
+        }
+
+        argument_parser_t& with_version()
+        {
+            add_flag("--version").set_action(action_t::VERSION);
+            return *this;
+        }
 
         argument_storage_t parse(argument_consumer_t& consumer); // NOLINT
 
@@ -669,15 +645,15 @@ namespace blt::argparse
 
         void print_usage();
 
-        void print_version();
+        void print_version() const;
 
-        argument_parser_t& set_name(const std::string_view name)
+        argument_parser_t& set_name(const std::optional<std::string>& name)
         {
             m_name = name;
             return *this;
         }
 
-        argument_parser_t& set_usage(const std::string_view usage)
+        argument_parser_t& set_usage(const std::optional<std::string>& usage)
         {
             m_usage = usage;
             return *this;
@@ -688,7 +664,7 @@ namespace blt::argparse
             return m_usage;
         }
 
-        argument_parser_t& set_description(const std::string_view description)
+        argument_parser_t& set_description(const std::optional<std::string>& description)
         {
             m_description = description;
             return *this;
@@ -699,7 +675,7 @@ namespace blt::argparse
             return m_description;
         }
 
-        argument_parser_t& set_epilogue(const std::string_view epilogue)
+        argument_parser_t& set_epilogue(const std::optional<std::string>& epilogue)
         {
             m_epilogue = epilogue;
             return *this;
@@ -708,6 +684,17 @@ namespace blt::argparse
         [[nodiscard]] const std::optional<std::string>& get_epilogue() const
         {
             return m_epilogue;
+        }
+
+        argument_parser_t& set_version(const std::optional<std::string>& version)
+        {
+            m_epilogue = version;
+            return *this;
+        }
+
+        [[nodiscard]] const std::optional<std::string>& get_version() const
+        {
+            return m_version;
         }
 
         [[nodiscard]] const hashset_t<char>& get_allowed_flag_prefixes() const
@@ -732,6 +719,7 @@ namespace blt::argparse
         std::optional<std::string> m_usage;
         std::optional<std::string> m_description;
         std::optional<std::string> m_epilogue;
+        std::optional<std::string> m_version;
         std::vector<std::pair<std::string_view, argument_subparser_t>> m_subparsers;
         std::vector<std::unique_ptr<argument_builder_t>> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;

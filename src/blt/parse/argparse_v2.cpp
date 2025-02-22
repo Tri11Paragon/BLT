@@ -21,6 +21,8 @@
 #include <blt/meta/type_traits.h>
 #include <blt/std/logging.h>
 #include <blt/iterator/enumerate.h>
+#include <blt/fs/path_helper.h>
+#include <blt/std/string.h>
 
 namespace blt::argparse
 {
@@ -89,6 +91,60 @@ namespace blt::argparse
         return std::vector<std::string_view>{"./program", strings...};
     }
 
+    template<typename T>
+    void add(std::string& out, T&& value, size_t line_size = 60)
+    {
+        const auto lines = string::split(out, '\n');
+        auto str = ensure_is_string(std::forward<T>(value));
+        if (lines.empty())
+        {
+            out = str;
+            return;
+        }
+        if (lines.back().size() + str.size() > line_size)
+        {
+            out += '\n';
+            out += '\t';
+        }
+        out += str;
+    }
+
+    argument_builder_t& argument_builder_t::set_action(const action_t action)
+    {
+        m_action = action;
+        switch (m_action)
+        {
+        case action_t::STORE_TRUE:
+            set_nargs(0);
+            as_type<bool>();
+            set_default(false);
+            break;
+        case action_t::STORE_FALSE:
+            set_nargs(0);
+            as_type<bool>();
+            set_default(true);
+            break;
+        case action_t::STORE_CONST:
+        case action_t::APPEND_CONST:
+            set_nargs(0);
+            break;
+        case action_t::COUNT:
+            set_nargs(0);
+            as_type<size_t>();
+            break;
+        case action_t::EXTEND:
+            set_nargs(nargs_t::ALL);
+            break;
+        case action_t::HELP:
+        case action_t::VERSION:
+            set_nargs(0);
+            break;
+        default:
+            break;
+        }
+        return *this;
+    }
+
     argument_subparser_t& argument_parser_t::add_subparser(const std::string_view dest)
     {
         m_subparsers.emplace_back(dest, argument_subparser_t{*this});
@@ -98,7 +154,7 @@ namespace blt::argparse
     argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
     {
         if (!m_name)
-            m_name = consumer.absolute_first().get_argument();
+            m_name = fs::base_name_sv(consumer.absolute_first().get_argument());
         argument_positional_storage_t positional_storage{m_positional_arguments};
         hashset_t<std::string> found_flags;
         argument_storage_t parsed_args;
@@ -146,14 +202,105 @@ namespace blt::argparse
 
     void argument_parser_t::print_help()
     {
+        print_usage();
+        std::cout << std::endl;
+        std::string help;
+        if (!m_flag_arguments.empty())
+        {
+            help += "Options:\n";
+            hashmap_t<argument_builder_t*, std::vector<std::string>> same_flags;
+            for (const auto& [key, value] : m_flag_arguments)
+                same_flags[value].emplace_back(key);
+            for (const auto& [builder, flag_list] : same_flags)
+            {
+                // find max size and algin?
+                add(help, '\t');
+                for (const auto& [i, flag] : enumerate(flag_list))
+                {
+                    add(help, flag);
+                    if (i != flag_list.size() - 1)
+                        add(help, ", ");
+                }
+            }
+        }
     }
 
     void argument_parser_t::print_usage()
     {
+        if (!m_usage)
+        {
+            std::string usage = m_name.value_or("");
+
+            hashmap_t<std::string, std::vector<std::string>> singleFlags;
+            std::vector<std::pair<argument_string_t, argument_builder_t*>> compoundFlags;
+
+            for (const auto& [key, value] : m_flag_arguments)
+            {
+                argument_string_t arg{key, allowed_flag_prefixes};
+                if (arg.get_flag().size() == 1)
+                {
+                    if (std::holds_alternative<i32>(value->m_nargs) && std::get<i32>(value->m_nargs) == 0)
+                        singleFlags[arg.get_flag()].emplace_back(arg.get_name());
+                    else
+                        compoundFlags.emplace_back(arg, value);
+                } else
+                    compoundFlags.emplace_back(arg, value);
+            }
+
+            for (const auto& [i, kv] : enumerate(singleFlags))
+            {
+                const auto& [key, value] = kv;
+                add(usage, "[");
+                add(usage, key);
+                for (const auto& name : value)
+                    add(usage, name);
+                add(usage, "]");
+                if (i != singleFlags.size() - 1)
+                    add(usage, " ");
+            }
+
+            for (const auto& [i, kv] : enumerate(compoundFlags))
+            {
+                const auto& [name, builder] = kv;
+                add(usage, "[");
+                add(usage, name.get_argument());
+                auto lambda = [&]()
+                {
+                    add(usage, " ");
+                    add(usage, builder->m_metavar.value_or(string::toUpperCase(name.get_name())));
+                };
+                std::visit(lambda_visitor{[&](const nargs_t)
+                {
+                    lambda();
+                }, [&](const int argc)
+                {
+                    if (argc == 0)
+                        return;
+                    lambda();
+                }}, builder->m_nargs);
+                add(usage, "]");
+                if (i != compoundFlags.size() - 1)
+                    add(usage, " ");
+            }
+
+            for (const auto& [i, pair] : enumerate(m_positional_arguments))
+            {
+                const auto& [name, _] = pair;
+                add(usage, "<");
+                add(usage, name);
+                add(usage, ">");
+                if (i != m_positional_arguments.size() - 1)
+                    add(usage, " ");
+            }
+
+            m_usage = usage;
+        }
+        std::cout << "Usage: " << *m_usage << std::endl;
     }
 
-    void argument_parser_t::print_version()
+    void argument_parser_t::print_version() const
     {
+        std::cout << m_name.value_or("NO NAME") << " " << m_version.value_or("NO VERSION") << std::endl;
     }
 
     void argument_parser_t::handle_compound_flags(hashset_t<std::string>& found_flags, argument_storage_t& parsed_args,
