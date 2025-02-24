@@ -91,7 +91,45 @@ namespace blt::argparse
         return std::vector<std::string_view>{"./program", strings...};
     }
 
-    template<typename T>
+    class printer_mark_t
+    {
+    public:
+        void reset()
+        {
+
+        }
+
+        void next()
+        {
+
+        }
+
+        template<typename T>
+        printer_mark_t& operator+=(T&& t)
+        {
+
+            return *this;
+        }
+    private:
+
+    };
+
+    class aligned_printer_t
+    {
+    public:
+        explicit aligned_printer_t(const size_t max_line_size = 60, const size_t spaces_per_tab = 4): max_line_size(max_line_size),
+            spaces_per_tab(spaces_per_tab)
+        {
+        }
+
+    private:
+        std::string buffer;
+        size_t last_newline = 0;
+        size_t max_line_size;
+        size_t spaces_per_tab;
+    };
+
+    template <typename T>
     void add(std::string& out, T&& value, size_t line_size = 60)
     {
         const auto lines = string::split(out, '\n');
@@ -243,7 +281,8 @@ namespace blt::argparse
                         singleFlags[arg.get_flag()].emplace_back(arg.get_name());
                     else
                         compoundFlags.emplace_back(arg, value);
-                } else
+                }
+                else
                     compoundFlags.emplace_back(arg, value);
             }
 
@@ -269,15 +308,18 @@ namespace blt::argparse
                     add(usage, " ");
                     add(usage, builder->m_metavar.value_or(string::toUpperCase(name.get_name())));
                 };
-                std::visit(lambda_visitor{[&](const nargs_t)
-                {
-                    lambda();
-                }, [&](const int argc)
-                {
-                    if (argc == 0)
-                        return;
-                    lambda();
-                }}, builder->m_nargs);
+                std::visit(lambda_visitor{
+                               [&](const nargs_t)
+                               {
+                                   lambda();
+                               },
+                               [&](const int argc)
+                               {
+                                   if (argc == 0)
+                                       return;
+                                   lambda();
+                               }
+                           }, builder->m_nargs);
                 add(usage, "]");
                 if (i != compoundFlags.size() - 1)
                     add(usage, " ");
@@ -1153,7 +1195,8 @@ namespace blt::argparse
             {
                 parser.parse(a6);
                 BLT_ASSERT(false && "Subparser should throw an error when first positional is not a valid subparser");
-            } catch (const std::exception&)
+            }
+            catch (const std::exception&)
             {
             }
 
