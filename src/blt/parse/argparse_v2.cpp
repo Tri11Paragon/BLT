@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <iostream>
+#include <utility>
 #include <blt/parse/argparse_v2.h>
 #include <blt/std/assert.h>
 #include <blt/meta/type_traits.h>
@@ -91,61 +92,86 @@ namespace blt::argparse
         return std::vector<std::string_view>{"./program", strings...};
     }
 
-    class printer_mark_t
+    class aligner_t
     {
     public:
-        void reset()
+        aligner_t(std::vector<std::string>& buffer, const size_t start_index):
+            buffer(buffer), start_index(start_index)
         {
-
         }
 
-        void next()
+        void align(const size_t spaces_between) const
         {
-
+            size_t aligned_size = 0;
+            for (const auto& v : iterate(buffer).skip(start_index))
+                aligned_size = std::max(aligned_size, v.size());
+            aligned_size += spaces_between;
+            for (auto& v : iterate(buffer).skip(start_index))
+            {
+                for (size_t i = v.size(); i < aligned_size; i++)
+                    v += ' ';
+            }
         }
 
-        template<typename T>
-        printer_mark_t& operator+=(T&& t)
-        {
-
-            return *this;
-        }
     private:
-
+        std::vector<std::string>& buffer;
+        size_t start_index;
     };
 
     class aligned_printer_t
     {
     public:
-        explicit aligned_printer_t(const size_t max_line_size = 60, const size_t spaces_per_tab = 4): max_line_size(max_line_size),
-            spaces_per_tab(spaces_per_tab)
+        explicit aligned_printer_t(std::string line_begin = "\t", const size_t max_line_size = 60, const size_t spaces_per_tab = 4):
+            line_begin(std::move(line_begin)), max_line_size(max_line_size)
         {
+            buffer.emplace_back();
+            for (size_t i = 0; i < spaces_per_tab; i++)
+                spaces_from_tab += ' ';
+        }
+
+        auto mark()
+        {
+            return aligner_t{buffer, buffer.size() - 1};
+        }
+
+        template <typename T>
+        aligned_printer_t& add(T&& value)
+        {
+            auto str = ensure_is_string(std::forward<T>(value));
+            if (buffer.back().size() + str.size() > max_line_size)
+                buffer.emplace_back(replace_tabs(line_begin));
+            buffer.back() += replace_tabs(str);
+            return *this;
+        }
+
+        [[nodiscard]] std::string replace_tabs(std::string str) const
+        {
+            string::replaceAll(str, "\t", spaces_from_tab);
+            return str;
+        }
+
+        template<typename T>
+        aligned_printer_t& operator+=(T&& value)
+        {
+            return add(std::forward<T>(value));
+        }
+
+        [[nodiscard]] auto iter()
+        {
+            return iterate(buffer);
+        }
+
+        [[nodiscard]] auto iter() const
+        {
+            return iterate(buffer);
         }
 
     private:
-        std::string buffer;
-        size_t last_newline = 0;
+        std::vector<std::string> buffer;
+        std::string line_begin;
+        std::string spaces_from_tab;
         size_t max_line_size;
-        size_t spaces_per_tab;
     };
-
-    template <typename T>
-    void add(std::string& out, T&& value, size_t line_size = 60)
-    {
-        const auto lines = string::split(out, '\n');
-        auto str = ensure_is_string(std::forward<T>(value));
-        if (lines.empty())
-        {
-            out = str;
-            return;
-        }
-        if (lines.back().size() + str.size() > line_size)
-        {
-            out += '\n';
-            out += '\t';
-        }
-        out += str;
-    }
 
     argument_builder_t& argument_builder_t::set_action(const action_t action)
     {
