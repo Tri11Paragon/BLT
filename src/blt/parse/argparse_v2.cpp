@@ -200,7 +200,7 @@ namespace blt::argparse
         {
             return iterate(buffer).skip(start_index).take(compute_take()).map([this](std::string& x)
             {
-                return aligned_internal_string_t{x, max_line_size, buffer[start_index].size()};
+                return aligned_internal_string_t{x, max_line_size, x.size()};
             });
         }
 
@@ -208,7 +208,7 @@ namespace blt::argparse
         {
             return iterate(buffer).skip(start_index).take(compute_take()).map([this](std::string& x)
             {
-                return aligned_internal_string_t{x, max_line_size, buffer[start_index].size()};
+                return aligned_internal_string_t{x, max_line_size, x.size()};
             });
         }
 
@@ -336,10 +336,10 @@ namespace blt::argparse
         return *this;
     }
 
-    argument_subparser_t& argument_parser_t::add_subparser(const std::string_view dest)
+    argument_subparser_t* argument_parser_t::add_subparser(const std::string_view dest)
     {
         m_subparsers.emplace_back(dest, argument_subparser_t{*this});
-        return m_subparsers.back().second;
+        return &m_subparsers.back().second;
     }
 
     argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
@@ -395,6 +395,14 @@ namespace blt::argparse
     {
         print_usage();
         aligned_printer_t help{""};
+
+        if (!m_subparsers.empty())
+        {
+            help += "Subcommands:";
+            help.newline();
+            
+        }
+
         if (!m_flag_arguments.empty())
         {
             help += "Options:";
@@ -1365,26 +1373,62 @@ namespace blt::argparse
             std::cout << "Success: run_combined_flag_test\n";
         }
 
+        void run_choice_test()
+        {
+            std::cout << "[Running Test: run_choice_test]\n";
+            argument_parser_t parser;
+
+            parser.add_flag("--hello").set_choices("silly", "crazy", "soft");
+            parser.add_positional("iam").set_choices("different", "choices", "for", "me");
+
+            const auto a1 = make_arguments("--hello", "crazy", "different");
+            const auto r1 = parser.parse(a1);
+            BLT_ASSERT(r1.get("--hello") == "crazy" && "Flag '--hello' should store 'crazy'");
+            BLT_ASSERT(r1.get("iam") == "different" && "Positional 'iam' should store 'different'");
+
+            const auto a2 = make_arguments("--hello", "not_an_option", "different");
+            try
+            {
+                parser.parse(a2);
+                BLT_ASSERT(false && "Parsing should fail due to invalid flag '--hello'");
+            }
+            catch (...)
+            {
+            }
+
+            const auto a3 = make_arguments("--hello", "crazy", "not_a_choice");
+            try
+            {
+                parser.parse(a3);
+                BLT_ASSERT(false && "Parsing should fail due to invalid positional 'iam'");
+            }
+            catch (...)
+            {
+            }
+
+            std::cout << "Success: run_choice_test\n";
+        }
+
         void run_subparser_test()
         {
             std::cout << "[Running Test: run_subparser_test]\n";
             argument_parser_t parser;
 
-            parser.add_flag("--open").set_flag();
+            parser.add_flag("--open").make_flag();
 
-            auto& subparser = parser.add_subparser("mode");
+            const auto subparser = parser.add_subparser("mode");
 
-            auto& n1 = subparser.add_parser("n1");
-            n1.add_flag("--silly").set_flag();
-            n1.add_positional("path");
+            const auto n1 = subparser->add_parser("n1");
+            n1->add_flag("--silly").make_flag();
+            n1->add_positional("path");
 
-            auto& n2 = subparser.add_parser("n2");
-            n2.add_flag("--crazy").set_flag();
-            n2.add_positional("path");
-            n2.add_positional("output");
+            const auto n2 = subparser->add_parser("n2");
+            n2->add_flag("--crazy").make_flag();
+            n2->add_positional("path");
+            n2->add_positional("output");
 
-            auto& n3 = subparser.add_parser("n3");
-            n3.add_flag("--deep").set_flag();
+            const auto n3 = subparser->add_parser("n3");
+            n3->add_flag("--deep").make_flag();
 
             const auto a1 = make_arguments("n1", "--silly");
             try
@@ -1423,8 +1467,6 @@ namespace blt::argparse
             {
             }
 
-            std::cout << std::endl;
-
             const auto a5 = make_arguments("--open", "n2", "path_n2", "output_n2");
             const auto r5 = parser.parse(a5);
             BLT_ASSERT(r5.get<bool>("--open") == true && "Flag '--open' should store true");
@@ -1458,6 +1500,7 @@ namespace blt::argparse
             test_combination_of_valid_and_invalid_flags();
             test_flags_with_different_actions();
             run_combined_flag_test();
+            run_choice_test();
             run_subparser_test();
         }
 

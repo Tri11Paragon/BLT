@@ -459,7 +459,7 @@ namespace blt::argparse
             return *this;
         }
 
-        argument_builder_t& set_flag()
+        argument_builder_t& make_flag()
         {
             return set_action(action_t::STORE_TRUE);
         }
@@ -614,7 +614,7 @@ namespace blt::argparse
             return b;
         }
 
-        argument_subparser_t& add_subparser(std::string_view dest);
+        argument_subparser_t* add_subparser(std::string_view dest);
 
         argument_parser_t& with_help()
         {
@@ -754,7 +754,7 @@ namespace blt::argparse
         }
 
         template <typename... Aliases>
-        argument_parser_t& add_parser(const std::string_view name, Aliases... aliases)
+        argument_parser_t* add_parser(const std::string_view name, Aliases... aliases)
         {
             static_assert(
                 std::conjunction_v<std::disjunction<std::is_convertible<Aliases, std::string_view>, std::is_constructible<
@@ -762,7 +762,7 @@ namespace blt::argparse
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
             m_parsers.emplace(name, argument_parser_t{});
             ((m_aliases[std::string_view{aliases}] = &m_parsers[name]), ...);
-            return m_parsers[name];
+            return &m_parsers[name];
         }
 
 
