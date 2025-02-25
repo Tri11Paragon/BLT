@@ -186,13 +186,16 @@ namespace blt::argparse
             size_t aligned_size = 0;
             for (const auto& v : iterate(buffer).skip(start_index).take(take))
             {
-                aligned_size = std::max(aligned_size, v.size());
+                auto size = static_cast<i64>(v.size());
+                for (; size > 0 && std::isblank(v[size - 1]); size--)
+                {
+                }
+                aligned_size = std::max(aligned_size, static_cast<size_t>(size));
             }
+            const auto offset_size = aligned_size + spaces_between;
 
             for (auto& v : iterate(buffer).skip(start_index).take(take))
             {
-                auto offset_size = aligned_size + spaces_between;
-
                 for (size_t i = v.size(); i < offset_size; i++)
                     v += ' ';
             }
@@ -456,6 +459,35 @@ namespace blt::argparse
                 auto& [builder, flag_list] = pair;
                 str += builder->m_help.value_or("");
             }
+            mark.align(4);
+            for (auto [str, pair] : mark.iter().zip(same_flags))
+            {
+                auto& [builder, flag_list] = pair;
+                if (builder->m_default_value)
+                {
+                    str += "(Default: ";
+                    std::visit(detail::arg_meta_type_helper_t::make_visitor(
+                                   [&](auto& value)
+                                   {
+                                       str += value;
+                                   },
+                                   [&](auto& vec)
+                                   {
+                                       if constexpr (!std::is_same_v<std::decay_t<meta::remove_cvref_t<decltype(vec)>>, std::vector<bool>>)
+                                       {
+                                           str += '[';
+                                           for (const auto& [i, v] : enumerate(vec))
+                                           {
+                                               str += v;
+                                               if (i != vec.size() - 1)
+                                                   str += ", ";
+                                           }
+                                           str += ']';
+                                       }
+                                   }), *builder->m_default_value);
+                    str += ")";
+                }
+            }
         }
 
         std::cout << help.str() << std::endl;
@@ -500,7 +532,7 @@ namespace blt::argparse
             for (const auto& [i, kv] : enumerate(compoundFlags))
             {
                 const auto& [name, builder] = kv;
-                aligner += '[';
+                aligner += builder->m_required ? '<' : '[';
                 aligner += name.get_argument();
                 auto lambda = [&]()
                 {
@@ -527,7 +559,7 @@ namespace blt::argparse
                                        lambda();
                                }
                            }, builder->m_nargs);
-                aligner += ']';
+                aligner += builder->m_required ? '>' : ']';
                 aligner += ' ';
             }
 
