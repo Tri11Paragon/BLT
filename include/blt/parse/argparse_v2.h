@@ -32,6 +32,7 @@
 #include <functional>
 #include <type_traits>
 #include <blt/iterator/iterator.h>
+#include <blt/meta/type_traits.h>
 #include <blt/std/assert.h>
 #include <blt/std/expected.h>
 #include <blt/std/ranges.h>
@@ -226,6 +227,16 @@ namespace blt::argparse
                 BLT_UNREACHABLE;
             }
         };
+
+        template <typename T>
+        auto ensure_is_string(T&& t)
+        {
+            if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>> && !(std::is_same_v<T, char>
+                || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>))
+                return std::to_string(std::forward<T>(t));
+            else
+                return std::forward<T>(t);
+        }
 
         void test();
     }
@@ -493,6 +504,14 @@ namespace blt::argparse
             return *this;
         }
 
+        template <typename... Args>
+        argument_builder_t& set_choices(Args&&... args)
+        {
+            m_choices = hashset_t<std::string>{};
+            ((m_choices->emplace(detail::ensure_is_string(std::forward<Args>(args)))), ...);
+            return *this;
+        }
+
         argument_builder_t& set_default(const detail::arg_data_t& default_value)
         {
             m_default_value = default_value;
@@ -566,7 +585,7 @@ namespace blt::argparse
 
     public:
         explicit argument_parser_t(const std::optional<std::string_view> description = {}, const std::optional<std::string_view> epilogue = {},
-                                    const std::optional<std::string_view> version = {},
+                                   const std::optional<std::string_view> version = {},
                                    const std::optional<std::string_view> usage = {}, const std::optional<std::string_view> name = {}):
             m_name(name), m_usage(usage), m_description(description), m_epilogue(epilogue), m_version(version)
         {

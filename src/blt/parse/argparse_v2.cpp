@@ -68,16 +68,6 @@ namespace blt::argparse
     }
 
     template <typename T>
-    auto ensure_is_string(T&& t)
-    {
-        if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>> && !(std::is_same_v<T, char>
-            || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>))
-            return std::to_string(std::forward<T>(t));
-        else
-            return std::forward<T>(t);
-    }
-
-    template <typename T>
     std::string to_string(const T& t)
     {
         if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, std::string_view>)
@@ -99,7 +89,7 @@ namespace blt::argparse
     {
         std::string out;
         out.reserve((get_const_char_size(strings) + ...));
-        ((out += ensure_is_string(std::forward<Strings>(strings))), ...);
+        ((out += detail::ensure_is_string(std::forward<Strings>(strings))), ...);
         return out;
     }
 
@@ -151,7 +141,7 @@ namespace blt::argparse
         template <typename T>
         aligned_internal_string_t& operator+=(T&& value)
         {
-            const auto str = to_string(ensure_is_string(std::forward<T>(value)));
+            const auto str = to_string(detail::ensure_is_string(std::forward<T>(value)));
             for (size_t i = 0; i < str.size(); i++)
             {
                 size_t j = i;
@@ -164,6 +154,11 @@ namespace blt::argparse
                 i = j;
             }
             return *this;
+        }
+
+        [[nodiscard]] std::string& str() const
+        {
+            return string;
         }
 
     private:
@@ -264,7 +259,7 @@ namespace blt::argparse
         template <typename T>
         aligned_printer_t& add(T&& value)
         {
-            const auto str = to_string(ensure_is_string(std::forward<T>(value)));
+            const auto str = to_string(detail::ensure_is_string(std::forward<T>(value)));
             if (buffer.back().size() + str.size() > max_line_size)
                 newline();
             buffer.back() += replace_tabs(str);
@@ -458,13 +453,10 @@ namespace blt::argparse
             {
                 auto& [builder, flag_list] = pair;
                 str += builder->m_help.value_or("");
-            }
-            mark.align(4);
-            for (auto [str, pair] : mark.iter().zip(same_flags))
-            {
-                auto& [builder, flag_list] = pair;
                 if (builder->m_default_value)
                 {
+                    if (!std::isblank(str.str().back()))
+                        str += " ";
                     str += "(Default: ";
                     std::visit(detail::arg_meta_type_helper_t::make_visitor(
                                    [&](auto& value)
@@ -486,6 +478,19 @@ namespace blt::argparse
                                        }
                                    }), *builder->m_default_value);
                     str += ")";
+                }
+                if (builder->m_choices)
+                {
+                    if (!std::isblank(str.str().back()))
+                        str += " ";
+                    str += "(Choices: ";
+                    for (const auto& [i, v] : enumerate(*builder->m_choices))
+                    {
+                        str += v;
+                        if (i != builder->m_choices->size() - 1)
+                            str += ", ";
+                    }
+                    str += ')';
                 }
             }
         }
