@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 4.0.26)
+set(BLT_VERSION 4.0.27)
 
 set(BLT_TARGET BLT)
 

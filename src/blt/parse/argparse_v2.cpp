@@ -77,6 +77,23 @@ namespace blt::argparse
             return std::forward<T>(t);
     }
 
+    template <typename T>
+    std::string to_string(const T& t)
+    {
+        if constexpr (std::is_same_v<T, const char*> || std::is_same_v<T, std::string_view>)
+        {
+            return std::string(t);
+        }
+        else if constexpr (std::is_same_v<T, char> || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>)
+        {
+            return std::string() + t;
+        }
+        else
+        {
+            return t;
+        }
+    }
+
     template <typename... Strings>
     std::string make_string(Strings&&... strings)
     {
@@ -92,36 +109,132 @@ namespace blt::argparse
         return std::vector<std::string_view>{"./program", strings...};
     }
 
+    class aligned_internal_string_t
+    {
+    public:
+        explicit aligned_internal_string_t(std::string& str, const size_t max_line_length,
+                                           const size_t line_start_size): string(str), max_line_size(max_line_length),
+                                                                          line_start_size(line_start_size)
+        {
+        }
+
+        void add(const std::string_view str) const
+        {
+            const auto lines = string::split(string, '\n');
+            if (lines.empty())
+            {
+                string += str;
+                return;
+            }
+            if (lines.back().size() + str.size() > max_line_size)
+            {
+                string += '\n';
+                for (size_t i = 0; i < line_start_size; i++)
+                    string += ' ';
+                bool blank = true;
+                // we don't want to write blank only strings
+                for (const char c : str)
+                {
+                    if (!std::isblank(c))
+                    {
+                        blank = false;
+                        break;
+                    }
+                }
+                if (blank)
+                    return;
+            }
+
+            string += str;
+        }
+
+        template <typename T>
+        aligned_internal_string_t& operator+=(T&& value)
+        {
+            const auto str = to_string(ensure_is_string(std::forward<T>(value)));
+            for (size_t i = 0; i < str.size(); i++)
+            {
+                size_t j = i;
+                for (; j < str.size() && !std::isblank(str[j]); ++j)
+                {
+                }
+                add(std::string_view(str.data() + i, j - i));
+                if (j < str.size())
+                    add(std::string_view(str.data() + j, 1));
+                i = j;
+            }
+            return *this;
+        }
+
+    private:
+        std::string& string;
+        size_t max_line_size;
+        size_t line_start_size;
+    };
+
     class aligner_t
     {
     public:
-        aligner_t(std::vector<std::string>& buffer, const size_t start_index):
-            buffer(buffer), start_index(start_index)
+        aligner_t(std::vector<std::string>& buffer, const size_t start_index, const size_t max_line_size):
+            buffer(buffer), start_index(start_index), max_line_size(max_line_size)
         {
         }
 
         void align(const size_t spaces_between) const
         {
+            const size_t take = compute_take();
             size_t aligned_size = 0;
-            for (const auto& v : iterate(buffer).skip(start_index))
-                aligned_size = std::max(aligned_size, v.size());
-            aligned_size += spaces_between;
-            for (auto& v : iterate(buffer).skip(start_index))
+            for (const auto& v : iterate(buffer).skip(start_index).take(take))
             {
-                for (size_t i = v.size(); i < aligned_size; i++)
+                aligned_size = std::max(aligned_size, v.size());
+            }
+
+            for (auto& v : iterate(buffer).skip(start_index).take(take))
+            {
+                auto offset_size = aligned_size + spaces_between;
+
+                for (size_t i = v.size(); i < offset_size; i++)
                     v += ' ';
             }
         }
 
+        [[nodiscard]] auto iter()
+        {
+            return iterate(buffer).skip(start_index).take(compute_take()).map([this](std::string& x)
+            {
+                return aligned_internal_string_t{x, max_line_size, buffer[start_index].size()};
+            });
+        }
+
+        [[nodiscard]] auto iter() const
+        {
+            return iterate(buffer).skip(start_index).take(compute_take()).map([this](std::string& x)
+            {
+                return aligned_internal_string_t{x, max_line_size, buffer[start_index].size()};
+            });
+        }
+
+        void take(const size_t amount)
+        {
+            this->amount = amount;
+        }
+
     private:
+        [[nodiscard]] size_t compute_take() const
+        {
+            return amount == -1ul ? (buffer.size() - start_index - 1) : amount;;
+        }
+
         std::vector<std::string>& buffer;
         size_t start_index;
+        size_t max_line_size;
+        size_t amount = -1;
     };
 
     class aligned_printer_t
     {
     public:
-        explicit aligned_printer_t(std::string line_begin = "\t", const size_t max_line_size = 60, const size_t spaces_per_tab = 4):
+        explicit aligned_printer_t(std::string line_begin = "\t", const size_t max_line_size = 120, const size_t spaces_per_tab = 4):
             line_begin(std::move(line_begin)), max_line_size(max_line_size)
         {
             buffer.emplace_back();
@@ -129,19 +242,35 @@ namespace blt::argparse
                 spaces_from_tab += ' ';
         }
 
+        [[nodiscard]] std::string str() const
+        {
+            std::string combined;
+            for (const auto& str : buffer)
+            {
+                combined += str;
+                combined += '\n';
+            }
+            return combined;
+        }
+
         auto mark()
         {
-            return aligner_t{buffer, buffer.size() - 1};
+            return aligner_t{buffer, buffer.size() - 1, max_line_size};
         }
 
         template <typename T>
         aligned_printer_t& add(T&& value)
         {
-            auto str = ensure_is_string(std::forward<T>(value));
+            const auto str = to_string(ensure_is_string(std::forward<T>(value)));
             if (buffer.back().size() + str.size() > max_line_size)
-                buffer.emplace_back(replace_tabs(line_begin));
+                newline();
             buffer.back() += replace_tabs(str);
             return *this;
+        }
+
+        void newline()
+        {
+            buffer.emplace_back(replace_tabs(line_begin));
         }
 
         [[nodiscard]] std::string replace_tabs(std::string str) const
@@ -150,7 +279,7 @@ namespace blt::argparse
             return str;
         }
 
-        template<typename T>
+        template <typename T>
         aligned_printer_t& operator+=(T&& value)
         {
             return add(std::forward<T>(value));
@@ -267,40 +396,85 @@ namespace blt::argparse
     void argument_parser_t::print_help()
     {
         print_usage();
-        std::cout << std::endl;
-        std::string help;
+        aligned_printer_t help{""};
         if (!m_flag_arguments.empty())
         {
-            help += "Options:\n";
+            help += "Options:";
+            help.newline();
             hashmap_t<argument_builder_t*, std::vector<std::string>> same_flags;
             for (const auto& [key, value] : m_flag_arguments)
                 same_flags[value].emplace_back(key);
+            auto mark = help.mark();
             for (const auto& [builder, flag_list] : same_flags)
             {
-                // find max size and algin?
-                add(help, '\t');
+                // find max size and align?
+                help += '\t';
                 for (const auto& [i, flag] : enumerate(flag_list))
                 {
-                    add(help, flag);
+                    help += flag;
                     if (i != flag_list.size() - 1)
-                        add(help, ", ");
+                        help += ", ";
                 }
+                const argument_string_t arg{flag_list.front(), allowed_flag_prefixes};
+                auto metavar = builder->m_metavar.value_or(string::toUpperCase(arg.get_name()));
+                auto lambda = [&]()
+                {
+                    help += ' ';
+                    help += metavar;
+                };
+                std::visit(lambda_visitor{
+                               [&](const nargs_t type)
+                               {
+                                   lambda();
+                                   switch (type)
+                                   {
+                                   case nargs_t::IF_POSSIBLE:
+                                       break;
+                                   case nargs_t::ALL:
+                                   case nargs_t::ALL_AT_LEAST_ONE:
+                                       help += "...";
+                                       break;
+                                   }
+                               },
+                               [&](const int argc)
+                               {
+                                   if (argc == 0)
+                                       return;
+                                   lambda();
+                                   if (argc > 1)
+                                   {
+                                       help += "... x";
+                                       help += std::to_string(argc);
+                                   }
+                               }
+                           }, builder->m_nargs);
+                help.newline();
+            }
+            mark.align(4);
+            for (auto [str, pair] : mark.iter().zip(same_flags))
+            {
+                auto& [builder, flag_list] = pair;
+                str += builder->m_help.value_or("");
             }
         }
+
+        std::cout << help.str() << std::endl;
     }
 
     void argument_parser_t::print_usage()
     {
         if (!m_usage)
         {
-            std::string usage = m_name.value_or("");
+            aligned_printer_t aligner;
+            aligner += m_name.value_or("");
+            aligner += ' ';
 
             hashmap_t<std::string, std::vector<std::string>> singleFlags;
             std::vector<std::pair<argument_string_t, argument_builder_t*>> compoundFlags;
 
             for (const auto& [key, value] : m_flag_arguments)
             {
-                argument_string_t arg{key, allowed_flag_prefixes};
+                const argument_string_t arg{key, allowed_flag_prefixes};
                 if (arg.get_flag().size() == 1)
                 {
                     if (std::holds_alternative<i32>(value->m_nargs) && std::get<i32>(value->m_nargs) == 0)
@@ -315,53 +489,59 @@ namespace blt::argparse
             for (const auto& [i, kv] : enumerate(singleFlags))
             {
                 const auto& [key, value] = kv;
-                add(usage, "[");
-                add(usage, key);
+                aligner += '[';
+                aligner += key;
                 for (const auto& name : value)
-                    add(usage, name);
-                add(usage, "]");
-                if (i != singleFlags.size() - 1)
-                    add(usage, " ");
+                    aligner += name;
+                aligner += ']';
+                aligner += ' ';
             }
 
             for (const auto& [i, kv] : enumerate(compoundFlags))
             {
                 const auto& [name, builder] = kv;
-                add(usage, "[");
-                add(usage, name.get_argument());
+                aligner += '[';
+                aligner += name.get_argument();
                 auto lambda = [&]()
                 {
-                    add(usage, " ");
-                    add(usage, builder->m_metavar.value_or(string::toUpperCase(name.get_name())));
+                    aligner += ' ';
+                    aligner += builder->m_metavar.value_or(string::toUpperCase(name.get_name()));
                 };
                 std::visit(lambda_visitor{
-                               [&](const nargs_t)
+                               [&](const nargs_t type)
                                {
                                    lambda();
+                                   switch (type)
+                                   {
+                                   case nargs_t::IF_POSSIBLE:
+                                       break;
+                                   case nargs_t::ALL:
+                                   case nargs_t::ALL_AT_LEAST_ONE:
+                                       aligner += "...";
+                                       break;
+                                   }
                                },
                                [&](const int argc)
                                {
-                                   if (argc == 0)
-                                       return;
-                                   lambda();
+                                   for (int j = 0; j < argc; j++)
+                                       lambda();
                                }
                            }, builder->m_nargs);
-                add(usage, "]");
-                if (i != compoundFlags.size() - 1)
-                    add(usage, " ");
+                aligner += ']';
+                aligner += ' ';
             }
 
             for (const auto& [i, pair] : enumerate(m_positional_arguments))
             {
                 const auto& [name, _] = pair;
-                add(usage, "<");
-                add(usage, name);
-                add(usage, ">");
+                aligner += '<';
+                aligner += name;
+                aligner += '>';
                 if (i != m_positional_arguments.size() - 1)
-                    add(usage, " ");
+                    aligner += ' ';
             }
 
-            m_usage = usage;
+            m_usage = aligner.str();
         }
         std::cout << "Usage: " << *m_usage << std::endl;
     }
