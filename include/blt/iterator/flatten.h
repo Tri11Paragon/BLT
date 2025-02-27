@@ -31,9 +31,14 @@ namespace blt::iterator
         {
             using type = std::tuple<T>;
 
+            static auto convert(T& f)
+            {
+                return std::forward_as_tuple(f);
+            }
+
             static auto convert(T&& f)
             {
-                return std::forward_as_tuple(std::forward<T>(f));
+                return std::forward_as_tuple(f);
             }
         };
 
