@@ -231,8 +231,11 @@ namespace blt::argparse
         template <typename T>
         auto ensure_is_string(T&& t)
         {
-            if constexpr (std::is_arithmetic_v<meta::remove_cvref_t<T>> && !(std::is_same_v<T, char>
-                || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>))
+            using NO_REF = meta::remove_cvref_t<T>;
+            if constexpr (std::is_same_v<NO_REF, bool>)
+                return t ? "true" : "false";
+            else if constexpr (std::is_arithmetic_v<NO_REF> && !(std::is_same_v<NO_REF, char>
+                || std::is_same_v<NO_REF, unsigned char> || std::is_same_v<NO_REF, signed char>))
                 return std::to_string(std::forward<T>(t));
             else
                 return std::forward<T>(t);
@@ -582,7 +585,9 @@ namespace blt::argparse
     class argument_parser_t
     {
         friend argument_subparser_t;
-
+        explicit argument_parser_t(const argument_subparser_t* parent): m_parent(parent)
+        {
+        }
     public:
         explicit argument_parser_t(const std::optional<std::string_view> description = {}, const std::optional<std::string_view> epilogue = {},
                                    const std::optional<std::string_view> version = {},
@@ -739,6 +744,7 @@ namespace blt::argparse
         std::optional<std::string> m_description;
         std::optional<std::string> m_epilogue;
         std::optional<std::string> m_version;
+        const argument_subparser_t* m_parent = nullptr;
         std::vector<std::pair<std::string_view, argument_subparser_t>> m_subparsers;
         std::vector<std::unique_ptr<argument_builder_t>> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;
@@ -748,6 +754,7 @@ namespace blt::argparse
 
     class argument_subparser_t
     {
+        friend argument_parser_t;
     public:
         explicit argument_subparser_t(const argument_parser_t& parent): m_parent(&parent)
         {
@@ -760,9 +767,16 @@ namespace blt::argparse
                 std::conjunction_v<std::disjunction<std::is_convertible<Aliases, std::string_view>, std::is_constructible<
                                                         std::string_view, Aliases>>...>,
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
-            m_parsers.emplace(name, argument_parser_t{});
-            ((m_aliases[std::string_view{aliases}] = &m_parsers[name]), ...);
-            return &m_parsers[name];
+            m_parsers.emplace_back(new argument_parser_t{this});
+            m_aliases[name] = m_parsers.back().get();
+            ((m_aliases[std::string_view{aliases}] = m_parsers.back().get()), ...);
+            return m_parsers.back().get();
+        }
+
+        argument_subparser_t* set_help(const std::optional<std::string>& help)
+        {
+            m_help = help;
+            return this;
         }
 
 
@@ -781,10 +795,15 @@ namespace blt::argparse
         std::pair<argument_string_t, argument_storage_t> parse(argument_consumer_t& consumer); // NOLINT
 
     private:
-        [[nodiscard]] std::vector<std::vector<std::string_view>> get_allowed_strings() const;
+        [[nodiscard]] hashmap_t<argument_parser_t*, std::vector<std::string_view>> get_allowed_strings() const;
+
+        // annoying compatability because im lazy
+        static std::vector<std::vector<std::string_view>> to_vec(const hashmap_t<argument_parser_t*, std::vector<std::string_view>>& map);
 
         const argument_parser_t* m_parent;
-        hashmap_t<std::string_view, argument_parser_t> m_parsers;
+        std::optional<std::string> m_last_parsed_parser; // bad hack
+        std::optional<std::string> m_help;
+        std::vector<std::unique_ptr<argument_parser_t>> m_parsers;
         hashmap_t<std::string_view, argument_parser_t*> m_aliases;
     };
 }

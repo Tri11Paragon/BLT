@@ -76,7 +76,9 @@ namespace blt::argparse
         }
         else if constexpr (std::is_same_v<T, char> || std::is_same_v<T, unsigned char> || std::is_same_v<T, signed char>)
         {
-            return std::string() + t;
+            std::string str;
+            str += t;
+            return str;
         }
         else
         {
@@ -400,7 +402,23 @@ namespace blt::argparse
         {
             help += "Subcommands:";
             help.newline();
-            
+            for (const auto& [key, value] : m_subparsers)
+            {
+                help += '\t';
+                auto map = value.get_allowed_strings();
+                // TODO: make an unzip?
+                for (const auto& [parser, strings] : map)
+                {
+                    for (const auto& [i, str] : enumerate(strings))
+                    {
+                        help += str;
+                        if (i != strings.size() - 1)
+                            help += ", ";
+                    }
+                    help += parser.he
+                    help.newline();
+                }
+            }
         }
 
         if (!m_flag_arguments.empty())
@@ -461,7 +479,7 @@ namespace blt::argparse
             {
                 auto& [builder, flag_list] = pair;
                 str += builder->m_help.value_or("");
-                if (builder->m_default_value)
+                if (builder->m_default_value && !(builder->m_action == action_t::STORE_TRUE || builder->m_action == action_t::STORE_FALSE))
                 {
                     if (!std::isblank(str.str().back()))
                         str += " ";
@@ -513,6 +531,17 @@ namespace blt::argparse
             aligned_printer_t aligner;
             aligner += m_name.value_or("");
             aligner += ' ';
+
+            auto parent = m_parent;
+            while (parent != nullptr)
+            {
+                if (!parent->m_last_parsed_parser)
+                    throw detail::missing_value_error(
+                        "Error: Help called on subparser but unable to find parser chain. This condition should be impossible.");
+                aligner += parent->m_last_parsed_parser.value();
+                aligner += ' ';
+                parent = parent->m_parent->m_parent;
+            }
 
             hashmap_t<std::string, std::vector<std::string>> singleFlags;
             std::vector<std::pair<argument_string_t, argument_builder_t*>> compoundFlags;
@@ -960,36 +989,28 @@ namespace blt::argparse
             throw detail::missing_argument_error("Subparser requires an argument.");
         const auto key = consumer.consume();
         if (key.is_flag())
-            throw detail::subparse_error(key.get_argument(), get_allowed_strings());
-        const auto it = m_parsers.find(key.get_name());
-        argument_parser_t* parser;
-        if (it == m_parsers.end())
-        {
-            const auto it2 = m_aliases.find(key.get_name());
-            if (it2 == m_aliases.end())
-                throw detail::subparse_error(key.get_argument(), get_allowed_strings());
-            parser = it2->second;
-        }
-        else
-            parser = &it->second;
-        parser->m_name = m_parent->m_name;
-        return {key, parser->parse(consumer)};
+            throw detail::subparse_error(key.get_argument(), to_vec(get_allowed_strings()));
+        const auto it = m_aliases.find(key.get_name());
+        if (it == m_aliases.end())
+            throw detail::subparse_error(key.get_argument(), to_vec(get_allowed_strings()));
+        it->second->m_name = m_parent->m_name;
+        m_last_parsed_parser = key.get_name();
+        return {key, it->second->parse(consumer)};
     }
 
-    std::vector<std::vector<std::string_view>> argument_subparser_t::get_allowed_strings() const
+    hashmap_t<argument_parser_t*, std::vector<std::string_view>> argument_subparser_t::get_allowed_strings() const
+    {
+        hashmap_t<argument_parser_t*, std::vector<std::string_view>> map;
+        for (const auto& [key, value] : m_aliases)
+            map[value].emplace_back(key);
+        return map;
+    }
+
+    std::vector<std::vector<std::string_view>> argument_subparser_t::to_vec(const hashmap_t<argument_parser_t*, std::vector<std::string_view>>& map)
     {
         std::vector<std::vector<std::string_view>> vec;
-        for (const auto& [key, value] : m_parsers)
-        {
-            std::vector<std::string_view> aliases;
-            aliases.push_back(key);
-            for (const auto& [alias, parser] : m_aliases)
-            {
-                if (parser == &value)
-                    aliases.push_back(alias);
-            }
-            vec.emplace_back(std::move(aliases));
-        }
+        for (const auto& [key, value] : map)
+            vec.push_back(value);
         return vec;
     }
 
