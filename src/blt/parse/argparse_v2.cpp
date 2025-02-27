@@ -24,6 +24,7 @@
 #include <blt/iterator/enumerate.h>
 #include <blt/fs/path_helper.h>
 #include <blt/std/string.h>
+#include <blt/iterator/flatten.h>
 
 namespace blt::argparse
 {
@@ -415,7 +416,7 @@ namespace blt::argparse
                         if (i != strings.size() - 1)
                             help += ", ";
                     }
-                    help += parser.he
+                    // help += parser.he
                     help.newline();
                 }
             }

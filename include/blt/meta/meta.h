@@ -114,7 +114,7 @@ namespace blt::meta
     template<typename T>
     struct deref_return
     {
-        using type = typename std::invoke_result_t<decltype(&T::operator*), T&>;
+        using type = std::invoke_result_t<decltype(&T::operator*), T&>;
     };
     
     template<typename T>

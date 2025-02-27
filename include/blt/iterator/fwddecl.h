@@ -46,6 +46,9 @@ namespace blt
         
         template<typename Iter, typename Pred>
         class filter_wrapper;
+
+        template<typename Iter>
+        class flatten_wrapper;
         
         namespace impl
         {
