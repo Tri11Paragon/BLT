@@ -216,6 +216,34 @@ namespace blt::iterator
         Pred func;
     };
 
+    template <typename Iter>
+    class const_wrapper : public deref_only_wrapper<Iter, const_wrapper<Iter>>
+    {
+    public:
+        using ref_return = meta::deref_return_t<Iter>;
+
+        using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+        using value_type = std::conditional_t<std::is_reference_v<ref_return>, std::remove_reference_t<ref_return>, ref_return>;
+        using difference_type = ptrdiff_t;
+        using pointer = const value_type*;
+        using reference = const value_type&;
+
+        explicit const_wrapper(Iter iter): deref_only_wrapper<Iter, const_wrapper>(std::move(iter))
+        {
+        }
+
+        auto operator*() const
+        {
+            if constexpr (std::is_reference_v<ref_return>)
+            {
+                return const_cast<const value_type&>(*this->iter);
+            } else
+            {
+                return *this->iter;
+            }
+        }
+    };
+
     namespace impl
     {
         template <typename Derived>
@@ -385,9 +413,25 @@ namespace blt::iterator
 
         auto flatten() const
         {
-            return iterator_container<flatten_wrapper<IterBase>>{
-                blt::iterator::flatten_wrapper<IterBase>{m_begin},
-                blt::iterator::flatten_wrapper<IterBase>{m_end}
+            return iterator_container<flatten_wrapper<IterBase, false>>{
+                blt::iterator::flatten_wrapper<IterBase, false>{m_begin},
+                blt::iterator::flatten_wrapper<IterBase, false>{m_end}
+            };
+        }
+
+        auto flatten_all() const
+        {
+            return iterator_container<flatten_wrapper<IterBase, true>>{
+                blt::iterator::flatten_wrapper<IterBase, true>{m_begin},
+                blt::iterator::flatten_wrapper<IterBase, true>{m_end}
+            };
+        }
+
+        auto as_const() const
+        {
+            return iterator_container<const_wrapper<IterBase>>{
+                const_wrapper<IterBase>{m_begin},
+                const_wrapper<IterBase>{m_end}
             };
         }
 

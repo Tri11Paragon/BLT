@@ -49,8 +49,11 @@ namespace blt
         template<typename Iter, typename Pred>
         class filter_wrapper;
 
-        template<typename Iter>
+        template<typename Iter, bool Recursive>
         class flatten_wrapper;
+
+        template<typename Iter>
+        class const_wrapper;
         
         namespace impl
         {

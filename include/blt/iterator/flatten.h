@@ -28,34 +28,68 @@ namespace blt::iterator
     namespace detail
     {
         template <typename Tuple>
-        static auto flatten(Tuple&& tuple) -> decltype(auto)
+        static auto flatten_recursive(Tuple&& tuple) -> decltype(auto)
         {
             using Decay = std::decay_t<Tuple>;
             if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
             {
                 return std::apply([](auto&&... args)
                 {
-                    return std::tuple_cat(flatten(std::forward<decltype(args)>(args))...);
+                    return std::tuple_cat(flatten_recursive(std::forward<decltype(args)>(args))...);
                 }, std::forward<Tuple>(tuple));
-            } else
+            }
+            else
             {
                 if constexpr (std::is_lvalue_reference_v<Tuple>)
                 {
                     return std::forward_as_tuple(std::forward<Tuple>(tuple));
-                } else
+                }
+                else
                 {
                     return std::make_tuple(std::forward<Tuple>(tuple));
                 }
             }
         }
+
+        template <typename Tuple>
+        static auto ensure_tuple(Tuple&& tuple) -> decltype(auto)
+        {
+            using Decay = std::decay_t<Tuple>;
+            if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
+            {
+                return std::forward<Tuple>(tuple);
+            }
+            else
+            {
+                if constexpr (std::is_lvalue_reference_v<Tuple>)
+                {
+                    return std::forward_as_tuple(std::forward<Tuple>(tuple));
+                }
+                else
+                {
+                    return std::make_tuple(std::forward<Tuple>(tuple));
+                }
+            }
+        }
+
+        template <typename Tuple>
+        static auto flatten(Tuple&& tuple) -> decltype(auto)
+        {
+            return std::apply([](auto&&... args)
+            {
+                return std::tuple_cat(ensure_tuple(std::forward<decltype(args)>(args))...);
+            }, std::forward<Tuple>(tuple));
+        }
     }
 
-    template <typename Iter>
-    class flatten_wrapper : public deref_only_wrapper<Iter, flatten_wrapper<Iter>>
+    template <typename Iter, bool Recursive>
+    class flatten_wrapper : public deref_only_wrapper<Iter, flatten_wrapper<Iter, Recursive>>
     {
     public:
         using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-        using value_type = std::remove_reference_t<decltype(detail::flatten(*std::declval<Iter>()))>;
+        using value_type = std::conditional_t<Recursive,
+                                              std::remove_reference_t<decltype(detail::flatten_recursive(*std::declval<Iter>()))>,
+                                              std::remove_reference_t<decltype(detail::flatten(*std::declval<Iter>()))>>;
         using difference_type = ptrdiff_t;
         using pointer = value_type*;
         using reference = value_type&;
@@ -67,7 +101,14 @@ namespace blt::iterator
 
         auto operator*() const -> decltype(auto)
         {
-            return detail::flatten(*this->iter);
+            if constexpr (Recursive)
+            {
+                return detail::flatten_recursive(*this->iter);
+            }
+            else
+            {
+                return detail::flatten(*this->iter);
+            }
         }
     };
 }
