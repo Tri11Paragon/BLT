@@ -27,9 +27,42 @@
 #include <blt/meta/iterator.h>
 #include <functional>
 #include <optional>
+#include <blt/meta/type_traits.h>
 
 namespace blt::iterator
 {
+    namespace detail
+    {
+        template<typename T>
+        static auto forward_as_tuple(T&& t) -> decltype(auto)
+        {
+            using Decay = std::decay_t<T>;
+            static_assert(!(meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>), "Tuple or pair passed to forward_as_tuple! Must not be a tuple!");
+            if constexpr (std::is_lvalue_reference_v<T>)
+            {
+                return std::forward_as_tuple(std::forward<T>(t));
+            }
+            else
+            {
+                return std::make_tuple(std::forward<T>(t));
+            }
+        }
+
+        template <typename Tuple>
+        static auto ensure_tuple(Tuple&& tuple) -> decltype(auto)
+        {
+            using Decay = std::decay_t<Tuple>;
+            if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
+            {
+                return std::forward<Tuple>(tuple);
+            }
+            else
+            {
+                return forward_as_tuple(std::forward<Tuple>(tuple));
+            }
+        }
+    }
+
     template <typename Derived>
     struct base_wrapper
     {
@@ -232,12 +265,32 @@ namespace blt::iterator
         {
         }
 
+        template<typename T>
+        static auto make_const(T&& value) -> decltype(auto)
+        {
+            using Decay = std::decay_t<T>;
+            if constexpr (std::is_lvalue_reference_v<T>)
+            {
+                return const_cast<const Decay&>(value);
+            } else
+            {
+                return static_cast<const Decay>(value);
+            }
+        }
+
         auto operator*() const
         {
             if constexpr (std::is_reference_v<ref_return>)
             {
                 return const_cast<const value_type&>(*this->iter);
-            } else
+            } else if constexpr (meta::is_tuple_v<value_type> || meta::is_pair_v<value_type>)
+            {
+                return std::apply([](auto&&... args)
+                {
+                    return std::tuple<decltype(make_const(std::forward<decltype(args)>(args)))...>{make_const(std::forward<decltype(args)>(args))...};
+                }, *this->iter);
+            }
+            else
             {
                 return *this->iter;
             }

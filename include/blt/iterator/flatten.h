@@ -40,35 +40,7 @@ namespace blt::iterator
             }
             else
             {
-                if constexpr (std::is_lvalue_reference_v<Tuple>)
-                {
-                    return std::forward_as_tuple(std::forward<Tuple>(tuple));
-                }
-                else
-                {
-                    return std::make_tuple(std::forward<Tuple>(tuple));
-                }
-            }
-        }
-
-        template <typename Tuple>
-        static auto ensure_tuple(Tuple&& tuple) -> decltype(auto)
-        {
-            using Decay = std::decay_t<Tuple>;
-            if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
-            {
-                return std::forward<Tuple>(tuple);
-            }
-            else
-            {
-                if constexpr (std::is_lvalue_reference_v<Tuple>)
-                {
-                    return std::forward_as_tuple(std::forward<Tuple>(tuple));
-                }
-                else
-                {
-                    return std::make_tuple(std::forward<Tuple>(tuple));
-                }
+                return forward_as_tuple(std::forward<Tuple>(tuple));
             }
         }
 

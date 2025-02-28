@@ -31,6 +31,10 @@ namespace blt::meta
         {
 
         }
+
+        inline auto lambda = [](auto...)
+        {
+        };
     }
 
     template <typename T>
@@ -64,19 +68,6 @@ namespace blt::meta
 
     template <typename T>
     static constexpr bool is_pair_v = is_pair<T>::value;
-
-    template <typename, typename = void>
-    struct is_tuple_like : std::false_type
-    {
-    };
-
-    template <typename T>
-    struct is_tuple_like<T, std::void_t<std::tuple_size<T>, std::tuple_element<0, T>>> : std::true_type
-    {
-    };
-
-    template <typename T>
-    inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
 }
 
 #endif // BLT_META_TYPE_TRAITS_H

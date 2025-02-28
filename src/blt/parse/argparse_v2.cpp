@@ -476,9 +476,10 @@ namespace blt::argparse
                 help.newline();
             }
             mark.align(4);
-            for (auto [str, pair] : mark.iter().zip(same_flags))
+            for (auto zipped_flags : mark.iter().zip(same_flags))
             {
-                auto& [builder, flag_list] = pair;
+                auto& str = std::get<0>(zipped_flags);
+                auto& [builder, flag_list] = std::get<1>(zipped_flags);
                 str += builder->m_help.value_or("");
                 if (builder->m_default_value && !(builder->m_action == action_t::STORE_TRUE || builder->m_action == action_t::STORE_FALSE))
                 {
@@ -574,7 +575,8 @@ namespace blt::argparse
 
             for (const auto& [i, kv] : enumerate(compoundFlags))
             {
-                const auto& [name, builder] = kv;
+                const auto& name = kv.first;
+                const auto& builder = kv.second;
                 aligner += builder->m_required ? '<' : '[';
                 aligner += name.get_argument();
                 auto lambda = [&]()
