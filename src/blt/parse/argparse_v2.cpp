@@ -551,7 +551,7 @@ namespace blt::argparse
                 {
                     if (!std::isblank(str.str().back()))
                         str += " ";
-                    str += "(Default: ";
+                    str += "(Default: '";
                     std::visit(detail::arg_meta_type_helper_t::make_visitor(
                                    [&](auto& value)
                                    {
@@ -571,7 +571,7 @@ namespace blt::argparse
                                            str += ']';
                                        }
                                    }), *builder->m_default_value);
-                    str += ")";
+                    str += "')";
                 }
                 if (builder->m_choices)
                 {
