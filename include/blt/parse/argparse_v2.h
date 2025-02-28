@@ -623,7 +623,7 @@ namespace blt::argparse
 
         argument_parser_t& with_help()
         {
-            add_flag("--help", "-h").set_action(action_t::HELP);
+            add_flag("--help", "-h").set_action(action_t::HELP).set_help("Show this help menu and exit");
             return *this;
         }
 

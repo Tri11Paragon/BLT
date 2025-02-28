@@ -405,20 +405,86 @@ namespace blt::argparse
             help.newline();
             for (const auto& [key, value] : m_subparsers)
             {
-                help += '\t';
                 auto map = value.get_allowed_strings();
-                // TODO: make an unzip?
-                for (const auto& [parser, strings] : map)
+                help += '\t';
+                help += key;
+                help += ": {";
+                for (const auto& [i, parser, strings] : enumerate(map).flatten())
                 {
+                    if (strings.size() > 1)
+                        help += '[';
                     for (const auto& [i, str] : enumerate(strings))
                     {
                         help += str;
                         if (i != strings.size() - 1)
                             help += ", ";
                     }
-                    // help += parser.he
-                    help.newline();
+                    if (strings.size() > 1)
+                        help += ']';
+                    if (i != map.size() - 1)
+                        help += ", ";
                 }
+                help += "}";
+                help.newline();
+            }
+            help.newline();
+        }
+
+        if (!m_positional_arguments.empty())
+        {
+            help += "Positional Arguments:";
+            help.newline();
+            for (auto& [name, builder] : m_positional_arguments)
+            {
+                help += '\t';
+                if (!builder.m_required)
+                    help += '[';
+                help += name;
+                if (!builder.m_required)
+                    help += ']';
+                if (builder.m_default_value && !(builder.m_action == action_t::STORE_TRUE || builder.m_action == action_t::STORE_FALSE))
+                {
+                    if (!std::isblank(help.str().back()))
+                        help += " ";
+                    help += "(Default: ";
+                    std::visit(detail::arg_meta_type_helper_t::make_visitor(
+                                   [&](auto& value)
+                                   {
+                                       help += value;
+                                   },
+                                   [&](auto& vec)
+                                   {
+                                       if constexpr (!std::is_same_v<std::decay_t<meta::remove_cvref_t<decltype(vec)>>, std::vector<bool>>)
+                                       {
+                                           help += '[';
+                                           for (const auto& [i, v] : enumerate(vec))
+                                           {
+                                               help += v;
+                                               if (i != vec.size() - 1)
+                                                   help += ", ";
+                                           }
+                                           help += ']';
+                                       }
+                                   }), *builder.m_default_value);
+                    help += ")";
+                }
+                if (builder.m_choices)
+                {
+                    if (!std::isblank(help.str().back()))
+                        help += " ";
+                    help += "(Choices: ";
+                    for (const auto& [i, v] : enumerate(*builder.m_choices))
+                    {
+                        help += '\'';
+                        help += v;
+                        help += '\'';
+                        if (i != builder.m_choices->size() - 1)
+                            help += ", ";
+                    }
+                    help += ')';
+                }
+                help.newline();
+                help.newline();
             }
         }
 
@@ -514,11 +580,19 @@ namespace blt::argparse
                     str += "(Choices: ";
                     for (const auto& [i, v] : enumerate(*builder->m_choices))
                     {
+                        str += '\'';
                         str += v;
+                        str += '\'';
                         if (i != builder->m_choices->size() - 1)
                             str += ", ";
                     }
                     str += ')';
+                }
+                if (builder->m_required)
+                {
+                    if (!std::isblank(str.str().back()))
+                        str += " ";
+                    str += "(Required)";
                 }
             }
         }
@@ -543,6 +617,14 @@ namespace blt::argparse
                 aligner += parent->m_last_parsed_parser.value();
                 aligner += ' ';
                 parent = parent->m_parent->m_parent;
+            }
+
+            for (const auto& [key, _] : m_subparsers)
+            {
+                aligner += '{';
+                aligner += key;
+                aligner += '}';
+                aligner += ' ';
             }
 
             hashmap_t<std::string, std::vector<std::string>> singleFlags;
