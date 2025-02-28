@@ -24,6 +24,15 @@
 
 namespace blt::meta
 {
+    namespace detail
+    {
+        template<typename... Args>
+        void empty_apply_function(Args...)
+        {
+
+        }
+    }
+
     template <typename T>
     using remove_cvref_t = std::remove_volatile_t<std::remove_const_t<std::remove_reference_t<T>>>;
 
@@ -50,15 +59,24 @@ namespace blt::meta
     {
     };
 
-    template<typename T>
+    template <typename T>
     static constexpr bool is_tuple_v = is_tuple<T>::value;
 
-    template<typename T>
+    template <typename T>
     static constexpr bool is_pair_v = is_pair<T>::value;
 
-    template<typename T>
-    static constexpr bool is_tuple_like_v = is_tuple_v<T> || is_pair_v<T>;
+    template <typename, typename = void>
+    struct is_tuple_like : std::false_type
+    {
+    };
 
+    template <typename T>
+    struct is_tuple_like<T, std::void_t<std::tuple_size<T>, std::tuple_element<0, T>>> : std::true_type
+    {
+    };
+
+    template <typename T>
+    inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
 }
 
 #endif // BLT_META_TYPE_TRAITS_H

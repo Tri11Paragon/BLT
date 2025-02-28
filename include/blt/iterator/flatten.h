@@ -20,43 +20,34 @@
 #define BLT_ITERATOR_FLATTEN_H
 
 #include <blt/iterator/common.h>
+#include <blt/meta/type_traits.h>
 #include <tuple>
 
 namespace blt::iterator
 {
     namespace detail
     {
-        template<typename T>
-        struct make_tuple
+        template <typename Tuple>
+        static auto flatten(Tuple&& tuple) -> decltype(auto)
         {
-            using type = std::tuple<T>;
-
-            static auto convert(T& f)
+            using Decay = std::decay_t<Tuple>;
+            if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
             {
-                return std::forward_as_tuple(f);
-            }
-
-            static auto convert(T&& f)
+                return std::apply([](auto&&... args)
+                {
+                    return std::tuple_cat(flatten(std::forward<decltype(args)>(args))...);
+                }, std::forward<Tuple>(tuple));
+            } else
             {
-                return std::forward_as_tuple(f);
+                if constexpr (std::is_lvalue_reference_v<Tuple>)
+                {
+                    return std::forward_as_tuple(std::forward<Tuple>(tuple));
+                } else
+                {
+                    return std::make_tuple(std::forward<Tuple>(tuple));
+                }
             }
-        };
-
-        template<typename... Args>
-        struct make_tuple<std::tuple<Args...>>
-        {
-            using type = std::tuple<Args...>;
-
-            static std::tuple<Args...>& convert(std::tuple<Args...>& lvalue)
-            {
-                return lvalue;
-            }
-
-            static std::tuple<Args...>&& convert(std::tuple<Args...>&& rvalue)
-            {
-                return rvalue;
-            }
-        };
+        }
     }
 
     template <typename Iter>
@@ -64,19 +55,19 @@ namespace blt::iterator
     {
     public:
         using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-        // using value_type = std::invoke_result_t<Func, meta::deref_return_t<Iter>>;
+        using value_type = std::remove_reference_t<decltype(detail::flatten(*std::declval<Iter>()))>;
         using difference_type = ptrdiff_t;
-        // using pointer = value_type;
-        // using reference = value_type;
+        using pointer = value_type*;
+        using reference = value_type&;
 
         explicit flatten_wrapper(Iter iter):
-            deref_only_wrapper<Iter, flatten_wrapper<Iter>>(std::move(iter))
+            deref_only_wrapper<Iter, flatten_wrapper>(std::move(iter))
         {
         }
 
-        reference operator*() const
+        auto operator*() const -> decltype(auto)
         {
-            return func(*this->iter);
+            return detail::flatten(*this->iter);
         }
     };
 }

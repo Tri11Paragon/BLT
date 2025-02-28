@@ -25,17 +25,6 @@ namespace blt
 {
     namespace iterator
     {
-        /**
-         * struct which is returned by the enumerator.
-         * @tparam T type to store.
-         */
-        template <typename T>
-        struct enumerate_item
-        {
-            const size_t index;
-            T value;
-        };
-
         template <typename Iter>
         class enumerate_wrapper : public passthrough_wrapper<Iter, enumerate_wrapper<Iter>>
         {
