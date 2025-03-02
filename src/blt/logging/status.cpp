@@ -17,7 +17,7 @@
  */
 #include <blt/logging/status.h>
 
-namespace blt
+namespace blt::logging
 {
 
 }

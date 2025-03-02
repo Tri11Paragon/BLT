@@ -16,30 +16,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/logging/logging.h>
-#include <blt/std/types.h>
 
-namespace blt::logging
+int main()
 {
-    void logger_t::compile()
-    {
-
-    }
-
-    void logger_t::insert_next_value(const std::string& arg)
-    {
-        const auto begin = fmt.find('{');
-        const auto end = fmt.find('}', begin);
-        fmt.erase(fmt.begin() + static_cast<i64>(begin), fmt.begin() + static_cast<i64>(end) + 1);
-        fmt.insert(begin, arg);
-    }
-
-    void print(const std::string& fmt)
-    {
-        std::cout << fmt;
-    }
-
-    void newline()
-    {
-        std::cout << std::endl;
-    }
+    blt::logging::println("This is a println!");
+    blt::logging::println("This is a println with args '{}'", 42);
+    blt::logging::println("This is a println with multiple args '{}' '{}' '{}'", 42, 32.34231233, "Hello World!");
 }

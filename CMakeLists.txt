@@ -204,6 +204,7 @@ if (${BUILD_TESTS})
 
     blt_add_test(blt_iterator tests/iterator_tests.cpp test)
     blt_add_test(blt_argparse tests/argparse_tests.cpp test)
+    blt_add_test(blt_logging tests/logger_tests.cpp test)
 
     message("Built tests")
 endif ()
