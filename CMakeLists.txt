@@ -17,6 +17,7 @@ option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_FS "Build the BLT FS utilities including the NBT + eNBT extension" ON)
 option(BUILD_PARSE "Build the BLT parsers" ON)
 option(BUILD_FORMAT "Build the BLT formatters" ON)
+option(BUILD_LOGGING "Build the BLT logging utilities" ON)
 
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
@@ -70,8 +71,14 @@ if (${BUILD_FORMAT})
     message(STATUS "Building ${Yellow}format${ColourReset} cxx files")
     file(GLOB_RECURSE FORMAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/format/*.cpp")
 else ()
-    set(FORMAT_FILES ""
-            include/blt/std/iterator.h)
+    set(FORMAT_FILES "")
+endif ()
+
+if (${BUILD_LOGGING})
+    message(STATUS "Building ${Yellow}logging${ColourReset} cxx files")
+    file(GLOB_RECURSE LOGGING_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/logging/*.cpp")
+else ()
+    set(PARSE_FILES "")
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
@@ -93,7 +100,7 @@ endif ()
 include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
-add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES} ${LOGGING_FILES})
 
 string(REPLACE "+" "\\+" escaped_source ${CMAKE_CURRENT_SOURCE_DIR})
 string(APPEND escaped_source "/src/blt/.*/")
