@@ -26,39 +26,114 @@
 
 namespace blt::logging
 {
-	enum class fmt_token_type : u8
-	{
-		STRING,
-		NUMBER,
-		SPACE,
-		COLON,
-		DOT,
-		MINUS,
-		PLUS
-	};
+    enum class fmt_token_type : u8
+    {
+        STRING,
+        NUMBER,
+        SPACE,
+        COLON,
+        DOT,
+        MINUS,
+        PLUS
+    };
 
-	struct fmt_token_t
-	{
-		fmt_token_type type;
-		std::string_view value;
-	};
+    enum class fmt_sign_t : u8
+    {
+        SPACE,
+        PLUS,
+        MINUS
+    };
 
-	class fmt_tokenizer_t
-	{
-	public:
-		explicit fmt_tokenizer_t(const std::string_view fmt): m_fmt(fmt)
-		{}
+    enum class fmt_type_t : u8
+    {
+        BINARY,             // 'b'
+        CHAR,               // 'c'
+        DECIMAL,            // 'd'
+        OCTAL,              // 'o'
+        HEX,                // 'x'
+        HEX_FLOAT,          // 'a'
+        EXPONENT,           // 'e'
+        FIXED_POINT,        // 'f'
+        GENERAL             // 'g'
+    };
 
-		static fmt_token_type get_type(char c);
+    struct fmt_spec_t
+    {
+        i64 arg_id = -1;
+        i64 width = -1;
+        i64 precision = -1;
+        fmt_type_t type = fmt_type_t::DECIMAL;
+        fmt_sign_t sign = fmt_sign_t::MINUS;
+        bool leading_zeros = false;
+        bool uppercase = false;
+    };
 
-		std::optional<fmt_token_t> next();
+    struct fmt_token_t
+    {
+        fmt_token_type type;
+        std::string_view value;
+    };
 
-		std::vector<fmt_token_t> tokenize();
+    class fmt_tokenizer_t
+    {
+    public:
+        explicit fmt_tokenizer_t() = default;
 
-	private:
-		size_t pos = 0;
-		std::string_view m_fmt;
-	};
+        static fmt_token_type get_type(char c);
+
+        std::optional<fmt_token_t> next();
+
+        std::vector<fmt_token_t> tokenize(std::string_view fmt);
+
+    private:
+        size_t m_pos = 0;
+        std::string_view m_fmt;
+    };
+
+
+    class fmt_parser_t
+    {
+    public:
+        explicit fmt_parser_t() = default;
+
+        fmt_token_t& peek()
+        {
+            return m_tokens[m_pos];
+        }
+
+        [[nodiscard]] bool has_next() const
+        {
+            return m_pos < m_tokens.size();
+        }
+
+        [[nodiscard]] fmt_token_t& next()
+        {
+            return m_tokens[m_pos++];
+        }
+
+        void consume()
+        {
+            ++m_pos;
+        }
+
+        const fmt_spec_t& parse(std::string_view fmt);
+
+    private:
+        void parse_fmt_field();
+        void parse_arg_id();
+        void parse_fmt_spec_stage_1();
+        void parse_fmt_spec_stage_2();
+        void parse_fmt_spec_stage_3();
+        void parse_sign();
+        void parse_width();
+        void parse_precision();
+        void parse_type();
+
+        size_t m_pos = 0;
+        std::vector<fmt_token_t> m_tokens;
+        fmt_tokenizer_t m_tokenizer;
+        fmt_spec_t m_spec;
+    };
 }
 
 #endif //BLT_LOGGING_FMT_TOKENIZER_H

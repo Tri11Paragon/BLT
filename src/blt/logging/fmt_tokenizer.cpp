@@ -15,67 +15,255 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <iostream>
 #include <blt/logging/fmt_tokenizer.h>
 
 namespace blt::logging
 {
-	fmt_token_type fmt_tokenizer_t::get_type(const char c)
-	{
-		switch (c)
-		{
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				return fmt_token_type::NUMBER;
-			case '+':
-				return fmt_token_type::PLUS;
-			case '-':
-				return fmt_token_type::MINUS;
-			case '.':
-				return fmt_token_type::DOT;
-			case ':':
-				return fmt_token_type::COLON;
-			case ' ':
-				return fmt_token_type::SPACE;
-			default:
-				return fmt_token_type::STRING;
-		}
-	}
+    fmt_token_type fmt_tokenizer_t::get_type(const char c)
+    {
+        switch (c)
+        {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            return fmt_token_type::NUMBER;
+        case '+':
+            return fmt_token_type::PLUS;
+        case '-':
+            return fmt_token_type::MINUS;
+        case '.':
+            return fmt_token_type::DOT;
+        case ':':
+            return fmt_token_type::COLON;
+        case ' ':
+            return fmt_token_type::SPACE;
+        default:
+            return fmt_token_type::STRING;
+        }
+    }
 
-	std::optional<fmt_token_t> fmt_tokenizer_t::next()
-	{
-		if (pos >= m_fmt.size())
-			return {};
-		switch (const auto base_type = get_type(m_fmt[pos]))
-		{
-			case fmt_token_type::SPACE:
-			case fmt_token_type::PLUS:
-			case fmt_token_type::MINUS:
-			case fmt_token_type::DOT:
-			case fmt_token_type::COLON:
-				return fmt_token_t{base_type, std::string_view{m_fmt.data() + pos++, 1}};
-			default:
-			{
-				const auto begin = pos;
-				for (; pos < m_fmt.size() && get_type(m_fmt[pos]) == base_type; ++pos)
-				{}
-				return fmt_token_t{base_type, std::string_view{m_fmt.data() + begin, pos - begin}};
-			}
-		}
-	}
+    std::optional<fmt_token_t> fmt_tokenizer_t::next()
+    {
+        if (m_pos >= m_fmt.size())
+            return {};
+        switch (const auto base_type = get_type(m_fmt[m_pos]))
+        {
+        case fmt_token_type::SPACE:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::DOT:
+        case fmt_token_type::COLON:
+            return fmt_token_t{base_type, std::string_view{m_fmt.data() + m_pos++, 1}};
+        default:
+            {
+                const auto begin = m_pos;
+                for (; m_pos < m_fmt.size() && get_type(m_fmt[m_pos]) == base_type; ++m_pos)
+                {
+                }
+                return fmt_token_t{base_type, std::string_view{m_fmt.data() + begin, m_pos - begin}};
+            }
+        }
+    }
 
-	std::vector<fmt_token_t> fmt_tokenizer_t::tokenize()
-	{
-		std::vector<fmt_token_t> tokens;
-		while (auto token = next())
-			tokens.push_back(*token);
-		return tokens;
-	}
+    std::vector<fmt_token_t> fmt_tokenizer_t::tokenize(const std::string_view fmt)
+    {
+        m_fmt = fmt;
+        m_pos = 0;
+        std::vector<fmt_token_t> tokens;
+        while (auto token = next())
+            tokens.push_back(*token);
+        return tokens;
+    }
+
+    const fmt_spec_t& fmt_parser_t::parse(const std::string_view fmt)
+    {
+        m_spec = {};
+        m_pos = 0;
+        m_tokens = m_tokenizer.tokenize(fmt);
+
+        parse_fmt_field();
+
+        return m_spec;
+    }
+
+    void fmt_parser_t::parse_fmt_field()
+    {
+        if (!has_next())
+        {
+            std::cerr << "Expected token when parsing format field" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        const auto [type, value] = peek();
+        if (type == fmt_token_type::COLON)
+        {
+            consume();
+            parse_fmt_spec_stage_1();
+        }
+        else if (type == fmt_token_type::NUMBER)
+        {
+            parse_arg_id();
+            if (has_next())
+            {
+                if (peek().type == fmt_token_type::COLON)
+                {
+                    consume();
+                    parse_fmt_spec_stage_1();
+                }else
+                {
+                    std::cerr << "Expected ':' when parsing format field after arg id!" << std::endl;
+                    std::exit(EXIT_FAILURE);
+                }
+            }
+        }
+        else
+        {
+            std::cerr << "Expected unknown token '" << static_cast<u8>(type) << "' value '" << value << "' when parsing format field" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        if (has_next())
+            parse_type();
+    }
+
+    void fmt_parser_t::parse_arg_id()
+    {
+        if (!has_next())
+        {
+            std::cerr << "Missing token when parsing arg id" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        const auto [type, value] = next();
+        if (type != fmt_token_type::NUMBER)
+        {
+            std::cerr << "Expected number when parsing arg id, unexpected value '" << value << '\'' << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        m_spec.arg_id = std::stoll(std::string(value));
+    }
+
+    // handle start of fmt, with sign
+    void fmt_parser_t::parse_fmt_spec_stage_1()
+    {
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::STRING:
+        case fmt_token_type::COLON:
+            std::cerr << "(Stage 1) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
+            std::exit(EXIT_FAILURE);
+        case fmt_token_type::NUMBER:
+            parse_width();
+            parse_fmt_spec_stage_3();
+            break;
+        case fmt_token_type::DOT:
+            consume();
+            parse_precision();
+            break;
+        case fmt_token_type::SPACE:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+            parse_sign();
+            parse_fmt_spec_stage_2();
+            break;
+        }
+    }
+
+    // handle width parsing
+    void fmt_parser_t::parse_fmt_spec_stage_2()
+    {
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::STRING:
+        case fmt_token_type::COLON:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::SPACE:
+            std::cerr << "(Stage 2) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
+            std::exit(EXIT_FAILURE);
+        case fmt_token_type::NUMBER:
+            parse_width();
+            parse_fmt_spec_stage_3();
+            break;
+        case fmt_token_type::DOT:
+            consume();
+            parse_precision();
+            break;
+        }
+    }
+
+    void fmt_parser_t::parse_fmt_spec_stage_3()
+    {
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::STRING:
+        case fmt_token_type::COLON:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::SPACE:
+        case fmt_token_type::NUMBER:
+            std::cerr << "(Stage 3) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
+            std::exit(EXIT_FAILURE);
+        case fmt_token_type::DOT:
+            consume();
+            parse_precision();
+            break;
+        }
+    }
+
+    void fmt_parser_t::parse_sign()
+    {
+        auto [_, value] = next();
+        if (value.size() > 1)
+        {
+            std::cerr << "Sign contains more than one character, we are not sure how to interpret this. Value '" << value << "'\n";
+            std::exit(EXIT_FAILURE);
+        }
+        switch (value[0])
+        {
+        case '+':
+            m_spec.sign = fmt_sign_t::PLUS;
+            break;
+        case '-':
+            m_spec.sign = fmt_sign_t::MINUS;
+            break;
+        case ' ':
+            m_spec.sign = fmt_sign_t::SPACE;
+            break;
+        default:
+            std::cerr << "Invalid sign " << value[0] << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
+    void fmt_parser_t::parse_width()
+    {
+        auto [_, value] = next();
+        if (value.front() == '0')
+            m_spec.leading_zeros = true;
+        m_spec.width = std::stoll(std::string(value));
+    }
+
+    void fmt_parser_t::parse_precision()
+    {
+
+    }
+
+    void fmt_parser_t::parse_type()
+    {
+    }
 }
