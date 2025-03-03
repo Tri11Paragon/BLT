@@ -21,68 +21,63 @@
 
 #include <iostream>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <blt/std/utility.h>
+#include <blt/meta/meta.h>
 
 namespace blt::logging
 {
-    struct logger_t
-    {
-        explicit logger_t(std::string fmt): fmt(std::move(fmt))
-        {
-        }
+	struct logger_t
+	{
+		explicit logger_t() = default;
 
-        template <typename T>
-        std::string make_string(T&& t)
-        {
-            if constexpr (std::is_same_v<T, std::string> || std::is_convertible_v<T, std::string>)
-                return std::forward<T>(t);
-            else if constexpr (std::is_same_v<T, std::string_view> || std::is_same_v<std::remove_const_t<T>, char*> || std::is_convertible_v<
-                T, std::string_view>)
-                return std::string(std::forward<T>(t));
-            else if constexpr (std::is_same_v<T, char>)
-                return std::string() + std::forward<T>(t);
-            else if constexpr (std::is_arithmetic_v<T>)
-                return std::to_string(std::forward<T>(t));
-            else
-            {
-                BLT_UNREACHABLE;
-            }
-        }
+		template <typename T>
+		void print_value(T&& t)
+		{
+			static_assert(meta::is_streamable_v<T>, "T must be streamable in order to work with blt::logging!");
+			m_stream << std::forward<T>(t);
+		}
 
-        void compile();
+		template <typename... Args>
+		std::string log(std::string fmt, Args&&... args)
+		{
+			compile(std::move(fmt));
+			((consume_until_fmt(), print_value(std::forward<Args>(args))), ...);
+			return to_string();
+		}
 
-        void insert_next_value(const std::string& arg);
+		std::string to_string();
 
-        template <typename... Args>
-        const std::string& log(Args&&... args)
-        {
-            (insert_next_value(make_string(std::forward<Args>(args))), ...);
-            return fmt;
-        }
+	private:
+		void compile(std::string fmt);
 
-    private:
-        std::string fmt;
-    };
+		void consume_until_fmt();
 
-    void print(const std::string& fmt);
+		std::string m_fmt;
+		std::stringstream m_stream;
+		size_t m_last_fmt_pos = 0;
+	};
 
-    void newline();
+	void print(const std::string& fmt);
 
-    template<typename... Args>
-    void print(std::string fmt, Args&&... args)
-    {
-        logger_t logger{std::move(fmt)};
-        logger.compile();
-        print(logger.log(std::forward<Args>(args)...));
-    }
+	void newline();
 
-    template<typename... Args>
-    void println(std::string fmt, Args&&... args)
-    {
-        print(std::move(fmt), std::forward<Args>(args)...);
-        newline();
-    }
+	logger_t& get_global_logger();
+
+	template <typename... Args>
+	void print(std::string fmt, Args&&... args)
+	{
+		auto& logger = get_global_logger();
+		print(logger.log(std::move(fmt), std::forward<Args>(args)...));
+	}
+
+	template <typename... Args>
+	void println(std::string fmt, Args&&... args)
+	{
+		print(std::move(fmt), std::forward<Args>(args)...);
+		newline();
+	}
 }
 
 #endif // BLT_LOGGING_LOGGING_H

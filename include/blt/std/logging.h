@@ -828,11 +828,6 @@ void flush() {
     std::cout.flush();
 }
 
-void newline()
-{
-    std::cout << std::endl;
-}
-
 }
 
 #endif

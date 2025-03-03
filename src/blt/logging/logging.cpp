@@ -20,26 +20,46 @@
 
 namespace blt::logging
 {
-    void logger_t::compile()
-    {
+	struct logging_thread_context_t
+	{
+		logger_t logger;
+	};
 
-    }
+	std::string logger_t::to_string()
+	{
+		auto str = m_stream.str();
+		m_stream.str("");
+		m_stream.clear();
+		return str;
+	}
 
-    void logger_t::insert_next_value(const std::string& arg)
-    {
-        const auto begin = fmt.find('{');
-        const auto end = fmt.find('}', begin);
-        fmt.erase(fmt.begin() + static_cast<i64>(begin), fmt.begin() + static_cast<i64>(end) + 1);
-        fmt.insert(begin, arg);
-    }
+	void logger_t::compile(std::string fmt)
+	{
+		m_fmt = std::move(fmt);
+		m_last_fmt_pos = 0;
+	}
 
-    void print(const std::string& fmt)
-    {
-        std::cout << fmt;
-    }
+	void logger_t::consume_until_fmt()
+	{
+		const auto begin = m_fmt.find('{', m_last_fmt_pos);
+		const auto end = m_fmt.find('}', begin);
+		m_stream << std::string_view(m_fmt.data() + static_cast<ptrdiff_t>(m_last_fmt_pos), begin - m_last_fmt_pos);
+		m_last_fmt_pos = end;
+	}
 
-    void newline()
-    {
-        std::cout << std::endl;
-    }
+	logger_t& get_global_logger()
+	{
+		thread_local logging_thread_context_t context;
+		return context.logger;
+	}
+
+	void print(const std::string& fmt)
+	{
+		std::cout << fmt;
+	}
+
+	void newline()
+	{
+		std::cout << std::endl;
+	}
 }
