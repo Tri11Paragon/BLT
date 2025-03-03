@@ -16,10 +16,16 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/logging/logging.h>
+#include <blt/std/utility.h>
 
 int main()
 {
+
+    using endl_t = decltype(static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
+    // blt::logging::println("{} | {} | {} | {}", blt::type_string<endl_t>());
     blt::logging::println("This is a println!");
     blt::logging::println("This is a println with args '{}'", 42);
     blt::logging::println("This is a println with multiple args '{}' '{}' '{}'", 42, 32.34231233, "Hello World!");
+    blt::logging::println("This is a '{1}' fmt string with positionals '{0}'", "I am a string!", "Well so am I except cooler :3");
+    // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

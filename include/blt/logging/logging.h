@@ -19,11 +19,9 @@
 #ifndef BLT_LOGGING_LOGGING_H
 #define BLT_LOGGING_LOGGING_H
 
-#include <iostream>
-#include <ostream>
 #include <sstream>
 #include <string>
-#include <blt/std/utility.h>
+#include <vector>
 #include <blt/meta/meta.h>
 
 namespace blt::logging
@@ -33,30 +31,56 @@ namespace blt::logging
 		explicit logger_t() = default;
 
 		template <typename T>
-		void print_value(T&& t)
+		std::string print_value(T&& t)
 		{
 			static_assert(meta::is_streamable_v<T>, "T must be streamable in order to work with blt::logging!");
+			m_stream.str("");
+			m_stream.clear();
 			m_stream << std::forward<T>(t);
+			return m_stream.str();
 		}
 
 		template <typename... Args>
 		std::string log(std::string fmt, Args&&... args)
 		{
 			compile(std::move(fmt));
-			((consume_until_fmt(), print_value(std::forward<Args>(args))), ...);
+			m_args_to_str.clear();
+			m_args_to_str.resize(sizeof...(Args));
+			insert(std::make_integer_sequence<size_t, sizeof...(Args)>{}, std::forward<Args>(args)...);
+			finish();
 			return to_string();
 		}
 
 		std::string to_string();
 
 	private:
+		template<typename... Args, size_t... Indexes>
+		void insert(std::integer_sequence<size_t, Indexes...>, Args&&... args)
+		{
+			((handle_insert<Indexes>(std::forward<Args>(args))), ...);
+		}
+
+		template<size_t index, typename T>
+		void handle_insert(T&& t)
+		{
+			m_args_to_str[index] = print_value(std::forward<T>(t));
+		}
+
+		void handle_fmt(std::string_view fmt);
+
+		const std::string& get(size_t index);
+
 		void compile(std::string fmt);
 
-		void consume_until_fmt();
+		bool consume_until_fmt();
+
+		void finish();
 
 		std::string m_fmt;
 		std::stringstream m_stream;
+		std::vector<std::string> m_args_to_str;
 		size_t m_last_fmt_pos = 0;
+		size_t m_arg_pos = 0;
 	};
 
 	void print(const std::string& fmt);
