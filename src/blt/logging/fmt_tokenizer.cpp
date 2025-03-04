@@ -46,6 +46,8 @@ namespace blt::logging
             return fmt_token_type::COLON;
         case ' ':
             return fmt_token_type::SPACE;
+        case '#':
+            return fmt_token_type::POUND;
         default:
             return fmt_token_type::STRING;
         }
@@ -62,6 +64,7 @@ namespace blt::logging
         case fmt_token_type::MINUS:
         case fmt_token_type::DOT:
         case fmt_token_type::COLON:
+        case fmt_token_type::POUND:
             return fmt_token_t{base_type, std::string_view{m_fmt.data() + m_pos++, 1}};
         default:
             {
@@ -100,30 +103,32 @@ namespace blt::logging
         if (!has_next())
             throw std::runtime_error("Expected token when parsing format field");
         const auto [type, value] = peek();
-        if (type == fmt_token_type::COLON)
+        switch (type)
         {
-            consume();
-            parse_fmt_spec_stage_1();
-        }
-        else if (type == fmt_token_type::NUMBER)
-        {
+        case fmt_token_type::NUMBER:
             parse_arg_id();
             if (has_next())
             {
                 if (peek().type == fmt_token_type::COLON)
-                {
-                    consume();
-                    parse_fmt_spec_stage_1();
-                }
+                    parse_fmt_spec();
                 else
                     throw std::runtime_error("Expected ':' when parsing format field after arg id!");
             }
-        }
-        else
-        {
-            std::stringstream ss;
-            ss << "Expected unknown token '" << static_cast<u8>(type) << "' value '" << value << "' when parsing format field";
-            throw std::runtime_error(ss.str());
+            break;
+        case fmt_token_type::COLON:
+            parse_fmt_spec();
+            break;
+        case fmt_token_type::STRING:
+        case fmt_token_type::SPACE:
+        case fmt_token_type::DOT:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::POUND:
+            {
+                std::stringstream ss;
+                ss << "Expected unknown token '" << static_cast<u8>(type) << "' value '" << value << "' when parsing format field";
+                throw std::runtime_error(ss.str());
+            }
         }
         if (has_next())
             parse_type();
@@ -131,8 +136,6 @@ namespace blt::logging
 
     void fmt_parser_t::parse_arg_id()
     {
-        if (!has_next())
-            throw std::runtime_error("Missing token when parsing arg id");
         const auto [type, value] = next();
         if (type != fmt_token_type::NUMBER)
         {
@@ -143,11 +146,10 @@ namespace blt::logging
         m_spec.arg_id = std::stoll(std::string(value));
     }
 
-    // handle start of fmt, with sign
-    void fmt_parser_t::parse_fmt_spec_stage_1()
+    void fmt_parser_t::parse_fmt_spec()
     {
-        if (!has_next())
-            return;
+        // consume :
+        consume();
         auto [type, value] = peek();
         switch (type)
         {
@@ -155,29 +157,89 @@ namespace blt::logging
         case fmt_token_type::COLON:
             {
                 std::stringstream ss;
-                ss << "(Stage 1) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                ss << "(Stage (Begin)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         case fmt_token_type::NUMBER:
-            parse_width();
-            parse_fmt_spec_stage_3();
+            parse_fmt_spec_width();
             break;
         case fmt_token_type::DOT:
-            consume();
-            parse_precision();
+            parse_fmt_spec_precision();
             break;
         case fmt_token_type::SPACE:
         case fmt_token_type::MINUS:
         case fmt_token_type::PLUS:
-            parse_sign();
-            parse_fmt_spec_stage_2();
+            parse_fmt_spec_sign();
+            break;
+        case fmt_token_type::POUND:
+            parse_fmt_spec_form();
+            break;
+        }
+    }
+
+    // handle start of fmt, with sign
+    void fmt_parser_t::parse_fmt_spec_sign()
+    {
+        parse_sign();
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::SPACE:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::STRING:
+        case fmt_token_type::COLON:
+            {
+                std::stringstream ss;
+                ss << "(Stage (Sign)) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
+        case fmt_token_type::NUMBER:
+            parse_fmt_spec_width();
+            break;
+        case fmt_token_type::DOT:
+            parse_fmt_spec_precision();
+            break;
+        case fmt_token_type::POUND:
+            parse_fmt_spec_form();
+            break;
+        }
+    }
+
+    void fmt_parser_t::parse_fmt_spec_form()
+    {
+        parse_form();
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::STRING:
+        case fmt_token_type::SPACE:
+        case fmt_token_type::COLON:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+        case fmt_token_type::POUND:
+            {
+                std::stringstream ss;
+                ss << "(Stage (Form)) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
+        case fmt_token_type::NUMBER:
+            parse_fmt_spec_width();
+            break;
+        case fmt_token_type::DOT:
+            parse_fmt_spec_precision();
             break;
         }
     }
 
     // handle width parsing
-    void fmt_parser_t::parse_fmt_spec_stage_2()
+    void fmt_parser_t::parse_fmt_spec_width()
     {
+        parse_width();
         if (!has_next())
             return;
         auto [type, value] = peek();
@@ -188,45 +250,24 @@ namespace blt::logging
         case fmt_token_type::MINUS:
         case fmt_token_type::PLUS:
         case fmt_token_type::SPACE:
+        case fmt_token_type::POUND:
+        case fmt_token_type::NUMBER:
             {
                 std::stringstream ss;
-                ss << "(Stage 2) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                ss << "(Stage (Width)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
-        case fmt_token_type::NUMBER:
-            parse_width();
-            parse_fmt_spec_stage_3();
-            break;
         case fmt_token_type::DOT:
-            consume();
-            parse_precision();
+            parse_fmt_spec_precision();
             break;
         }
     }
 
-    void fmt_parser_t::parse_fmt_spec_stage_3()
+    void fmt_parser_t::parse_fmt_spec_precision()
     {
-        if (!has_next())
-            return;
-        auto [type, value] = peek();
-        switch (type)
-        {
-        case fmt_token_type::STRING:
-        case fmt_token_type::COLON:
-        case fmt_token_type::MINUS:
-        case fmt_token_type::PLUS:
-        case fmt_token_type::SPACE:
-        case fmt_token_type::NUMBER:
-            {
-                std::stringstream ss;
-                ss << "(Stage 3) Invalid token type " << static_cast<u8>(type) << " value " << value;
-                throw std::runtime_error(ss.str());
-            }
-        case fmt_token_type::DOT:
-            consume();
-            parse_precision();
-            break;
-        }
+        // consume .
+        consume();
+        parse_precision();
     }
 
     void fmt_parser_t::parse_sign()
@@ -258,6 +299,12 @@ namespace blt::logging
         }
     }
 
+    void fmt_parser_t::parse_form()
+    {
+        consume();
+        m_spec.alternate_form = true;
+    }
+
     void fmt_parser_t::parse_width()
     {
         auto [_, value] = next();
@@ -276,8 +323,6 @@ namespace blt::logging
 
     void fmt_parser_t::parse_type()
     {
-        if (!has_next())
-            throw std::runtime_error("Missing token when parsing type");
         auto [_, value] = next();
         if (value.size() != 1)
         {

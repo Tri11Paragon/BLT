@@ -36,5 +36,7 @@ int main()
     blt::logging::println("This is a println with a with {:10}", 4120);
     blt::logging::println("This is a println with a with leading zeros {:010}", 4120);
     blt::logging::println("This is a println with a precision {:.10f}", 42.232342349);
+    blt::logging::println("This is a println with hex {:.10x}", 4250);
+    blt::logging::println("This is a println with hex with leading {:#.10x}", 4250);
     // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

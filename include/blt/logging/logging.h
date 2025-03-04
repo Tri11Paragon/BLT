@@ -68,7 +68,7 @@ namespace blt::logging
                     case fmt_sign_t::SPACE:
                         if constexpr (std::is_arithmetic_v<T>)
                         {
-                            if (t >= 0)
+                            if (type.type != fmt_type_t::BINARY && t >= 0)
                                 stream << ' ';
                         }
                         break;
@@ -90,7 +90,8 @@ namespace blt::logging
                         {
                             char buffer[sizeof(T)];
                             std::memcpy(buffer, &t, sizeof(T));
-                            stream << '0' << (type.uppercase ? 'B' : 'b');
+                            if (type.alternate_form)
+                                stream << '0' << (type.uppercase ? 'B' : 'b');
                             for (size_t i = 0; i < sizeof(T); ++i)
                             {
                                 for (size_t j = 0; j < 8; ++j)
@@ -127,7 +128,7 @@ namespace blt::logging
                     }
                     break;
                 default:
-                    handle_type(stream, type.type);
+                    handle_type(stream, type);
                     stream << t;
                 }
             };
@@ -135,7 +136,7 @@ namespace blt::logging
 
         void setup_stream(const fmt_spec_t& spec);
         void process_strings();
-        static void handle_type(std::ostream& stream, fmt_type_t type);
+        static void handle_type(std::ostream& stream, const fmt_spec_t& spec);
 
         static void exponential(std::ostream& stream);
         static void fixed(std::ostream& stream);

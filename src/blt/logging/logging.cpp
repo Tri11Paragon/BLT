@@ -73,20 +73,26 @@ namespace blt::logging
         m_stream << *str_it;
     }
 
-    void logger_t::handle_type(std::ostream& stream, const fmt_type_t type)
+    void logger_t::handle_type(std::ostream& stream, const fmt_spec_t& spec)
     {
-        switch (type)
+        switch (spec.type)
         {
         case fmt_type_t::DECIMAL:
             stream << std::dec;
             break;
         case fmt_type_t::OCTAL:
+            if (spec.alternate_form)
+                stream << "0";
             stream << std::oct;
             break;
         case fmt_type_t::HEX:
+            if (spec.alternate_form)
+                stream << (spec.uppercase ? "0X" : "0x");
             stream << std::hex;
             break;
         case fmt_type_t::HEX_FLOAT:
+            if (spec.alternate_form)
+                stream << (spec.uppercase ? "0X" : "0x");
             stream << std::hexfloat;
             break;
         case fmt_type_t::EXPONENT:

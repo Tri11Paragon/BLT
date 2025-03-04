@@ -34,7 +34,8 @@ namespace blt::logging
         COLON,
         DOT,
         MINUS,
-        PLUS
+        PLUS,
+        POUND
     };
 
     enum class fmt_sign_t : u8
@@ -66,6 +67,7 @@ namespace blt::logging
         fmt_sign_t sign = fmt_sign_t::MINUS;
         bool leading_zeros = false;
         bool uppercase = false;
+        bool alternate_form = false;
     };
 
     struct fmt_token_t
@@ -121,10 +123,15 @@ namespace blt::logging
     private:
         void parse_fmt_field();
         void parse_arg_id();
-        void parse_fmt_spec_stage_1();
-        void parse_fmt_spec_stage_2();
-        void parse_fmt_spec_stage_3();
+
+        void parse_fmt_spec();
+        void parse_fmt_spec_sign();
+        void parse_fmt_spec_form();
+        void parse_fmt_spec_width();
+        void parse_fmt_spec_precision();
+
         void parse_sign();
+        void parse_form();
         void parse_width();
         void parse_precision();
         void parse_type();
