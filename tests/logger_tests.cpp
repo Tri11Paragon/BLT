@@ -25,12 +25,16 @@ int main()
     // blt::logging::println("{} | {} | {} | {}", blt::type_string<endl_t>());
     blt::logging::println("This is a println!");
     blt::logging::println("This is a println with args '{}'", 42);
-    blt::logging::println("This is a println with multiple args '{}' '{}' '{}'", 42, 32.34231233, "Hello World!");
+    blt::logging::println("This is a println with multiple args '{}' '{:.100}' '{}'", 42, 32.34231233f, "Hello World!");
     blt::logging::println("This is a '{1}' fmt string with positionals '{0}'", "I am a string!", "Well so am I except cooler :3");
     blt::logging::println("This is a println with a sign {:+}", 4120);
+    blt::logging::println("This is a println with a sign {:+}", -4120);
     blt::logging::println("This is a println with a space {: }", 4120);
-    blt::logging::println("This is a println with a with {:3}", 4120);
+    blt::logging::println("This is a println with a space {: }", -4120);
+    blt::logging::println("This is a println with a minus {:-}", 4120);
+    blt::logging::println("This is a println with a minus {:-}", -4120);
+    blt::logging::println("This is a println with a with {:10}", 4120);
     blt::logging::println("This is a println with a with leading zeros {:010}", 4120);
-    blt::logging::println("This is a println with a precision {:.3}", 42.232342349);
+    blt::logging::println("This is a println with a precision {:.10f}", 42.232342349);
     // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

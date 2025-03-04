@@ -21,12 +21,18 @@
 
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
-#include <blt/meta/meta.h>
+#include <cstring>
+#include <functional>
 #include <blt/logging/fmt_tokenizer.h>
 
 namespace blt::logging
 {
+    namespace detail
+    {
+    }
+
     struct logger_t
     {
         explicit logger_t() = default;
@@ -36,83 +42,116 @@ namespace blt::logging
         {
             compile(std::move(fmt));
             auto sequence = std::make_integer_sequence<size_t, sizeof...(Args)>{};
-            while (auto pair = consume_until_fmt())
-            {
-                auto [begin, end] = *pair;
-                if (end - begin > 0)
-                {
-                    auto format_data = handle_fmt(m_fmt.substr(begin + 1, begin - end - 1));
-                    auto [arg_pos, fmt_type] = format_data;
-                    if (arg_pos == -1)
-                        arg_pos = static_cast<i64>(m_arg_pos++);
-                    if (fmt_type)
-                    {
-                        if (fmt_type == fmt_type_t::GENERAL)
-                        {
-                            apply_func([this](auto&& value)
-                            {
-                                if (static_cast<u64>(value) > 0xFFFFFFFFFul)
-                                    exponential();
-                                else
-                                    fixed();
-                                m_stream << std::forward<decltype(value)>(value);
-                            }, arg_pos, sequence, std::forward<Args>(args)...);
-                        } else if (fmt_type == fmt_type_t::CHAR)
-                        {
-
-                        } else if (fmt_type == fmt_type_t::BINARY)
-                        {
-
-                        }
-                    }
-                    else
-                    {
-                        apply_func([this](auto&& value)
-                        {
-                            m_stream << std::forward<decltype(value)>(value);
-                        }, arg_pos, sequence, std::forward<Args>(args)...);
-                    }
-                }
-                else
-                    apply_func([this](auto&& value)
-                    {
-                        m_stream << std::forward<decltype(value)>(value);
-                    }, m_arg_pos++, sequence, std::forward<Args>(args)...);
-            }
-            finish();
+            m_arg_print_funcs.clear();
+            m_arg_print_funcs.resize(sizeof...(Args));
+            create_conv_funcs(sequence, std::forward<Args>(args)...);
+            process_strings();
             return to_string();
         }
 
         std::string to_string();
 
     private:
-        template <typename Func, typename... Args, size_t... Indexes>
-        void apply_func(const Func& func, const size_t arg, std::integer_sequence<size_t, Indexes...>, Args&&... args)
+        template <typename... Args, size_t... Indexes>
+        void create_conv_funcs(std::integer_sequence<size_t, Indexes...>, Args&&... args)
         {
-            ((handle_func<Indexes>(func, arg, std::forward<Args>(args))), ...);
+            ((handle_func<Indexes>(std::forward<Args>(args))), ...);
         }
 
-        template <size_t index, typename Func, typename T>
-        void handle_func(const Func& func, const size_t arg, T&& t)
+        template <size_t index, typename T>
+        void handle_func(const T& t)
         {
-            if (index == arg)
-                func(std::forward<T>(t));
+            m_arg_print_funcs[index] = [&t, this](std::ostream& stream, const fmt_spec_t& type)
+            {
+                switch (type.sign)
+                {
+                    case fmt_sign_t::SPACE:
+                        if constexpr (std::is_arithmetic_v<T>)
+                        {
+                            if (t >= 0)
+                                stream << ' ';
+                        }
+                        break;
+                    case fmt_sign_t::PLUS:
+                        if constexpr (std::is_arithmetic_v<T>)
+                        {
+                            if (t >= 0)
+                                stream << '+';
+                        }
+                        break;
+                    case fmt_sign_t::MINUS:
+                        break;
+                }
+                switch (type.type)
+                {
+                case fmt_type_t::BINARY:
+                    {
+                        if constexpr (std::is_trivially_copyable_v<T>)
+                        {
+                            char buffer[sizeof(T)];
+                            std::memcpy(buffer, &t, sizeof(T));
+                            stream << '0' << (type.uppercase ? 'B' : 'b');
+                            for (size_t i = 0; i < sizeof(T); ++i)
+                            {
+                                for (size_t j = 0; j < 8; ++j)
+                                    stream << ((buffer[i] & (1 << j)) ? '1' : '0');
+                                if (type.sign == fmt_sign_t::SPACE && i != sizeof(T) - 1)
+                                    stream << ' ';
+                            }
+                        } else
+                        {
+                            stream << t;
+                        }
+                        break;
+                    }
+                case fmt_type_t::CHAR:
+                    if constexpr (std::is_arithmetic_v<T> || std::is_convertible_v<T, char>)
+                    {
+                        stream << static_cast<char>(t);
+                    } else
+                    {
+                        stream << t;
+                    }
+                    break;
+                case fmt_type_t::GENERAL:
+                    if constexpr (std::is_arithmetic_v<T>)
+                    {
+                        if (static_cast<u64>(t) > 10e12)
+                            exponential(stream);
+                        else
+                            fixed(stream);
+                        stream << t;
+                    } else
+                    {
+                        stream << t;
+                    }
+                    break;
+                default:
+                    handle_type(stream, type.type);
+                    stream << t;
+                }
+            };
         }
 
-        [[nodiscard]] std::pair<i64, std::optional<fmt_type_t>> handle_fmt(std::string_view fmt);
+        void setup_stream(const fmt_spec_t& spec);
+        void process_strings();
+        static void handle_type(std::ostream& stream, fmt_type_t type);
 
-        void exponential();
-        void fixed();
+        static void exponential(std::ostream& stream);
+        static void fixed(std::ostream& stream);
 
         void compile(std::string fmt);
 
-        std::optional<std::pair<size_t, size_t>> consume_until_fmt();
-
-        void finish();
+        std::optional<std::pair<size_t, size_t>> consume_to_next_fmt();
 
         std::string m_fmt;
         std::stringstream m_stream;
         fmt_parser_t m_parser;
+        // normal sections of string
+        std::vector<std::string_view> m_string_sections;
+        // processed format specs
+        std::vector<fmt_spec_t> m_fmt_specs;
+        std::vector<std::function<void(std::ostream&, const fmt_spec_t&)>> m_arg_print_funcs;
         size_t m_last_fmt_pos = 0;
         size_t m_arg_pos = 0;
     };

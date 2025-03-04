@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <iostream>
+#include <sstream>
 #include <blt/logging/fmt_tokenizer.h>
 
 namespace blt::logging
@@ -97,10 +98,7 @@ namespace blt::logging
     void fmt_parser_t::parse_fmt_field()
     {
         if (!has_next())
-        {
-            std::cerr << "Expected token when parsing format field" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Expected token when parsing format field");
         const auto [type, value] = peek();
         if (type == fmt_token_type::COLON)
         {
@@ -118,16 +116,14 @@ namespace blt::logging
                     parse_fmt_spec_stage_1();
                 }
                 else
-                {
-                    std::cerr << "Expected ':' when parsing format field after arg id!" << std::endl;
-                    std::exit(EXIT_FAILURE);
-                }
+                    throw std::runtime_error("Expected ':' when parsing format field after arg id!");
             }
         }
         else
         {
-            std::cerr << "Expected unknown token '" << static_cast<u8>(type) << "' value '" << value << "' when parsing format field" << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::stringstream ss;
+            ss << "Expected unknown token '" << static_cast<u8>(type) << "' value '" << value << "' when parsing format field";
+            throw std::runtime_error(ss.str());
         }
         if (has_next())
             parse_type();
@@ -136,15 +132,13 @@ namespace blt::logging
     void fmt_parser_t::parse_arg_id()
     {
         if (!has_next())
-        {
-            std::cerr << "Missing token when parsing arg id" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Missing token when parsing arg id");
         const auto [type, value] = next();
         if (type != fmt_token_type::NUMBER)
         {
-            std::cerr << "Expected number when parsing arg id, unexpected value '" << value << '\'' << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::stringstream ss;
+            ss << "Expected number when parsing arg id, unexpected value '" << value << '\'';
+            throw std::runtime_error(ss.str());
         }
         m_spec.arg_id = std::stoll(std::string(value));
     }
@@ -159,8 +153,11 @@ namespace blt::logging
         {
         case fmt_token_type::STRING:
         case fmt_token_type::COLON:
-            std::cerr << "(Stage 1) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
-            std::exit(EXIT_FAILURE);
+            {
+                std::stringstream ss;
+                ss << "(Stage 1) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
         case fmt_token_type::NUMBER:
             parse_width();
             parse_fmt_spec_stage_3();
@@ -191,8 +188,11 @@ namespace blt::logging
         case fmt_token_type::MINUS:
         case fmt_token_type::PLUS:
         case fmt_token_type::SPACE:
-            std::cerr << "(Stage 2) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
-            std::exit(EXIT_FAILURE);
+            {
+                std::stringstream ss;
+                ss << "(Stage 2) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
         case fmt_token_type::NUMBER:
             parse_width();
             parse_fmt_spec_stage_3();
@@ -217,8 +217,11 @@ namespace blt::logging
         case fmt_token_type::PLUS:
         case fmt_token_type::SPACE:
         case fmt_token_type::NUMBER:
-            std::cerr << "(Stage 3) Invalid token type " << static_cast<u8>(type) << " value " << value << std::endl;
-            std::exit(EXIT_FAILURE);
+            {
+                std::stringstream ss;
+                ss << "(Stage 3) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
         case fmt_token_type::DOT:
             consume();
             parse_precision();
@@ -231,8 +234,9 @@ namespace blt::logging
         auto [_, value] = next();
         if (value.size() > 1)
         {
-            std::cerr << "Sign contains more than one character, we are not sure how to interpret this. Value '" << value << "'\n";
-            std::exit(EXIT_FAILURE);
+            std::stringstream ss;
+            ss << "Sign contains more than one character, we are not sure how to interpret this. Value '" << value << "'";
+            throw std::runtime_error(ss.str());
         }
         switch (value[0])
         {
@@ -246,8 +250,11 @@ namespace blt::logging
             m_spec.sign = fmt_sign_t::SPACE;
             break;
         default:
-            std::cerr << "Invalid sign " << value[0] << std::endl;
-            std::exit(EXIT_FAILURE);
+            {
+                std::stringstream ss;
+                ss << "Invalid sign " << value[0];
+                throw std::runtime_error(ss.str());
+            }
         }
     }
 
@@ -262,10 +269,7 @@ namespace blt::logging
     void fmt_parser_t::parse_precision()
     {
         if (!has_next())
-        {
-            std::cerr << "Missing token when parsing precision" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Missing token when parsing precision");
         auto [_, value] = next();
         m_spec.precision = std::stoll(std::string(value));
     }
@@ -273,15 +277,13 @@ namespace blt::logging
     void fmt_parser_t::parse_type()
     {
         if (!has_next())
-        {
-            std::cerr << "Missing token when parsing type" << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Missing token when parsing type");
         auto [_, value] = next();
         if (value.size() != 1)
         {
-            std::cerr << "Type contains more than one character, we are not sure how to interpret this value '" << value << "'\n";
-            std::exit(EXIT_FAILURE);
+            std::stringstream ss;
+            ss << "Type contains more than one character, we are not sure how to interpret this value '" << value << "'";
+            throw std::runtime_error(ss.str());
         }
         m_spec.uppercase = std::isupper(value.front());
         switch (value.front())
@@ -320,8 +322,9 @@ namespace blt::logging
             m_spec.type = fmt_type_t::GENERAL;
             break;
         default:
-            std::cerr << "Invalid type " << value << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::stringstream ss;
+            ss << "Invalid type " << value;
+            throw std::runtime_error(ss.str());
         }
     }
 }
