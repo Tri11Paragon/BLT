@@ -26,6 +26,8 @@
 #include <cstring>
 #include <functional>
 #include <blt/logging/fmt_tokenizer.h>
+#include <blt/std/utility.h>
+#include <blt/meta/is_streamable.h>
 
 namespace blt::logging
 {
@@ -65,22 +67,22 @@ namespace blt::logging
             {
                 switch (type.sign)
                 {
-                    case fmt_sign_t::SPACE:
-                        if constexpr (std::is_arithmetic_v<T>)
-                        {
-                            if (type.type != fmt_type_t::BINARY && t >= 0)
-                                stream << ' ';
-                        }
-                        break;
-                    case fmt_sign_t::PLUS:
-                        if constexpr (std::is_arithmetic_v<T>)
-                        {
-                            if (t >= 0)
-                                stream << '+';
-                        }
-                        break;
-                    case fmt_sign_t::MINUS:
-                        break;
+                case fmt_sign_t::SPACE:
+                    if constexpr (std::is_arithmetic_v<T>)
+                    {
+                        if (type.type != fmt_type_t::BINARY && t >= 0)
+                            stream << ' ';
+                    }
+                    break;
+                case fmt_sign_t::PLUS:
+                    if constexpr (std::is_arithmetic_v<T>)
+                    {
+                        if (t >= 0)
+                            stream << '+';
+                    }
+                    break;
+                case fmt_sign_t::MINUS:
+                    break;
                 }
                 switch (type.type)
                 {
@@ -104,9 +106,13 @@ namespace blt::logging
                                 if (type.sign == fmt_sign_t::SPACE && i != sizeof(T) - 1)
                                     stream << ' ';
                             }
-                        } else
+                        }
+                        else
                         {
-                            stream << t;
+                            if constexpr (blt::meta::is_streamable_v<T>)
+                                stream << t;
+                            else
+                                stream << "{INVALID TYPE}";
                         }
                         break;
                     }
@@ -114,9 +120,13 @@ namespace blt::logging
                     if constexpr (std::is_arithmetic_v<T> || std::is_convertible_v<T, char>)
                     {
                         stream << static_cast<char>(t);
-                    } else
+                    }
+                    else
                     {
-                        stream << t;
+                        if constexpr (blt::meta::is_streamable_v<T>)
+                            stream << t;
+                        else
+                            stream << "{INVALID TYPE}";
                     }
                     break;
                 case fmt_type_t::GENERAL:
@@ -127,14 +137,24 @@ namespace blt::logging
                         else
                             fixed(stream);
                         stream << t;
-                    } else
-                    {
-                        stream << t;
                     }
+                    else
+                    {
+                        if constexpr (blt::meta::is_streamable_v<T>)
+                            stream << t;
+                        else
+                            stream << "{INVALID TYPE}";
+                    }
+                    break;
+                case fmt_type_t::TYPE:
+                    stream << blt::type_string<T>();
                     break;
                 default:
                     handle_type(stream, type);
-                    stream << t;
+                    if constexpr (blt::meta::is_streamable_v<T>)
+                        stream << t;
+                    else
+                        stream << "{INVALID TYPE}";
                 }
             };
         }

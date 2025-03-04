@@ -55,7 +55,8 @@ namespace blt::logging
         HEX_FLOAT,          // 'a'
         EXPONENT,           // 'e'
         FIXED_POINT,        // 'f'
-        GENERAL             // 'g'
+        GENERAL,            // 'g'
+        TYPE                // 't'
     };
 
     struct fmt_spec_t

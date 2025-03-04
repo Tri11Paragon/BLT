@@ -18,6 +18,10 @@
 #include <blt/logging/logging.h>
 #include <blt/std/utility.h>
 
+struct some_silly_type_t
+{
+};
+
 int main()
 {
     blt::logging::println("This is a println!");
@@ -39,5 +43,11 @@ int main()
     blt::logging::println("This is a println with binary with space {: #b}", 6969421);
     blt::logging::println("This is a println with octal {:#o}", 6669);
     blt::logging::println("This is a println with hexfloat {:a}", 402.4320);
+    blt::logging::println("This is a println with exponent {:e}", 44320902.4320);
+    blt::logging::println("This is a println with exponent {:e}", 9532434234042340);
+    blt::logging::println("This is a println with exponent {:g}", 953243.49);
+    blt::logging::println("This is a println with exponent {:g}", 953243324023403240.49);
+    blt::logging::println("This is a println with a char {:c}", 66);
+    blt::logging::println("This is a println with type {:t}", some_silly_type_t{});
     // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

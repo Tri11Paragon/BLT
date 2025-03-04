@@ -372,6 +372,10 @@ namespace blt::logging
         case 'G':
             m_spec.type = fmt_type_t::GENERAL;
             break;
+        case 't':
+        case 'T':
+            m_spec.type = fmt_type_t::TYPE;
+            break;
         default:
             std::stringstream ss;
             ss << "Invalid type " << value;
