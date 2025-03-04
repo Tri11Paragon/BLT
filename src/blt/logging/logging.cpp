@@ -17,6 +17,7 @@
  */
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <blt/iterator/enumerate.h>
 #include <blt/logging/logging.h>
 #include <blt/std/types.h>
@@ -25,23 +26,33 @@ namespace blt::logging
 {
     struct logging_thread_context_t
     {
-        logger_t logger;
+        std::stringstream stream;
+        logger_t logger{stream};
     };
 
-    std::string logger_t::to_string()
+    std::string logger_t::to_string() const
     {
-        auto str = m_stream.str();
-        m_stream.str("");
-        m_stream.clear();
-        return str;
+        return dynamic_cast<std::stringstream&>(m_stream).str();
     }
 
-    void logger_t::setup_stream(const fmt_spec_t& spec)
+    void logger_t::setup_stream(const fmt_spec_t& spec) const
     {
-        if (spec.leading_zeros)
-            m_stream << std::setfill('0');
+        if (spec.prefix_char)
+            m_stream << std::setfill(*spec.prefix_char);
         else
             m_stream << std::setfill(' ');
+        switch (spec.alignment)
+        {
+        case fmt_align_t::LEFT:
+            m_stream << std::left;
+            break;
+        case fmt_align_t::CENTER:
+            // TODO?
+            break;
+        case fmt_align_t::RIGHT:
+            m_stream << std::right;
+            break;
+        }
         if (spec.width > 0)
             m_stream << std::setw(static_cast<i32>(spec.width));
         else
@@ -52,6 +63,8 @@ namespace blt::logging
             m_stream << std::setprecision(16);
         if (spec.alternate_form)
             m_stream << std::showbase;
+        else
+            m_stream << std::noshowbase;
         if (spec.uppercase)
             m_stream << std::uppercase;
         else
@@ -129,7 +142,8 @@ namespace blt::logging
         m_fmt = std::move(fmt);
         m_last_fmt_pos = 0;
         m_arg_pos = 0;
-        m_stream.str("");
+        auto& ss = dynamic_cast<std::stringstream&>(m_stream);
+        ss.str("");
         m_stream.clear();
         m_string_sections.clear();
         m_fmt_specs.clear();
@@ -171,9 +185,9 @@ namespace blt::logging
         return context.logger;
     }
 
-    void print(const std::string& fmt)
+    void print(const std::string& str)
     {
-        std::cout << fmt;
+        std::cout << str;
     }
 
     void newline()

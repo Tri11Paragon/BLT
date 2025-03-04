@@ -19,7 +19,6 @@
 #ifndef BLT_LOGGING_LOGGING_H
 #define BLT_LOGGING_LOGGING_H
 
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -37,7 +36,9 @@ namespace blt::logging
 
     struct logger_t
     {
-        explicit logger_t() = default;
+        explicit logger_t(std::ostream& stream): m_stream(stream)
+        {
+        }
 
         template <typename... Args>
         std::string log(std::string fmt, Args&&... args)
@@ -51,7 +52,7 @@ namespace blt::logging
             return to_string();
         }
 
-        std::string to_string();
+        [[nodiscard]] std::string to_string() const;
 
     private:
         template <typename... Args, size_t... Indexes>
@@ -136,7 +137,7 @@ namespace blt::logging
             };
         }
 
-        void setup_stream(const fmt_spec_t& spec);
+        void setup_stream(const fmt_spec_t& spec) const;
         void process_strings();
         static void handle_type(std::ostream& stream, const fmt_spec_t& spec);
 
@@ -148,7 +149,7 @@ namespace blt::logging
         std::optional<std::pair<size_t, size_t>> consume_to_next_fmt();
 
         std::string m_fmt;
-        std::stringstream m_stream;
+        std::ostream& m_stream;
         fmt_parser_t m_parser;
         // normal sections of string
         std::vector<std::string_view> m_string_sections;
@@ -159,7 +160,7 @@ namespace blt::logging
         size_t m_arg_pos = 0;
     };
 
-    void print(const std::string& fmt);
+    void print(const std::string& str);
 
     void newline();
 
@@ -173,10 +174,24 @@ namespace blt::logging
     }
 
     template <typename... Args>
+    void print(std::ostream& stream, std::string fmt, Args&&... args)
+    {
+        auto& logger = get_global_logger();
+        stream << logger.log(std::move(fmt), std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
     void println(std::string fmt, Args&&... args)
     {
         print(std::move(fmt), std::forward<Args>(args)...);
         newline();
+    }
+
+    template <typename... Args>
+    void println(std::ostream& stream, std::string fmt, Args&&... args)
+    {
+        print(stream, std::move(fmt), std::forward<Args>(args)...);
+        stream << std::endl;
     }
 }
 

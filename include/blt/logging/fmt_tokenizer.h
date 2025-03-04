@@ -35,7 +35,17 @@ namespace blt::logging
         DOT,
         MINUS,
         PLUS,
-        POUND
+        POUND,
+        LEFT_CHEVRON,
+        RIGHT_CHEVRON,
+        CARET
+    };
+
+    enum class fmt_align_t : u8
+    {
+        LEFT,
+        CENTER,
+        RIGHT
     };
 
     enum class fmt_sign_t : u8
@@ -67,7 +77,8 @@ namespace blt::logging
         i64 precision = -1;
         fmt_type_t type = fmt_type_t::UNSPECIFIED;
         fmt_sign_t sign = fmt_sign_t::MINUS;
-        bool leading_zeros = false;
+        fmt_align_t alignment = fmt_align_t::RIGHT;
+        std::optional<char> prefix_char;
         bool uppercase = false;
         bool alternate_form = false;
     };
@@ -100,6 +111,11 @@ namespace blt::logging
     public:
         explicit fmt_parser_t() = default;
 
+        fmt_token_t& peek(const size_t offset)
+        {
+            return m_tokens[m_pos + offset];
+        }
+
         fmt_token_t& peek()
         {
             return m_tokens[m_pos];
@@ -108,6 +124,11 @@ namespace blt::logging
         [[nodiscard]] bool has_next() const
         {
             return m_pos < m_tokens.size();
+        }
+
+        [[nodiscard]] bool has_next(const size_t offset) const
+        {
+            return (m_pos + offset) < m_tokens.size();
         }
 
         [[nodiscard]] fmt_token_t& next()
@@ -120,18 +141,27 @@ namespace blt::logging
             ++m_pos;
         }
 
+        void consume(const size_t amount)
+        {
+            m_pos += amount;
+        }
+
         const fmt_spec_t& parse(std::string_view fmt);
 
     private:
+        static bool is_align_t(fmt_token_type type);
+
         void parse_fmt_field();
         void parse_arg_id();
 
         void parse_fmt_spec();
+        void parse_fmt_spec_align();
         void parse_fmt_spec_sign();
         void parse_fmt_spec_form();
         void parse_fmt_spec_width();
         void parse_fmt_spec_precision();
 
+        void parse_align();
         void parse_sign();
         void parse_form();
         void parse_width();

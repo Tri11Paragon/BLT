@@ -19,6 +19,8 @@
 #ifndef BLT_META_IS_STREAMABLE_H
 #define BLT_META_IS_STREAMABLE_H
 
+#include <ostream>
+
 namespace blt::meta
 {
     // https://stackoverflow.com/questions/66397071/is-it-possible-to-check-if-overloaded-operator-for-type-or-class-exists
