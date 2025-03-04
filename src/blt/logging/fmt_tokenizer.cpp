@@ -154,6 +154,7 @@ namespace blt::logging
         switch (type)
         {
         case fmt_token_type::STRING:
+            return;
         case fmt_token_type::COLON:
             {
                 std::stringstream ss;

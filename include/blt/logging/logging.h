@@ -88,14 +88,19 @@ namespace blt::logging
                     {
                         if constexpr (std::is_trivially_copyable_v<T>)
                         {
+                            // copy bytes of type
                             char buffer[sizeof(T)];
                             std::memcpy(buffer, &t, sizeof(T));
+                            // display prefix
                             if (type.alternate_form)
                                 stream << '0' << (type.uppercase ? 'B' : 'b');
+                            // print bytes
                             for (size_t i = 0; i < sizeof(T); ++i)
                             {
+                                // print bits
                                 for (size_t j = 0; j < 8; ++j)
                                     stream << ((buffer[i] & (1 << j)) ? '1' : '0');
+                                // special seperator defined via sign (weird hack, change?)
                                 if (type.sign == fmt_sign_t::SPACE && i != sizeof(T) - 1)
                                     stream << ' ';
                             }

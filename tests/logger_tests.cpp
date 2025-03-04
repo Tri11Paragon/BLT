@@ -20,9 +20,6 @@
 
 int main()
 {
-
-    using endl_t = decltype(static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
-    // blt::logging::println("{} | {} | {} | {}", blt::type_string<endl_t>());
     blt::logging::println("This is a println!");
     blt::logging::println("This is a println with args '{}'", 42);
     blt::logging::println("This is a println with multiple args '{}' '{:.100}' '{}'", 42, 32.34231233f, "Hello World!");
@@ -40,5 +37,7 @@ int main()
     blt::logging::println("This is a println with hex with leading {:#.10x}", 4250);
     blt::logging::println("This is a println with binary {:#b}", 6969420);
     blt::logging::println("This is a println with binary with space {: #b}", 6969421);
+    blt::logging::println("This is a println with octal {:#o}", 6669);
+    blt::logging::println("This is a println with hexfloat {:a}", 402.4320);
     // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }
