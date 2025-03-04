@@ -15,6 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <blt/logging/fmt_tokenizer.h>
@@ -379,6 +380,23 @@ namespace blt::logging
         default:
             std::stringstream ss;
             ss << "Invalid type " << value;
+            ss << std::endl << std::endl;
+            ss << "Expected one of: " << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "b | B" << std::setw(6) << ' ' << "Print as binary output" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "c" << std::setw(6) << ' ' << "Print as character output" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "d" << std::setw(6) << ' ' << "Print as decimal (base 10) output" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "o" << std::setw(6) << ' ' << "Print as octal (base 8) output" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "x | X" << std::setw(6) << ' ' << "Print as hexadecimal (base 16) output" <<
+                std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "a | A" << std::setw(6) << ' ' << "Print floats as hexadecimal (base 16) output"
+                << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "e | E" << std::setw(6) << ' ' << "Print floats in scientific notation" <<
+                std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "f | F" << std::setw(6) << ' ' <<
+                "Print floats in fixed point output, useful for setting precision of output" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "g | G" << std::setw(6) << ' ' <<
+                "Print floats in general output, switching between fixed point and scientific notation based on magnitude" << std::endl;
+            ss << std::setw(4) << ' ' << std::left << std::setw(5) << "t | T" << std::setw(6) << ' ' << "Print the type as a string" << std::endl;
             throw std::runtime_error(ss.str());
         }
     }

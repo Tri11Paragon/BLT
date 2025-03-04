@@ -56,7 +56,8 @@ namespace blt::logging
         EXPONENT,           // 'e'
         FIXED_POINT,        // 'f'
         GENERAL,            // 'g'
-        TYPE                // 't'
+        TYPE,               // 't'
+        UNSPECIFIED         // default
     };
 
     struct fmt_spec_t
@@ -64,7 +65,7 @@ namespace blt::logging
         i64 arg_id = -1;
         i64 width = -1;
         i64 precision = -1;
-        fmt_type_t type = fmt_type_t::DECIMAL;
+        fmt_type_t type = fmt_type_t::UNSPECIFIED;
         fmt_sign_t sign = fmt_sign_t::MINUS;
         bool leading_zeros = false;
         bool uppercase = false;

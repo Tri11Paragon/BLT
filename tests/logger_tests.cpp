@@ -41,13 +41,19 @@ int main()
     blt::logging::println("This is a println with hex with leading {:#.10x}", 4250);
     blt::logging::println("This is a println with binary {:#b}", 6969420);
     blt::logging::println("This is a println with binary with space {: #b}", 6969421);
+    blt::logging::println("This is a println with binary with space {: b}", 69);
     blt::logging::println("This is a println with octal {:#o}", 6669);
     blt::logging::println("This is a println with hexfloat {:a}", 402.4320);
     blt::logging::println("This is a println with exponent {:e}", 44320902.4320);
-    blt::logging::println("This is a println with exponent {:e}", 9532434234042340);
-    blt::logging::println("This is a println with exponent {:g}", 953243.49);
-    blt::logging::println("This is a println with exponent {:g}", 953243324023403240.49);
+    blt::logging::println("This is a println with exponent {:e}", 9532434234042340.0);
+    blt::logging::println("This is a println with general {:g}", 953243.49);
+    blt::logging::println("This is a println with general {:g}", 953243324023403240.49);
     blt::logging::println("This is a println with a char {:c}", 66);
     blt::logging::println("This is a println with type {:t}", some_silly_type_t{});
+    blt::logging::println("This is a println with boolean {}", true);
+    blt::logging::println("This is a println with boolean as int {:d}", false);
+    blt::logging::println("This is a println with boolean as hex {:#x}", true);
+    blt::logging::println("This is a println with boolean as octal {:o}", true);
+    blt::logging::println("This is a println with boolean as test {:h}", true);
     // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

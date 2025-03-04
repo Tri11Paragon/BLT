@@ -70,17 +70,11 @@ namespace blt::logging
                 case fmt_sign_t::SPACE:
                     if constexpr (std::is_arithmetic_v<T>)
                     {
-                        if (type.type != fmt_type_t::BINARY && t >= 0)
+                        if (type.type != fmt_type_t::BINARY && static_cast<i64>(t) >= 0l)
                             stream << ' ';
                     }
                     break;
                 case fmt_sign_t::PLUS:
-                    if constexpr (std::is_arithmetic_v<T>)
-                    {
-                        if (t >= 0)
-                            stream << '+';
-                    }
-                    break;
                 case fmt_sign_t::MINUS:
                     break;
                 }
@@ -120,23 +114,6 @@ namespace blt::logging
                     if constexpr (std::is_arithmetic_v<T> || std::is_convertible_v<T, char>)
                     {
                         stream << static_cast<char>(t);
-                    }
-                    else
-                    {
-                        if constexpr (blt::meta::is_streamable_v<T>)
-                            stream << t;
-                        else
-                            stream << "{INVALID TYPE}";
-                    }
-                    break;
-                case fmt_type_t::GENERAL:
-                    if constexpr (std::is_arithmetic_v<T>)
-                    {
-                        if (static_cast<u64>(t) > 10e12)
-                            exponential(stream);
-                        else
-                            fixed(stream);
-                        stream << t;
                     }
                     else
                     {

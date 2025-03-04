@@ -49,11 +49,17 @@ namespace blt::logging
         if (spec.precision > 0)
             m_stream << std::setprecision(static_cast<i32>(spec.precision));
         else
-            m_stream << std::setprecision(static_cast<int>(std::cout.precision()));
+            m_stream << std::setprecision(16);
+        if (spec.alternate_form)
+            m_stream << std::showbase;
         if (spec.uppercase)
             m_stream << std::uppercase;
         else
             m_stream << std::nouppercase;
+        if (spec.sign == fmt_sign_t::PLUS)
+            m_stream << std::showpos;
+        else
+            m_stream << std::noshowpos;
     }
 
     void logger_t::process_strings()
@@ -78,21 +84,16 @@ namespace blt::logging
         switch (spec.type)
         {
         case fmt_type_t::DECIMAL:
+            stream << std::noboolalpha;
             stream << std::dec;
             break;
         case fmt_type_t::OCTAL:
-            if (spec.alternate_form)
-                stream << "0";
             stream << std::oct;
             break;
         case fmt_type_t::HEX:
-            if (spec.alternate_form)
-                stream << (spec.uppercase ? "0X" : "0x");
             stream << std::hex;
             break;
         case fmt_type_t::HEX_FLOAT:
-            if (spec.alternate_form)
-                stream << (spec.uppercase ? "0X" : "0x");
             stream << std::hexfloat;
             break;
         case fmt_type_t::EXPONENT:
@@ -100,6 +101,13 @@ namespace blt::logging
             break;
         case fmt_type_t::FIXED_POINT:
             stream << std::fixed;
+            break;
+        case fmt_type_t::GENERAL:
+            stream << std::defaultfloat;
+            break;
+        case fmt_type_t::UNSPECIFIED:
+            stream << std::boolalpha;
+            stream << std::dec;
             break;
         default:
             break;
