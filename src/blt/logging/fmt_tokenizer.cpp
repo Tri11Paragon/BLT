@@ -186,10 +186,11 @@ namespace blt::logging
         auto [type, value] = peek();
         switch (type)
         {
+        case fmt_token_type::STRING:
+            return;
         case fmt_token_type::SPACE:
         case fmt_token_type::MINUS:
         case fmt_token_type::PLUS:
-        case fmt_token_type::STRING:
         case fmt_token_type::COLON:
             {
                 std::stringstream ss;
@@ -217,6 +218,7 @@ namespace blt::logging
         switch (type)
         {
         case fmt_token_type::STRING:
+            return;
         case fmt_token_type::SPACE:
         case fmt_token_type::COLON:
         case fmt_token_type::MINUS:
@@ -246,6 +248,7 @@ namespace blt::logging
         switch (type)
         {
         case fmt_token_type::STRING:
+            return;
         case fmt_token_type::COLON:
         case fmt_token_type::MINUS:
         case fmt_token_type::PLUS:
@@ -317,7 +320,9 @@ namespace blt::logging
     {
         if (!has_next())
             throw std::runtime_error("Missing token when parsing precision");
-        auto [_, value] = next();
+        auto [type, value] = next();
+        if (type != fmt_token_type::NUMBER)
+            throw std::runtime_error("Expected number when parsing precision");
         m_spec.precision = std::stoll(std::string(value));
     }
 
