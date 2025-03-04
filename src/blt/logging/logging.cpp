@@ -15,6 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <iomanip>
 #include <iostream>
 #include <blt/iterator/enumerate.h>
 #include <blt/logging/logging.h>
@@ -35,25 +36,63 @@ namespace blt::logging
 		return str;
 	}
 
-	void logger_t::handle_fmt(const std::string_view fmt)
+	std::pair<i64, std::optional<fmt_type_t>> logger_t::handle_fmt(const std::string_view fmt)
 	{
-		std::cout << fmt << std::endl;
+		const auto spec = m_parser.parse(fmt);
+		if (spec.leading_zeros)
+			m_stream << std::setfill('0');
+		else
+			m_stream << std::setfill(' ');
+		if (spec.width > 0)
+			m_stream << std::setw(static_cast<i32>(spec.width));
+		else
+			m_stream << std::setw(0);
+		if (spec.precision > 0)
+			m_stream << std::setprecision(static_cast<i32>(spec.precision));
+		else
+			m_stream << std::setprecision(2);
+		if (spec.uppercase)
+			m_stream << std::uppercase;
+		else
+			m_stream << std::nouppercase;
+		std::optional<fmt_type_t> type;
+		switch (spec.type)
+		{
+		case fmt_type_t::BINARY:
+		case fmt_type_t::CHAR:
+		case fmt_type_t::GENERAL:
+			type = spec.type;
+			break;
+		case fmt_type_t::DECIMAL:
+			m_stream << std::dec;
+			break;
+		case fmt_type_t::OCTAL:
+			m_stream << std::oct;
+			break;
+		case fmt_type_t::HEX:
+			m_stream << std::hex;
+			break;
+		case fmt_type_t::HEX_FLOAT:
+			m_stream << std::hexfloat;
+			break;
+		case fmt_type_t::EXPONENT:
+			m_stream << std::scientific;
+			break;
+		case fmt_type_t::FIXED_POINT:
+			m_stream << std::fixed;
+			break;
+		}
+		return {spec.arg_id, type};
 	}
 
-	const std::string& logger_t::get(const size_t index)
+	void logger_t::exponential()
 	{
-		if (index >= m_args_to_str.size())
-		{
-			std::cerr << "Insufficient number of arguments provided to format string '" << m_fmt << "' got ";
-			for (const auto& [i, arg] : enumerate(std::as_const(m_args_to_str)))
-			{
-				std::cerr << '\'' << arg << "'";
-				if (i != m_args_to_str.size() - 1)
-					std::cerr << " ";
-			}
-			std::exit(EXIT_FAILURE);
-		}
-		return m_args_to_str[index];
+		m_stream << std::scientific;
+	}
+
+	void logger_t::fixed()
+	{
+		m_stream << std::fixed;
 	}
 
 	void logger_t::compile(std::string fmt)
@@ -61,13 +100,15 @@ namespace blt::logging
 		m_fmt = std::move(fmt);
 		m_last_fmt_pos = 0;
 		m_arg_pos = 0;
+		m_stream.str("");
+		m_stream.clear();
 	}
 
-	bool logger_t::consume_until_fmt()
+	std::optional<std::pair<size_t, size_t>> logger_t::consume_until_fmt()
 	{
 		const auto begin = m_fmt.find('{', m_last_fmt_pos);
 		if (begin == std::string::npos)
-			return false;
+			return {};
 		const auto end = m_fmt.find('}', begin);
 		if (end == std::string::npos)
 		{
@@ -75,25 +116,12 @@ namespace blt::logging
 			std::exit(EXIT_FAILURE);
 		}
 		m_stream << std::string_view(m_fmt.data() + static_cast<ptrdiff_t>(m_last_fmt_pos), begin - m_last_fmt_pos);\
-		if (end - begin > 1)
-			handle_fmt(std::string_view(m_fmt.data() + static_cast<ptrdiff_t>(begin + 1), end - begin - 1));
-		else
-		{
-			// no arguments, must consume from args
-			m_stream << get(m_arg_pos++);
-		}
 		m_last_fmt_pos = end + 1;
-		return true;
+		return std::pair{begin, end};
 	}
 
 	void logger_t::finish()
 	{
-		m_stream.str("");
-		m_stream.clear();
-
-		while (consume_until_fmt())
-		{}
-
 		m_stream << std::string_view(m_fmt.data() + static_cast<ptrdiff_t>(m_last_fmt_pos), m_fmt.size() - m_last_fmt_pos);
 		m_last_fmt_pos = m_fmt.size();
 	}

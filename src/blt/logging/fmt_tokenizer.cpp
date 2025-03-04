@@ -116,7 +116,8 @@ namespace blt::logging
                 {
                     consume();
                     parse_fmt_spec_stage_1();
-                }else
+                }
+                else
                 {
                     std::cerr << "Expected ':' when parsing format field after arg id!" << std::endl;
                     std::exit(EXIT_FAILURE);
@@ -260,10 +261,67 @@ namespace blt::logging
 
     void fmt_parser_t::parse_precision()
     {
-
+        if (!has_next())
+        {
+            std::cerr << "Missing token when parsing precision" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        auto [_, value] = next();
+        m_spec.precision = std::stoll(std::string(value));
     }
 
     void fmt_parser_t::parse_type()
     {
+        if (!has_next())
+        {
+            std::cerr << "Missing token when parsing type" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        auto [_, value] = next();
+        if (value.size() != 1)
+        {
+            std::cerr << "Type contains more than one character, we are not sure how to interpret this value '" << value << "'\n";
+            std::exit(EXIT_FAILURE);
+        }
+        m_spec.uppercase = std::isupper(value.front());
+        switch (value.front())
+        {
+        case 'b':
+        case 'B':
+            m_spec.type = fmt_type_t::BINARY;
+            break;
+        case 'c':
+            m_spec.type = fmt_type_t::CHAR;
+            break;
+        case 'd':
+            m_spec.type = fmt_type_t::DECIMAL;
+            break;
+        case 'o':
+            m_spec.type = fmt_type_t::OCTAL;
+            break;
+        case 'x':
+        case 'X':
+            m_spec.type = fmt_type_t::HEX;
+            break;
+        case 'a':
+        case 'A':
+            m_spec.type = fmt_type_t::HEX_FLOAT;
+            break;
+        case 'e':
+        case 'E':
+            m_spec.type = fmt_type_t::EXPONENT;
+            break;
+        case 'f':
+        case 'F':
+            m_spec.type = fmt_type_t::FIXED_POINT;
+            break;
+        case 'g':
+        case 'G':
+            m_spec.type = fmt_type_t::GENERAL;
+            break;
+        default:
+            std::cerr << "Invalid type " << value << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
     }
 }

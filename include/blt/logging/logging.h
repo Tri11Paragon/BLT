@@ -23,85 +23,119 @@
 #include <string>
 #include <vector>
 #include <blt/meta/meta.h>
+#include <blt/logging/fmt_tokenizer.h>
 
 namespace blt::logging
 {
-	struct logger_t
-	{
-		explicit logger_t() = default;
+    struct logger_t
+    {
+        explicit logger_t() = default;
 
-		template <typename T>
-		std::string print_value(T&& t)
-		{
-			static_assert(meta::is_streamable_v<T>, "T must be streamable in order to work with blt::logging!");
-			m_stream.str("");
-			m_stream.clear();
-			m_stream << std::forward<T>(t);
-			return m_stream.str();
-		}
+        template <typename... Args>
+        std::string log(std::string fmt, Args&&... args)
+        {
+            compile(std::move(fmt));
+            auto sequence = std::make_integer_sequence<size_t, sizeof...(Args)>{};
+            while (auto pair = consume_until_fmt())
+            {
+                auto [begin, end] = *pair;
+                if (end - begin > 0)
+                {
+                    auto format_data = handle_fmt(m_fmt.substr(begin + 1, begin - end - 1));
+                    auto [arg_pos, fmt_type] = format_data;
+                    if (arg_pos == -1)
+                        arg_pos = static_cast<i64>(m_arg_pos++);
+                    if (fmt_type)
+                    {
+                        if (fmt_type == fmt_type_t::GENERAL)
+                        {
+                            apply_func([this](auto&& value)
+                            {
+                                if (static_cast<u64>(value) > 0xFFFFFFFFFul)
+                                    exponential();
+                                else
+                                    fixed();
+                                m_stream << std::forward<decltype(value)>(value);
+                            }, arg_pos, sequence, std::forward<Args>(args)...);
+                        } else if (fmt_type == fmt_type_t::CHAR)
+                        {
 
-		template <typename... Args>
-		std::string log(std::string fmt, Args&&... args)
-		{
-			compile(std::move(fmt));
-			m_args_to_str.clear();
-			m_args_to_str.resize(sizeof...(Args));
-			insert(std::make_integer_sequence<size_t, sizeof...(Args)>{}, std::forward<Args>(args)...);
-			finish();
-			return to_string();
-		}
+                        } else if (fmt_type == fmt_type_t::BINARY)
+                        {
 
-		std::string to_string();
+                        }
+                    }
+                    else
+                    {
+                        apply_func([this](auto&& value)
+                        {
+                            m_stream << std::forward<decltype(value)>(value);
+                        }, arg_pos, sequence, std::forward<Args>(args)...);
+                    }
+                }
+                else
+                    apply_func([this](auto&& value)
+                    {
+                        m_stream << std::forward<decltype(value)>(value);
+                    }, m_arg_pos++, sequence, std::forward<Args>(args)...);
+            }
+            finish();
+            return to_string();
+        }
 
-	private:
-		template<typename... Args, size_t... Indexes>
-		void insert(std::integer_sequence<size_t, Indexes...>, Args&&... args)
-		{
-			((handle_insert<Indexes>(std::forward<Args>(args))), ...);
-		}
+        std::string to_string();
 
-		template<size_t index, typename T>
-		void handle_insert(T&& t)
-		{
-			m_args_to_str[index] = print_value(std::forward<T>(t));
-		}
+    private:
+        template <typename Func, typename... Args, size_t... Indexes>
+        void apply_func(const Func& func, const size_t arg, std::integer_sequence<size_t, Indexes...>, Args&&... args)
+        {
+            ((handle_func<Indexes>(func, arg, std::forward<Args>(args))), ...);
+        }
 
-		void handle_fmt(std::string_view fmt);
+        template <size_t index, typename Func, typename T>
+        void handle_func(const Func& func, const size_t arg, T&& t)
+        {
+            if (index == arg)
+                func(std::forward<T>(t));
+        }
 
-		const std::string& get(size_t index);
+        [[nodiscard]] std::pair<i64, std::optional<fmt_type_t>> handle_fmt(std::string_view fmt);
 
-		void compile(std::string fmt);
+        void exponential();
+        void fixed();
 
-		bool consume_until_fmt();
+        void compile(std::string fmt);
 
-		void finish();
+        std::optional<std::pair<size_t, size_t>> consume_until_fmt();
 
-		std::string m_fmt;
-		std::stringstream m_stream;
-		std::vector<std::string> m_args_to_str;
-		size_t m_last_fmt_pos = 0;
-		size_t m_arg_pos = 0;
-	};
+        void finish();
 
-	void print(const std::string& fmt);
+        std::string m_fmt;
+        std::stringstream m_stream;
+        fmt_parser_t m_parser;
+        size_t m_last_fmt_pos = 0;
+        size_t m_arg_pos = 0;
+    };
 
-	void newline();
+    void print(const std::string& fmt);
 
-	logger_t& get_global_logger();
+    void newline();
 
-	template <typename... Args>
-	void print(std::string fmt, Args&&... args)
-	{
-		auto& logger = get_global_logger();
-		print(logger.log(std::move(fmt), std::forward<Args>(args)...));
-	}
+    logger_t& get_global_logger();
 
-	template <typename... Args>
-	void println(std::string fmt, Args&&... args)
-	{
-		print(std::move(fmt), std::forward<Args>(args)...);
-		newline();
-	}
+    template <typename... Args>
+    void print(std::string fmt, Args&&... args)
+    {
+        auto& logger = get_global_logger();
+        print(logger.log(std::move(fmt), std::forward<Args>(args)...));
+    }
+
+    template <typename... Args>
+    void println(std::string fmt, Args&&... args)
+    {
+        print(std::move(fmt), std::forward<Args>(args)...);
+        newline();
+    }
 }
 
 #endif // BLT_LOGGING_LOGGING_H
