@@ -17,13 +17,13 @@
  */
 #include <iostream>
 #include <sstream>
+#include <blt/logging/ansi.h>
 #include <blt/logging/logging.h>
 #include <blt/std/assert.h>
 #include <blt/std/utility.h>
 
 struct some_silly_type_t
-{
-};
+{};
 
 auto expected_str = std::string(R"(This is a println!
 This is a println with args '42'
@@ -67,69 +67,91 @@ This is a println with arg reference &&&&&&&&&&&&&&&&&&&&
 
 std::pair<bool, std::string> compare_strings(const std::string& s1, const std::string& s2)
 {
-    const auto size = std::min(s1.size(), s2.size());
-    size_t index = 0;
-    for (; index < size; ++index)
-    {
-        if (s1[index] != s2[index])
-        {
-            std::stringstream ss;
-            const auto i1 = std::max(static_cast<blt::i64>(index) - 32, 0l);
-            const auto l1 = std::min(static_cast<blt::i64>(size) - i1, 65l);
-            ss << "Strings differ at index " << index << "!\n";
-            ss << "'" << s1.substr(i1, l1) << "' vs '" << s2.substr(i1, l1) << "'" << std::endl;
-            return {false, ss.str()};
-        }
-    }
-    if (s1.size() != s2.size())
-        return {false, "Strings size do not match '" + std::to_string(s1.size()) + "' vs '" + std::to_string(s2.size()) + "'"};
-    return {true, ""};
+	const auto size = std::min(s1.size(), s2.size());
+	size_t index = 0;
+	for (; index < size; ++index)
+	{
+		if (s1[index] != s2[index])
+		{
+			std::stringstream ss;
+			const auto i1 = std::max(static_cast<blt::i64>(index) - 32, 0l);
+			const auto l1 = std::min(static_cast<blt::i64>(size) - i1, 65l);
+			ss << "Strings differ at index " << index << "!\n";
+			ss << "'" << s1.substr(i1, l1) << "' vs '" << s2.substr(i1, l1) << "'" << std::endl;
+			return {false, ss.str()};
+		}
+	}
+	if (s1.size() != s2.size())
+		return {false, "Strings size do not match '" + std::to_string(s1.size()) + "' vs '" + std::to_string(s2.size()) + "'"};
+	return {true, ""};
 }
 
 int main()
 {
-    std::stringstream ss;
-    blt::logging::println(ss, "This is a println!");
-    blt::logging::println(ss, "This is a println with args '{}'", 42);
-    blt::logging::println(ss, "This is a println with multiple args '{}' '{:.100}' '{}'", 42, 32.34231233f, "Hello World!");
-    blt::logging::println(ss, "This is a '{1}' fmt string with positionals '{0}'", "I am a string!", "Well so am I except cooler :3");
-    blt::logging::println(ss, "This is a println with a sign {:+}", 4120);
-    blt::logging::println(ss, "This is a println with a sign {:+}", -4120);
-    blt::logging::println(ss, "This is a println with a space {: }", 4120);
-    blt::logging::println(ss, "This is a println with a space {: }", -4120);
-    blt::logging::println(ss, "This is a println with a minus {:-}", 4120);
-    blt::logging::println(ss, "This is a println with a minus {:-}", -4120);
-    blt::logging::println(ss, "This is a println with a with {:10}", 4120);
-    blt::logging::println(ss, "This is a println with a with leading zeros {:010}", 4120);
-    blt::logging::println(ss, "This is a println with a precision {:.10f}", 42.232342349);
-    blt::logging::println(ss, "This is a println with hex {:.10x}", 4250);
-    blt::logging::println(ss, "This is a println with hex with leading {:#.10x}", 4250);
-    blt::logging::println(ss, "This is a println with binary {:#b}", 6969420);
-    blt::logging::println(ss, "This is a println with binary with space {: #b}", 6969421);
-    blt::logging::println(ss, "This is a println with binary with space {: b}", 69);
-    blt::logging::println(ss, "This is a println with octal {:#o}", 6669);
-    blt::logging::println(ss, "This is a println with hexfloat {:a}", 402.4320);
-    blt::logging::println(ss, "This is a println with exponent {:e}", 44320902.4320);
-    blt::logging::println(ss, "This is a println with exponent {:e}", 9532434234042340.0);
-    blt::logging::println(ss, "This is a println with general {:g}", 953243.49);
-    blt::logging::println(ss, "This is a println with general {:g}", 953243324023403240.49);
-    blt::logging::println(ss, "This is a println with a char {:c}", 66);
-    blt::logging::println(ss, "This is a println with type {:t}", some_silly_type_t{});
-    blt::logging::println(ss, "This is a println with boolean {}", true);
-    blt::logging::println(ss, "This is a println with boolean as int {:d}", false);
-    blt::logging::println(ss, "This is a println with boolean as hex {:#x}", true);
-    blt::logging::println(ss, "This is a println with boolean as octal {:o}", true);
-    blt::logging::println(ss, "This is a println with alignment left {:<10} end value", 64);
-    blt::logging::println(ss, "This is a println with alignment right {:>10} end value", 46);
-    blt::logging::println(ss, "This is a println with alignment left (fill)  {:*<10} end value", 46);
-    blt::logging::println(ss, "This is a println with alignment right (fill) {:*>10} end value", 46);
-    blt::logging::println(ss, "This is a println with alignment right (fill with reserved character) {:\\^>10} end value", 46);
-    blt::logging::println(ss, "This is a println with fill no alignment {:%20} end value", 46);
-    blt::logging::println(ss, "This is a println with arg reference {0:{1}.{2}f}", 46.0232, 20, 2);
-    blt::logging::println(ss, "This is a println with arg reference {0:&{1}}", "", 20);
-    blt::logging::print(ss.str());
-    auto [passed, error_msg] = compare_strings(expected_str, ss.str());
-    BLT_ASSERT_MSG(passed && "Logger logged string doesn't match precomputed expected string!", error_msg.c_str());
+	std::stringstream ss;
+	blt::logging::println(ss, "This is a println!");
+	blt::logging::println(ss, "This is a println with args '{}'", 42);
+	blt::logging::println(ss, "This is a println with multiple args '{}' '{:.100}' '{}'", 42, 32.34231233f, "Hello World!");
+	blt::logging::println(ss, "This is a '{1}' fmt string with positionals '{0}'", "I am a string!", "Well so am I except cooler :3");
+	blt::logging::println(ss, "This is a println with a sign {:+}", 4120);
+	blt::logging::println(ss, "This is a println with a sign {:+}", -4120);
+	blt::logging::println(ss, "This is a println with a space {: }", 4120);
+	blt::logging::println(ss, "This is a println with a space {: }", -4120);
+	blt::logging::println(ss, "This is a println with a minus {:-}", 4120);
+	blt::logging::println(ss, "This is a println with a minus {:-}", -4120);
+	blt::logging::println(ss, "This is a println with a with {:10}", 4120);
+	blt::logging::println(ss, "This is a println with a with leading zeros {:010}", 4120);
+	blt::logging::println(ss, "This is a println with a precision {:.10f}", 42.232342349);
+	blt::logging::println(ss, "This is a println with hex {:.10x}", 4250);
+	blt::logging::println(ss, "This is a println with hex with leading {:#.10x}", 4250);
+	blt::logging::println(ss, "This is a println with binary {:#b}", 6969420);
+	blt::logging::println(ss, "This is a println with binary with space {: #b}", 6969421);
+	blt::logging::println(ss, "This is a println with binary with space {: b}", 69);
+	blt::logging::println(ss, "This is a println with octal {:#o}", 6669);
+	blt::logging::println(ss, "This is a println with hexfloat {:a}", 402.4320);
+	blt::logging::println(ss, "This is a println with exponent {:e}", 44320902.4320);
+	blt::logging::println(ss, "This is a println with exponent {:e}", 9532434234042340.0);
+	blt::logging::println(ss, "This is a println with general {:g}", 953243.49);
+	blt::logging::println(ss, "This is a println with general {:g}", 953243324023403240.49);
+	blt::logging::println(ss, "This is a println with a char {:c}", 66);
+	blt::logging::println(ss, "This is a println with type {:t}", some_silly_type_t{});
+	blt::logging::println(ss, "This is a println with boolean {}", true);
+	blt::logging::println(ss, "This is a println with boolean as int {:d}", false);
+	blt::logging::println(ss, "This is a println with boolean as hex {:#x}", true);
+	blt::logging::println(ss, "This is a println with boolean as octal {:o}", true);
+	blt::logging::println(ss, "This is a println with alignment left {:<10} end value", 64);
+	blt::logging::println(ss, "This is a println with alignment right {:>10} end value", 46);
+	blt::logging::println(ss, "This is a println with alignment left (fill)  {:*<10} end value", 46);
+	blt::logging::println(ss, "This is a println with alignment right (fill) {:*>10} end value", 46);
+	blt::logging::println(ss, "This is a println with alignment right (fill with reserved character) {:\\^>10} end value", 46);
+	blt::logging::println(ss, "This is a println with fill no alignment {:%20} end value", 46);
+	blt::logging::println(ss, "This is a println with arg reference {0:{1}.{2}f}", 46.0232, 20, 2);
+	blt::logging::println(ss, "This is a println with arg reference {0:&{1}}", "", 20);
+	blt::logging::print(ss.str());
+	auto [passed, error_msg] = compare_strings(expected_str, ss.str());
+	BLT_ASSERT_MSG(passed && "Logger logged string doesn't match precomputed expected string!", error_msg.c_str());
 
-    // blt::logging::println("This is println {}\twith a std::endl in the middle of it");
+	namespace ansi = blt::logging::ansi;
+	namespace color = ansi::color;
+
+	for (blt::u8 r = 0; r < 6; r++)
+	{
+		for (blt::u8 g = 0; g < 6; g++)
+		{
+			for (blt::u8 b = 0; b < 6; b++)
+			{
+				blt::logging::println("{}This is a println with a color {:#3x} {:#3x} {:#3x}{}",
+									build(fg(color::color256{r, g, b}), bg(color::color256{
+											static_cast<unsigned char>(5 - r),
+											static_cast<unsigned char>(5 - g),
+											static_cast<unsigned char>(5 - b)
+										})), r, g, b, build(color::color_mode::RESET_ALL));
+			}
+		}
+	}
+	blt::logging::println("{}This is a color now with background{}",
+						build(color::color_mode::BOLD, fg(color::color8::CYAN), color::color_mode::DIM, bg(color::color8::YELLOW)),
+						build(color::color_mode::RESET_ALL));
+
+	// blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

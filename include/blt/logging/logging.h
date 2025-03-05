@@ -130,8 +130,14 @@ namespace blt::logging
                 default:
                     handle_type(stream, type);
                     if constexpr (blt::meta::is_streamable_v<T>)
-                        stream << t;
-                    else
+                    {
+                        if constexpr (std::is_same_v<T, char> || std::is_same_v<T, signed char>)
+                            stream << static_cast<int>(t);
+                        else if constexpr (std::is_same_v<T, unsigned char>)
+                            stream << static_cast<unsigned int>(t);
+                        else
+                            stream << t;
+                    }else
                         stream << "{INVALID TYPE}";
                 }
             };
