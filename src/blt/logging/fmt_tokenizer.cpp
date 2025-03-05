@@ -55,6 +55,10 @@ namespace blt::logging
             return fmt_token_type::RIGHT_CHEVRON;
         case '^':
             return fmt_token_type::CARET;
+        case '{':
+            return fmt_token_type::OPEN_BRACKET;
+        case '}':
+            return fmt_token_type::CLOSE_BRACKET;
         default:
             return fmt_token_type::STRING;
         }
@@ -64,6 +68,12 @@ namespace blt::logging
     {
         if (m_pos >= m_fmt.size())
             return {};
+        bool is_escaped = false;
+        if (m_fmt[m_pos] == '\\')
+        {
+            is_escaped = true;
+            ++m_pos;
+        }
         switch (const auto base_type = get_type(m_fmt[m_pos]))
         {
         case fmt_token_type::SPACE:
@@ -75,6 +85,10 @@ namespace blt::logging
         case fmt_token_type::LEFT_CHEVRON:
         case fmt_token_type::RIGHT_CHEVRON:
         case fmt_token_type::CARET:
+        case fmt_token_type::OPEN_BRACKET:
+        case fmt_token_type::CLOSE_BRACKET:
+            if (is_escaped)
+                return fmt_token_t{fmt_token_type::STRING, std::string_view{m_fmt.data() + m_pos++, 1}};
             return fmt_token_t{base_type, std::string_view{m_fmt.data() + m_pos++, 1}};
         default:
             {
@@ -164,6 +178,29 @@ namespace blt::logging
         m_spec.arg_id = std::stoll(std::string(value));
     }
 
+    std::string fmt_parser_t::parse_arg_or_number()
+    {
+        auto [type, value] = next();
+        if (type == fmt_token_type::NUMBER)
+            return std::string(value);
+        if (type == fmt_token_type::OPEN_BRACKET)
+        {
+            auto [next_type, next_value] = next();
+            if (next_type != fmt_token_type::NUMBER)
+                throw std::runtime_error("Expected number when parsing arg or number, unexpected value '" + std::string(next_value) + '\'');
+            if (next().type != fmt_token_type::CLOSE_BRACKET)
+                throw std::runtime_error("Expected closing bracket when parsing arg or number, unexpected value '" + std::string(next_value) + '\'');
+            // TODO: this feels like an evil hack.
+            const auto arg_id = std::stoul(std::string(next_value));
+            if (arg_id >= m_handlers.size())
+                throw std::runtime_error("Invalid arg id " + std::to_string(arg_id) + ", max arg supported: " + std::to_string(m_handlers.size()));
+            std::stringstream ss;
+            m_handlers[arg_id](ss, fmt_spec_t{});
+            return ss.str();
+        }
+        throw std::runtime_error("Expected number when parsing arg or number, unexpected value '" + std::string(value) + '\'');
+    }
+
     void fmt_parser_t::parse_fmt_spec()
     {
         // consume :
@@ -172,12 +209,9 @@ namespace blt::logging
         switch (type)
         {
         case fmt_token_type::STRING:
+            // if there is a token beyond this string, it is not a type string
             if (has_next(1))
-            {
-                const auto [next_type, next_value] = peek(1);
-                if (is_align_t(next_type))
-                    parse_fmt_spec_align();
-            }
+                parse_fmt_spec_fill();
             return;
         case fmt_token_type::RIGHT_CHEVRON:
         case fmt_token_type::LEFT_CHEVRON:
@@ -185,12 +219,14 @@ namespace blt::logging
             parse_fmt_spec_align();
             break;
         case fmt_token_type::COLON:
+        case fmt_token_type::CLOSE_BRACKET:
             {
                 std::stringstream ss;
                 ss << "(Stage (Begin)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         case fmt_token_type::NUMBER:
+        case fmt_token_type::OPEN_BRACKET:
             parse_fmt_spec_width();
             break;
         case fmt_token_type::DOT:
@@ -207,6 +243,46 @@ namespace blt::logging
         }
     }
 
+    void fmt_parser_t::parse_fmt_spec_fill()
+    {
+        parse_fill();
+        if (!has_next())
+            return;
+        auto [type, value] = peek();
+        switch (type)
+        {
+        case fmt_token_type::RIGHT_CHEVRON:
+        case fmt_token_type::LEFT_CHEVRON:
+        case fmt_token_type::CARET:
+            parse_fmt_spec_align();
+            break;
+        case fmt_token_type::NUMBER:
+        case fmt_token_type::OPEN_BRACKET:
+            parse_fmt_spec_width();
+            break;
+        case fmt_token_type::DOT:
+            parse_fmt_spec_precision();
+            break;
+        case fmt_token_type::SPACE:
+        case fmt_token_type::MINUS:
+        case fmt_token_type::PLUS:
+            parse_fmt_spec_sign();
+            break;
+        case fmt_token_type::POUND:
+            parse_fmt_spec_form();
+            break;
+        case fmt_token_type::STRING:
+            return;
+        case fmt_token_type::COLON:
+        case fmt_token_type::CLOSE_BRACKET:
+            {
+                std::stringstream ss;
+                ss << "(Stage (Fill)) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                throw std::runtime_error(ss.str());
+            }
+        }
+    }
+
     void fmt_parser_t::parse_fmt_spec_align()
     {
         parse_align();
@@ -218,6 +294,7 @@ namespace blt::logging
         case fmt_token_type::STRING:
             return;
         case fmt_token_type::NUMBER:
+        case fmt_token_type::OPEN_BRACKET:
             parse_fmt_spec_width();
             break;
         case fmt_token_type::DOT:
@@ -235,9 +312,10 @@ namespace blt::logging
         case fmt_token_type::COLON:
         case fmt_token_type::LEFT_CHEVRON:
         case fmt_token_type::RIGHT_CHEVRON:
+        case fmt_token_type::CLOSE_BRACKET:
             {
                 std::stringstream ss;
-                ss << "(Stage (Begin)) Invalid token type " << static_cast<u8>(type) << " value " << value;
+                ss << "(Stage (Align)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         }
@@ -261,12 +339,14 @@ namespace blt::logging
         case fmt_token_type::CARET:
         case fmt_token_type::LEFT_CHEVRON:
         case fmt_token_type::RIGHT_CHEVRON:
+        case fmt_token_type::CLOSE_BRACKET:
             {
                 std::stringstream ss;
                 ss << "(Stage (Sign)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         case fmt_token_type::NUMBER:
+        case fmt_token_type::OPEN_BRACKET:
             parse_fmt_spec_width();
             break;
         case fmt_token_type::DOT:
@@ -296,12 +376,14 @@ namespace blt::logging
         case fmt_token_type::CARET:
         case fmt_token_type::LEFT_CHEVRON:
         case fmt_token_type::RIGHT_CHEVRON:
+        case fmt_token_type::CLOSE_BRACKET:
             {
                 std::stringstream ss;
                 ss << "(Stage (Form)) Invalid token type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         case fmt_token_type::NUMBER:
+        case fmt_token_type::OPEN_BRACKET:
             parse_fmt_spec_width();
             break;
         case fmt_token_type::DOT:
@@ -330,6 +412,8 @@ namespace blt::logging
         case fmt_token_type::CARET:
         case fmt_token_type::LEFT_CHEVRON:
         case fmt_token_type::RIGHT_CHEVRON:
+        case fmt_token_type::OPEN_BRACKET:
+        case fmt_token_type::CLOSE_BRACKET:
             {
                 std::stringstream ss;
                 ss << "(Stage (Width)) Invalid token type " << static_cast<u8>(type) << " value " << value;
@@ -348,17 +432,22 @@ namespace blt::logging
         parse_precision();
     }
 
+    void fmt_parser_t::parse_fill()
+    {
+        auto [type, value] = next();
+        if (type != fmt_token_type::STRING)
+        {
+            std::stringstream ss;
+            ss << "Expected string when parsing fill, got " << static_cast<u8>(type) << " value " << value;
+            throw std::runtime_error(ss.str());
+        }
+        m_spec.prefix_char = value.front();
+    }
+
     void fmt_parser_t::parse_align()
     {
         auto [type, value] = next();
-        fmt_token_type process_type = type;
-        if (type == fmt_token_type::STRING)
-        {
-            auto [next_type, next_value] = next();
-            process_type = next_type;
-            m_spec.prefix_char = value.front();
-        }
-        switch (process_type)
+        switch (type)
         {
         case fmt_token_type::LEFT_CHEVRON:
             m_spec.alignment = fmt_align_t::LEFT;
@@ -372,7 +461,7 @@ namespace blt::logging
         default:
             {
                 std::stringstream ss;
-                ss << "Invalid align type " << static_cast<u8>(process_type) << " value " << value;
+                ss << "Invalid align type " << static_cast<u8>(type) << " value " << value;
                 throw std::runtime_error(ss.str());
             }
         }
@@ -415,19 +504,17 @@ namespace blt::logging
 
     void fmt_parser_t::parse_width()
     {
-        auto [_, value] = next();
+        const auto value = parse_arg_or_number();
         if (value.front() == '0' && !m_spec.prefix_char.has_value())
             m_spec.prefix_char = '0';
-        m_spec.width = std::stoll(std::string(value));
+        m_spec.width = std::stoll(value);
     }
 
     void fmt_parser_t::parse_precision()
     {
         if (!has_next())
             throw std::runtime_error("Missing token when parsing precision");
-        auto [type, value] = next();
-        if (type != fmt_token_type::NUMBER)
-            throw std::runtime_error("Expected number when parsing precision");
+        auto value = parse_arg_or_number();
         m_spec.precision = std::stoll(std::string(value));
     }
 

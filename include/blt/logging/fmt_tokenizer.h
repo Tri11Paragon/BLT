@@ -23,6 +23,7 @@
 #include <string_view>
 #include <vector>
 #include <blt/std/types.h>
+#include <functional>
 
 namespace blt::logging
 {
@@ -38,6 +39,8 @@ namespace blt::logging
         POUND,
         LEFT_CHEVRON,
         RIGHT_CHEVRON,
+        OPEN_BRACKET,
+        CLOSE_BRACKET,
         CARET
     };
 
@@ -102,14 +105,16 @@ namespace blt::logging
 
     private:
         size_t m_pos = 0;
-        std::string_view m_fmt;
+        std::string_view m_fmt{};
     };
 
 
     class fmt_parser_t
     {
     public:
-        explicit fmt_parser_t() = default;
+        explicit fmt_parser_t(std::vector<std::function<void(std::ostream&, const fmt_spec_t&)>>& handlers): m_handlers(handlers)
+        {
+        }
 
         fmt_token_t& peek(const size_t offset)
         {
@@ -153,14 +158,17 @@ namespace blt::logging
 
         void parse_fmt_field();
         void parse_arg_id();
+        std::string parse_arg_or_number();
 
         void parse_fmt_spec();
+        void parse_fmt_spec_fill();
         void parse_fmt_spec_align();
         void parse_fmt_spec_sign();
         void parse_fmt_spec_form();
         void parse_fmt_spec_width();
         void parse_fmt_spec_precision();
 
+        void parse_fill();
         void parse_align();
         void parse_sign();
         void parse_form();
@@ -172,6 +180,8 @@ namespace blt::logging
         std::vector<fmt_token_t> m_tokens;
         fmt_tokenizer_t m_tokenizer;
         fmt_spec_t m_spec;
+
+        std::vector<std::function<void(std::ostream&, const fmt_spec_t&)>>& m_handlers;
     };
 }
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.1.9)
+set(BLT_VERSION 5.1.10)
 
 set(BLT_TARGET BLT)
 
@@ -78,7 +78,7 @@ if (${BUILD_LOGGING})
     message(STATUS "Building ${Yellow}logging${ColourReset} cxx files")
     file(GLOB_RECURSE LOGGING_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/logging/*.cpp")
 else ()
-    set(PARSE_FILES "")
+    set(LOGGING_FILES "")
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)

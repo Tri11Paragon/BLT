@@ -43,11 +43,11 @@ namespace blt::logging
         template <typename... Args>
         std::string log(std::string fmt, Args&&... args)
         {
-            compile(std::move(fmt));
             auto sequence = std::make_integer_sequence<size_t, sizeof...(Args)>{};
             m_arg_print_funcs.clear();
             m_arg_print_funcs.resize(sizeof...(Args));
             create_conv_funcs(sequence, std::forward<Args>(args)...);
+            compile(std::move(fmt));
             process_strings();
             return to_string();
         }
@@ -137,6 +137,7 @@ namespace blt::logging
             };
         }
 
+        [[nodiscard]] size_t find_ending_brace(size_t begin) const;
         void setup_stream(const fmt_spec_t& spec) const;
         void process_strings();
         static void handle_type(std::ostream& stream, const fmt_spec_t& spec);
@@ -150,7 +151,7 @@ namespace blt::logging
 
         std::string m_fmt;
         std::ostream& m_stream;
-        fmt_parser_t m_parser;
+        fmt_parser_t m_parser{m_arg_print_funcs};
         // normal sections of string
         std::vector<std::string_view> m_string_sections;
         // processed format specs

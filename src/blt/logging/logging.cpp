@@ -35,6 +35,21 @@ namespace blt::logging
         return dynamic_cast<std::stringstream&>(m_stream).str();
     }
 
+    size_t logger_t::find_ending_brace(size_t begin) const
+    {
+        size_t braces = 0;
+        for (; begin < m_fmt.size(); ++begin)
+        {
+            if (m_fmt[begin] == '{')
+                ++braces;
+            else if (m_fmt[begin] == '}')
+                --braces;
+            if (braces == 0)
+                return begin;
+        }
+        return std::string::npos;
+    }
+
     void logger_t::setup_stream(const fmt_spec_t& spec) const
     {
         if (spec.prefix_char)
@@ -167,9 +182,8 @@ namespace blt::logging
         const auto begin = m_fmt.find('{', m_last_fmt_pos);
         if (begin == std::string::npos)
             return {};
-        const auto next_begin = m_fmt.find('{', begin + 1);
-        const auto end = m_fmt.find('}', begin);
-        if (end == std::string::npos || (next_begin != std::string::npos && next_begin < end))
+        const auto end = find_ending_brace(begin);
+        if (end == std::string::npos)
         {
             std::stringstream ss;
             ss << "Invalid format string, missing closing '}' near " << m_fmt.substr(std::min(static_cast<i64>(begin) - 5, 0l));

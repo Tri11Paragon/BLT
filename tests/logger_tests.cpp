@@ -57,27 +57,32 @@ This is a println with boolean as hex 0x1
 This is a println with boolean as octal 1
 This is a println with alignment left 64         end value
 This is a println with alignment right         46 end value
-This is a println with alignment left (fill) 46******** end value
+This is a println with alignment left (fill)  46******** end value
 This is a println with alignment right (fill) ********46 end value
+This is a println with alignment right (fill with reserved character) ^^^^^^^^46 end value
+This is a println with fill no alignment %%%%%%%%%%%%%%%%%%46 end value
+This is a println with arg reference                46.02
+This is a println with arg reference &&&&&&&&&&&&&&&&&&&&
 )");
 
 std::pair<bool, std::string> compare_strings(const std::string& s1, const std::string& s2)
 {
-    if (s1.size() != s2.size())
-        return {false, "Strings size do not match '" + std::to_string(s1.size()) + "' vs '" + std::to_string(s2.size()) + "'"};
+    const auto size = std::min(s1.size(), s2.size());
     size_t index = 0;
-    for (; index < s1.size(); ++index)
+    for (; index < size; ++index)
     {
         if (s1[index] != s2[index])
         {
             std::stringstream ss;
             const auto i1 = std::max(static_cast<blt::i64>(index) - 32, 0l);
-            const auto l1 = std::min(static_cast<blt::i64>(s1.size()) - i1, 65l);
+            const auto l1 = std::min(static_cast<blt::i64>(size) - i1, 65l);
             ss << "Strings differ at index " << index << "!\n";
             ss << "'" << s1.substr(i1, l1) << "' vs '" << s2.substr(i1, l1) << "'" << std::endl;
             return {false, ss.str()};
         }
     }
+    if (s1.size() != s2.size())
+        return {false, "Strings size do not match '" + std::to_string(s1.size()) + "' vs '" + std::to_string(s2.size()) + "'"};
     return {true, ""};
 }
 
@@ -116,8 +121,12 @@ int main()
     blt::logging::println(ss, "This is a println with boolean as octal {:o}", true);
     blt::logging::println(ss, "This is a println with alignment left {:<10} end value", 64);
     blt::logging::println(ss, "This is a println with alignment right {:>10} end value", 46);
-    blt::logging::println(ss, "This is a println with alignment left (fill) {:*<10} end value", 46);
+    blt::logging::println(ss, "This is a println with alignment left (fill)  {:*<10} end value", 46);
     blt::logging::println(ss, "This is a println with alignment right (fill) {:*>10} end value", 46);
+    blt::logging::println(ss, "This is a println with alignment right (fill with reserved character) {:\\^>10} end value", 46);
+    blt::logging::println(ss, "This is a println with fill no alignment {:%20} end value", 46);
+    blt::logging::println(ss, "This is a println with arg reference {0:{1}.{2}f}", 46.0232, 20, 2);
+    blt::logging::println(ss, "This is a println with arg reference {0:&{1}}", "", 20);
     blt::logging::print(ss.str());
     auto [passed, error_msg] = compare_strings(expected_str, ss.str());
     BLT_ASSERT_MSG(passed && "Logger logged string doesn't match precomputed expected string!", error_msg.c_str());
