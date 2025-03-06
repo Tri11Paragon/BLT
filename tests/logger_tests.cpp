@@ -21,6 +21,9 @@
 #include <blt/logging/logging.h>
 #include <blt/std/assert.h>
 #include <blt/std/utility.h>
+#include <thread>
+#include <chrono>
+
 
 struct some_silly_type_t
 {};
@@ -152,6 +155,22 @@ int main()
 	blt::logging::println("{}This is a color now with background{}",
 						build(color::color_mode::BOLD, fg(color::color8::CYAN), color::color_mode::DIM, bg(color::color8::YELLOW)),
 						build(color::color_mode::RESET_ALL));
+
+	std::cout << "\033[2J";
+
+	constexpr int totalRows = 24;
+	std::cout << "\033[1;" << (totalRows - 1) << "r";
+
+	for (int i = 1; i <= 10; ++i)
+	{
+		std::cout << "\033[1;1H";
+		std::cout << "printed line " << i << std::endl;
+		std::cout << "\033[" << totalRows << ";1H";
+		std::cout << "[----status----]" << std::flush;
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	}
+
+	std::cout << "\033[r";
 
 	// blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }
