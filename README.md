@@ -1,14 +1,27 @@
-# **BLT v0.20**
+# **BLT v5.1**
 A C++17 common utilities library to make thing easy! 
 
 ![Icon](icon_large.png)
 
 ---
 
-# ***Features***
+# Features
+
+## BLT Format
+
+This module provides general string formatting utilities. *Note: this folder contains mostly outdated library files and will be updated in the future.*
+
+### Files
+
+- **boxing.h**  
+  Simple utility for drawing boxes around blocks of text.
+
+- **format.h**  
+  Legacy library file containing various utilities for creating formatted output. Also includes methods for writing Java UTF8 strings.
+
 - ## blt/fs
   - ### loader.h
-    - std::string blt::fs::getFile(std::string_view path)
+    - `std::string blt::fs::getFile(std::string_view path)`
       - Gets the entire file as a string.
     - std::vector\<std::string> blt::fs::getLinesFromFile(std::string_view path)
       - Gets the entire file as a string, then splits on the new line character. Then returns a vector of those lines
