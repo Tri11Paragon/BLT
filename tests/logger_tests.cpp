@@ -15,15 +15,16 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
+#include <thread>
+#include <blt/fs/filesystem.h>
 #include <blt/logging/ansi.h>
 #include <blt/logging/logging.h>
 #include <blt/std/assert.h>
 #include <blt/std/utility.h>
-#include <thread>
-#include <chrono>
-#include <fstream>
 
 struct some_silly_type_t
 {};
@@ -88,43 +89,6 @@ std::pair<bool, std::string> compare_strings(const std::string& s1, const std::s
 		return {false, "Strings size do not match '" + std::to_string(s1.size()) + "' vs '" + std::to_string(s2.size()) + "'"};
 	return {true, ""};
 }
-
-struct seqbuf final : std::streambuf
-{
-	seqbuf(std::streambuf* destBuf, std::size_t& charCount) : m_dest(destBuf), m_count(charCount)
-	{}
-
-protected:
-	int_type overflow(int_type ch) override
-	{
-		if (traits_type::eq_int_type(ch, traits_type::eof()))
-			return traits_type::eof();
-		++m_count;
-		blt::logging::println("We are printing a character {:c}", ch);
-		return m_dest->sputc(static_cast<char>(ch));
-	}
-
-	std::streamsize xsputn(const char* s, std::streamsize count) override
-	{
-		blt::logging::println("We are printing a series of characters {} {}", count, std::string_view{s, static_cast<size_t>(count)});
-		m_count += static_cast<std::size_t>(count);
-		return m_dest->sputn(s, count);
-	}
-
-	int_type underflow() override
-	{
-		return m_dest->sgetc();
-	}
-
-	int sync() override
-	{
-		return m_dest->pubsync();
-	}
-
-private:
-	std::streambuf* m_dest;
-	std::size_t& m_count;
-};
 
 int main()
 {
@@ -195,12 +159,17 @@ int main()
 
 
 	std::ofstream os("test.txt");
+	blt::fs::fstream_writer_t wtr(os);
+	blt::fs::writer_wrapper_t writer(wtr);
+
+	writer.write("This is a println with a stream\n");
+	writer.write("This is a mixed print");
+	writer.write(std::to_string(25));
+	writer.write(" with multiple types ");
+	writer.write(std::to_string(34.23340));
+	writer.write('\n');
+	writer.write("What about just a new line character?\n");
 	size_t charCount = 0;
-	seqbuf hi{os.rdbuf(), charCount};
-	dynamic_cast<std::ostream&>(os).rdbuf(&hi);
-	os << "This is a println with a stream" << std::endl;
-	os << "This is a mixed print " << 25 << " with multiple types " << 34.23340 << std::endl;
-	os << "What about just a new line character?\n";
 
 	blt::logging::println("Logged {} characters", charCount);
 

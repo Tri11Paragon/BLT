@@ -32,7 +32,7 @@ namespace blt::fs
 	fstream_writer_t::fstream_writer_t(std::ostream& stream): m_stream{&stream}
 	{}
 
-	i64 fstream_writer_t::write(char* buffer, size_t bytes)
+	i64 fstream_writer_t::write(const char* buffer, const size_t bytes)
 	{
 		m_stream->write(buffer, static_cast<std::streamsize>(bytes));
 		return static_cast<i64>(bytes);

@@ -19,6 +19,7 @@
 #ifndef BLT_FS_FWDDECL_H
 #define BLT_FS_FWDDECL_H
 
+#include <stdexcept>
 #include <blt/std/types.h>
 
 namespace blt::fs
@@ -64,7 +65,7 @@ namespace blt::fs
 		* @param bytes number of bytes to write
 		* @return number of bytes, or negative value if error. Zero is also a valid return, not indicating error in itself but can be the result of one.
 		*/
-		virtual i64 write(char* buffer, size_t bytes) = 0;
+		virtual i64 write(const char* buffer, size_t bytes) = 0;
 
 		/**
 		* Optional flush command which syncs the underlying objects
