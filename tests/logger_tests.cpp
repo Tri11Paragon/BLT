@@ -23,7 +23,7 @@
 #include <blt/std/utility.h>
 #include <thread>
 #include <chrono>
-
+#include <fstream>
 
 struct some_silly_type_t
 {};
@@ -89,6 +89,43 @@ std::pair<bool, std::string> compare_strings(const std::string& s1, const std::s
 	return {true, ""};
 }
 
+struct seqbuf final : std::streambuf
+{
+	seqbuf(std::streambuf* destBuf, std::size_t& charCount) : m_dest(destBuf), m_count(charCount)
+	{}
+
+protected:
+	int_type overflow(int_type ch) override
+	{
+		if (traits_type::eq_int_type(ch, traits_type::eof()))
+			return traits_type::eof();
+		++m_count;
+		blt::logging::println("We are printing a character {:c}", ch);
+		return m_dest->sputc(static_cast<char>(ch));
+	}
+
+	std::streamsize xsputn(const char* s, std::streamsize count) override
+	{
+		blt::logging::println("We are printing a series of characters {} {}", count, std::string_view{s, static_cast<size_t>(count)});
+		m_count += static_cast<std::size_t>(count);
+		return m_dest->sputn(s, count);
+	}
+
+	int_type underflow() override
+	{
+		return m_dest->sgetc();
+	}
+
+	int sync() override
+	{
+		return m_dest->pubsync();
+	}
+
+private:
+	std::streambuf* m_dest;
+	std::size_t& m_count;
+};
+
 int main()
 {
 	std::stringstream ss;
@@ -153,16 +190,28 @@ int main()
 		}
 	}
 	blt::logging::println("{}This is a color now with background{}",
-						build(color::color_mode::BOLD, fg(color::color8::CYAN), color::color_mode::DIM, bg(color::color8::YELLOW)),
+						build(color::color_mode::BOLD, fg(color::color8::RED), color::color_mode::DIM, bg(color::color_rgb(0, 100, 255))),
 						build(color::color_mode::RESET_ALL));
 
-	std::cout << "\033[2J";
 
+	std::ofstream os("test.txt");
+	size_t charCount = 0;
+	seqbuf hi{os.rdbuf(), charCount};
+	dynamic_cast<std::ostream&>(os).rdbuf(&hi);
+	os << "This is a println with a stream" << std::endl;
+	os << "This is a mixed print " << 25 << " with multiple types " << 34.23340 << std::endl;
+	os << "What about just a new line character?\n";
+
+	blt::logging::println("Logged {} characters", charCount);
+
+	/*std::cout << "\033[2J";
 	constexpr int totalRows = 24;
-	std::cout << "\033[1;" << (totalRows - 1) << "r";
+	// std::cout << "\033[1;" << (totalRows - 1) << "r";
+	std::cout << use_mode(ansi::mode::color80x25_text);
 
 	for (int i = 1; i <= 10; ++i)
 	{
+
 		std::cout << "\033[1;1H";
 		std::cout << "printed line " << i << std::endl;
 		std::cout << "\033[" << totalRows << ";1H";
@@ -170,7 +219,7 @@ int main()
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 
-	std::cout << "\033[r";
+	std::cout << "\033[r";*/
 
 	// blt::logging::println("This is println {}\twith a std::endl in the middle of it");
 }

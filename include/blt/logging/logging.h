@@ -19,14 +19,15 @@
 #ifndef BLT_LOGGING_LOGGING_H
 #define BLT_LOGGING_LOGGING_H
 
+#include <cstring>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <cstring>
-#include <functional>
 #include <blt/logging/fmt_tokenizer.h>
-#include <blt/std/utility.h>
+#include <blt/logging/fwddecl.h>
 #include <blt/meta/is_streamable.h>
+#include <blt/std/utility.h>
 
 namespace blt::logging
 {

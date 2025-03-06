@@ -19,40 +19,48 @@
 #ifndef BLT_LOGGING_LOGGING_CONFIG_H
 #define BLT_LOGGING_LOGGING_CONFIG_H
 
-#include <optional>
-#include <string>
-#include <blt/std/types.h>
-#include <blt/logging/ansi.h>
 #include <array>
+#include <ostream>
+#include <string>
+#include <vector>
+#include <blt/logging/logging.h>
+#include <blt/std/types.h>
 
 namespace blt::logging
 {
-    enum class log_level_t
-    {
-        TRACE,
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-        FATAL
-    };
+	enum class log_level_t : u8
+	{
+		TRACE,
+		DEBUG,
+		INFO,
+		WARN,
+		ERROR,
+		FATAL
+	};
 
-    inline constexpr size_t LOG_LEVEL_COUNT = 6;
+	inline constexpr size_t LOG_LEVEL_COUNT = 6;
 
-    class logging_config_t
-    {
-    public:
-        std::optional<std::string> log_file_path;
-        std::string log_format = "";
-        std::array<std::string, LOG_LEVEL_COUNT> log_level_colors = {
-
-        };
-        log_level_t level = log_level_t::TRACE;
-        bool use_color = true;
-        bool log_to_console = true;
-
-    private:
-    };
+	class logging_config_t
+	{
+		friend logger_t;
+	public:
+		std::vector<std::ostream*> log_outputs = get_default_log_outputs();
+		std::string log_format = get_default_log_format();
+		std::array<std::string, LOG_LEVEL_COUNT> log_level_colors = get_default_log_level_colors();
+		std::array<std::string, LOG_LEVEL_COUNT> log_level_names = get_default_log_level_names();
+		log_level_t level = log_level_t::TRACE;
+		bool use_color = true;
+		// if true prints the whole path to the file (eg /home/user/.../.../project/src/source.cpp:line#)
+		bool print_full_name = false;
+		// this will attempt to use the maximum possible size for each printed element, then align to that.
+		// This creates output where the user message always starts at the same column.
+		bool ensure_alignment = true;
+	private:
+		static std::string get_default_log_format();
+		static std::vector<std::ostream*> get_default_log_outputs();
+		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_colors();
+		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_names();
+	};
 }
 
 #endif //BLT_LOGGING_LOGGING_CONFIG_H

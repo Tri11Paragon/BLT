@@ -10,13 +10,13 @@
 #include <type_traits>
 
 namespace blt::nbt {
-    void writeUTF8String(blt::fs::block_writer& stream, const std::string& str) {
+    void writeUTF8String(blt::fs::writer_t& stream, const std::string& str) {
         blt::string::utf8_string str8 = blt::string::createUTFString(str);
         stream.write(str8.characters, str8.size);
         delete[] str8.characters;
     }
     
-    std::string readUTF8String(blt::fs::block_reader& stream) {
+    std::string readUTF8String(blt::fs::reader_t& stream) {
         int16_t utflen;
         
         readData(stream, utflen);

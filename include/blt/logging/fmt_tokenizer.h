@@ -19,11 +19,11 @@
 #ifndef BLT_LOGGING_FMT_TOKENIZER_H
 #define BLT_LOGGING_FMT_TOKENIZER_H
 
+#include <functional>
 #include <optional>
 #include <string_view>
 #include <vector>
 #include <blt/std/types.h>
-#include <functional>
 
 namespace blt::logging
 {

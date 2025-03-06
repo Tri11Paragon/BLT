@@ -1,5 +1,5 @@
+#pragma once
 /*
- *  <Short Description>
  *  Copyright (C) 2024  Brett Terpstra
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,31 +15,21 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/fs/filesystem.h>
-#include <cstring>
-#include <blt/std/logging.h>
 
-namespace blt::fs
+#ifndef BLT_LOGGING_FWDDECL_H
+#define BLT_LOGGING_FWDDECL_H
+
+namespace blt::logging
 {
-	fstream_reader_t::fstream_reader_t(std::istream& stream): m_stream{&stream}
-	{}
-
-	i64 fstream_reader_t::read(char* buffer, const size_t bytes)
-	{
-		return m_stream->readsome(buffer, static_cast<std::streamsize>(bytes));
-	}
-
-	fstream_writer_t::fstream_writer_t(std::ostream& stream): m_stream{&stream}
-	{}
-
-	i64 fstream_writer_t::write(char* buffer, size_t bytes)
-	{
-		m_stream->write(buffer, static_cast<std::streamsize>(bytes));
-		return static_cast<i64>(bytes);
-	}
-
-	void fstream_writer_t::flush()
-	{
-		m_stream->flush();
-	}
+	struct logger_t;
+	enum class fmt_token_type : u8;
+	enum class fmt_align_t : u8;
+	enum class fmt_sign_t : u8;
+	enum class fmt_type_t : u8;
+	struct fmt_spec_t;
+	struct fmt_token_t;
+	class fmt_tokenizer_t;
+	class fmt_parser_t;
 }
+
+#endif //BLT_LOGGING_FWDDECL_H

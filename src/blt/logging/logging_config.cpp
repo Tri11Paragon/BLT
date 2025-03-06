@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/logging/logging_config.h>
+#include <blt/logging/ansi.h>
 
 namespace blt::logging
 {
