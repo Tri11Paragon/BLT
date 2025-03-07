@@ -216,7 +216,7 @@ void test_iterate()
     }
     BLT_TRACE("================================");
     for (auto a : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); })
-                                       .enumerate().filter([](const auto& f) { return f.value.x() > 0.5; }))
+                                       .enumerate().filter([](const auto& f) { return f.second.x() > 0.5; }))
     {
         if (!a)
             continue;

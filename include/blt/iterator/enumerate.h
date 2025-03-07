@@ -34,7 +34,7 @@ namespace blt
             }
 
             using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-            using value_type = enumerate_item<Iter>;
+            using value_type = enumerate_item<meta::deref_return_t<Iter>>;
             using difference_type = blt::ptrdiff_t;
             using pointer = value_type;
             using reference = value_type;

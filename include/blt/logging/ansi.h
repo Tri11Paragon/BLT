@@ -71,7 +71,8 @@ namespace blt::logging::ansi
 			BLUE    = 4,
 			MAGENTA = 5,
 			CYAN    = 6,
-			WHITE   = 7, };
+			WHITE   = 7
+		};
 
 		struct rgb_t
 		{

@@ -65,6 +65,7 @@ namespace blt::fs
 	{
 	public:
 		explicit buffered_writer(const std::string& name, size_t buffer_size = 1024 * 128);
+		explicit buffered_writer(size_t buffer_size = 1024 * 128);
 
 		i64 write(const char* buffer, size_t bytes) override;
 

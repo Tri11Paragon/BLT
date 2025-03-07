@@ -359,15 +359,17 @@ namespace blt::nbt {
             void writePayload(blt::fs::writer_t& out) final {
                 for (const auto& v : t){
                     auto tag = v.second;
-                    out.put((char) tag->getType());
+                    auto c = (char) tag->getType();
+                    out.write(&c, 1);
                     tag->writeName(out);
                     tag->writePayload(out);
                 }
-                out.put('\0');
+                const char c = '\0';
+                out.write(&c, 1);
             }
             void readPayload(blt::fs::reader_t& in) final {
                 char type;
-                while ((type = in.get()) != (char)nbt_tag::END){
+                while ((in.read(&type, 1), type) != (char)nbt_tag::END){
                     auto* v = _internal_::toType(type);
                     v->readName(in);
                     v->readPayload(in);
@@ -431,7 +433,8 @@ namespace blt::nbt {
                 delete root;
             }
             void write(tag_compound& root){
-                writer.put((char)nbt_tag::COMPOUND);
+                auto c = (char)nbt_tag::COMPOUND;
+                writer.write(&c, 1);
                 root.writeName(writer);
                 root.writePayload(writer);
             }

@@ -28,6 +28,82 @@
 
 namespace blt::logging
 {
+	namespace tags
+	{
+		// Current Year
+		inline constexpr auto YEAR = "{YEAR}";
+		// Current Month
+		inline constexpr auto MONTH = "{MONTH}";
+		// Current Day
+		inline constexpr auto DAY = "{DAY}";
+		// Current Hour
+		inline constexpr auto HOUR = "{HOUR}";
+		// Current Minute
+		inline constexpr auto MINUTE = "{MINUTE}";
+		// Current Second
+		inline constexpr auto SECOND = "{SECOND}";
+		// Current Millisecond
+		inline constexpr auto MILLISECOND = "{MS}";
+		// Current Nanosecond time, This is direct output of nanotime
+		inline constexpr auto NANOSECOND = "{NS}";
+		// Current Unix time in milliseconds
+		inline constexpr auto UNIX_TIME = "{UNIX}";
+		// Formatted ISO year-month-day in a single variable
+		inline constexpr auto ISO_YEAR = "{ISO_YEAR}";
+		// Formatted hour:minute:second in a single variable
+		inline constexpr auto TIME = "{TIME}";
+		// Formatted year-month-day hour:minute:second in a single variable
+		inline constexpr auto FULL_TIME = "{FULL_TIME}";
+		// Color of the current log level, empty string if use_color = false
+		inline constexpr auto LOG_COLOR = "{LC}";
+		// Color of the error color, empty string if use_color = false
+		inline constexpr auto ERROR_COLOR = "{EC}";
+		// Empty is use_color = false or if log level is not an error. Otherwise, {EC}
+		inline constexpr auto CONDITIONAL_ERROR_COLOR = "{CEC}";
+		// Resets all ANSI sequences
+		inline constexpr auto RESET = "{RESET}";
+		// Current log level
+		inline constexpr auto LOG_LEVEL = "{LL}";
+		// Current thread name. Requires you to manually set the thread name using blt::logging::set_thread_name() from that thread.
+		inline constexpr auto THREAD_NAME = "{TN}";
+		// Current file from where the log call was invoked.
+		inline constexpr auto FILE = "{FILE}";
+		// Current line from where the log call was invoked
+		inline constexpr auto LINE = "{LINE}";
+		// User string input, formatted with provided args
+		inline constexpr auto STR = "{STR}";
+
+		namespace detail
+		{
+			enum class log_tag_token_t : u8
+			{
+				YEAR,
+				MONTH,
+				DAY,
+				HOUR,
+				MINUTE,
+				SECOND,
+				MS,
+				NS,
+				UNIX,
+				ISO_YEAR,
+				TIME,
+				FULL_TIME,
+				LC,
+				EC,
+				CEC,
+				RESET,
+				LL,
+				TN,
+				FILE,
+				LINE,
+				STR,
+				// token used to describe that a non-format token should be consumed. aka a normal string from the file.
+				CONTENT
+			};
+		}
+	}
+
 	enum class log_level_t : u8
 	{
 		TRACE,
@@ -43,10 +119,12 @@ namespace blt::logging
 	class logging_config_t
 	{
 		friend logger_t;
+
 	public:
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
 		std::vector<fs::writer_t*> log_outputs = get_default_log_outputs();
 		std::string log_format = get_default_log_format();
+		std::string error_color = get_default_error_color();
 		std::array<std::string, LOG_LEVEL_COUNT> log_level_colors = get_default_log_level_colors();
 		std::array<std::string, LOG_LEVEL_COUNT> log_level_names = get_default_log_level_names();
 		log_level_t level = log_level_t::TRACE;
@@ -56,11 +134,13 @@ namespace blt::logging
 		// this will attempt to use the maximum possible size for each printed element, then align to that.
 		// This creates output where the user message always starts at the same column.
 		bool ensure_alignment = true;
+
 	private:
 		static std::string get_default_log_format();
 		static std::vector<fs::writer_t*> get_default_log_outputs();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_colors();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_names();
+		static std::string get_default_error_color();
 	};
 }
 
