@@ -15,11 +15,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/fs/file_writers.h>
 #include <cstdio>
-#include <utility>
 #include <cstring>
+#include <ctime>
 #include <stdexcept>
+#include <utility>
+#include <blt/fs/file_writers.h>
 
 namespace blt::fs
 {
@@ -48,6 +49,12 @@ namespace blt::fs
 		m_buffer.resize(buffer_size);
 	}
 
+	void buffered_writer::newfile(const std::string& new_name)
+	{
+		fwriter_t::newfile(new_name);
+		setvbuf(this->m_file, nullptr, _IONBF, 0);
+	}
+
 	i64 buffered_writer::write(const char* buffer, const size_t bytes)
 	{
 		if (bytes > m_buffer.size())
@@ -61,20 +68,86 @@ namespace blt::fs
 
 	void buffered_writer::flush()
 	{
-		fwriter_t::flush();
 		fwriter_t::write(m_buffer.data(), m_current_pos);
+		fwriter_t::flush();
 		m_current_pos = 0;
 	}
 
-	bounded_writer::bounded_writer(fwriter_t& writer, std::optional<std::string> base_name,
-									const std::function<std::string(size_t, std::optional<std::string>)>& naming_function,
-									const size_t max_size): fwriter_t{naming_function(0, base_name)}, m_writer(&writer),
-															m_base_name(std::move(base_name)), m_max_size(max_size),
-															m_naming_function(naming_function)
-	{}
-
-	i64 bounded_writer::write(const char* buffer, size_t bytes)
+	bounded_writer::bounded_writer(fwriter_t& writer, std::optional<std::string> base_name, const size_t max_size, naming_function_t naming_function):
+		m_writer(&writer), m_base_name(std::move(base_name)), m_max_size(max_size), m_naming_function(std::move(naming_function))
 	{
-		return fwriter_t::write(buffer, bytes);
+		bounded_writer::newfile(m_base_name.value_or(""));
+	}
+
+	i64 bounded_writer::write(const char* buffer, const size_t bytes)
+	{
+		m_currently_written += bytes;
+		if (m_currently_written > m_max_size)
+			this->newfile(m_base_name.value_or(""));
+		return m_writer->write(buffer, bytes);
+	}
+
+	void bounded_writer::newfile(const std::string& new_name)
+	{
+		++m_current_invocation;
+		m_currently_written = 0;
+		m_writer->newfile(m_naming_function(m_current_invocation, new_name));
+	}
+
+	void bounded_writer::flush()
+	{
+		m_writer->flush();
+	}
+
+	rotating_writer::rotating_writer(fwriter_t& writer, const time_t period): m_writer{&writer}, m_period{period}
+	{
+		newfile();
+	}
+
+	i64 rotating_writer::write(const char* buffer, const size_t bytes)
+	{
+		check_for_time();
+		return m_writer->write(buffer, bytes);
+	}
+
+	void rotating_writer::flush()
+	{
+		check_for_time();
+		m_writer->flush();
+	}
+
+	void rotating_writer::newfile(const std::string& new_name)
+	{
+		m_writer->newfile(new_name);
+	}
+
+	void rotating_writer::newfile()
+	{
+		m_last_time = get_current_time();
+		std::string name;
+		name += std::to_string(m_last_time.year);
+		name += "-" + std::to_string(m_last_time.month);
+		name += "-" + std::to_string(m_last_time.day);
+		if (m_period.hour >= 0)
+			name += "-" + std::to_string(m_last_time.hour);
+		name += ".txt";
+		newfile(name);
+	}
+
+	void rotating_writer::check_for_time()
+	{
+		const auto current_time = get_current_time();
+		if ((m_period.hour > 0 && current_time.hour > m_last_time.hour + m_period.hour) ||
+			(m_period.day > 0 && current_time.day > m_last_time.day + m_period.day) ||
+			(m_period.month > 0 && current_time.month > m_last_time.month + m_period.month) ||
+			(m_period.year > 0 && current_time.year > m_last_time.year + m_period.year))
+			newfile();
+	}
+
+	time_t rotating_writer::get_current_time()
+	{
+		const std::time_t time = std::time(nullptr);
+		const auto current_time = std::localtime(&time);
+		return {current_time->tm_year, current_time->tm_mon, current_time->tm_mday, current_time->tm_hour};
 	}
 }

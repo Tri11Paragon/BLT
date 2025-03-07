@@ -15,20 +15,22 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/logging/logging_config.h>
-#include <blt/logging/ansi.h>
+#include <blt/fs/threaded_writers.h>
 
-namespace blt::logging
+namespace blt::fs
 {
-	std::string logging_config_t::get_default_log_format()
+	concurrent_file_writer::concurrent_file_writer(writer_t* writer): m_writer{writer}
 	{}
 
-	std::vector<fs::writer_t*> logging_config_t::get_default_log_outputs()
-	{}
+	i64 concurrent_file_writer::write(const char* buffer, const size_t bytes)
+	{
+		std::scoped_lock lock{m_mutex};
+		return m_writer->write(buffer, bytes);
+	}
 
-	std::array<std::string, LOG_LEVEL_COUNT> logging_config_t::get_default_log_level_colors()
-	{}
-
-	std::array<std::string, LOG_LEVEL_COUNT> logging_config_t::get_default_log_level_names()
-	{}
+	void concurrent_file_writer::flush()
+	{
+		std::scoped_lock lock{m_mutex};
+		m_writer->flush();
+	}
 }

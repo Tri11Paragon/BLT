@@ -28,11 +28,15 @@
 
 namespace blt::fs
 {
-	inline auto basic_naming_function = [](const size_t invocation, const std::optional<std::string>& prefix) {
-		return prefix.value_or("") + "-" + std::to_string(invocation) + ".txt";
+	inline auto basic_naming_function = [](const size_t invocation, std::string prefix) {
+		prefix += '-';
+		prefix += std::to_string(invocation);
+		prefix += ".txt";
+		return prefix;
 	};
 
-	// ReSharper disable once CppClassCanBeFinal
+	using naming_function_t = std::function<std::string(size_t, std::string)>;
+
 	class fwriter_t : public writer_t
 	{
 	public:
@@ -40,6 +44,10 @@ namespace blt::fs
 		{
 			fwriter_t::newfile(name);
 		}
+
+		// create a writer without creating a new file. Writing without calling newfile is UB
+		explicit fwriter_t(std::string mode = "ab"): m_mode(std::move(mode))
+		{}
 
 		i64 write(const char* buffer, size_t bytes) override;
 
@@ -62,6 +70,8 @@ namespace blt::fs
 
 		void flush() override;
 
+		void newfile(const std::string& new_name) override;
+
 	protected:
 		size_t m_current_pos = 0;
 		std::vector<char> m_buffer;
@@ -74,21 +84,61 @@ namespace blt::fs
 	class bounded_writer : public fwriter_t
 	{
 	public:
-		explicit bounded_writer(fwriter_t& writer, std::optional<std::string> base_name,
-								const std::function<std::string(size_t, std::optional<std::string>)>& naming_function = basic_naming_function,
-								size_t max_size = 1024 * 1024 * 10);
+		explicit bounded_writer(fwriter_t& writer, std::optional<std::string> base_name, size_t max_size = 1024 * 1024 * 10,
+								naming_function_t naming_function = basic_naming_function);
 
 		i64 write(const char* buffer, size_t bytes) override;
 
+		void newfile(const std::string& new_name) override;
+
+		void flush() override;
+
 	private:
-		fwriter_t* m_writer = nullptr;
+		fwriter_t* m_writer;
 		std::optional<std::string> m_base_name;
 		size_t m_current_invocation = 0;
-		size_t m_max_size = 0;
+		size_t m_max_size;
 		size_t m_currently_written = 0;
-		// inputs: current invocation, optional string provided to the constructor
+		// inputs: current invocation, then basename string
 		// returns: name of the file to write to
-		std::function<std::string(size_t, const std::optional<std::string>&)> m_naming_function;
+		naming_function_t m_naming_function;
+	};
+
+	struct time_t
+	{
+		i32 year = 0, month = 0, day = 1, hour = -1;
+
+		time_t(const i32 year, const i32 month, const i32 day, const i32 hour) : year{year}, month{month}, day{day}, hour{hour}
+		{}
+
+		time_t(const i32 year, const i32 month, const i32 day) : year{year}, month{month}, day{day}
+		{}
+
+		time_t() = default;
+	};
+
+	// ReSharper disable once CppClassCanBeFinal
+	class rotating_writer : public fwriter_t
+	{
+	public:
+		rotating_writer(fwriter_t& writer, time_t period);
+
+		i64 write(const char* buffer, size_t bytes) override;
+
+		void flush() override;
+
+		void newfile(const std::string& new_name) override;
+
+		void newfile();
+
+		void check_for_time();
+
+		static time_t get_current_time();
+
+	private:
+		fwriter_t* m_writer;
+		time_t m_period;
+		time_t m_last_time;
 	};
 }
 

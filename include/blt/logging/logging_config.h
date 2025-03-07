@@ -20,11 +20,11 @@
 #define BLT_LOGGING_LOGGING_CONFIG_H
 
 #include <array>
-#include <ostream>
 #include <string>
 #include <vector>
 #include <blt/logging/logging.h>
 #include <blt/std/types.h>
+#include <blt/fs/fwddecl.h>
 
 namespace blt::logging
 {
@@ -44,7 +44,8 @@ namespace blt::logging
 	{
 		friend logger_t;
 	public:
-		std::vector<std::ostream*> log_outputs = get_default_log_outputs();
+		// wrappers for streams exist in blt/fs/stream_wrappers.h
+		std::vector<fs::writer_t*> log_outputs = get_default_log_outputs();
 		std::string log_format = get_default_log_format();
 		std::array<std::string, LOG_LEVEL_COUNT> log_level_colors = get_default_log_level_colors();
 		std::array<std::string, LOG_LEVEL_COUNT> log_level_names = get_default_log_level_names();
@@ -57,7 +58,7 @@ namespace blt::logging
 		bool ensure_alignment = true;
 	private:
 		static std::string get_default_log_format();
-		static std::vector<std::ostream*> get_default_log_outputs();
+		static std::vector<fs::writer_t*> get_default_log_outputs();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_colors();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_names();
 	};

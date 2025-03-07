@@ -1,6 +1,6 @@
+#pragma once
 /*
- *  <Short Description>
- *  Copyright (C) 2025  Brett Terpstra
+ *  Copyright (C) 2024  Brett Terpstra
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,20 +15,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/logging/logging_config.h>
-#include <blt/logging/ansi.h>
 
-namespace blt::logging
+#ifndef BLT_FS_THREADED_WRITERS_H
+#define BLT_FS_THREADED_WRITERS_H
+
+#include <mutex>
+#include <blt/fs/fwddecl.h>
+
+namespace blt::fs
 {
-	std::string logging_config_t::get_default_log_format()
-	{}
+	// ReSharper disable once CppClassCanBeFinal
+	class concurrent_file_writer : public writer_t
+	{
+	public:
+		explicit concurrent_file_writer(writer_t* writer);
 
-	std::vector<fs::writer_t*> logging_config_t::get_default_log_outputs()
-	{}
+		i64 write(const char* buffer, size_t bytes) override;
 
-	std::array<std::string, LOG_LEVEL_COUNT> logging_config_t::get_default_log_level_colors()
-	{}
-
-	std::array<std::string, LOG_LEVEL_COUNT> logging_config_t::get_default_log_level_names()
-	{}
+		void flush() override;
+	private:
+		writer_t* m_writer;
+		std::mutex m_mutex;
+	};
 }
+
+#endif //BLT_FS_THREADED_WRITERS_H
