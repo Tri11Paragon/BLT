@@ -22,7 +22,7 @@
 #include <iosfwd>
 #include <sstream>
 #include <blt/fs/fwddecl.h>
-#include <blt/fs/limited_writers.h>
+#include <blt/fs/file_writers.h>
 #include <blt/fs/stream_wrappers.h>
 
 namespace blt::fs
