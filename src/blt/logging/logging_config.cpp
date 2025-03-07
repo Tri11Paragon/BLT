@@ -52,7 +52,86 @@ namespace blt::logging
 			return map;
 		}
 
-		hashmap_t<std::string_view, log_tag_token_t> tag_map = make_map();
+		std::array<bool, static_cast<u8>(log_tag_token_t::CONTENT)> tag_known_values{
+			// year
+			false,
+			// month
+			false,
+			// day
+			false,
+			// hour
+			false,
+			// minute
+			false,
+			// second
+			false,
+			// ms
+			false,
+			// ns
+			false,
+			// unix
+			false,
+			// iso year
+			false,
+			// time
+			false,
+			// full_time
+			false,
+			// lc
+			true,
+			// ec
+			true,
+			// conditional error
+			false,
+			// reset
+			true,
+			// log level
+			false,
+			// thread_name
+			false,
+			// file
+			false,
+			// line
+			false,
+			// str
+			false
+		};
+	}
+
+	void logging_config_t::compile()
+	{
+		static hashmap_t<std::string_view, tags::detail::log_tag_token_t> tag_map = tags::detail::make_map();
+		log_tag_content.clear();
+		log_tag_tokens.clear();
+
+		size_t i = 0;
+		for (; i < log_format.size(); ++i)
+		{
+			size_t start = i;
+			while (i < log_format.size() && log_format[i] != '{')
+				++i;
+			if (i == log_format.size() || (i < log_format.size() && (i - start) > 0))
+			{
+				log_tag_content.emplace_back(std::string_view(log_format.data() + start, i - start));
+				log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
+				if (i == log_format.size())
+					break;
+			}
+			start = i;
+			while (i < log_format.size() && log_format[i] != '}')
+				++i;
+			const auto tag = std::string_view(log_format.data() + start, i - start + 1);
+			auto it = tag_map.find(tag);
+			if (it == tag_map.end())
+				throw std::runtime_error("Invalid log tag: " + std::string(tag));
+			log_tag_tokens.emplace_back(it->second);
+		}
+
+		if (i < log_format.size())
+		{
+			log_tag_content.emplace_back(std::string_view(log_format.data() + i, log_format.size() - i));
+			log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
+		}
 	}
 
 	std::string logging_config_t::get_default_log_format()
@@ -90,14 +169,7 @@ namespace blt::logging
 
 	std::array<std::string, LOG_LEVEL_COUNT> logging_config_t::get_default_log_level_names()
 	{
-		return {
-			"TRACE",
-			"DEBUG",
-			"INFO",
-			"WARN",
-			"ERROR",
-			"FATAL",
-		};
+		return {"TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL",};
 	}
 
 	std::string logging_config_t::get_default_error_color()

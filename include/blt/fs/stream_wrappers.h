@@ -99,7 +99,7 @@ namespace blt::fs
 		void write(const T& t)
 		{
 			static_assert(std::is_trivially_copyable_v<T>);
-			m_writer->write(reinterpret_cast<char*>(&t), sizeof(T));
+			m_writer->write(reinterpret_cast<const char*>(&t), sizeof(T));
 		}
 
 		template <typename T>

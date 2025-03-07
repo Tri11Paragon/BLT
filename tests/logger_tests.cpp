@@ -160,10 +160,10 @@ int main()
 
 	std::ofstream os("test.txt");
 	blt::fs::fstream_writer_t wtr(os);
-	blt::fs::writer_wrapper_t writer(wtr);
+	blt::fs::writer_string_wrapper_t writer(wtr);
 
 	writer.write("This is a println with a stream\n");
-	writer.write("This is a mixed print");
+	writer.write("This is a mixed print ");
 	writer.write(std::to_string(25));
 	writer.write(" with multiple types ");
 	writer.write(std::to_string(34.23340));

@@ -22,9 +22,9 @@
 #include <array>
 #include <string>
 #include <vector>
-#include <blt/logging/logging.h>
-#include <blt/std/types.h>
 #include <blt/fs/fwddecl.h>
+#include <blt/logging/fwddecl.h>
+#include <blt/std/types.h>
 
 namespace blt::logging
 {
@@ -121,6 +121,79 @@ namespace blt::logging
 		friend logger_t;
 
 	public:
+		logging_config_t()
+		{
+			compile();
+		}
+
+		void compile();
+
+		logging_config_t& add_log_output(fs::writer_t* writer)
+		{
+			log_outputs.push_back(writer);
+			return *this;
+		}
+
+		logging_config_t& set_log_format(std::string format)
+		{
+			log_format = std::move(format);
+			compile();
+			return *this;
+		}
+
+		logging_config_t& set_error_color(std::string color)
+		{
+			error_color = std::move(color);
+			compile();
+			return *this;
+		}
+
+		logging_config_t& set_log_level_colors(std::array<std::string, LOG_LEVEL_COUNT> colors)
+		{
+			log_level_colors = std::move(colors);
+			compile();
+			return *this;
+		}
+
+		logging_config_t& set_log_level_names(std::array<std::string, LOG_LEVEL_COUNT> names)
+		{
+			log_level_names = std::move(names);
+			return *this;
+		}
+
+		logging_config_t& set_level(const log_level_t level)
+		{
+			this->level = level;
+			return *this;
+		}
+
+		logging_config_t& set_use_color(const bool use_color)
+		{
+			this->use_color = use_color;
+			compile();
+			return *this;
+		}
+
+		logging_config_t& set_print_full_name(const bool print_full_name)
+		{
+			this->print_full_name = print_full_name;
+			return *this;
+		}
+
+		logging_config_t& set_ensure_alignment(const bool ensure_alignment)
+		{
+			this->ensure_alignment = ensure_alignment;
+			return *this;
+		}
+
+		[[nodiscard]] std::pair<const std::vector<tags::detail::log_tag_token_t>&, const std::vector<std::string>&> get_log_tag_tokens() const
+		{
+			return {log_tag_tokens, log_tag_content};
+		}
+
+	private:
+		std::vector<std::string> log_tag_content;
+		std::vector<tags::detail::log_tag_token_t> log_tag_tokens;
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
 		std::vector<fs::writer_t*> log_outputs = get_default_log_outputs();
 		std::string log_format = get_default_log_format();
@@ -135,7 +208,6 @@ namespace blt::logging
 		// This creates output where the user message always starts at the same column.
 		bool ensure_alignment = true;
 
-	private:
 		static std::string get_default_log_format();
 		static std::vector<fs::writer_t*> get_default_log_outputs();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_colors();

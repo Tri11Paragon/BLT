@@ -17,18 +17,36 @@
  */
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <sstream>
+#include <thread>
 #include <blt/iterator/enumerate.h>
 #include <blt/logging/logging.h>
+#include <blt/std/hashmap.h>
 #include <blt/std/types.h>
 
 namespace blt::logging
 {
+    struct global_context_t
+    {
+        logging_config_t global_config;
+        std::mutex thread_name_mutex;
+        hashmap_t<std::thread::id, std::string> thread_names;
+    };
+
+    static global_context_t global_context;
+
     struct logging_thread_context_t
     {
         std::stringstream stream;
         logger_t logger{stream};
     };
+
+    logging_thread_context_t& get_thread_context()
+    {
+        thread_local logging_thread_context_t context;
+        return context;
+    }
 
     std::string logger_t::to_string() const
     {
@@ -195,8 +213,7 @@ namespace blt::logging
 
     logger_t& get_global_logger()
     {
-        thread_local logging_thread_context_t context;
-        return context.logger;
+        return get_thread_context().logger;
     }
 
     void print(const std::string& str)
@@ -207,5 +224,16 @@ namespace blt::logging
     void newline()
     {
         std::cout << std::endl;
+    }
+
+    logging_config_t& get_global_config()
+    {
+        return global_context.global_config;
+    }
+
+    void set_thread_name(const std::string& name)
+    {
+        std::scoped_lock lock{global_context.thread_name_mutex};
+        global_context.thread_names[std::this_thread::get_id()] = name;
     }
 }
