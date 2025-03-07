@@ -1,6 +1,6 @@
 /*
  *  <Short Description>
- *  Copyright (C) 2024  Brett Terpstra
+ *  Copyright (C) 2025  Brett Terpstra
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/fs/filesystem.h>
-#include <cstring>
-#include <blt/std/logging.h>
+#include <blt/fs/bounded_writers.h>
 
+namespace blt::fs
+{
+	bounded_writer::bounded_writer(size_t max_size)
+	{
+
+	}
+
+}

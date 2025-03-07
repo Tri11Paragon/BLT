@@ -25,7 +25,6 @@
 #include <string_view>
 #include <vector>
 #include <blt/logging/fmt_tokenizer.h>
-#include <blt/logging/fwddecl.h>
 #include <blt/meta/is_streamable.h>
 #include <blt/std/utility.h>
 

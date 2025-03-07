@@ -19,7 +19,6 @@
 #ifndef BLT_FS_FWDDECL_H
 #define BLT_FS_FWDDECL_H
 
-#include <stdexcept>
 #include <blt/std/types.h>
 
 namespace blt::fs

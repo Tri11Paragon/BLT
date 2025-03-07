@@ -22,121 +22,12 @@
 #include <iosfwd>
 #include <sstream>
 #include <blt/fs/fwddecl.h>
+#include <blt/fs/limited_writers.h>
+#include <blt/fs/stream_wrappers.h>
 
 namespace blt::fs
 {
-	/**
-	* reader_t wrapper for fstream
-	*/
-	class fstream_reader_t final : public reader_t
-	{
-	public:
-		explicit fstream_reader_t(std::istream& stream);
 
-		explicit fstream_reader_t(fstream_reader_t& copy) = delete;
-
-		fstream_reader_t& operator=(const fstream_reader_t& copy) = delete;
-
-		i64 read(char* buffer, size_t bytes) override;
-
-	private:
-		std::istream* m_stream;
-	};
-
-	class fstream_writer_t final : public writer_t
-	{
-	public:
-		explicit fstream_writer_t(std::ostream& stream);
-
-		explicit fstream_writer_t(fstream_writer_t& copy) = delete;
-
-		fstream_writer_t& operator=(const fstream_writer_t& copy) = delete;
-
-		i64 write(const char* buffer, size_t bytes) override;
-
-		void flush() override;
-
-		virtual ~fstream_writer_t() override // NOLINT
-		{
-			flush();
-		}
-
-	private:
-		std::ostream* m_stream;
-	};
-
-	class reader_wrapper_t final
-	{
-	public:
-		explicit reader_wrapper_t(reader_t& reader): m_reader(&reader)
-		{}
-
-		template <typename T>
-		void read(T& out)
-		{
-			if (!m_reader->read(reinterpret_cast<char*>(&out), sizeof(T)))
-				throw std::runtime_error("Failed to read from reader");
-		}
-
-		template <typename T>
-		friend reader_wrapper_t& operator>>(reader_wrapper_t& reader, T& t)
-		{
-			reader.read(t);
-			return reader;
-		}
-
-	private:
-		reader_t* m_reader;
-	};
-
-	class writer_wrapper_t final
-	{
-	public:
-		explicit writer_wrapper_t(writer_t& writer): m_writer(&writer)
-		{}
-
-		template <typename T>
-		void write(const T& t)
-		{
-			m_writer->write(reinterpret_cast<char*>(&t), sizeof(T));
-		}
-
-		template <typename T>
-		friend writer_wrapper_t& operator<<(writer_wrapper_t& writer, const T& t)
-		{
-			writer.write(t);
-			return writer;
-		}
-
-	private:
-		writer_t* m_writer;
-	};
-
-	class writer_string_wrapper_t final
-	{
-	public:
-		explicit writer_string_wrapper_t(writer_t& writer): m_writer(&writer)
-		{}
-
-		template <typename T>
-		void write(const T& t)
-		{
-			std::stringstream ss;
-			ss << t;
-			const auto str = ss.str();
-			m_writer->write(str.data(), str.size());
-		}
-
-		template <typename T>
-		friend writer_string_wrapper_t& operator<<(writer_string_wrapper_t& writer, const T& t)
-		{
-			writer.write(t);
-			return writer;
-		}
-
-	private:
-		writer_t* m_writer;
-	};
 }
 
 #endif //BLT_FILESYSTEM_H

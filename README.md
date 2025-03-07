@@ -19,19 +19,32 @@ This module provides general string formatting utilities. *Note: this folder con
 - **format.h**  
   Legacy library file containing various utilities for creating formatted output. Also includes methods for writing Java UTF8 strings.
 
-- ## blt/fs
-  - ### loader.h
-    - `std::string blt::fs::getFile(std::string_view path)`
-      - Gets the entire file as a string.
-    - std::vector\<std::string> blt::fs::getLinesFromFile(std::string_view path)
-      - Gets the entire file as a string, then splits on the new line character. Then returns a vector of those lines
-    - std::vector\<std::string> blt::fs::recursiveInclude(std::string_view path, std::string include_header, std::vector<include_guard> guards);
-      - Recursively include in order based on the include string (include_header) marked by the include guards
-      - Defaults to C/C++/GLSL preprocessor style (Was designed for GLSL)
-    - std::string blt::fs::loadBrainFuckFile(const std::string& path)
-      - Load a brainfuck file recursively, uses ~ to mark the include path
-  - ### nbt.h
-    - probably needs to be remade (TODO)
+## BLT Filesystem
+This module provides helper classes for filesystem objects. It seeks to offer an interface that is simpler than the one provided by the standard library. 
+Specifically, the number of functions required to implement is significantly lower, 
+and the interface is generally cleaner. Eventually, this module aims to support various file formats, 
+such as Minecraft's NBT system. Currently, there is an existing NBT file, but it was written when I was first learning C++.
+
+### Files
+
+- **filesystem.h**  
+  This is the base file which includes all other files. You should use the other options as this can be a heavy file to include
+
+- **path_helper.h**  
+  This file provides functions for interfacing with paths. Specifically, as of this moment it only provides an interface for getting the base name of a file path.
+
+- **loader.h**  
+  - `std::string blt::fs::getFile(std::string_view path)`
+    - Gets the entire file as a string.  
+  - `std::vector\<std::string> blt::fs::getLinesFromFile(std::string_view path)`
+    - Gets the entire file as a string, then splits on the new line character. Then returns a vector of those lines  
+  - `std::vector\<std::string> blt::fs::recursiveInclude(std::string_view path, std::string include_header, std::vector<include_guard> guards)`
+    - Recursively include in order based on the include string (include_header) marked by the include guards  
+    - Defaults to C/C++/GLSL preprocessor style (Was designed for GLSL)
+  - `std::string blt::fs::loadBrainFuckFile(const std::string& path)`
+    - Load a brainfuck file recursively, uses ~ to mark the include path
+- ### nbt.h
+  - probably needs to be remade (TODO)
 - ## blt/math
   - ### averages.h
     - blt::averagizer_o_matic

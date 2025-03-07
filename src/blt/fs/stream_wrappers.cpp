@@ -1,6 +1,6 @@
 /*
  *  <Short Description>
- *  Copyright (C) 2024  Brett Terpstra
+ *  Copyright (C) 2025  Brett Terpstra
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,31 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/fs/filesystem.h>
-#include <cstring>
-#include <blt/std/logging.h>
+#include <istream>
+#include <ostream>
+#include <blt/fs/stream_wrappers.h>
 
+namespace blt::fs
+{
+	fstream_reader_t::fstream_reader_t(std::istream& stream): m_stream{&stream}
+	{}
+
+	i64 fstream_reader_t::read(char* buffer, const size_t bytes)
+	{
+		return m_stream->readsome(buffer, static_cast<std::streamsize>(bytes));
+	}
+
+	fstream_writer_t::fstream_writer_t(std::ostream& stream): m_stream{&stream}
+	{}
+
+	i64 fstream_writer_t::write(const char* buffer, const size_t bytes)
+	{
+		m_stream->write(buffer, static_cast<std::streamsize>(bytes));
+		return static_cast<i64>(bytes);
+	}
+
+	void fstream_writer_t::flush()
+	{
+		m_stream->flush();
+	}
+}
