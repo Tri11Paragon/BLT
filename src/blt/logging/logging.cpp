@@ -30,8 +30,6 @@ namespace blt::logging
     struct global_context_t
     {
         logging_config_t global_config;
-        std::mutex thread_name_mutex;
-        hashmap_t<std::thread::id, std::string> thread_names;
     };
 
     static global_context_t global_context;
@@ -39,6 +37,7 @@ namespace blt::logging
     struct logging_thread_context_t
     {
         std::stringstream stream;
+        std::string thread_name;
         logger_t logger{stream};
     };
 
@@ -233,7 +232,11 @@ namespace blt::logging
 
     void set_thread_name(const std::string& name)
     {
-        std::scoped_lock lock{global_context.thread_name_mutex};
-        global_context.thread_names[std::this_thread::get_id()] = name;
+        get_thread_context().thread_name = name;
+    }
+
+    const std::string& get_thread_name()
+    {
+        return get_thread_context().thread_name;
     }
 }

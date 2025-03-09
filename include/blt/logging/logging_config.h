@@ -20,6 +20,7 @@
 #define BLT_LOGGING_LOGGING_CONFIG_H
 
 #include <array>
+#include <optional>
 #include <string>
 #include <vector>
 #include <blt/fs/fwddecl.h>
@@ -44,10 +45,12 @@ namespace blt::logging
 		inline constexpr auto SECOND = "{SECOND}";
 		// Current Millisecond
 		inline constexpr auto MILLISECOND = "{MS}";
-		// Current Nanosecond time, This is direct output of nanotime
+		// Current Nanosecond
 		inline constexpr auto NANOSECOND = "{NS}";
 		// Current Unix time in milliseconds
 		inline constexpr auto UNIX_TIME = "{UNIX}";
+		// Current Unix time in nanosecond
+		inline constexpr auto UNIX_TIME_NANO = "{UNIX_NANO}";
 		// Formatted ISO year-month-day in a single variable
 		inline constexpr auto ISO_YEAR = "{ISO_YEAR}";
 		// Formatted hour:minute:second in a single variable
@@ -86,6 +89,7 @@ namespace blt::logging
 				MS,
 				NS,
 				UNIX,
+				UNIX_NANO,
 				ISO_YEAR,
 				TIME,
 				FULL_TIME,
@@ -130,83 +134,87 @@ namespace blt::logging
 
 		logging_config_t& add_log_output(fs::writer_t* writer)
 		{
-			log_outputs.push_back(writer);
+			m_log_outputs.push_back(writer);
 			return *this;
 		}
 
 		logging_config_t& set_log_format(std::string format)
 		{
-			log_format = std::move(format);
+			m_log_format = std::move(format);
 			compile();
 			return *this;
 		}
 
 		logging_config_t& set_error_color(std::string color)
 		{
-			error_color = std::move(color);
+			m_error_color = std::move(color);
 			compile();
 			return *this;
 		}
 
 		logging_config_t& set_log_level_colors(std::array<std::string, LOG_LEVEL_COUNT> colors)
 		{
-			log_level_colors = std::move(colors);
+			m_log_level_colors = std::move(colors);
 			compile();
 			return *this;
 		}
 
 		logging_config_t& set_log_level_names(std::array<std::string, LOG_LEVEL_COUNT> names)
 		{
-			log_level_names = std::move(names);
+			m_log_level_names = std::move(names);
 			return *this;
 		}
 
 		logging_config_t& set_level(const log_level_t level)
 		{
-			this->level = level;
+			this->m_level = level;
 			return *this;
 		}
 
 		logging_config_t& set_use_color(const bool use_color)
 		{
-			this->use_color = use_color;
+			this->m_use_color = use_color;
 			compile();
 			return *this;
 		}
 
 		logging_config_t& set_print_full_name(const bool print_full_name)
 		{
-			this->print_full_name = print_full_name;
+			this->m_print_full_name = print_full_name;
 			return *this;
 		}
 
 		logging_config_t& set_ensure_alignment(const bool ensure_alignment)
 		{
-			this->ensure_alignment = ensure_alignment;
+			this->m_ensure_alignment = ensure_alignment;
 			return *this;
 		}
 
 		[[nodiscard]] std::pair<const std::vector<tags::detail::log_tag_token_t>&, const std::vector<std::string>&> get_log_tag_tokens() const
 		{
-			return {log_tag_tokens, log_tag_content};
+			return {m_log_tag_tokens, m_log_tag_content};
 		}
 
+		std::optional<std::string> generate(const std::string& user_str, const std::string& thread_name, log_level_t level, const char* file,
+											i32 line) const;
+
 	private:
-		std::vector<std::string> log_tag_content;
-		std::vector<tags::detail::log_tag_token_t> log_tag_tokens;
+		std::vector<std::string> m_log_tag_content;
+		std::vector<tags::detail::log_tag_token_t> m_log_tag_tokens;
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
-		std::vector<fs::writer_t*> log_outputs = get_default_log_outputs();
-		std::string log_format = get_default_log_format();
-		std::string error_color = get_default_error_color();
-		std::array<std::string, LOG_LEVEL_COUNT> log_level_colors = get_default_log_level_colors();
-		std::array<std::string, LOG_LEVEL_COUNT> log_level_names = get_default_log_level_names();
-		log_level_t level = log_level_t::TRACE;
-		bool use_color = true;
+		std::vector<fs::writer_t*> m_log_outputs = get_default_log_outputs();
+		std::string m_log_format = get_default_log_format();
+		std::string m_error_color = get_default_error_color();
+		std::array<std::string, LOG_LEVEL_COUNT> m_log_level_colors = get_default_log_level_colors();
+		std::array<std::string, LOG_LEVEL_COUNT> m_log_level_names = get_default_log_level_names();
+		log_level_t m_level = log_level_t::TRACE;
+
+		bool m_use_color = true;
 		// if true prints the whole path to the file (eg /home/user/.../.../project/src/source.cpp:line#)
-		bool print_full_name = false;
+		bool m_print_full_name = false;
 		// this will attempt to use the maximum possible size for each printed element, then align to that.
 		// This creates output where the user message always starts at the same column.
-		bool ensure_alignment = true;
+		bool m_ensure_alignment = true;
 
 		static std::string get_default_log_format();
 		static std::vector<fs::writer_t*> get_default_log_outputs();

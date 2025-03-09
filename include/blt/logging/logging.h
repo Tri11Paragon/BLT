@@ -31,9 +31,6 @@
 
 namespace blt::logging
 {
-	namespace detail
-	{}
-
 	struct logger_t
 	{
 		explicit logger_t(std::ostream& stream): m_stream(stream)
@@ -173,6 +170,8 @@ namespace blt::logging
 
 	void set_thread_name(const std::string& name);
 
+	const std::string& get_thread_name();
+
 	template <typename... Args>
 	void print(std::string fmt, Args&&... args)
 	{
@@ -200,6 +199,22 @@ namespace blt::logging
 		print(stream, std::move(fmt), std::forward<Args>(args)...);
 		stream << std::endl;
 	}
+
+	template<typename... Args>
+	void log(log_level_t level, const char* file, const i32 line, std::string fmt, Args&&... args)
+	{
+		auto& logger = get_global_logger();
+		auto& config = get_global_config();
+		auto user_str = logger.log(std::move(fmt), std::forward<Args>(args)...);
+		auto log_fmt_str = config.generate(user_str, get_thread_name(), level, file, line);
+		if (log_fmt_str)
+			print(std::move(*log_fmt_str));
+	}
+
+	namespace detail
+	{}
 }
+
+#define BLT_LOG(level, fmt, ...) blt::logging::log(level, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
 #endif // BLT_LOGGING_LOGGING_H

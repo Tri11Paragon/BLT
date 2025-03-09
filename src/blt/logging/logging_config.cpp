@@ -15,11 +15,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <ctime>
 #include <iostream>
 #include <blt/fs/stream_wrappers.h>
 #include <blt/logging/ansi.h>
 #include <blt/logging/logging_config.h>
 #include <blt/std/hashmap.h>
+#include <blt/std/system.h>
+#include <blt/std/time.h>
 
 namespace blt::logging
 {
@@ -37,6 +40,7 @@ namespace blt::logging
 			map[MILLISECOND] = log_tag_token_t::MS;
 			map[NANOSECOND] = log_tag_token_t::NS;
 			map[UNIX_TIME] = log_tag_token_t::UNIX;
+			map[UNIX_TIME_NANO] = log_tag_token_t::UNIX_NANO;
 			map[ISO_YEAR] = log_tag_token_t::ISO_YEAR;
 			map[TIME] = log_tag_token_t::TIME;
 			map[FULL_TIME] = log_tag_token_t::FULL_TIME;
@@ -51,87 +55,241 @@ namespace blt::logging
 			map[STR] = log_tag_token_t::STR;
 			return map;
 		}
-
-		std::array<bool, static_cast<u8>(log_tag_token_t::CONTENT)> tag_known_values{
-			// year
-			false,
-			// month
-			false,
-			// day
-			false,
-			// hour
-			false,
-			// minute
-			false,
-			// second
-			false,
-			// ms
-			false,
-			// ns
-			false,
-			// unix
-			false,
-			// iso year
-			false,
-			// time
-			false,
-			// full_time
-			false,
-			// lc
-			true,
-			// ec
-			true,
-			// conditional error
-			false,
-			// reset
-			true,
-			// log level
-			false,
-			// thread_name
-			false,
-			// file
-			false,
-			// line
-			false,
-			// str
-			false
-		};
 	}
 
 	void logging_config_t::compile()
 	{
 		static hashmap_t<std::string_view, tags::detail::log_tag_token_t> tag_map = tags::detail::make_map();
-		log_tag_content.clear();
-		log_tag_tokens.clear();
+		m_log_tag_content.clear();
+		m_log_tag_tokens.clear();
 
 		size_t i = 0;
-		for (; i < log_format.size(); ++i)
+		for (; i < m_log_format.size(); ++i)
 		{
 			size_t start = i;
-			while (i < log_format.size() && log_format[i] != '{')
+			while (i < m_log_format.size() && m_log_format[i] != '{')
 				++i;
-			if (i == log_format.size() || (i < log_format.size() && (i - start) > 0))
+			if (i == m_log_format.size() || (i < m_log_format.size() && (i - start) > 0))
 			{
-				log_tag_content.emplace_back(std::string_view(log_format.data() + start, i - start));
-				log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
-				if (i == log_format.size())
+				m_log_tag_content.emplace_back(std::string_view(m_log_format.data() + start, i - start));
+				m_log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
+				if (i == m_log_format.size())
 					break;
 			}
 			start = i;
-			while (i < log_format.size() && log_format[i] != '}')
+			while (i < m_log_format.size() && m_log_format[i] != '}')
 				++i;
-			const auto tag = std::string_view(log_format.data() + start, i - start + 1);
+			const auto tag = std::string_view(m_log_format.data() + start, i - start + 1);
 			auto it = tag_map.find(tag);
 			if (it == tag_map.end())
 				throw std::runtime_error("Invalid log tag: " + std::string(tag));
-			log_tag_tokens.emplace_back(it->second);
+			m_log_tag_tokens.emplace_back(it->second);
 		}
 
-		if (i < log_format.size())
+		if (i < m_log_format.size())
 		{
-			log_tag_content.emplace_back(std::string_view(log_format.data() + i, log_format.size() - i));
-			log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
+			m_log_tag_content.emplace_back(std::string_view(m_log_format.data() + i, m_log_format.size() - i));
+			m_log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
 		}
+	}
+
+	std::string add_year(const tm* current_time)
+	{
+		return std::to_string(current_time->tm_year + 1900);
+	}
+
+	std::string add_month(const tm* current_time, const bool ensure_alignment)
+	{
+		auto str = std::to_string(current_time->tm_mon + 1);
+		if (ensure_alignment && str.size() < 2)
+			str.insert(str.begin(), '0');
+		return str;
+	}
+
+	std::string add_day(const tm* current_time, const bool ensure_alignment)
+	{
+		auto str = std::to_string(current_time->tm_mday);
+		if (ensure_alignment && str.size() < 2)
+			str.insert(str.begin(), '0');
+		return str;
+	}
+
+	std::string add_hour(const tm* current_time, const bool ensure_alignment)
+	{
+		auto str = std::to_string(current_time->tm_hour);
+		if (ensure_alignment && str.size() < 2)
+			str.insert(str.begin(), '0');
+		return str;
+	}
+
+	std::string add_minute(const tm* current_time, const bool ensure_alignment)
+	{
+		auto str = std::to_string(current_time->tm_min);
+		if (ensure_alignment && str.size() < 2)
+			str.insert(str.begin(), '0');
+		return str;
+	}
+
+	std::string add_second(const tm* current_time, const bool ensure_alignment)
+	{
+		auto str = std::to_string(current_time->tm_sec);
+		if (ensure_alignment && str.size() < 2)
+			str.insert(str.begin(), '0');
+		return str;
+	}
+
+	std::optional<std::string> logging_config_t::generate(const std::string& user_str, const std::string& thread_name, const log_level_t level,
+														const char* file, const i32 line) const
+	{
+		if (level < m_level)
+			return {};
+
+		std::string fmt;
+
+		const std::time_t time = std::time(nullptr);
+		const auto current_time = std::localtime(&time);
+		const auto millis_time = system::getCurrentTimeMilliseconds();
+		const auto nano_time = system::getCurrentTimeNanoseconds();
+
+		size_t content = 0;
+		for (const auto& log_tag_token : m_log_tag_tokens)
+		{
+			switch (log_tag_token)
+			{
+				case tags::detail::log_tag_token_t::YEAR:
+					fmt += add_year(current_time);
+					break;
+				case tags::detail::log_tag_token_t::MONTH:
+					fmt += add_month(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::DAY:
+					fmt += add_day(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::HOUR:
+					fmt += add_hour(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::MINUTE:
+					fmt += add_minute(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::SECOND:
+					fmt += add_second(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::MS:
+				{
+					auto str = std::to_string(millis_time % 1000);
+					if (m_ensure_alignment)
+					{
+						for (size_t i = str.size(); i < 4; ++i)
+							str.insert(str.begin(), '0');
+					}
+					fmt += str;
+					break;
+				}
+				case tags::detail::log_tag_token_t::NS:
+				{
+					auto str = std::to_string(nano_time % 1000);
+					if (m_ensure_alignment)
+					{
+						for (size_t i = str.size(); i < 4; ++i)
+							str.insert(str.begin(), '0');
+					}
+					fmt += str;
+					break;
+				}
+				case tags::detail::log_tag_token_t::UNIX:
+				{
+					auto str = std::to_string(millis_time % 1000);
+					if (m_ensure_alignment)
+					{
+						for (size_t i = str.size(); i < 4; ++i)
+							str.insert(str.begin(), '0');
+					}
+					fmt += str;
+					break;
+				}
+				case tags::detail::log_tag_token_t::UNIX_NANO:
+				{
+					auto str = std::to_string(nano_time);
+					if (m_ensure_alignment)
+					{
+						for (size_t i = str.size(); i < 4; ++i)
+							str.insert(str.begin(), '0');
+					}
+					fmt += str;
+					break;
+				}
+				case tags::detail::log_tag_token_t::ISO_YEAR:
+				{
+					fmt += add_year(current_time);
+					fmt += '-';
+					fmt += add_month(current_time, m_ensure_alignment);
+					fmt += '-';
+					fmt += add_day(current_time, m_ensure_alignment);
+					break;
+				}
+				case tags::detail::log_tag_token_t::TIME:
+					fmt += add_hour(current_time, m_ensure_alignment);
+					fmt += ':';
+					fmt += add_minute(current_time, m_ensure_alignment);
+					fmt += ':';
+					fmt += add_second(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::FULL_TIME:
+					fmt += add_year(current_time);
+					fmt += '-';
+					fmt += add_month(current_time, m_ensure_alignment);
+					fmt += '-';
+					fmt += add_day(current_time, m_ensure_alignment);
+					fmt += ' ';
+					fmt += add_hour(current_time, m_ensure_alignment);
+					fmt += ':';
+					fmt += add_minute(current_time, m_ensure_alignment);
+					fmt += ':';
+					fmt += add_second(current_time, m_ensure_alignment);
+					break;
+				case tags::detail::log_tag_token_t::LC:
+					if (!m_use_color)
+						break;
+					fmt += m_log_level_colors[static_cast<u8>(level)];
+					break;
+				case tags::detail::log_tag_token_t::EC:
+					if (!m_use_color)
+						break;
+					fmt += m_error_color;
+					break;
+				case tags::detail::log_tag_token_t::CEC:
+					if (!m_use_color)
+						break;
+					if (static_cast<u8>(level) >= static_cast<u8>(log_level_t::ERROR))
+						fmt += m_error_color;
+					break;
+				case tags::detail::log_tag_token_t::RESET:
+					if (!m_use_color)
+						break;
+					fmt += build(ansi::color::color_mode::RESET_ALL);
+					break;
+				case tags::detail::log_tag_token_t::LL:
+					fmt += m_log_level_names[static_cast<u8>(level)];
+					break;
+				case tags::detail::log_tag_token_t::TN:
+					fmt += thread_name;
+					break;
+				case tags::detail::log_tag_token_t::FILE:
+					fmt += file;
+					break;
+				case tags::detail::log_tag_token_t::LINE:
+					fmt += std::to_string(line);
+					break;
+				case tags::detail::log_tag_token_t::STR:
+					fmt += user_str;
+					break;
+				case tags::detail::log_tag_token_t::CONTENT:
+					fmt += m_log_tag_content[content++];
+					break;
+			}
+		}
+
+		return fmt;
 	}
 
 	std::string logging_config_t::get_default_log_format()
