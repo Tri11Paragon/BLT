@@ -149,7 +149,7 @@ namespace blt
 		*/
 		inline void allocate_block()
 		{
-			//BLT_INFO("Allocating a new block of size %d", BLOCK_SIZE);
+			//BLT_INFO("Allocating a new block of size {:d}", BLOCK_SIZE);
 			auto* blk = new block_storage();
 			blk->data = static_cast<pointer>(malloc(sizeof(T) * BLOCK_SIZE));
 			blocks.push_back(blk);
@@ -572,13 +572,13 @@ namespace blt
 			if constexpr (WARN_ON_FAIL)
 			{
 				if (((size_t) buffer & (HUGE_PAGE_SIZE - 1)) != 0)
-					BLT_ERROR("Pointer is not aligned! %p", buffer);
+					BLT_ERROR("Pointer is not aligned! {:#x}", buffer);
 			}
 			auto* ptr = static_cast<void*>(buffer);
 			auto ptr_size = reinterpret_cast<blt::size_t>(ptr);
 			buffer = static_cast<T*>(std::align(BLOCK_SIZE, BLOCK_SIZE, ptr, bytes));
 			if constexpr (WARN_ON_FAIL)
-				BLT_ERROR("Offset by %ld pages, resulting: %p", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
+				BLT_ERROR("Offset by {} pages, resulting: {:#x}", (reinterpret_cast<blt::size_t>(buffer) - ptr_size) / 4096, buffer);
 		}
 		return buffer;
 		#endif
@@ -839,7 +839,7 @@ namespace blt
 			#endif
 			//                if (deletes.contains(p))
 			//                {
-			//                    BLT_FATAL("pointer %p has already been freed", p);
+			//                    BLT_FATAL("pointer {:#x} has already been freed", p);
 			//                    throw std::bad_alloc();
 			//                }else
 			//                    deletes.insert(static_cast<void*>(p));
@@ -848,7 +848,7 @@ namespace blt
 			blk->metadata.allocated_objects--;
 			if (blk->metadata.allocated_objects == 0)
 			{
-				//BLT_INFO("Deallocating block from %p in (1) %p current head %p, based: %p", p, blk, head, base);
+				//BLT_INFO("Deallocating block from {:#x} in (1) {:#x} current head {:#x}, based: {:#x}", p, blk, head, base);
 				if (blk == base)
 				{
 					base = base->metadata.next;
@@ -860,7 +860,7 @@ namespace blt
 				else if (blk->metadata.prev != nullptr) // finally if it wasn't the head we need to bridge the gap in the list
 					blk->metadata.prev->metadata.next = blk->metadata.next;
 
-				//BLT_INFO("Deallocating block from %p in (2) %p current head %p, based: %p", p, blk, head, base);
+				//BLT_INFO("Deallocating block from {:#x} in (2) {:#x} current head {:#x}, based: {:#x}", p, blk, head, base);
 				delete_block(blk);
 			}
 		}

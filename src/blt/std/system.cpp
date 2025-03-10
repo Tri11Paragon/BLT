@@ -94,7 +94,7 @@ namespace blt
         if (GetProcessTimes(GetCurrentProcess(),
                             &starttime, &exittime, &kerneltime, &usertime) == 0)
         {
-            BLT_WARN("Unable to get process resource usage, error: %d", GetLastError());
+            BLT_WARN("Unable to get process resource usage, error: {:d}", GetLastError());
             return {};
         }
         
@@ -111,7 +111,7 @@ namespace blt
 #else
         if (getrusage(who, (struct rusage*) &usage) != 0)
         {
-            BLT_ERROR("Failed to get rusage %d", errno);
+            BLT_ERROR("Failed to get rusage {:d}", errno);
             return {};
         }
 #endif

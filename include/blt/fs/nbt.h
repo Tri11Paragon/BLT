@@ -305,7 +305,7 @@ namespace blt::nbt {
                 auto& tag = t[i];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);
@@ -342,7 +342,7 @@ namespace blt::nbt {
                 auto& tag = t[name];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);
@@ -409,7 +409,7 @@ namespace blt::nbt {
                 auto& tag = root->get()[name];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);

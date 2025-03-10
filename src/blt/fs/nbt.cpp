@@ -36,7 +36,7 @@ namespace blt::nbt {
         char t;
         reader.read(&t, 1);
         if (t != (char)nbt_tag::COMPOUND) {
-            BLT_WARN("Found %d", t);
+            BLT_WARN("Found {:d}", t);
             throw std::runtime_error("Incorrectly formatted NBT data! Root tag must be a compound tag!");
         }
         root = new tag_compound;

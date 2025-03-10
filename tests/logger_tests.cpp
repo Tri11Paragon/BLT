@@ -181,6 +181,7 @@ int main()
 	BLT_WARN("This is a warning!");
 	BLT_ERROR("This is an error!");
 	BLT_FATAL("This is a fatal error!");
+	BLT_TRACE("This is a pointer {:f}", &charCount);
 
 	/*std::cout << "\033[2J";
 	constexpr int totalRows = 24;

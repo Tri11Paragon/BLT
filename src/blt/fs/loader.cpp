@@ -82,8 +82,8 @@ std::string blt::fs::getFile(std::string_view path)
         file_contents = file_stream.str();
     } catch (std::ifstream::failure& e)
     {
-        BLT_WARN("Unable to read file '%s'!\n", std::string(path).c_str());
-        BLT_WARN("Exception: %s", e.what());
+        BLT_WARN("Unable to read file '{}'!\n", std::string(path).c_str());
+        BLT_WARN("Exception: {}", e.what());
         BLT_THROW(std::runtime_error("Failed to read file!\n"));
     }
     return file_contents;
