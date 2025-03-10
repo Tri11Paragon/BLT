@@ -28,6 +28,12 @@ namespace blt::fs
     std::string base_name(const std::string& str);
     std::string_view base_name_sv(std::string_view str);
 
+	std::string filename(const std::string& str);
+	std::string_view filename_sv(std::string_view str);
+
+	std::string extension(const std::string& str);
+	std::string_view extension_sv(std::string_view str);
+
 }
 
 #endif //BLT_FS_PATH_HELPER_H

@@ -173,6 +173,15 @@ int main()
 
 	blt::logging::println("Logged {} characters", charCount);
 
+	BLT_TRACE("Hello this is am empty trace!");
+	BLT_TRACE("This is a trace with data {} {} {}", "bad at code", 413, "boy");
+
+	BLT_DEBUG("This is complete? {}", "this is working!");
+	BLT_INFO("Hello there!");
+	BLT_WARN("This is a warning!");
+	BLT_ERROR("This is an error!");
+	BLT_FATAL("This is a fatal error!");
+
 	/*std::cout << "\033[2J";
 	constexpr int totalRows = 24;
 	// std::cout << "\033[1;" << (totalRows - 1) << "r";

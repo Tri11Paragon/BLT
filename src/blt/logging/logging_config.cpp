@@ -17,6 +17,7 @@
  */
 #include <ctime>
 #include <iostream>
+#include <blt/fs/path_helper.h>
 #include <blt/fs/stream_wrappers.h>
 #include <blt/logging/ansi.h>
 #include <blt/logging/logging_config.h>
@@ -91,6 +92,10 @@ namespace blt::logging
 			m_log_tag_content.emplace_back(std::string_view(m_log_format.data() + i, m_log_format.size() - i));
 			m_log_tag_tokens.emplace_back(tags::detail::log_tag_token_t::CONTENT);
 		}
+
+		m_longest_name_length = 0;
+		for (const auto& name : m_log_level_names)
+			m_longest_name_length = std::max(m_longest_name_length, name.size());
 	}
 
 	std::string add_year(const tm* current_time)
@@ -187,10 +192,10 @@ namespace blt::logging
 				}
 				case tags::detail::log_tag_token_t::NS:
 				{
-					auto str = std::to_string(nano_time % 1000);
+					auto str = std::to_string(nano_time % 1000000000ul);
 					if (m_ensure_alignment)
 					{
-						for (size_t i = str.size(); i < 4; ++i)
+						for (size_t i = str.size(); i < 9; ++i)
 							str.insert(str.begin(), '0');
 					}
 					fmt += str;
@@ -198,24 +203,12 @@ namespace blt::logging
 				}
 				case tags::detail::log_tag_token_t::UNIX:
 				{
-					auto str = std::to_string(millis_time % 1000);
-					if (m_ensure_alignment)
-					{
-						for (size_t i = str.size(); i < 4; ++i)
-							str.insert(str.begin(), '0');
-					}
-					fmt += str;
+					fmt += std::to_string(millis_time);
 					break;
 				}
 				case tags::detail::log_tag_token_t::UNIX_NANO:
 				{
-					auto str = std::to_string(nano_time);
-					if (m_ensure_alignment)
-					{
-						for (size_t i = str.size(); i < 4; ++i)
-							str.insert(str.begin(), '0');
-					}
-					fmt += str;
+					fmt += std::to_string(nano_time);
 					break;
 				}
 				case tags::detail::log_tag_token_t::ISO_YEAR:
@@ -275,7 +268,10 @@ namespace blt::logging
 					fmt += thread_name;
 					break;
 				case tags::detail::log_tag_token_t::FILE:
-					fmt += file;
+					if (m_print_full_name)
+						fmt += file;
+					else
+						fmt += fs::filename_sv(file);
 					break;
 				case tags::detail::log_tag_token_t::LINE:
 					fmt += std::to_string(line);
@@ -294,7 +290,7 @@ namespace blt::logging
 
 	std::string logging_config_t::get_default_log_format()
 	{
-		return build(fg(ansi::color::color8_bright::CYAN)) + "[" + tags::FULL_TIME + "]" + tags::RESET + " " + tags::LOG_COLOR + "[" + tags::LOG_LEVEL
+		return build(fg(ansi::color::color8_bright::BLUE)) + "[" + tags::FULL_TIME + "]" + tags::RESET + " " + tags::LOG_COLOR + "[" + tags::LOG_LEVEL
 		+ "]" + tags::RESET + " " + build(fg(ansi::color::color8::MAGENTA)) + "(" + tags::FILE + ":" + tags::LINE + ")" + tags::RESET + " " +
 		tags::CONDITIONAL_ERROR_COLOR + tags::STR + tags::RESET + "\n";
 	}

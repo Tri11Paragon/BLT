@@ -37,6 +37,7 @@ namespace blt::logging
     struct logging_thread_context_t
     {
         std::stringstream stream;
+        std::stringstream logging_stream;
         std::string thread_name;
         logger_t logger{stream};
     };
@@ -238,5 +239,12 @@ namespace blt::logging
     const std::string& get_thread_name()
     {
         return get_thread_context().thread_name;
+    }
+
+    std::ostream& get_local_stream()
+    {
+        auto& context = get_thread_context();
+        context.logging_stream.str("");
+        return context.logging_stream;
     }
 }

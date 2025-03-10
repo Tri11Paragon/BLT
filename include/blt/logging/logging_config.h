@@ -216,6 +216,8 @@ namespace blt::logging
 		// This creates output where the user message always starts at the same column.
 		bool m_ensure_alignment = true;
 
+		size_t m_longest_name_length = 0;
+
 		static std::string get_default_log_format();
 		static std::vector<fs::writer_t*> get_default_log_outputs();
 		static std::array<std::string, LOG_LEVEL_COUNT> get_default_log_level_colors();

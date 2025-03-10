@@ -168,6 +168,8 @@ namespace blt::logging
 
 	logging_config_t& get_global_config();
 
+	std::ostream& get_local_stream();
+
 	void set_thread_name(const std::string& name);
 
 	const std::string& get_thread_name();
@@ -200,7 +202,7 @@ namespace blt::logging
 		stream << std::endl;
 	}
 
-	template<typename... Args>
+	template <typename... Args>
 	void log(log_level_t level, const char* file, const i32 line, std::string fmt, Args&&... args)
 	{
 		auto& logger = get_global_logger();
@@ -212,9 +214,62 @@ namespace blt::logging
 	}
 
 	namespace detail
-	{}
+	{
+
+	}
 }
 
+#if defined(__clang__) || defined(__llvm__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
+#ifdef BLT_DISABLE_LOGGING
+#define BLT_LOG(level, fmt, ...)
+
+#else
 #define BLT_LOG(level, fmt, ...) blt::logging::log(level, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+
+#ifdef BLT_DISABLE_TRACE
+#define BLT_TRACE(format, ...)
+#else
+#define BLT_TRACE(format, ...) BLT_LOG(blt::logging::log_level_t::TRACE, format, ##__VA_ARGS__)
+#endif
+
+#ifdef BLT_DISABLE_DEBUG
+#define BLT_DEBUG(format, ...)
+#else
+#define BLT_DEBUG(format, ...) BLT_LOG(blt::logging::log_level_t::DEBUG, format, ##__VA_ARGS__)
+#endif
+
+#ifdef BLT_DISABLE_INFO
+#define BLT_INFO(format, ...)
+#else
+#define BLT_INFO(format, ...) BLT_LOG(blt::logging::log_level_t::INFO, format, ##__VA_ARGS__)
+#endif
+
+#ifdef BLT_DISABLE_WARN
+#define BLT_WARN(format, ...)
+#else
+#define BLT_WARN(format, ...) BLT_LOG(blt::logging::log_level_t::WARN, format, ##__VA_ARGS__)
+#endif
+
+#ifdef BLT_DISABLE_ERROR
+#define BLT_ERROR(format, ...)
+#else
+#define BLT_ERROR(format, ...) BLT_LOG(blt::logging::log_level_t::ERROR, format, ##__VA_ARGS__)
+#endif
+
+#ifdef BLT_DISABLE_FATAL
+#define BLT_FATAL(format, ...)
+#else
+#define BLT_FATAL(format, ...) BLT_LOG(blt::logging::log_level_t::FATAL, format, ##__VA_ARGS__)
+#endif
+
+#endif
+
+#if defined(__clang__) || defined(__llvm__)
+#pragma clang diagnostic pop
+#endif
 
 #endif // BLT_LOGGING_LOGGING_H

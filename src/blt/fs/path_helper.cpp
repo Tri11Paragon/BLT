@@ -38,4 +38,30 @@ namespace blt::fs
         const auto file_parts = string::split_sv(parts.back(), '.');
         return file_parts.front();
     }
+
+    std::string filename(const std::string& str)
+    {
+        return std::string(filename_sv(str));
+    }
+
+    std::string_view filename_sv(const std::string_view str)
+    {
+        const auto parts = string::split_sv(str, delim);
+        return parts.back();
+    }
+
+    std::string extension(const std::string& str)
+    {
+        return std::string(extension_sv(str));
+    }
+
+    std::string_view extension_sv(const std::string_view str)
+    {
+        const auto parts = string::split_sv(str, delim);
+        const auto file_parts = parts.back().find_first_of('.');
+        return parts.back().substr(std::min(file_parts + 1, parts.back().size()));
+    }
 }
+
+
+
