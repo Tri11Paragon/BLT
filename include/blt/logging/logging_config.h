@@ -20,7 +20,6 @@
 #define BLT_LOGGING_LOGGING_CONFIG_H
 
 #include <array>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -140,9 +139,9 @@ namespace blt::logging
 			return *this;
 		}
 
-		logging_config_t& add_injector(injector_t* injector)
+		logging_config_t& add_injector(injector_t& injector)
 		{
-			m_injectors.push_back(std::unique_ptr<injector_t>(injector));
+			m_injectors.push_back(&injector);
 			return *this;
 		}
 
@@ -206,13 +205,13 @@ namespace blt::logging
 		std::optional<std::string> generate(const std::string& user_str, const std::string& thread_name, log_level_t level, const char* file,
 											i32 line) const;
 
-		[[nodiscard]] const std::vector<std::unique_ptr<injector_t>>& get_injectors() const
+		[[nodiscard]] const std::vector<injector_t*>& get_injectors() const
 		{
 			return m_injectors;
 		}
 
 	private:
-		std::vector<std::unique_ptr<injector_t>> m_injectors;
+		std::vector<injector_t*> m_injectors;
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
 		std::vector<fs::writer_t*> m_log_outputs = get_default_log_outputs();
 		std::string m_log_format = get_default_log_format();

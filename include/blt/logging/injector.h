@@ -25,9 +25,9 @@ namespace blt::logging
 	{
 		std::string new_logging_output;
 		// should we continue processing the injector call chain?
-		bool should_continue;
+		bool should_continue = true;
 		// should we log the resulting string at the end of the injector call chain? If false for any injector, it becomes false for all injectors.
-		bool should_log;
+		bool should_log = true;
 	};
 
 	class injector_t

@@ -19,8 +19,37 @@
 #ifndef BLT_LOGGING_STATUS_H
 #define BLT_LOGGING_STATUS_H
 
+#include <string>
+#include <blt/logging/injector.h>
+#include <blt/std/types.h>
+
 namespace blt::logging
 {
+
+	class status_item_t
+	{
+	public:
+		virtual ~status_item_t() = default;
+
+		[[nodiscard]] virtual i32 lines_used() const
+		{
+			return 1;
+		}
+
+		virtual std::string print();
+	};
+
+	class status_bar_t final : public injector_t
+	{
+	public:
+		explicit status_bar_t(i32 status_size);
+
+		injector_output_t inject(const std::string& input) override;
+
+		virtual ~status_bar_t() override;
+	private:
+		i32 m_status_size;
+	};
 
 }
 

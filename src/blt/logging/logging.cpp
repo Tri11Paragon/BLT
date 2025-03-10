@@ -225,11 +225,11 @@ namespace blt::logging
 			for (const auto& injector : config.get_injectors())
 			{
 				auto [new_logging_output, should_continue, should_log] = injector->inject(str);
-				if (!should_continue)
-					break;
 				if (!should_log)
 					should_print = false;
 				str = std::move(new_logging_output);
+				if (!should_continue)
+					break;
 			}
 		}
 		if (should_print)

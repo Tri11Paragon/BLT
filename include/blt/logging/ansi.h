@@ -249,8 +249,12 @@ namespace blt::logging::ansi
 	namespace cursor
 	{
 		inline const std::string home = BLT_ANSI_CSI "H";
+		inline const std::string lower_left_corner = BLT_ANSI_ESCAPE " F";
+		inline const std::string hide_cursor = BLT_ANSI_CSI "?2 5l";
+		inline const std::string show_cursor = BLT_ANSI_CSI "?2 5h";
+		inline const std::string report_position = BLT_ANSI_CSI "6n";
 
-		template <bool UseH>
+		template <bool UseH = true>
 		std::string move_to(const i64 line, const i64 column)
 		{
 			if constexpr (UseH)
@@ -300,6 +304,14 @@ namespace blt::logging::ansi
 		inline const std::string restore_cursor_position_dec = BLT_ANSI_ESCAPE " 8";
 		inline const std::string save_cursor_position_sco = BLT_ANSI_CSI "s";
 		inline const std::string restore_cursor_position_sco = BLT_ANSI_CSI "u";
+	}
+
+	namespace scroll
+	{
+		inline std::string scroll_up(const int lines)
+		{
+			return std::string(BLT_ANSI_CSI) + std::to_string(lines) + "S";
+		};
 	}
 
 	namespace erase

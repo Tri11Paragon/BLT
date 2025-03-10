@@ -23,6 +23,7 @@
 #include <blt/fs/filesystem.h>
 #include <blt/logging/ansi.h>
 #include <blt/logging/logging.h>
+#include <blt/logging/status.h>
 #include <blt/std/assert.h>
 #include <blt/std/utility.h>
 
@@ -131,31 +132,31 @@ int main()
 	blt::logging::println(ss, "This is a println with fill no alignment {:%20} end value", 46);
 	blt::logging::println(ss, "This is a println with arg reference {0:{1}.{2}f}", 46.0232, 20, 2);
 	blt::logging::println(ss, "This is a println with arg reference {0:&{1}}", "", 20);
-	blt::logging::print(ss.str());
+	// blt::logging::print(ss.str());
 	auto [passed, error_msg] = compare_strings(expected_str, ss.str());
 	BLT_ASSERT_MSG(passed && "Logger logged string doesn't match precomputed expected string!", error_msg.c_str());
 
 	namespace ansi = blt::logging::ansi;
 	namespace color = ansi::color;
 
-	for (blt::u8 r = 0; r < 6; r++)
-	{
-		for (blt::u8 g = 0; g < 6; g++)
-		{
-			for (blt::u8 b = 0; b < 6; b++)
-			{
-				blt::logging::println("{}This is a println with a color {:#3x} {:#3x} {:#3x}{}",
-									build(fg(color::color256{r, g, b}), bg(color::color256{
-											static_cast<unsigned char>(5 - r),
-											static_cast<unsigned char>(5 - g),
-											static_cast<unsigned char>(5 - b)
-										})), r, g, b, build(color::color_mode::RESET_ALL));
-			}
-		}
-	}
-	blt::logging::println("{}This is a color now with background{}",
-						build(color::color_mode::BOLD, fg(color::color8::RED), color::color_mode::DIM, bg(color::color_rgb(0, 100, 255))),
-						build(color::color_mode::RESET_ALL));
+	// for (blt::u8 r = 0; r < 6; r++)
+	// {
+	// 	for (blt::u8 g = 0; g < 6; g++)
+	// 	{
+	// 		for (blt::u8 b = 0; b < 6; b++)
+	// 		{
+	// 			blt::logging::println("{}This is a println with a color {:#3x} {:#3x} {:#3x}{}",
+	// 								build(fg(color::color256{r, g, b}), bg(color::color256{
+	// 										static_cast<unsigned char>(5 - r),
+	// 										static_cast<unsigned char>(5 - g),
+	// 										static_cast<unsigned char>(5 - b)
+	// 									})), r, g, b, build(color::color_mode::RESET_ALL));
+	// 		}
+	// 	}
+	// }
+	// blt::logging::println("{}This is a color now with background{}",
+	// 					build(color::color_mode::BOLD, fg(color::color8::RED), color::color_mode::DIM, bg(color::color_rgb(0, 100, 255))),
+	// 					build(color::color_mode::RESET_ALL));
 
 
 	std::ofstream os("test.txt");
@@ -171,17 +172,36 @@ int main()
 	writer.write("What about just a new line character?\n");
 	size_t charCount = 0;
 
-	blt::logging::println("Logged {} characters", charCount);
+	// blt::logging::println("Logged {} characters", charCount);
+	//
+	// BLT_TRACE("Hello this is am empty trace!");
+	// BLT_TRACE("This is a trace with data {} {} {}", "bad at code", 413, "boy");
+	//
+	// BLT_DEBUG("This is complete? {}", "this is working!");
+	// BLT_INFO("Hello there!");
+	// BLT_WARN("This is a warning!");
+	// BLT_ERROR("This is an error!");
+	// BLT_FATAL("This is a fatal error!");
+	// BLT_TRACE("This is a pointer {:f}", &charCount);
+	//
+	// BLT_TRACE("Now time to test the logger status box");
 
-	BLT_TRACE("Hello this is am empty trace!");
-	BLT_TRACE("This is a trace with data {} {} {}", "bad at code", 413, "boy");
+	blt::logging::status_bar_t status{2};
+	blt::logging::get_global_config().add_injector(status);
 
-	BLT_DEBUG("This is complete? {}", "this is working!");
-	BLT_INFO("Hello there!");
-	BLT_WARN("This is a warning!");
-	BLT_ERROR("This is an error!");
-	BLT_FATAL("This is a fatal error!");
-	BLT_TRACE("This is a pointer {:f}", &charCount);
+	BLT_TRACE("Hello There!");
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	BLT_TRACE("I am printing stuff!");
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	BLT_TRACE("How are you!?");
+
+	for (int i = 0; i < 100; i++)
+	{
+		BLT_INFO("I am printing some output {} times!", i + 1);
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	/*std::cout << "\033[2J";
 	constexpr int totalRows = 24;
