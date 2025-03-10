@@ -216,9 +216,24 @@ namespace blt::logging
 		return get_thread_context().logger;
 	}
 
-	void print(const std::string& str)
+	void print(std::string str)
 	{
-		std::cout << str;
+		const auto& config = get_global_config();
+		bool should_print = true;
+		if (!config.get_injectors().empty())
+		{
+			for (const auto& injector : config.get_injectors())
+			{
+				auto [new_logging_output, should_continue, should_log] = injector->inject(str);
+				if (!should_continue)
+					break;
+				if (!should_log)
+					should_print = false;
+				str = std::move(new_logging_output);
+			}
+		}
+		if (should_print)
+			std::cout << str;
 	}
 
 	void newline()

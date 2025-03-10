@@ -160,7 +160,7 @@ namespace blt::logging
 		size_t m_arg_pos = 0;
 	};
 
-	void print(const std::string& str);
+	void print(std::string str);
 
 	void newline();
 
@@ -212,12 +212,13 @@ namespace blt::logging
 			user_str.pop_back();
 		if (level == log_level_t::NONE)
 		{
-			println(user_str);
+			print(user_str);
+			newline();
 			return;
 		}
 		auto log_fmt_str = config.generate(user_str, get_thread_name(), level, file, line);
 		if (log_fmt_str)
-			print(*log_fmt_str);
+			print(std::move(*log_fmt_str));
 	}
 
 	namespace detail

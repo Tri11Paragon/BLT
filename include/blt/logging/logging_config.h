@@ -206,6 +206,11 @@ namespace blt::logging
 		std::optional<std::string> generate(const std::string& user_str, const std::string& thread_name, log_level_t level, const char* file,
 											i32 line) const;
 
+		[[nodiscard]] const std::vector<std::unique_ptr<injector_t>>& get_injectors() const
+		{
+			return m_injectors;
+		}
+
 	private:
 		std::vector<std::unique_ptr<injector_t>> m_injectors;
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
