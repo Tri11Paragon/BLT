@@ -134,32 +134,32 @@ void test_zip()
     blt::log_box_t box(std::cout, "Zip Tests", 25);
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, list_1))
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, list_1).take(3))
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take(3).rev())
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).take_or(13))
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).rev().take(3))
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
     BLT_TRACE("================================");
     for (auto [a1, a2, a3] : blt::zip(array_1, array_2, array_3).skip(2).rev())
     {
-        BLT_TRACE("{} : {} : {}", a1, a2, a3);
+        BLT_TRACE("{:.4} : {:.4} : {:.4}", a1, a2, a3);
     }
 }
 
@@ -168,33 +168,33 @@ void test_iterate()
     blt::log_box_t box(std::cout, "Iterate Tests", 25);
     for (auto v : blt::iterate(array_1))
     {
-        BLT_TRACE("Element: {}", v);
+        BLT_TRACE("Element: {:.4f}", v);
     }
     BLT_TRACE("================================");
     for (auto v : blt::iterate(array_1).skip(5))
     {
-        BLT_TRACE("Element: {}", v);
+        BLT_TRACE("Element: {:.4f}", v);
     }
     BLT_TRACE("================================");
     for (auto v : blt::iterate(array_1).take(5))
     {
-        BLT_TRACE("Element: {}", v);
+        BLT_TRACE("Element: {:.4f}", v);
     }
     BLT_TRACE("================================");
     for (auto v : blt::iterate(array_1).rev())
     {
-        BLT_TRACE("Element: {}", v);
+        BLT_TRACE("Element: {:.4f}", v);
     }
     BLT_TRACE("================================");
     for (auto [a, b] : blt::iterate(array_1).zip(list_1))
     {
-        BLT_TRACE("Zip: {} {}", a, b);
+        BLT_TRACE("Zip: {:.4f} {:.4f}", a, b);
     }
     BLT_TRACE("================================");
     for (auto [i, data] : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); }).zip(list_1).skip(3).take(4).enumerate())
     {
         auto [a, b] = data;
-        BLT_TRACE("Map + Zip + Skip + Take + Enumerate (Index: {})> {} {}", i, a, b);
+        BLT_TRACE("Map + Zip + Skip + Take + Enumerate (Index: {})> {:.4f} {:.4f}", i, a, b);
     }
     BLT_TRACE("================================");
     for (auto [i, data] : blt::iterate(array_1).map(
@@ -203,7 +203,7 @@ void test_iterate()
             }).zip(list_1).skip(3).take(4).enumerate())
     {
         auto [a, b] = data;
-        BLT_TRACE("Map + Zip + Skip + Take + Enumerate (Index: {})> {} {}", i, a, b);
+        BLT_TRACE("Map + Zip + Skip + Take + Enumerate (Index: {})> {:.4f} {:.4f}", i, a, b);
     }
     BLT_TRACE("================================");
     for (auto a : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); })
@@ -212,7 +212,7 @@ void test_iterate()
         if (!a)
             continue;
         auto v = *a;
-        BLT_TRACE(" So this one works? {}", v);
+        BLT_TRACE(" So this one works? {:.4f}", v);
     }
     BLT_TRACE("================================");
     for (auto a : blt::iterate(array_1).map([](const blt::vec2& in) { return in.normalize(); })
@@ -221,7 +221,7 @@ void test_iterate()
         if (!a)
             continue;
         auto [index, v] = *a;
-        BLT_TRACE(" So this one works? ({}) {}", index, v);
+        BLT_TRACE(" So this one works? ({}) {:.4f}", index, v);
     }
     BLT_TRACE("================================");
 //    for (auto a : blt::iterate(array_1).filter([](const auto& f) { return f.x() > 3 && f.y() < 6; }).take(2))
@@ -233,7 +233,7 @@ void test_iterate()
 //    }
     for (auto a : blt::iterate(array_1).map([](const auto& f) { return f.x() > 3 && f.y() < 6; }))
     {
-        BLT_TRACE(" How about this one?? ({}) {}", a);
+        BLT_TRACE(" How about this one?? ({}) {:.4f}", a);
     }
 
 //    for (auto [value, a] : blt::iterate(array_1).map(
