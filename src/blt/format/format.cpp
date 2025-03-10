@@ -6,7 +6,7 @@
 #include <blt/format/format.h>
 #include <blt/std/string.h>
 #include <cmath>
-#include "blt/std/logging.h"
+#include "blt/logging/logging.h"
 #include "blt/std/assert.h"
 #include "blt/std/utility.h"
 #include <stack>

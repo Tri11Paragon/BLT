@@ -4,7 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/fs/nbt.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <cassert>
 
 #include <type_traits>

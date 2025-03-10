@@ -18,7 +18,7 @@
 #include <blt/parse/templating.h>
 #include <blt/std/string.h>
 #include <cctype>
-#include "blt/std/logging.h"
+#include "blt/logging/logging.h"
 
 namespace blt
 {

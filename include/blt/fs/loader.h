@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <string>
 #include <blt/std/string.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <unordered_set>
 
 namespace blt::fs

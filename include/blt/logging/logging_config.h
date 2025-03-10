@@ -115,7 +115,8 @@ namespace blt::logging
 		INFO,
 		WARN,
 		ERROR,
-		FATAL
+		FATAL,
+		NONE
 	};
 
 	inline constexpr size_t LOG_LEVEL_COUNT = 6;

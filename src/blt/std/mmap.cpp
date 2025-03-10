@@ -15,6 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <blt/logging/logging.h>
 #include <blt/std/mmap.h>
 
 #ifdef __unix__
@@ -112,7 +113,7 @@ namespace blt
 #ifdef __unix__
         if (munmap(ptr, bytes))
         {
-            BLT_ERROR_STREAM << "Failed to deallocate\n";
+            BLT_ERROR("Failed to deallocate");
             throw bad_alloc_t(handle_mmap_error());
         }
 #else

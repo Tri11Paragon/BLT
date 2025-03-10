@@ -17,5 +17,4 @@
  */
 #include <blt/fs/filesystem.h>
 #include <cstring>
-#include <blt/std/logging.h>
 

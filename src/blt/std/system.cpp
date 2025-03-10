@@ -4,7 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/system.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 
 #if !defined(_MSC_VER) && !defined(WIN32)
 #include <sys/time.h>            /* for struct timeval */

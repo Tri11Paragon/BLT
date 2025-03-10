@@ -26,7 +26,7 @@
 #include <charconv>
 #include "blt/std/assert.h"
 #include "blt/std/utility.h"
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 
 namespace blt::parse
 {
@@ -101,24 +101,23 @@ namespace blt::parse
             return;
         }
         
-        auto elements = blt::string::split(std::string(tokenizer.read_fully()), " ");
+        auto elements = string::split(tokenizer.read_fully(), " ");
         BLT_ASSERT(elements.size() >= 2 && "Current line doesn't have enough arguments to process!");
         float x = get(elements[0]), y = get(elements[1]);
-        BLT_DEBUG_STREAM << "Loaded value of (" << x << ", " << y << ")";
+        BLT_DEBUG("Loaded value of ({}, {})", x, y);
         if (elements.size() < 3)
         {
             if (type == 't')
                 uvs.push_back(uv_t{x, y});
             else
-                BLT_ERROR("Unable to parse line '%s' type '%c' not recognized for arg count", std::string(tokenizer.read_fully()).c_str(), type);
+                BLT_ERROR("Unable to parse line '{}' type '{:c}' not recognized for arg count", tokenizer.read_fully(), type);
         } else
         {
             float z = get(elements[2]);
-            BLT_DEBUG_STREAM << " with z: " << z;
+            BLT_DEBUG(" with z: {}", z);
             if (!handle_vertex_and_normals(x, y, z, type))
-                BLT_ERROR("Unable to parse line '%s' type '%c' not recognized", std::string(tokenizer.read_fully()).c_str(), type);
+                BLT_ERROR("Unable to parse line '{}' type '{:c}' not recognized", tokenizer.read_fully(), type);
         }
-        BLT_DEBUG_STREAM << "\n";
     }
     
     bool obj_loader::handle_vertex_and_normals(float x, float y, float z, char type)

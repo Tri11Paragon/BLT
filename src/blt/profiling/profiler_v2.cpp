@@ -187,11 +187,11 @@ namespace blt
             stream << line << "\n";
     }
     
-    void printProfile(profile_t& profiler, const std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
+    void printProfile(profile_t& profiler, const std::uint32_t flags, sort_by sort, blt::logging::log_level_t log_level)
     {
         std::stringstream stream;
         writeProfile(stream, profiler, flags, sort);
-        BLT_LOG_STREAM(log_level) << stream.str();
+        BLT_LOG(log_level, "{}", stream.str());
     }
     
     profile_t::~profile_t()
@@ -237,7 +237,7 @@ namespace blt
         profiles.erase(profile_name);
     }
     
-    void _internal::printProfile(const std::string& profile_name, std::uint32_t flags, sort_by sort, blt::logging::log_level log_level)
+    void _internal::printProfile(const std::string& profile_name, std::uint32_t flags, sort_by sort, blt::logging::log_level_t log_level)
     {
         if (profiles.find(profile_name) == profiles.end())
             return;

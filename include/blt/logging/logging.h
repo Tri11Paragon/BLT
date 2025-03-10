@@ -203,14 +203,21 @@ namespace blt::logging
 	}
 
 	template <typename... Args>
-	void log(log_level_t level, const char* file, const i32 line, std::string fmt, Args&&... args)
+	void log(const log_level_t level, const char* file, const i32 line, std::string fmt, Args&&... args)
 	{
 		auto& logger = get_global_logger();
-		auto& config = get_global_config();
-		auto user_str = logger.log(std::move(fmt), std::forward<Args>(args)...);
+		const auto& config = get_global_config();
+		std::string user_str = logger.log(std::move(fmt), std::forward<Args>(args)...);
+		if (!user_str.empty() && user_str.back() == '\n')
+			user_str.pop_back();
+		if (level == log_level_t::NONE)
+		{
+			println(user_str);
+			return;
+		}
 		auto log_fmt_str = config.generate(user_str, get_thread_name(), level, file, line);
 		if (log_fmt_str)
-			print(std::move(*log_fmt_str));
+			print(*log_fmt_str);
 	}
 
 	namespace detail

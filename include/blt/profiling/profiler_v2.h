@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 
 namespace blt
 {
@@ -98,7 +98,7 @@ namespace blt
     void endInterval(interval_t* interval);
 
     void printProfile(profile_t& profiler, std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
-                      sort_by sort = sort_by::CYCLES, blt::logging::log_level log_level = blt::logging::log_level::NONE);
+                      sort_by sort = sort_by::CYCLES, blt::logging::log_level_t log_level = blt::logging::log_level_t::NONE);
 
     void writeProfile(std::ostream& stream, profile_t& profiler,
                       std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
@@ -113,7 +113,7 @@ namespace blt
         void endInterval(const std::string& profile_name, const std::string& interval_name);
 
         void printProfile(const std::string& profile_name, std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,
-                          sort_by sort = sort_by::CYCLES, blt::logging::log_level log_level = blt::logging::log_level::NONE);
+                          sort_by sort = sort_by::CYCLES, blt::logging::log_level_t log_level = blt::logging::log_level_t::NONE);
 
         void writeProfile(std::ostream& stream, const std::string& profile_name,
                           std::uint32_t flags = AVERAGE_HISTORY | PRINT_CYCLES | PRINT_THREAD | PRINT_WALL,

@@ -7,7 +7,7 @@
 #include <mutex>
 #include <vector>
 #include <blt/std/time.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <iostream>
 #include <algorithm>
 #include <blt/format/format.h>
@@ -32,9 +32,9 @@ namespace blt::profiling {
                 difference(difference), name(std::move(name)), total(total) {}
     };
     
-    inline void println(const std::vector<std::string>&& lines, logging::log_level level) {
+    inline void println(const std::vector<std::string>&& lines, const logging::log_level_t level) {
         for (const auto& line : lines)
-            BLT_LOG_STREAM(level) << line << "\n";
+            BLT_LOG(level, "{}", line);
 //        auto& logger = logging::getLoggerFromLevel(level);
 //        for (const auto& line : lines)
 //            logger << line << "\n";
@@ -108,7 +108,7 @@ namespace blt::profiling {
     }
     
     void printProfile(
-            const std::string& profileName, logging::log_level loggingLevel, bool averageHistory
+            const std::string& profileName, const logging::log_level_t loggingLevel, const bool averageHistory
     ) {
         auto& profile = profiles[profileName];
         const auto& intervals = profile.intervals;

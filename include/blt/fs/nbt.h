@@ -15,7 +15,7 @@
 
 #include "blt/format/format.h"
 #include "blt/fs/filesystem.h"
-#include "blt/std/logging.h"
+#include "blt/logging/logging.h"
 #include "blt/std/memory.h"
 
 #include <blt/std/hashmap.h>

@@ -27,7 +27,7 @@
 #include <blt/std/hashmap.h>
 #include <blt/std/types.h>
 #include <blt/std/expected.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <variant>
 
 namespace blt

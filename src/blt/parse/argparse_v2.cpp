@@ -20,7 +20,7 @@
 #include <blt/parse/argparse_v2.h>
 #include <blt/std/assert.h>
 #include <blt/meta/type_traits.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <blt/iterator/enumerate.h>
 #include <blt/fs/path_helper.h>
 #include <blt/std/string.h>
