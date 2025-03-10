@@ -20,7 +20,7 @@
 #define BLT_BOXING_H
 
 #include <blt/std/types.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <string>
 
 namespace blt
@@ -82,25 +82,6 @@ namespace blt
             }
         private:
             Logger& logger;
-    };
-    
-    template<>
-    class log_box_t<blt::logging::logger> : detail::log_box_base_t
-    {
-        public:
-            log_box_t(blt::logging::logger logger, std::string_view title, blt::size_t padding = 0): detail::log_box_base_t(title, padding), logger(logger)
-            {
-                make_full_title(logger);
-                logger << '\n';
-            }
-            
-            ~log_box_t()
-            {
-                make_full_width_line(logger);
-                logger << '\n';
-            }
-        private:
-            blt::logging::logger logger;
     };
     
     template<typename Logger>

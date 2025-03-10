@@ -9,7 +9,7 @@
 
 #include <blt/math/vectors.h>
 #include <blt/math/matrix.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <blt/std/utility.h>
 #include "blt/std/string.h"
 
