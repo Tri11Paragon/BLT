@@ -20,6 +20,7 @@
 #define BLT_LOGGING_LOGGING_CONFIG_H
 
 #include <array>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -133,9 +134,15 @@ namespace blt::logging
 
 		void compile();
 
-		logging_config_t& add_log_output(fs::writer_t* writer)
+		logging_config_t& add_log_output(fs::writer_t& writer)
 		{
-			m_log_outputs.push_back(writer);
+			m_log_outputs.push_back(&writer);
+			return *this;
+		}
+
+		logging_config_t& add_injector(injector_t* injector)
+		{
+			m_injectors.push_back(std::unique_ptr<injector_t>(injector));
 			return *this;
 		}
 
@@ -200,8 +207,7 @@ namespace blt::logging
 											i32 line) const;
 
 	private:
-		std::vector<std::string> m_log_tag_content;
-		std::vector<tags::detail::log_tag_token_t> m_log_tag_tokens;
+		std::vector<std::unique_ptr<injector_t>> m_injectors;
 		// wrappers for streams exist in blt/fs/stream_wrappers.h
 		std::vector<fs::writer_t*> m_log_outputs = get_default_log_outputs();
 		std::string m_log_format = get_default_log_format();
@@ -218,6 +224,9 @@ namespace blt::logging
 		bool m_ensure_alignment = true;
 
 		size_t m_longest_name_length = 0;
+
+		std::vector<std::string> m_log_tag_content;
+		std::vector<tags::detail::log_tag_token_t> m_log_tag_tokens;
 
 		static std::string get_default_log_format();
 		static std::vector<fs::writer_t*> get_default_log_outputs();

@@ -16,22 +16,26 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef BLT_LOGGING_FWDDECL_H
-#define BLT_LOGGING_FWDDECL_H
+#ifndef BLT_LOGGING_INJECTOR_H
+#define BLT_LOGGING_INJECTOR_H
 
 namespace blt::logging
 {
-	struct logger_t;
-	enum class fmt_token_type : u8;
-	enum class fmt_align_t : u8;
-	enum class fmt_sign_t : u8;
-	enum class fmt_type_t : u8;
-	struct fmt_spec_t;
-	struct fmt_token_t;
-	class fmt_tokenizer_t;
-	class fmt_parser_t;
+	struct injector_output_t
+	{
+		std::string new_logging_output;
+		// should we continue processing the injector call chain?
+		bool should_continue;
+		// should we log the resulting string at the end of the injector call chain? If false for any injector, it becomes false for all injectors.
+		bool should_log;
+	};
 
-	class injector_t;
+	class injector_t
+	{
+	public:
+		virtual ~injector_t() = default;
+		virtual injector_output_t inject(const std::string& input) = 0;
+	};
 }
 
-#endif //BLT_LOGGING_FWDDECL_H
+#endif //BLT_LOGGING_INJECTOR_H
