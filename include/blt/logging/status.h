@@ -49,6 +49,7 @@ namespace blt::logging
 		virtual ~status_bar_t() override;
 	private:
 		i32 m_status_size;
+		i32 m_last_position[2];
 	};
 
 }

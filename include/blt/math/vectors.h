@@ -107,6 +107,11 @@ namespace blt
             }
         }
 
+        [[nodiscard]] const std::array<T, size>& to_array() const
+        {
+            return elements;
+        }
+
         [[nodiscard]] constexpr inline T x() const
         {
             return elements[0];
