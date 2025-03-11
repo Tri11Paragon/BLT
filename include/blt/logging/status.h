@@ -22,6 +22,7 @@
 #include <string>
 #include <blt/logging/injector.h>
 #include <blt/std/types.h>
+#include <blt/math/vectors.h>
 
 namespace blt::logging
 {
@@ -36,7 +37,7 @@ namespace blt::logging
 			return 1;
 		}
 
-		virtual std::string print();
+		virtual std::string print() = 0;
 	};
 
 	class status_bar_t final : public injector_t
@@ -46,10 +47,13 @@ namespace blt::logging
 
 		injector_output_t inject(const std::string& input) override;
 
-		virtual ~status_bar_t() override;
+		void redraw();
+
+		~status_bar_t() override;
 	private:
 		i32 m_status_size;
-		i32 m_last_position[2];
+		vec2i m_last_log_position;
+		vec2i m_begin_position;
 	};
 
 }

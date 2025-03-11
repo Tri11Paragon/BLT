@@ -21,8 +21,10 @@
 #include <unistd.h>
 #include <blt/logging/ansi.h>
 #include <blt/logging/fmt_tokenizer.h>
+#include <blt/logging/logging.h>
 #include <blt/logging/status.h>
 #include <blt/math/vectors.h>
+#include <blt/math/log_util.h>
 
 namespace blt::logging
 {
@@ -78,34 +80,43 @@ namespace blt::logging
 
 	status_bar_t::status_bar_t(const i32 status_size): m_status_size(status_size)
 	{
+		std::cout << ansi::cursor::home << std::flush;
+		std::cout << ansi::erase::entire_screen << std::flush;
+		m_begin_position = m_last_log_position = get_cursor_position();
 		std::cout << ansi::cursor::hide_cursor;
 	}
-
-	std::string status_item_t::print()
-	{}
 
 	injector_output_t status_bar_t::inject(const std::string& input)
 	{
 		injector_output_t output{input, false, false};
+		if (output.new_logging_output.back() != '\n')
+			output.new_logging_output += '\n';
 
-		std::cout << ansi::cursor::lower_left_corner;
-		std::cout << ansi::scroll::scroll_up(1);
-		for (int i = 0; i < m_status_size; i++)
-			std::cout << ansi::erase::entire_line << ansi::cursor::move_begin_up(1);
-		std::cout << output.new_logging_output;
-		std::cout << ansi::erase::entire_line;
-		std::cout << "[----status----]";
-		std::cout << ansi::cursor::move_begin_down(1) << ansi::erase::entire_line;
-		std::cout << "[----Second Line----]";
-		std::cout << std::flush;
+		if (get_cursor_position() != m_begin_position)
+		{
+			for (int i = 0; i < m_status_size; i++)
+				std::cout << ansi::erase::entire_line << ansi::cursor::move_begin_up(1) << std::flush;
+		}
+		std::cout << ansi::erase::entire_line << std::flush;
+		std::cout << output.new_logging_output << std::flush;
+		m_last_log_position = get_cursor_position();
+		redraw();
 
 		return output;
 	}
 
+	void status_bar_t::redraw()
+	{
+		std::cout << ansi::cursor::move_to(m_last_log_position.x(), m_last_log_position.y());
+		std::cout << ansi::erase::entire_line << std::flush;
+		std::cout << "[----status----]" << std::endl;
+		std::cout << ansi::erase::entire_line << std::flush;
+		std::cout << "[----Second Line----]" << std::endl;
+		std::cout << std::flush;
+	}
+
 	status_bar_t::~status_bar_t()
 	{
-		// std::cout << "\033[" << m_scrolling_region + 1 << ";1H";
-		std::cout << ansi::cursor::lower_left_corner;
 		std::cout << ansi::cursor::show_cursor;
 	}
 }

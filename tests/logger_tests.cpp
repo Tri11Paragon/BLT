@@ -170,7 +170,6 @@ int main()
 	writer.write(std::to_string(34.23340));
 	writer.write('\n');
 	writer.write("What about just a new line character?\n");
-	size_t charCount = 0;
 
 	// blt::logging::println("Logged {} characters", charCount);
 	//
