@@ -52,6 +52,7 @@ namespace blt::logging
 		~status_bar_t() override;
 	private:
 		i32 m_status_size;
+		vec2i m_screen_size;
 		vec2i m_last_log_position;
 		vec2i m_begin_position;
 	};

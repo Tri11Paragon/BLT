@@ -44,8 +44,10 @@ namespace blt::logging
 
 		if (isatty(fileno(stdin)))
 		{
-			write(1, cmd, sizeof(cmd));
-			read(0, buf, sizeof(buf));
+			ssize_t i = write(1, cmd, sizeof(cmd));
+			(void) i;
+			i = read(0, buf, sizeof(buf));
+			(void) i;
 
 			int sep = 0;
 			int end = 0;
@@ -61,7 +63,6 @@ namespace blt::logging
 			}
 			row = std::stoi(std::string(buf + 2, buf + sep));
 			col = std::stoi(std::string(buf + sep + 1, buf + end));
-			// printf("{Row: %d, Col: %d}", row, col);
 		}
 
 		tcsetattr(0,TCSANOW, &save);
@@ -69,17 +70,54 @@ namespace blt::logging
 		return vec2i{row, col};
 	}
 
+#define SIZE 100
+
 	vec2i get_screen_size()
 	{
-		std::cout << ansi::cursor::move_to(9999, 9999);
-		const auto pos = get_cursor_position();
-		std::cout << ansi::cursor::lower_left_corner;
-		std::cout << " ";
-		return pos;
+		char in[SIZE] = "";
+		int each = 0;
+		int ch = 0;
+		int rows = 0;
+		int cols = 0;
+		termios original, changed;
+
+		// change terminal settings
+		tcgetattr( STDIN_FILENO, &original);
+		changed = original;
+		changed.c_lflag &= ~( ICANON | ECHO);
+		changed.c_cc[VMIN] = 1;
+		changed.c_cc[VTIME] = 0;
+		tcsetattr( STDIN_FILENO, TCSANOW, &changed);
+
+		// printf ( "\033[2J"); //clear screen
+
+		printf ( "\033[9999;9999H"); // cursor should move as far as it can
+
+		printf ( "\033[6n"); // ask for cursor position
+		while ( ( ch = getchar ()) != 'R') { // R terminates the response
+			if ( EOF == ch) {
+				break;
+			}
+			if ( isprint ( ch)) {
+				if ( each + 1 < SIZE) {
+					in[each] = ch;
+					each++;
+					in[each] = '\0';
+				}
+			}
+		}
+
+		printf ( "\033[1;1H"); // move to upper left corner
+		if ( 2 == sscanf ( in, "[%d;%d", &rows, &cols)) {
+			tcsetattr( STDIN_FILENO, TCSANOW, &original);
+			return {rows, cols};
+		}
+		throw std::runtime_error("Could not get screen size");
 	}
 
 	status_bar_t::status_bar_t(const i32 status_size): m_status_size(status_size)
 	{
+		m_screen_size = get_screen_size();
 		std::cout << ansi::cursor::home << std::flush;
 		std::cout << ansi::erase::entire_screen << std::flush;
 		m_begin_position = m_last_log_position = get_cursor_position();
