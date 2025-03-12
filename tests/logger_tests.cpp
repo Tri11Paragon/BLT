@@ -185,17 +185,23 @@ int main()
 	//
 	// BLT_TRACE("Now time to test the logger status box");
 
-	blt::logging::status_bar_t status{2};
+	blt::logging::status_progress_bar_t progress;
+	blt::logging::status_bar_t status;
+	status.add(progress);
 	blt::logging::get_global_config().add_injector(status);
 
+	progress.set_progress(1.0 / 103.0);
 	BLT_TRACE("Hello There!");
 	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	progress.set_progress(2.0 / 103.0);
 	BLT_TRACE("I am printing stuff!");
 	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	progress.set_progress(3.0 / 103.0);
 	BLT_TRACE("How are you!?");
 
 	for (int i = 0; i < 100; i++)
 	{
+		progress.set_progress((4.0 + i) / 103.0);
 		BLT_INFO("I am printing some output {} times!", i + 1);
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}

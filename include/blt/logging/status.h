@@ -19,42 +19,85 @@
 #ifndef BLT_LOGGING_STATUS_H
 #define BLT_LOGGING_STATUS_H
 
+#include <mutex>
 #include <string>
 #include <blt/logging/injector.h>
-#include <blt/std/types.h>
 #include <blt/math/vectors.h>
+#include <blt/std/types.h>
 
 namespace blt::logging
 {
+	class status_bar_t;
 
 	class status_item_t
 	{
 	public:
 		virtual ~status_item_t() = default;
 
+		void assign(status_bar_t* bar)
+		{
+			m_status = bar;
+		}
+
 		[[nodiscard]] virtual i32 lines_used() const
 		{
 			return 1;
 		}
 
-		virtual std::string print() = 0;
+		[[nodiscard]] virtual std::string print(vec2i screen_size, i32 max_printed_length) const = 0;
+	protected:
+		status_bar_t* m_status = nullptr;
+	};
+
+	class status_progress_bar_t final : public status_item_t
+	{
+	public:
+		[[nodiscard]] std::string print(vec2i screen_size, i32 max_printed_length) const override;
+
+		void set_progress(double progress);
+
+		void add_progress(const double progress)
+		{
+			set_progress(get_progress() + progress);
+		}
+
+		[[nodiscard]] double get_progress() const
+		{
+			return m_progress;
+		}
+	private:
+		double m_progress = 0.0;
 	};
 
 	class status_bar_t final : public injector_t
 	{
 	public:
-		explicit status_bar_t(i32 status_size);
+		explicit status_bar_t();
 
 		injector_output_t inject(const std::string& input) override;
 
-		void redraw();
+		status_bar_t& add(status_item_t& item)
+		{
+			item.assign(this);
+			m_status_items.push_back(&item);
+			compute_size();
+			return *this;
+		}
+
+		void redraw() const;
 
 		~status_bar_t() override;
 	private:
-		i32 m_status_size;
+		void compute_size();
+
+		std::vector<status_item_t*> m_status_items;
+		i32 m_status_size = 0;
+		i32 m_max_printed_length = 0;
 		vec2i m_screen_size;
 		vec2i m_last_log_position;
 		vec2i m_begin_position;
+
+		std::mutex m_print_mutex;
 	};
 
 }

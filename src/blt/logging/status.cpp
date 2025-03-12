@@ -89,7 +89,7 @@ namespace blt::logging
 		changed.c_cc[VTIME] = 0;
 		tcsetattr( STDIN_FILENO, TCSANOW, &changed);
 
-		// printf ( "\033[2J"); //clear screen
+		printf ( "\033[2J"); //clear screen
 
 		printf ( "\033[9999;9999H"); // cursor should move as far as it can
 
@@ -115,7 +115,53 @@ namespace blt::logging
 		throw std::runtime_error("Could not get screen size");
 	}
 
-	status_bar_t::status_bar_t(const i32 status_size): m_status_size(status_size)
+	i32 get_size_no_ansi(const std::string& str)
+	{
+		i32 size = 0;
+		for (size_t i = 0; i < str.size(); i++)
+		{
+			if (str[i] == BLT_ANSI_ESCAPE[0])
+			{
+				while (i < str.size())
+				{
+					if (std::isalpha(str[i++]))
+						break;
+				}
+			}
+			++size;
+		}
+		return size;
+	}
+
+	std::string status_progress_bar_t::print(const vec2i screen_size, const i32 max_printed_length) const
+	{
+		std::string output = "[";
+		output.reserve(max_printed_length);
+		const auto amount_filled = (max_printed_length - 2) * m_progress;
+		auto amount_filled_int = static_cast<i64>(amount_filled);
+		const auto frac = amount_filled - static_cast<double>(amount_filled_int);
+
+		for (i64 i = 0; i < amount_filled_int; i++)
+			output += '#';
+		if (frac >= 0.5)
+		{
+			output += '|';
+			++amount_filled_int;
+		}
+		for (i64 i = amount_filled_int; i < max_printed_length - 2; i++)
+			output += ' ';
+
+		output += ']';
+		return output;
+	}
+
+	void status_progress_bar_t::set_progress(const double progress)
+	{
+		m_progress = progress;
+		// m_status->redraw();
+	}
+
+	status_bar_t::status_bar_t()
 	{
 		m_screen_size = get_screen_size();
 		std::cout << ansi::cursor::home << std::flush;
@@ -126,6 +172,7 @@ namespace blt::logging
 
 	injector_output_t status_bar_t::inject(const std::string& input)
 	{
+		std::scoped_lock lock{m_print_mutex};
 		injector_output_t output{input, false, false};
 		if (output.new_logging_output.back() != '\n')
 			output.new_logging_output += '\n';
@@ -137,19 +184,25 @@ namespace blt::logging
 		}
 		std::cout << ansi::erase::entire_line << std::flush;
 		std::cout << output.new_logging_output << std::flush;
+		m_max_printed_length = std::max(get_size_no_ansi(output.new_logging_output), m_max_printed_length);
 		m_last_log_position = get_cursor_position();
 		redraw();
 
 		return output;
 	}
 
-	void status_bar_t::redraw()
+	void status_bar_t::compute_size()
+	{
+		m_status_size = 0;
+		for (const auto* ptr : m_status_items)
+			m_status_size += ptr->lines_used();
+	}
+
+	void status_bar_t::redraw() const
 	{
 		std::cout << ansi::cursor::move_to(m_last_log_position.x(), m_last_log_position.y());
-		std::cout << ansi::erase::entire_line << std::flush;
-		std::cout << "[----status----]" << std::endl;
-		std::cout << ansi::erase::entire_line << std::flush;
-		std::cout << "[----Second Line----]" << std::endl;
+		for (const auto* ptr : m_status_items)
+			std::cout << ansi::erase::entire_line << ptr->print(m_screen_size, m_max_printed_length) << std::endl;
 		std::cout << std::flush;
 	}
 
