@@ -394,7 +394,7 @@ namespace blt::argparse
             return std::get<std::string>(m_data.at(key));
         }
 
-        bool contains(const std::string_view key) const
+        [[nodiscard]] bool contains(const std::string_view key) const
         {
             return m_data.find(key) != m_data.end();
         }
