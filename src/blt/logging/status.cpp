@@ -158,7 +158,7 @@ namespace blt::logging
 	void status_progress_bar_t::set_progress(const double progress)
 	{
 		if (std::isnan(progress) || progress < 0 || progress > 1 || std::isinf(progress))
-			throw std::invalid_argument("progress must be between 0 and 1");
+			throw std::invalid_argument("Progress must be between 0 and 1 (got: " + std::to_string(progress) + ")");
 		m_progress = progress;
 		// m_status->redraw();
 	}
