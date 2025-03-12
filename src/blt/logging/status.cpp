@@ -208,6 +208,6 @@ namespace blt::logging
 
 	status_bar_t::~status_bar_t()
 	{
-		std::cout << ansi::cursor::show_cursor;
+		std::cout << ansi::cursor::show_cursor << std::flush;
 	}
 }
