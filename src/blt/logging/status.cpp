@@ -130,10 +130,10 @@ namespace blt::logging
 			}
 			++size;
 		}
-		return size;
+		return size - 1;
 	}
 
-	std::string status_progress_bar_t::print(const vec2i screen_size, const i32 max_printed_length) const
+	std::string status_progress_bar_t::print(const vec2i, const i32 max_printed_length) const
 	{
 		std::string output = "[";
 		output.reserve(max_printed_length);
@@ -167,7 +167,7 @@ namespace blt::logging
 		std::cout << ansi::cursor::home << std::flush;
 		std::cout << ansi::erase::entire_screen << std::flush;
 		m_begin_position = m_last_log_position = get_cursor_position();
-		std::cout << ansi::cursor::hide_cursor;
+		std::cout << ansi::cursor::hide_cursor << std::flush;
 	}
 
 	injector_output_t status_bar_t::inject(const std::string& input)
