@@ -138,7 +138,7 @@ namespace blt::logging
 		std::string output = "[";
 		output.reserve(max_printed_length);
 		const auto amount_filled = (max_printed_length - 2) * m_progress;
-		auto amount_filled_int = static_cast<i64>(amount_filled);
+		auto amount_filled_int = static_cast<i32>(amount_filled);
 		const auto frac = amount_filled - static_cast<double>(amount_filled_int);
 
 		for (i64 i = 0; i < amount_filled_int; i++)
@@ -157,6 +157,8 @@ namespace blt::logging
 
 	void status_progress_bar_t::set_progress(const double progress)
 	{
+		if (std::isnan(progress) || progress < 0 || progress > 1 || std::isinf(progress))
+			throw std::invalid_argument("progress must be between 0 and 1");
 		m_progress = progress;
 		// m_status->redraw();
 	}
