@@ -31,7 +31,7 @@
 #include <mutex>
 #include <chrono>
 #include <optional>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <condition_variable>
 
 namespace blt
