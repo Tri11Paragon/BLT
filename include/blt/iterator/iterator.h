@@ -22,6 +22,7 @@
 #include <blt/iterator/common.h>
 #include <blt/iterator/zip.h>
 #include <blt/iterator/enumerate.h>
+#include <blt/iterator/flatten.h>
 #include <type_traits>
 #include <iterator>
 #include <tuple>
