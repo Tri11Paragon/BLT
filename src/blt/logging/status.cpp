@@ -17,8 +17,10 @@
  */
 #include <cstdio>
 #include <iostream>
+#ifdef unix
 #include <termios.h>
 #include <unistd.h>
+#endif
 #include <blt/logging/ansi.h>
 #include <blt/logging/fmt_tokenizer.h>
 #include <blt/logging/logging.h>
@@ -30,6 +32,7 @@ namespace blt::logging
 {
 	vec2i get_cursor_position()
 	{
+#ifdef unix
 		termios save{}, raw{};
 
 		tcgetattr(0, &save);
@@ -68,12 +71,16 @@ namespace blt::logging
 		tcsetattr(0,TCSANOW, &save);
 
 		return vec2i{row, col};
+#else
+		return {0,0};
+#endif
 	}
 
 #define SIZE 100
 
 	vec2i get_screen_size()
 	{
+#ifdef unix
 		char in[SIZE] = "";
 		int each = 0;
 		int ch = 0;
@@ -113,6 +120,9 @@ namespace blt::logging
 			return {rows, cols};
 		}
 		throw std::runtime_error("Could not get screen size");
+#else
+		return {0,0};
+#endif
 	}
 
 	i32 get_size_no_ansi(const std::string& str)

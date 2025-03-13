@@ -82,14 +82,14 @@ namespace blt
     }
 
     template <typename Iter>
-    class enumerate_iterator_container : public iterator::iterator_container<iterator::enumerate_wrapper<Iter>>
+    class enumerate_iterator_container : public blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>
     {
     public:
-        using iterator::iterator_container<iterator::enumerate_wrapper<Iter>>::iterator_container;
+        using blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>::iterator_container;
 
         enumerate_iterator_container(Iter begin, Iter end, blt::size_t size):
-            iterator::iterator_container<iterator::enumerate_wrapper<Iter>>(
-                iterator::enumerate_wrapper<Iter>{0, std::move(begin)}, iterator::enumerate_wrapper<Iter>{size, std::move(end)})
+            blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>(
+                blt::iterator::enumerate_wrapper<Iter>{0, std::move(begin)}, blt::iterator::enumerate_wrapper<Iter>{size, std::move(end)})
         {
         }
     };

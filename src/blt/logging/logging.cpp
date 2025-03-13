@@ -204,7 +204,7 @@ namespace blt::logging
 		if (end == std::string::npos)
 		{
 			std::stringstream ss;
-			ss << "Invalid format string, missing closing '}' near " << m_fmt.substr(std::min(static_cast<i64>(begin) - 5, 0l));
+			ss << "Invalid format string, missing closing '}' near " << m_fmt.substr(std::min(static_cast<i64>(begin) - 5, 0ll));
 			throw std::runtime_error(ss.str());
 		}
 		m_last_fmt_pos = end + 1;

@@ -112,11 +112,11 @@ namespace blt
     class zip_iterator_container : public iterator::iterator_container<iterator::zip_wrapper<Iter...>>
     {
         public:
-            using iterator::iterator_container<iterator::zip_wrapper<Iter...>>::iterator_container;
+            using blt::iterator::iterator_container<blt::iterator::zip_wrapper<Iter...>>::iterator_container;
             
-            explicit zip_iterator_container(iterator::iterator_pair<Iter>... iterator_pairs):
-                    iterator::iterator_container<iterator::zip_wrapper<Iter...>>(iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
-                                                                                 iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...})
+            explicit zip_iterator_container(blt::iterator::iterator_pair<Iter>... iterator_pairs):
+                blt::iterator::iterator_container<blt::iterator::zip_wrapper<Iter...>>(blt::iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.begin)...},
+                    blt::iterator::zip_wrapper<Iter...>{std::move(iterator_pairs.end)...})
             {}
         
     };
