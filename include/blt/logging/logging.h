@@ -39,6 +39,8 @@ namespace blt::logging
 		template <typename... Args>
 		std::string log(std::string fmt, Args&&... args)
 		{
+			if (fmt.empty())
+				return fmt;
 			auto sequence = std::make_integer_sequence<size_t, sizeof...(Args)>{};
 			m_arg_print_funcs.clear();
 			m_arg_print_funcs.resize(sizeof...(Args));
