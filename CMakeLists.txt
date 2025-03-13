@@ -168,8 +168,10 @@ macro(blt_add_test name source type)
 
     target_link_libraries(${name}-${type} PRIVATE BLT)
 
-    target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
-    target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    if (NOT MSVC)
+        target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+        target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    endif()
     target_compile_definitions(${name}-${type} PRIVATE BLT_DEBUG_LEVEL=${DEBUG_LEVEL})
 
     if (${TRACK_ALLOCATIONS})
