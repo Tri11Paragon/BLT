@@ -21,6 +21,7 @@
 
 #include <blt/iterator/common.h>
 #include <tuple>
+#include <limits>
 
 namespace blt
 {
