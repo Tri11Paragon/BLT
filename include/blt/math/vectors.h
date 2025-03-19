@@ -428,6 +428,50 @@ namespace blt
         return true;
     }
 
+    template <typename T, typename G, u32 size>
+    constexpr bool operator>=(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] < right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator>(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] <= right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator<(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] >= right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator<=(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] > right[i])
+                return false;
+        }
+        return true;
+    }
+
     template <typename T, typename G, blt::u32 size>
     inline constexpr bool operator!=(const vec<T, size>& left, const vec<G, size>& right)
     {
