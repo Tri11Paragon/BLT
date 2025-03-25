@@ -55,6 +55,11 @@ namespace blt
 			return m_max;
 		}
 
+		[[nodiscard]] T length() const
+		{
+			return m_max - m_min;
+		}
+
 	private:
 		T m_min, m_max;
 	};
@@ -78,7 +83,7 @@ namespace blt
 			{
 				vec<T, Axis> size;
 				for (u32 i = 0; i < Axis; i++)
-					size[i] = m_axes[i].max() - m_axes[i].min();
+					size[i] = m_axes[i].length();
 				return size;
 			}
 
