@@ -29,7 +29,7 @@
 #include <blt/std/mmap.h>
 #include <blt/compatibility.h>
 #include <stdexcept>
-#include "logging.h"
+#include "blt/logging/logging.h"
 #include <cstdlib>
 #include <atomic>
 
