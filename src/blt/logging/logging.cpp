@@ -108,13 +108,30 @@ namespace blt::logging
 			m_stream << std::noshowpos;
 	}
 
+	std::string logger_t::process_string(const std::string_view str)
+	{
+		auto result = std::string(str);
+		size_t pos = 0;
+		while (pos = result.find('{', pos), pos != std::string::npos)
+		{
+			if (pos > 0 && result[pos - 1] == '\\')
+			{
+				auto before = result.substr(0, pos - 1);
+				auto after = result.substr(pos);
+				result = before + after;
+			} else
+				++pos;
+		}
+		return result;
+	}
+
 	void logger_t::process_strings()
 	{
 		auto spec_it = m_fmt_specs.begin();
 		auto str_it = m_string_sections.begin();
 		for (; spec_it != m_fmt_specs.end(); ++spec_it, ++str_it)
 		{
-			m_stream << *str_it;
+			m_stream << process_string(*str_it);
 			auto arg_pos = spec_it->arg_id;
 			if (arg_pos == -1)
 				arg_pos = static_cast<i64>(m_arg_pos++);
@@ -122,7 +139,7 @@ namespace blt::logging
 			setup_stream(*spec_it);
 			m_arg_print_funcs[arg_pos](m_stream, *spec_it);
 		}
-		m_stream << *str_it;
+		m_stream << process_string(*str_it);
 	}
 
 	void logger_t::handle_type(std::ostream& stream, const fmt_spec_t& spec)
@@ -197,7 +214,9 @@ namespace blt::logging
 
 	std::optional<std::pair<size_t, size_t>> logger_t::consume_to_next_fmt()
 	{
-		const auto begin = m_fmt.find('{', m_last_fmt_pos);
+		auto begin = m_fmt.find('{', m_last_fmt_pos);
+		while (begin > 0 && m_fmt[begin - 1] == '\\')
+			begin = m_fmt.find('{', begin + 1);;
 		if (begin == std::string::npos)
 			return {};
 		const auto end = find_ending_brace(begin);

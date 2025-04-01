@@ -140,6 +140,7 @@ namespace blt::logging
 
 		[[nodiscard]] size_t find_ending_brace(size_t begin) const;
 		void setup_stream(const fmt_spec_t& spec) const;
+		std::string process_string(std::string_view str);
 		void process_strings();
 		static void handle_type(std::ostream& stream, const fmt_spec_t& spec);
 
