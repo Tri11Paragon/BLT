@@ -21,9 +21,9 @@ namespace blt
 
     constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
-    static inline constexpr bool f_equal(float v1, float v2)
+    static constexpr bool f_equal(const float v1, const float v2, const float range = 1)
     {
-        return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
+        return v1 >= v2 - (EPSILON * range) && v1 <= v2 + (EPSILON * range);
     }
 
     template <typename T, blt::u32 size>
