@@ -215,7 +215,7 @@ namespace blt::logging
 	std::optional<std::pair<size_t, size_t>> logger_t::consume_to_next_fmt()
 	{
 		auto begin = m_fmt.find('{', m_last_fmt_pos);
-		while (begin > 0 && m_fmt[begin - 1] == '\\')
+		while (begin != std::string::npos && begin > 0 && m_fmt[begin - 1] == '\\')
 			begin = m_fmt.find('{', begin + 1);;
 		if (begin == std::string::npos)
 			return {};
