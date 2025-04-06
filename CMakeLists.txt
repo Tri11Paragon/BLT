@@ -12,6 +12,8 @@ option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
 option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
+option(BLT_DEBUG_OTEL "Enable OpenTelemetry Service" OFF)
+
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_FS "Build the BLT FS utilities including the NBT + eNBT extension" ON)
@@ -28,6 +30,22 @@ option(BLT_DISABLE_INFO "Disable blt::logging BLT_INFO macro" OFF)
 option(BLT_DISABLE_WARN "Disable blt::logging BLT_WARN macro" OFF)
 option(BLT_DISABLE_ERROR "Disable blt::logging BLT_ERROR macro" OFF)
 option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
+
+if (BLT_DEBUG_OTEL)
+    set(WITH_BENCHMARK OFF)
+    set(BUILD_TESTING OFF)
+    set(WITH_ABSEIL OFF)
+    include(FetchContent)
+    FetchContent_Declare(
+            opentelemtry-cpp
+            GIT_REPOSITORY https://github.com/open-telemetry/opentelemetry-cpp
+            GIT_TAG        6175aa0b213eea053247e43b4f35b8d201fa356e # release-1.20.0
+    )
+    FetchContent_MakeAvailable(opentelemtry-cpp)
+
+    message("${OPENTELEMETRY_CPP_LIBRARIES}")
+#    include_directories("${opentelemtry-cpp_INCLUDE_DIRS}")
+endif ()
 
 if(${BLT_DISABLE_STATS})
     add_compile_definitions(BLT_DISABLE_STATS)
@@ -200,3 +218,7 @@ if (${BUILD_TESTS})
 endif ()
 
 project(BLT)
+
+if (BLT_DEBUG_OTEL)
+    target_link_libraries(${BLT_TARGET} PUBLIC ${OPENTELEMETRY_CPP_LIBRARIES})
+endif ()

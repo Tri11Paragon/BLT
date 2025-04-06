@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <blt/std/defines.h>
 
 #ifndef NO_BLT_NAMESPACE_ON_TYPES
 namespace blt
