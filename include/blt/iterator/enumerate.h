@@ -20,120 +20,112 @@
 #define BLT_ITERATOR_ENUMERATE_H
 
 #include <blt/iterator/common.h>
-#include <tuple>
 
 namespace blt
 {
-    
     namespace iterator
     {
-        /**
-         * struct which is returned by the enumerator.
-         * @tparam T type to store.
-         */
-        template<typename T>
-        struct enumerate_item
-        {
-            blt::size_t index;
-            T value;
-        };
-        
-        template<typename Iter>
+        template <typename Iter>
         class enumerate_wrapper : public passthrough_wrapper<Iter, enumerate_wrapper<Iter>>
         {
-            public:
-                enumerate_wrapper(blt::size_t index, Iter iter): passthrough_wrapper<Iter, enumerate_wrapper<Iter>>(std::move(iter)), index(index)
-                {}
-                
-                using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-                using value_type = enumerate_item<meta::deref_return_t<Iter>>;
-                using difference_type = blt::ptrdiff_t;
-                using pointer = value_type;
-                using reference = value_type;
-                
-                enumerate_item<meta::deref_return_t<Iter>> operator*() const
-                {
-                    return {index, *this->iter};
-                }
-                
-                enumerate_wrapper& operator++()
-                {
-                    ++index;
-                    ++this->iter;
-                    return *this;
-                }
-                
-                enumerate_wrapper& operator--()
-                {
-                    --index;
-                    --this->iter;
-                    return *this;
-                }
-                
-                friend enumerate_wrapper operator+(const enumerate_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
-                    auto copy = a;
-                    copy.index += n;
-                    copy.iter = copy.iter + n;
-                    return copy;
-                }
-                
-                friend enumerate_wrapper operator-(const enumerate_wrapper& a, blt::ptrdiff_t n)
-                {
-                    static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
-                    auto copy = a;
-                    copy.index -= n;
-                    copy.iter = copy.iter - n;
-                    return copy;
-                }
-            
-            private:
-                blt::size_t index;
+        public:
+            enumerate_wrapper(const size_t index, Iter iter): passthrough_wrapper<Iter, enumerate_wrapper<Iter>>(std::move(iter)), index(index)
+            {
+            }
+
+            using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+            using value_type = enumerate_item<meta::deref_return_t<Iter>>;
+            using difference_type = blt::ptrdiff_t;
+            using pointer = value_type;
+            using reference = value_type;
+
+            enumerate_item<meta::deref_return_t<Iter>> operator*() const
+            {
+                return {index, *this->iter};
+            }
+
+            enumerate_wrapper& operator++()
+            {
+                ++index;
+                ++this->iter;
+                return *this;
+            }
+
+            enumerate_wrapper& operator--()
+            {
+                --index;
+                --this->iter;
+                return *this;
+            }
+
+            friend enumerate_wrapper operator+(const enumerate_wrapper& a, blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                auto copy = a;
+                copy.index += n;
+                copy.iter = copy.iter + n;
+                return copy;
+            }
+
+            friend enumerate_wrapper operator-(const enumerate_wrapper& a, blt::ptrdiff_t n)
+            {
+                static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
+                auto copy = a;
+                copy.index -= n;
+                copy.iter = copy.iter - n;
+                return copy;
+            }
+
+        private:
+            blt::size_t index;
         };
     }
-    
-    template<typename Iter>
-    class enumerate_iterator_container : public iterator::iterator_container<iterator::enumerate_wrapper<Iter>>
+
+    template <typename Iter>
+    class enumerate_iterator_container : public blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>
     {
-        public:
-            using iterator::iterator_container<iterator::enumerate_wrapper<Iter>>::iterator_container;
-            
-            enumerate_iterator_container(Iter begin, Iter end, blt::size_t size):
-                    iterator::iterator_container<iterator::enumerate_wrapper<Iter>>(
-                            iterator::enumerate_wrapper<Iter>{0, std::move(begin)}, iterator::enumerate_wrapper<Iter>{size, std::move(end)})
-            {}
+    public:
+        using blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>::iterator_container;
+
+        enumerate_iterator_container(Iter begin, Iter end, blt::size_t size):
+            blt::iterator::iterator_container<blt::iterator::enumerate_wrapper<Iter>>(
+                blt::iterator::enumerate_wrapper<Iter>{0, std::move(begin)}, blt::iterator::enumerate_wrapper<Iter>{size, std::move(end)})
+        {
+        }
     };
-    
-    template<typename Iter>
+
+    template <typename Iter>
     enumerate_iterator_container(Iter, Iter, blt::size_t) -> enumerate_iterator_container<Iter>;
-    
-    template<typename T>
+
+    template <typename T>
     static inline auto enumerate(T& container)
     {
-        return enumerate_iterator_container{container.begin(), container.end(),
-                                            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))};
+        return enumerate_iterator_container{
+            container.begin(), container.end(),
+            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))
+        };
     }
-    
-    template<typename T>
+
+    template <typename T>
     static inline auto enumerate(const T& container)
     {
-        return enumerate_iterator_container{container.begin(), container.end(),
-                                            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))};
+        return enumerate_iterator_container{
+            container.begin(), container.end(),
+            static_cast<blt::size_t>(std::distance(container.begin(), container.end()))
+        };
     }
-    
-    template<typename T, blt::size_t size>
-    static inline auto enumerate(const T(& container)[size])
+
+    template <typename T, blt::size_t size>
+    static inline auto enumerate(const T (&container)[size])
     {
         return enumerate_iterator_container{&container[0], &container[size], size};
     }
-    
-    template<typename T, blt::size_t size>
-    static inline auto enumerate(T(& container)[size])
+
+    template <typename T, blt::size_t size>
+    static inline auto enumerate(T (&container)[size])
     {
         return enumerate_iterator_container{&container[0], &container[size], size};
     }
-    
 }
 
 #endif //BLT_ITERATOR_ENUMERATE_H

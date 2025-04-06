@@ -19,6 +19,8 @@
 #ifndef BLT_ITERATOR_FWDDECL_H
 #define BLT_ITERATOR_FWDDECL_H
 
+#include <utility>
+
 namespace blt
 {
     template<typename... Iter>
@@ -33,7 +35,7 @@ namespace blt
         struct iterator_pair;
         
         template<typename T>
-        struct enumerate_item;
+        using enumerate_item = std::pair<size_t, T>;
         
         template<typename Iter>
         class enumerate_wrapper;
@@ -46,6 +48,12 @@ namespace blt
         
         template<typename Iter, typename Pred>
         class filter_wrapper;
+
+        template<typename Iter, bool Recursive>
+        class flatten_wrapper;
+
+        template<typename Iter>
+        class const_wrapper;
         
         namespace impl
         {

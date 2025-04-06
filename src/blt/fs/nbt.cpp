@@ -4,19 +4,19 @@
  * See LICENSE file for license detail
  */
 #include <blt/fs/nbt.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <cassert>
 
 #include <type_traits>
 
 namespace blt::nbt {
-    void writeUTF8String(blt::fs::block_writer& stream, const std::string& str) {
+    void writeUTF8String(blt::fs::writer_t& stream, const std::string& str) {
         blt::string::utf8_string str8 = blt::string::createUTFString(str);
         stream.write(str8.characters, str8.size);
         delete[] str8.characters;
     }
     
-    std::string readUTF8String(blt::fs::block_reader& stream) {
+    std::string readUTF8String(blt::fs::reader_t& stream) {
         int16_t utflen;
         
         readData(stream, utflen);
@@ -33,9 +33,10 @@ namespace blt::nbt {
     }
     
     void NBTReader::read() {
-        char t = reader.get();
+        char t;
+        reader.read(&t, 1);
         if (t != (char)nbt_tag::COMPOUND) {
-            BLT_WARN("Found %d", t);
+            BLT_WARN("Found {:d}", t);
             throw std::runtime_error("Incorrectly formatted NBT data! Root tag must be a compound tag!");
         }
         root = new tag_compound;

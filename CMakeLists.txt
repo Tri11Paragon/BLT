@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 3.0.6)
+set(BLT_VERSION 5.2.34)
 
 set(BLT_TARGET BLT)
 
@@ -19,6 +19,7 @@ option(BUILD_PROFILING "Build the BLT profiler extension" ON)
 option(BUILD_FS "Build the BLT FS utilities including the NBT + eNBT extension" ON)
 option(BUILD_PARSE "Build the BLT parsers" ON)
 option(BUILD_FORMAT "Build the BLT formatters" ON)
+option(BUILD_LOGGING "Build the BLT logging utilities" ON)
 
 option(BUILD_TESTS "Build the BLT test set" OFF)
 
@@ -88,8 +89,14 @@ if (${BUILD_FORMAT})
     message(STATUS "Building ${Yellow}format${ColourReset} cxx files")
     file(GLOB_RECURSE FORMAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/format/*.cpp")
 else ()
-    set(FORMAT_FILES ""
-            include/blt/std/iterator.h)
+    set(FORMAT_FILES "")
+endif ()
+
+if (${BUILD_LOGGING})
+    message(STATUS "Building ${Yellow}logging${ColourReset} cxx files")
+    file(GLOB_RECURSE LOGGING_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/logging/*.cpp")
+else ()
+    set(LOGGING_FILES "")
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
@@ -111,7 +118,7 @@ endif ()
 include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
-add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES} ${LOGGING_FILES})
 
 string(REPLACE "+" "\\+" escaped_source ${CMAKE_CURRENT_SOURCE_DIR})
 string(APPEND escaped_source "/src/blt/.*/")
@@ -166,8 +173,9 @@ install(TARGETS ${BLT_TARGET}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-macro(blt_add_project name source type)
+macro(blt_add_test name source type)
 
+    message("Adding project ${name} of type ${type}" DEBUG)
     project(${name}-${type})
 
     add_executable(${name}-${type} ${source})
@@ -178,8 +186,10 @@ macro(blt_add_project name source type)
 
     target_link_libraries(${name}-${type} PRIVATE BLT)
 
-    target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
-    target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    if (NOT MSVC)
+        target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+        target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
+    endif()
     target_compile_definitions(${name}-${type} PRIVATE BLT_DEBUG_LEVEL=${DEBUG_LEVEL})
 
     if (${TRACK_ALLOCATIONS})
@@ -212,7 +222,9 @@ endmacro()
 if (${BUILD_TESTS})
     message("Building tests for version ${BLT_VERSION}")
 
-    blt_add_project(blt-iterator tests/iterator_tests.cpp test)
+    blt_add_test(blt_iterator tests/iterator_tests.cpp test)
+    blt_add_test(blt_argparse tests/argparse_tests.cpp test)
+    blt_add_test(blt_logging tests/logger_tests.cpp test)
 
     message("Built tests")
 endif ()

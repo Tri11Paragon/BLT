@@ -27,9 +27,42 @@
 #include <blt/meta/iterator.h>
 #include <functional>
 #include <optional>
+#include <blt/meta/type_traits.h>
 
 namespace blt::iterator
 {
+    namespace detail
+    {
+        template<typename T>
+        static auto forward_as_tuple(T&& t) -> decltype(auto)
+        {
+            using Decay = std::decay_t<T>;
+            static_assert(!(meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>), "Tuple or pair passed to forward_as_tuple! Must not be a tuple!");
+            if constexpr (std::is_lvalue_reference_v<T>)
+            {
+                return std::forward_as_tuple(std::forward<T>(t));
+            }
+            else
+            {
+                return std::make_tuple(std::forward<T>(t));
+            }
+        }
+
+        template <typename Tuple>
+        static auto ensure_tuple(Tuple&& tuple) -> decltype(auto)
+        {
+            using Decay = std::decay_t<Tuple>;
+            if constexpr (meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>)
+            {
+                return std::forward<Tuple>(tuple);
+            }
+            else
+            {
+                return forward_as_tuple(std::forward<Tuple>(tuple));
+            }
+        }
+    }
+
     template <typename Derived>
     struct base_wrapper
     {
@@ -42,19 +75,21 @@ namespace blt::iterator
 
         base_wrapper operator--(int)
         {
-            static_assert(meta::is_bidirectional_or_better_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
+            static_assert(meta::is_bidirectional_or_better_category_v<typename Derived::iterator_category>,
+                          "Iterator must allow bidirectional access");
             auto tmp = *this;
             --*this;
             return tmp;
         }
 
-        auto operator[](blt::ptrdiff_t n) const
+        auto operator[](ptrdiff_t n) const
         {
-            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
+            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>,
+                          "Iterator must allow bidirectional access");
             return *(*this + n);
         }
 
-        friend base_wrapper operator+(blt::ptrdiff_t n, const base_wrapper& a)
+        friend base_wrapper operator+(ptrdiff_t n, const base_wrapper& a)
         {
             return a + n;
         }
@@ -95,9 +130,8 @@ namespace blt::iterator
     };
 
     template <typename Iter, typename Derived, bool dereference = false>
-    struct passthrough_wrapper : public base_wrapper<Derived>
+    struct passthrough_wrapper : base_wrapper<Derived>
     {
-    public:
         explicit passthrough_wrapper(Iter iter): iter(std::move(iter))
         {
         }
@@ -107,7 +141,7 @@ namespace blt::iterator
             return iter;
         }
 
-        friend blt::ptrdiff_t operator-(const passthrough_wrapper& a, const passthrough_wrapper& b)
+        friend ptrdiff_t operator-(const passthrough_wrapper& a, const passthrough_wrapper& b)
         {
             return a.base() - b.base();
         }
@@ -117,7 +151,7 @@ namespace blt::iterator
     };
 
     template <typename Iter, typename Derived>
-    struct passthrough_wrapper<Iter, Derived, true> : public passthrough_wrapper<Iter, Derived>
+    struct passthrough_wrapper<Iter, Derived, true> : passthrough_wrapper<Iter, Derived>
     {
         using passthrough_wrapper<Iter, Derived>::passthrough_wrapper;
 
@@ -213,6 +247,54 @@ namespace blt::iterator
 
     private:
         Pred func;
+    };
+
+    template <typename Iter>
+    class const_wrapper : public deref_only_wrapper<Iter, const_wrapper<Iter>>
+    {
+    public:
+        using ref_return = meta::deref_return_t<Iter>;
+
+        using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+        using value_type = std::conditional_t<std::is_reference_v<ref_return>, std::remove_reference_t<ref_return>, ref_return>;
+        using difference_type = ptrdiff_t;
+        using pointer = const value_type*;
+        using reference = const value_type&;
+
+        explicit const_wrapper(Iter iter): deref_only_wrapper<Iter, const_wrapper>(std::move(iter))
+        {
+        }
+
+        template<typename T>
+        static auto make_const(T&& value) -> decltype(auto)
+        {
+            using Decay = std::decay_t<T>;
+            if constexpr (std::is_lvalue_reference_v<T>)
+            {
+                return const_cast<const Decay&>(value);
+            } else
+            {
+                return static_cast<const Decay>(value);
+            }
+        }
+
+        auto operator*() const
+        {
+            if constexpr (std::is_reference_v<ref_return>)
+            {
+                return const_cast<const value_type&>(*this->iter);
+            } else if constexpr (meta::is_tuple_v<value_type> || meta::is_pair_v<value_type>)
+            {
+                return std::apply([](auto&&... args)
+                {
+                    return std::tuple<decltype(make_const(std::forward<decltype(args)>(args)))...>{make_const(std::forward<decltype(args)>(args))...};
+                }, *this->iter);
+            }
+            else
+            {
+                return *this->iter;
+            }
+        }
     };
 
     namespace impl
@@ -380,6 +462,30 @@ namespace blt::iterator
         auto enumerate() const
         {
             return enumerate_iterator_container{begin(), end(), static_cast<blt::size_t>(std::distance(begin(), end()))};
+        }
+
+        auto flatten() const
+        {
+            return iterator_container<flatten_wrapper<IterBase, false>>{
+                blt::iterator::flatten_wrapper<IterBase, false>{m_begin},
+                blt::iterator::flatten_wrapper<IterBase, false>{m_end}
+            };
+        }
+
+        auto flatten_all() const
+        {
+            return iterator_container<flatten_wrapper<IterBase, true>>{
+                blt::iterator::flatten_wrapper<IterBase, true>{m_begin},
+                blt::iterator::flatten_wrapper<IterBase, true>{m_end}
+            };
+        }
+
+        auto as_const() const
+        {
+            return iterator_container<const_wrapper<IterBase>>{
+                const_wrapper<IterBase>{m_begin},
+                const_wrapper<IterBase>{m_end}
+            };
         }
 
         template <typename Func>

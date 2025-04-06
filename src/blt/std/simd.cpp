@@ -16,7 +16,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/std/simd.h>
-#include <blt/std/logging.h>
 
 namespace blt
 {

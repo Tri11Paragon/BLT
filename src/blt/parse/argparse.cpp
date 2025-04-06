@@ -196,7 +196,7 @@ namespace blt
                         printUsage();
                         std::cout << getProgramName() << ": error: flag '" << flag << "' expected " << properties.a_nargs.args
                                   << " argument(s) but found '" << tokenizer.get() << "' instead!\n";
-                        //BLT_WARN("Expected %d arguments, found flag instead!", properties.a_nargs.args);
+                        //BLT_WARN("Expected {:d} arguments, found flag instead!", properties.a_nargs.args);
                         return false;
                     }
                     // get the value and advance

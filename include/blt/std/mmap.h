@@ -19,9 +19,11 @@
 #ifndef BLT_MMAP_H
 #define BLT_MMAP_H
 
-#include <blt/std/logging.h>
 #include <blt/std/types.h>
 #include <cstdlib>
+#include <exception>
+#include <string>
+#include <string_view>
 
 // size of 2mb in bytes
 inline constexpr blt::size_t BLT_2MB_SIZE = 2048 * 1024;
@@ -41,7 +43,7 @@ namespace blt
         public:
             bad_alloc_t() = default;
             
-            explicit bad_alloc_t(std::string_view str): str(str)
+            explicit bad_alloc_t(const std::string_view str): str(str)
             {}
             
             explicit bad_alloc_t(std::string str): str(std::move(str))

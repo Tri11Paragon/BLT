@@ -18,7 +18,7 @@
 #include <blt/parse/templating.h>
 #include <blt/std/string.h>
 #include <cctype>
-#include "blt/std/logging.h"
+#include "blt/logging/logging.h"
 
 namespace blt
 {
@@ -275,7 +275,7 @@ namespace blt
                         values.push_back(b1 ^ b2);
                         break;
                     default:
-                        BLT_WARN("Unexpected token '%s'", std::string(next.token).c_str());
+                        BLT_WARN("Unexpected token '{}'", std::string(next.token).c_str());
                         return blt::unexpected(template_parser_failure_t::BOOL_TYPE_NOT_FOUND);
                 }
             }

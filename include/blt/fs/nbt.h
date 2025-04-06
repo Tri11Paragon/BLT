@@ -15,26 +15,26 @@
 
 #include "blt/format/format.h"
 #include "blt/fs/filesystem.h"
-#include "blt/std/logging.h"
+#include "blt/logging/logging.h"
 #include "blt/std/memory.h"
 
 #include <blt/std/hashmap.h>
 
 namespace blt::nbt {
     
-    void writeUTF8String(blt::fs::block_writer& stream, const std::string& str);
+    void writeUTF8String(blt::fs::writer_t& stream, const std::string& str);
     
-    std::string readUTF8String(blt::fs::block_reader& stream);
+    std::string readUTF8String(blt::fs::reader_t& stream);
     
     template<typename T>
-    inline static void writeData(blt::fs::block_writer& out, const T& d){
+    inline static void writeData(blt::fs::writer_t& out, const T& d){
         char data[sizeof(T)];
         mem::toBytes(d, data);
         out.write(data, sizeof(T));
     }
     
     template<typename T>
-    inline static void readData(blt::fs::block_reader& in, T& d) {
+    inline static void readData(blt::fs::reader_t& in, T& d) {
         char data[sizeof(T)];
         in.read(data, sizeof(T));
         mem::fromBytes(data, &d);
@@ -63,12 +63,12 @@ namespace blt::nbt {
         public:
             explicit tag_t(nbt_tag type): type(type) {};
             explicit tag_t(nbt_tag type, std::string name): type(type), name(std::move(name)) {}
-            virtual void writePayload(blt::fs::block_writer& out) = 0;
-            virtual void readPayload(blt::fs::block_reader& in) = 0;
-            void writeName(blt::fs::block_writer& out) {
+            virtual void writePayload(blt::fs::writer_t& out) = 0;
+            virtual void readPayload(blt::fs::reader_t& in) = 0;
+            void writeName(blt::fs::writer_t& out) {
                 writeUTF8String(out, name);
             }
-            void readName(blt::fs::block_reader& in) {
+            void readName(blt::fs::reader_t& in) {
                 name = readUTF8String(in);
             }
             [[nodiscard]] inline nbt_tag getType() const {
@@ -87,11 +87,11 @@ namespace blt::nbt {
         public:
             explicit tag(nbt_tag type): tag_t(type) {}
             tag(nbt_tag type, std::string name, T t): tag_t(type, std::move(name)), t(std::move(t)) {}
-            void writePayload(blt::fs::block_writer& out) override {
+            void writePayload(blt::fs::writer_t& out) override {
                 if constexpr(std::is_arithmetic<T>::value)
                     writeData(out, t);
             }
-            void readPayload(blt::fs::block_reader& in) override {
+            void readPayload(blt::fs::reader_t& in) override {
                 if constexpr(std::is_arithmetic<T>::value)
                     readData(in, t);
             }
@@ -102,9 +102,9 @@ namespace blt::nbt {
     
     class tag_end : public tag<char> {
         public:
-            void writePayload(blt::fs::block_writer&) final {}
+            void writePayload(blt::fs::writer_t&) final {}
             // nothing to read
-            void readPayload(blt::fs::block_reader&) final {}
+            void readPayload(blt::fs::reader_t&) final {}
     };
     
     class tag_byte : public tag<int8_t> {
@@ -147,13 +147,13 @@ namespace blt::nbt {
         public:
             tag_byte_array(): tag(nbt_tag::BYTE_ARRAY) {}
             tag_byte_array(const std::string& name, const std::vector<int8_t>& v): tag(nbt_tag::BYTE_ARRAY, name, v) {}
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 auto length = (int32_t) t.size();
                 writeData(out, length);
                 // TODO on the writer (remove need for cast + more std::fstream functions)
                 out.write(reinterpret_cast<char*>(t.data()), length);
             }
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 int32_t length;
                 readData(in, length);
                 t.reserve(length);
@@ -165,10 +165,10 @@ namespace blt::nbt {
         public:
             tag_string(): tag(nbt_tag::STRING) {}
             tag_string(const std::string& name, const std::string& s): tag(nbt_tag::STRING, name, s) {}
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 writeUTF8String(out, t);
             }
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 t = readUTF8String(in);
             }
     };
@@ -177,13 +177,13 @@ namespace blt::nbt {
         public:
             tag_int_array(): tag(nbt_tag::INT_ARRAY) {}
             tag_int_array(const std::string& name, const std::vector<int32_t>& v): tag(nbt_tag::INT_ARRAY, name, v) {}
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 auto length = (int32_t) t.size();
                 writeData(out, length);
                 for (int i = 0; i < length; i++)
                     writeData(out, t[i]);
             }
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 int32_t length;
                 readData(in, length);
                 t.reserve(length);
@@ -196,13 +196,13 @@ namespace blt::nbt {
         public:
             tag_long_array(): tag(nbt_tag::LONG_ARRAY) {}
             tag_long_array(const std::string& name, const std::vector<int64_t>& v): tag(nbt_tag::LONG_ARRAY, name, v) {}
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 auto length = (int32_t) t.size();
                 writeData(out, length);
                 for (int i = 0; i < length; i++)
                     writeData(out, t[i]);
             }
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 int32_t length;
                 readData(in, length);
                 t.reserve(length);
@@ -262,7 +262,7 @@ namespace blt::nbt {
         public:
             tag_list(): tag(nbt_tag::LIST) {}
             tag_list(const std::string& name, const std::vector<tag_t*>& v): tag(nbt_tag::LIST, name, v) {}
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 if (t.empty())
                     writeData(out, (char)nbt_tag::END);
                 else
@@ -273,7 +273,7 @@ namespace blt::nbt {
                     v->writePayload(out);
             }
             
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 char id;
                 int32_t length;
                 readData(in, id);
@@ -305,7 +305,7 @@ namespace blt::nbt {
                 auto& tag = t[i];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);
@@ -342,7 +342,7 @@ namespace blt::nbt {
                 auto& tag = t[name];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);
@@ -356,18 +356,20 @@ namespace blt::nbt {
                 t[tag->getName()] = tag;
             }
             
-            void writePayload(blt::fs::block_writer& out) final {
+            void writePayload(blt::fs::writer_t& out) final {
                 for (const auto& v : t){
                     auto tag = v.second;
-                    out.put((char) tag->getType());
+                    auto c = (char) tag->getType();
+                    out.write(&c, 1);
                     tag->writeName(out);
                     tag->writePayload(out);
                 }
-                out.put('\0');
+                const char c = '\0';
+                out.write(&c, 1);
             }
-            void readPayload(blt::fs::block_reader& in) final {
+            void readPayload(blt::fs::reader_t& in) final {
                 char type;
-                while ((type = in.get()) != (char)nbt_tag::END){
+                while ((in.read(&type, 1), type) != (char)nbt_tag::END){
                     auto* v = _internal_::toType(type);
                     v->readName(in);
                     v->readPayload(in);
@@ -390,10 +392,10 @@ namespace blt::nbt {
     
     class NBTReader {
         private:
-            blt::fs::block_reader& reader;
+            blt::fs::reader_t& reader;
             tag_compound* root = nullptr;
         public:
-            explicit NBTReader(blt::fs::block_reader& reader): reader(reader) {}
+            explicit NBTReader(blt::fs::reader_t& reader): reader(reader) {}
             
             void read();
             
@@ -407,7 +409,7 @@ namespace blt::nbt {
                 auto& tag = root->get()[name];
                 T t;
                 if (tag->getType() != t.getType()) {
-                    BLT_WARN("Expected tag of type %d but got tag of type %d", (char)t.getType(), (char)tag->getType());
+                    BLT_WARN("Expected tag of type {:d} but got tag of type {:d}", (char)t.getType(), (char)tag->getType());
                     throw std::runtime_error("Requested Tag does not match stored type!");
                 }
                 return dynamic_cast<T*>(tag);
@@ -419,9 +421,9 @@ namespace blt::nbt {
     
     class NBTWriter {
         private:
-            blt::fs::block_writer& writer;
+            blt::fs::writer_t& writer;
         public:
-            explicit NBTWriter(blt::fs::block_writer& writer): writer(writer) {}
+            explicit NBTWriter(blt::fs::writer_t& writer): writer(writer) {}
             /**
              * Write a compound tag and then DELETES the tag. If you don't wish for the memory to be freed, please use the reference version!
              * @param root root NBT tag to write, this function assumes ownership of this pointer.
@@ -431,7 +433,8 @@ namespace blt::nbt {
                 delete root;
             }
             void write(tag_compound& root){
-                writer.put((char)nbt_tag::COMPOUND);
+                auto c = (char)nbt_tag::COMPOUND;
+                writer.write(&c, 1);
                 root.writeName(writer);
                 root.writePayload(writer);
             }

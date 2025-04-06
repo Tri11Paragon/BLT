@@ -4,7 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/std/system.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 
 #if !defined(_MSC_VER) && !defined(WIN32)
 #include <sys/time.h>            /* for struct timeval */
@@ -94,7 +94,7 @@ namespace blt
         if (GetProcessTimes(GetCurrentProcess(),
                             &starttime, &exittime, &kerneltime, &usertime) == 0)
         {
-            BLT_WARN("Unable to get process resource usage, error: %d", GetLastError());
+            BLT_WARN("Unable to get process resource usage, error: {:d}", GetLastError());
             return {};
         }
         
@@ -111,7 +111,7 @@ namespace blt
 #else
         if (getrusage(who, (struct rusage*) &usage) != 0)
         {
-            BLT_ERROR("Failed to get rusage %d", errno);
+            BLT_ERROR("Failed to get rusage {:d}", errno);
             return {};
         }
 #endif

@@ -21,9 +21,9 @@ namespace blt
 
     constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
-    static inline constexpr bool f_equal(float v1, float v2)
+    static constexpr bool f_equal(const float v1, const float v2, const float range = 1)
     {
-        return v1 >= v2 - EPSILON && v1 <= v2 + EPSILON;
+        return v1 >= v2 - (EPSILON * range) && v1 <= v2 + (EPSILON * range);
     }
 
     template <typename T, blt::u32 size>
@@ -105,6 +105,11 @@ namespace blt
                 ++m;
                 ++b;
             }
+        }
+
+        [[nodiscard]] const std::array<T, size>& to_array() const
+        {
+            return elements;
         }
 
         [[nodiscard]] constexpr inline T x() const
@@ -418,6 +423,50 @@ namespace blt
         {
             auto diff = left[i] - right[i];
             if (diff > E || diff < -E)
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator>=(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] < right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator>(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] <= right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator<(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] >= right[i])
+                return false;
+        }
+        return true;
+    }
+
+    template <typename T, typename G, u32 size>
+    constexpr bool operator<=(const vec<T, size>& left, const vec<G, size>& right)
+    {
+        for (u32 i = 0; i < size; i++)
+        {
+            if (left[i] > right[i])
                 return false;
         }
         return true;

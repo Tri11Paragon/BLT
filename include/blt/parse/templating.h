@@ -27,7 +27,7 @@
 #include <blt/std/hashmap.h>
 #include <blt/std/types.h>
 #include <blt/std/expected.h>
-#include <blt/std/logging.h>
+#include <blt/logging/logging.h>
 #include <variant>
 
 namespace blt
@@ -223,8 +223,12 @@ namespace blt
             
             std::string_view from_last()
             {
-                if (!hasNext())
-                    return std::string_view(&raw_string[last_read_index], raw_string.size() - last_read_index);
+                if (!hasNext()) {
+                    auto size = raw_string.size() - last_read_index;
+                    if (size > 0)
+                        return std::string_view(&raw_string[last_read_index], size);
+                    return "";
+                }
                 auto token = storage[getCurrentIndex()];
                 auto len = ((&token.token.back()) - &raw_string[last_read_index]);
                 auto str = std::string_view(&raw_string[last_read_index], len);

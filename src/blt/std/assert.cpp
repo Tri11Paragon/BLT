@@ -3,15 +3,15 @@
  * Licensed under GNU General Public License V3.0
  * See LICENSE file for license detail
  */
-#include <blt/std/assert.h>
-#include <blt/std/utility.h>
-#include <blt/std/logging.h>
-#include <blt/std/string.h>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <exception>
 #include <cstring>
+#include <exception>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <blt/logging/logging.h>
+#include <blt/std/assert.h>
+#include <blt/std/string.h>
+#include <blt/std/utility.h>
 
 struct abort_exception final : public std::exception
 {
@@ -48,8 +48,8 @@ struct abort_exception final : public std::exception
 
 #ifdef IS_GNU_BACKTRACE
     
-    #include <execinfo.h>
     #include <cstdlib>
+#include <execinfo.h>
 
 #endif
 
@@ -86,7 +86,7 @@ namespace blt
 #ifdef IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
         
-        BLT_ERROR("An exception '%s' has occurred in file '%s:%d'", what, path, line);
+        BLT_ERROR("An exception '{}' has occurred in file '{}:{:d}'", what, path, line);
         BLT_ERROR("Stack Trace:");
         printStacktrace(messages, size, path, line);
         
@@ -103,7 +103,7 @@ namespace blt
 #ifdef IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
         
-        BLT_ERROR("The assertion '%s' has failed in file '%s:%d'", expression, path, line);
+        BLT_ERROR("The assertion '{}' has failed in file '{}:{:d}'", expression, path, line);
         if (msg != nullptr)
             BLT_ERROR(msg);
         BLT_ERROR("Stack Trace:");
@@ -175,8 +175,8 @@ namespace blt
         BLT_STACK_TRACE(50);
 #endif
         BLT_FATAL("----{BLT ABORT}----");
-        BLT_FATAL("\tWhat: %s", what);
-        BLT_FATAL("\tCalled from %s:%d", path, line);
+        BLT_FATAL("\tWhat: {}", what);
+        BLT_FATAL("\tCalled from {}:{:d}", path, line);
 #ifdef IS_GNU_BACKTRACE
         printStacktrace(messages, size, path, line);
         
