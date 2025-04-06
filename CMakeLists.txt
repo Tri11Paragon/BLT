@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.2.34)
+set(BLT_VERSION 5.2.35)
 
 set(BLT_TARGET BLT)
 
@@ -13,6 +13,7 @@ option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
 option(BLT_DEBUG_OTEL "Enable OpenTelemetry Service" OFF)
+option(BLT_LOGGING_THREAD_SAFE "Make sure logging is thread synced" ON)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
@@ -46,6 +47,10 @@ if (BLT_DEBUG_OTEL)
 
     message("${OPENTELEMETRY_CPP_LIBRARIES}")
 #    include_directories("${opentelemtry-cpp_INCLUDE_DIRS}")
+endif ()
+
+if (BLT_LOGGING_THREAD_SAFE)
+    add_compile_definitions(BLT_LOGGING_THREAD_SAFE)
 endif ()
 
 if(${BLT_DISABLE_STATS})

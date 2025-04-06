@@ -33,6 +33,9 @@ namespace blt::logging
 	};
 
 	static global_context_t global_context;
+#ifdef BLT_LOGGING_THREAD_SAFE
+	static std::mutex global_logging_mutex;
+#endif
 
 	struct logging_thread_context_t
 	{
@@ -237,6 +240,9 @@ namespace blt::logging
 
 	void print(std::string str)
 	{
+#ifdef BLT_LOGGING_THREAD_SAFE
+		std::scoped_lock lock{global_logging_mutex};
+#endif
 		const auto& config = get_global_config();
 		bool should_print = true;
 		if (!config.get_injectors().empty())
@@ -257,6 +263,9 @@ namespace blt::logging
 
 	void newline()
 	{
+#ifdef BLT_LOGGING_THREAD_SAFE
+		std::scoped_lock lock{global_logging_mutex};
+#endif
 		std::cout << std::endl;
 	}
 
