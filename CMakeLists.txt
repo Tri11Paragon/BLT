@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.2.37)
+set(BLT_VERSION 5.2.38)
 
 set(BLT_TARGET BLT)
 
@@ -12,7 +12,6 @@ option(ENABLE_ADDRSAN "Enable the address sanitizer" OFF)
 option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
-option(BLT_DEBUG_OTEL "Enable OpenTelemetry Service" OFF)
 option(BLT_LOGGING_THREAD_SAFE "Make sure logging is thread synced" ON)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
@@ -32,27 +31,6 @@ option(BLT_DISABLE_INFO "Disable blt::logging BLT_INFO macro" OFF)
 option(BLT_DISABLE_WARN "Disable blt::logging BLT_WARN macro" OFF)
 option(BLT_DISABLE_ERROR "Disable blt::logging BLT_ERROR macro" OFF)
 option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
-
-if (BLT_DEBUG_OTEL)
-    set(BUILD_TESTING OFF)
-    set(WITH_BENCHMARK OFF)
-    set(WITH_ABSEIL OFF)
-    set(WITH_STL ON)
-    set(WITH_OTLP_FILE ON)
-    set(WITH_OTLP_HTTP ON)
-    set(WITH_OTLP_GRPC ON)
-    include(FetchContent)
-    FetchContent_Declare(
-            opentelemetry-cpp
-            GIT_REPOSITORY https://github.com/open-telemetry/opentelemetry-cpp
-            GIT_TAG        6175aa0b213eea053247e43b4f35b8d201fa356e # release-1.20.0
-    )
-    FetchContent_MakeAvailable(opentelemetry-cpp)
-
-    message("Hello ${OPENTELEMETRY_CPP_LIBRARIES}")
-    message("Hello ${opentelemtry-cpp_INCLUDE_DIRS}")
-#    include_directories("${opentelemtry-cpp_INCLUDE_DIRS}")
-endif ()
 
 if (BLT_LOGGING_THREAD_SAFE)
     add_compile_definitions(BLT_LOGGING_THREAD_SAFE)

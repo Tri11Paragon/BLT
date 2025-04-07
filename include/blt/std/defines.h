@@ -19,6 +19,7 @@
 #ifndef BLT_DEFINES_H
 #define BLT_DEFINES_H
 
+
 #if defined(BLT_DEBUG_OTEL) && defined(__has_include) &&__has_include(<opentelemetry/version.h>)
     #define BLT_DEBUG_OTEL_ENABLED 1
 #endif
