@@ -19,6 +19,8 @@ pkgs.mkShell
         gtest.dev
         grpc
         protobuf
+        curl
+        abseil-cpp
 	];
 	LD_LIBRARY_PATH="/run/opengl-driver/lib:/run/opengl-driver-32/lib";
 }
