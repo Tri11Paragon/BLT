@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.2.35)
+set(BLT_VERSION 5.2.36)
 
 set(BLT_TARGET BLT)
 
@@ -34,18 +34,23 @@ option(BLT_DISABLE_ERROR "Disable blt::logging BLT_ERROR macro" OFF)
 option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
 
 if (BLT_DEBUG_OTEL)
-    set(WITH_BENCHMARK OFF)
     set(BUILD_TESTING OFF)
+    set(WITH_BENCHMARK OFF)
     set(WITH_ABSEIL OFF)
+    set(WITH_STL ON)
+    set(WITH_OTLP_FILE ON)
+    set(WITH_OTLP_HTTP ON)
+    set(WITH_OTLP_GRPC ON)
     include(FetchContent)
     FetchContent_Declare(
-            opentelemtry-cpp
+            opentelemetry-cpp
             GIT_REPOSITORY https://github.com/open-telemetry/opentelemetry-cpp
             GIT_TAG        6175aa0b213eea053247e43b4f35b8d201fa356e # release-1.20.0
     )
-    FetchContent_MakeAvailable(opentelemtry-cpp)
+    FetchContent_MakeAvailable(opentelemetry-cpp)
 
-    message("${OPENTELEMETRY_CPP_LIBRARIES}")
+    message("Hello ${OPENTELEMETRY_CPP_LIBRARIES}")
+    message("Hello ${opentelemtry-cpp_INCLUDE_DIRS}")
 #    include_directories("${opentelemtry-cpp_INCLUDE_DIRS}")
 endif ()
 

@@ -13,9 +13,12 @@ pkgs.mkShell
 		renderdoc
 		valgrind
 	];
+	nativeBuildInputs = with pkgs; [ pkg-config ];
 	propagatedBuildInputs = with pkgs; [
         gtest
         gtest.dev
+        grpc
+        protobuf
 	];
 	LD_LIBRARY_PATH="/run/opengl-driver/lib:/run/opengl-driver-32/lib";
 }
