@@ -12,15 +12,33 @@ pkgs.mkShell
 		ninja
 		renderdoc
 		valgrind
+		gtest
+		opentelemetry-cpp
+		opentelemetry-cpp.dev
 	];
-	nativeBuildInputs = with pkgs; [ pkg-config ];
+	nativeBuildInputs = with pkgs; [
+	    pkg-config
+	    opentelemetry-cpp
+        opentelemetry-cpp.dev
+	];
 	propagatedBuildInputs = with pkgs; [
-        gtest
-        gtest.dev
-        grpc
-        protobuf
-        curl
-        abseil-cpp
+		abseil-cpp
+		protobuf
+		grpc
+		prometheus-cpp
+		prometheus-cpp.dev
+		openssl
+		openssl.dev
+		opentelemetry-cpp
+		opentelemetry-cpp.dev
+		civetweb
+		civetweb.dev
+		c-ares
+		c-ares.dev
+		nlohmann_json
+		glibc
+		glibc.dev
+		curl
 	];
 	LD_LIBRARY_PATH="/run/opengl-driver/lib:/run/opengl-driver-32/lib";
 }

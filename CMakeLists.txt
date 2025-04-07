@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.2.38)
+set(BLT_VERSION 5.2.39)
 
 set(BLT_TARGET BLT)
 
@@ -13,6 +13,7 @@ option(ENABLE_UBSAN "Enable the ub sanitizer" OFF)
 option(ENABLE_TSAN "Enable the thread data race sanitizer" OFF)
 
 option(BLT_LOGGING_THREAD_SAFE "Make sure logging is thread synced" ON)
+option(BLT_DEBUG_OTEL "Use Open Telemetry for debugging" OFF)
 
 option(BUILD_STD "Build the BLT standard utilities." ON)
 option(BUILD_PROFILING "Build the BLT profiler extension" ON)
@@ -31,6 +32,17 @@ option(BLT_DISABLE_INFO "Disable blt::logging BLT_INFO macro" OFF)
 option(BLT_DISABLE_WARN "Disable blt::logging BLT_WARN macro" OFF)
 option(BLT_DISABLE_ERROR "Disable blt::logging BLT_ERROR macro" OFF)
 option(BLT_DISABLE_FATAL "Disable blt::logging BLT_FATAL macro" OFF)
+
+if (BLT_DEBUG_OTEL)
+    message(STATUS "Searching in path '${CMAKE_PREFIX_PATH}'")
+    find_package(absl REQUIRED)
+    find_package(protobuf REQUIRED)
+    find_package(OpenSSL REQUIRED)
+    find_package(gRPC REQUIRED)
+    find_package(nlohmann_json CONFIG REQUIRED)
+    find_package(prometheus-cpp CONFIG REQUIRED)
+    find_package(opentelemetry-cpp CONFIG REQUIRED)
+endif ()
 
 if (BLT_LOGGING_THREAD_SAFE)
     add_compile_definitions(BLT_LOGGING_THREAD_SAFE)
@@ -221,4 +233,5 @@ project(BLT)
 
 if (BLT_DEBUG_OTEL)
     target_link_libraries(${BLT_TARGET} PUBLIC ${OPENTELEMETRY_CPP_LIBRARIES})
+    target_include_directories(${BLT_TARGET} PUBLIC ${OPENTELEMETRY_CPP_INCLUDE_DIRS})
 endif ()
