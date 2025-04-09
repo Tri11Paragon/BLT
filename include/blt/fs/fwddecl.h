@@ -43,6 +43,11 @@ namespace blt::fs
 		* @return number of bytes read, or negative value if error. Errors are not required and can just return 0
 		*/
 		virtual i64 read(char* buffer, size_t bytes) = 0;
+
+		virtual i64 read(void* buffer, const size_t bytes)
+		{
+			return this->read(static_cast<char*>(buffer), bytes);
+		}
 	};
 
 	/**
@@ -65,6 +70,11 @@ namespace blt::fs
 		* @return number of bytes, or negative value if error. Zero is also a valid return, not indicating error in itself but can be the result of one.
 		*/
 		virtual i64 write(const char* buffer, size_t bytes) = 0;
+
+		i64 write(const void* buffer, const size_t bytes)
+		{
+			return this->write(static_cast<const char*>(buffer), bytes);
+		}
 
 		/**
 		* Optional flush command which syncs the underlying objects
