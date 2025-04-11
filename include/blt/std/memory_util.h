@@ -201,18 +201,26 @@ namespace blt::mem
 
         static constexpr std::size_t make_storage_ones()
         {
+            #ifdef __EMSCRIPTEN__
+            return ~static_cast<size_t>(0);
+            #else
             std::size_t result = 0;
             for (std::size_t i = START_BIT; i < END_BIT; i++)
                 result |= 1ul << i;
             return result;
+            #endif
         }
 
         static constexpr std::size_t make_ptr_ones()
         {
+            #ifdef __EMSCRIPTEN__
+            return ~static_cast<size_t>(0);
+            #else
             std::size_t result = 0;
             for (std::size_t i = 0; i < START_BIT; i++)
                 result |= 1ul << i;
             return result;
+            #endif
         }
 
         bit_storage(): bits(0)
@@ -263,16 +271,19 @@ namespace blt::mem
 
         pointer_storage& bit(const std::size_t index, const bool b) noexcept
         {
+            #ifndef __EMSCRIPTEN__
             if (index >= bit_storage::END_BIT)
                 return *this;
             ptr_bits &= ~(1ul << (bit_storage::START_BIT + index));
             ptr_bits |= (static_cast<std::uintptr_t>(b) << (bit_storage::START_BIT + index));
+            #endif
             return *this;
         }
 
         template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
         pointer_storage& storage(const T& type)
         {
+            #ifndef __EMSCRIPTEN__
             static_assert(sizeof(T) <= sizeof(std::uintptr_t), "Type takes too many bits to be stored!");
             static constexpr std::uintptr_t store_bits = (2 << (bit_storage::AVAILABLE_BITS - 1)) - 1;
             std::uintptr_t bit_store = 0;
@@ -280,12 +291,15 @@ namespace blt::mem
             std::memcpy(&bit_store, &type, sizeof(T));
             store.bits |= bit_store & store_bits;
             storage(store);
+            #endif
             return *this;
         }
 
         pointer_storage& storage(const bit_storage bits) noexcept
         {
+            #ifndef __EMSCRIPTEN__
             ptr_bits = ((ptr_bits & PTR_ALL_ONES) | (static_cast<std::uintptr_t>(bits.bits) << bit_storage::START_BIT));
+            #endif
             return *this;
         }
 

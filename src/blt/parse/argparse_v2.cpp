@@ -313,7 +313,7 @@ namespace blt::argparse
 				break;
 			case action_t::COUNT:
 				set_nargs(0);
-				as_type<size_t>();
+				as_type<u64>();
 				break;
 			case action_t::EXTEND:
 				set_nargs(nargs_t::ALL);
@@ -1176,14 +1176,14 @@ namespace blt::argparse
 			argument_parser_t parser;
 			parser.add_flag("-a").set_action(action_t::STORE_TRUE);
 			parser.add_flag("+b").set_action(action_t::STORE_FALSE);
-			parser.add_flag("/c").as_type<int>().set_action(action_t::STORE);
+			parser.add_flag("/c").as_type<u32>().set_action(action_t::STORE);
 
 			const std::vector<std::string> args = {"./program", "-a", "+b", "/c", "42"};
 			const auto parsed_args = parser.parse(args);
 
 			BLT_ASSERT(parsed_args.get<bool>("-a") == true && "Flag '-a' should store `true`");
 			BLT_ASSERT(parsed_args.get<bool>("+b") == false && "Flag '+b' should store `false`");
-			BLT_ASSERT(parsed_args.get<int>("/c") == 42 && "Flag '/c' should store the value 42");
+			BLT_ASSERT(parsed_args.get<u32>("/c") == 42 && "Flag '/c' should store the value 42");
 		}
 
 		// Test: Invalid flag prefixes
@@ -1208,12 +1208,12 @@ namespace blt::argparse
 		void test_compound_flags()
 		{
 			argument_parser_t parser;
-			parser.add_flag("-v").as_type<int>().set_action(action_t::COUNT);
+			parser.add_flag("-v").set_action(action_t::COUNT);
 
 			const std::vector<std::string> args = {"./program", "-vvv"};
 			const auto parsed_args = parser.parse(args);
 
-			BLT_ASSERT(parsed_args.get<size_t>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
+			BLT_ASSERT(parsed_args.get<u64>("-v") == 3 && "Flag '-v' should count occurrences in compound form");
 		}
 
 		void test_combination_of_valid_and_invalid_flags()
