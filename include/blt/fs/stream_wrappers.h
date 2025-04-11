@@ -33,10 +33,6 @@ namespace blt::fs
 	public:
 		explicit fstream_reader_t(std::istream& stream);
 
-		explicit fstream_reader_t(fstream_reader_t& copy) = delete;
-
-		fstream_reader_t& operator=(const fstream_reader_t& copy) = delete;
-
 		i64 read(char* buffer, size_t bytes) override;
 
 	private:
@@ -48,13 +44,13 @@ namespace blt::fs
 	public:
 		explicit fstream_writer_t(std::ostream& stream);
 
-		explicit fstream_writer_t(fstream_writer_t& copy) = delete;
-
-		fstream_writer_t& operator=(const fstream_writer_t& copy) = delete;
-
 		i64 write(const char* buffer, size_t bytes) override;
 
 		void flush() override;
+
+		i64 tell() override;
+
+		void seek(i64 offset, seek_origin origin = seek_origin::seek_set) override;
 
 		virtual ~fstream_writer_t() override // NOLINT
 		{

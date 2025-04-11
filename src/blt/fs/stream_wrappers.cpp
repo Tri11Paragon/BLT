@@ -42,4 +42,25 @@ namespace blt::fs
 	{
 		m_stream->flush();
 	}
+
+	i64 fstream_writer_t::tell()
+	{
+		return m_stream->tellp();
+	}
+
+	void fstream_writer_t::seek(const i64 offset, const seek_origin origin)
+	{
+		switch (origin)
+		{
+		case seek_origin::seek_cur:
+			m_stream->seekp(offset, std::ios_base::cur);
+			break;
+		case seek_origin::seek_end:
+			m_stream->seekp(offset, std::ios_base::end);
+			break;
+		case seek_origin::seek_set:
+			m_stream->seekp(offset, std::ios_base::beg);
+			break;
+		}
+	}
 }

@@ -57,6 +57,16 @@ namespace blt::fs
 	class writer_t
 	{
 	public:
+		enum class seek_origin
+		{
+			// Seek from current position
+			seek_cur = SEEK_CUR,
+			// Seek from end of file. Not valid on binary streams
+			seek_end = SEEK_END,
+			// Seek from start of file
+			seek_set = SEEK_SET
+		};
+
 		virtual ~writer_t() = default;
 		explicit writer_t() = default;
 
@@ -70,6 +80,15 @@ namespace blt::fs
 		* @return number of bytes, or negative value if error. Zero is also a valid return, not indicating error in itself but can be the result of one.
 		*/
 		virtual i64 write(const char* buffer, size_t bytes) = 0;
+
+		virtual i64 tell()
+		{
+			return 0;
+		}
+
+		virtual void seek(i64 offset, seek_origin origin = seek_origin::seek_set)
+		{
+		}
 
 		i64 write(const void* buffer, const size_t bytes)
 		{
