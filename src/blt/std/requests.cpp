@@ -85,10 +85,11 @@ namespace blt::requests
 	std::string send_get_request(const std::string& url)
 	{
 		#ifdef __EMSCRIPTEN__
-		auto* str = static_cast<char*>(EM_ASM_PTR(
-			{ const v = await fetch('$0', { 'credentials': 'omit', 'headers': { 'User-Agent':
-				'Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0', 'Accept': '/', 'Accept-Language': 'en-US,en;q=0.5',
-				'Priority': 'u=4' }, 'method': 'GET', 'mode': 'cors' }); if (!v.ok) { throw v.status; } return stringToNewUTF8(await response.text());
+		auto* str = static_cast<char*>(EM_ASM_PTR({
+				var xhr = new XMLHttpRequest();
+				xhr.open("GET", $0);
+				xhr.send();
+				return stringToNewUTF8(xhr.responseText);
 			}, url.c_str()));
 		std::string str_obj{str};
 		free(str);
