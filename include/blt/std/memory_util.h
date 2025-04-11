@@ -283,6 +283,7 @@ namespace blt::mem
         template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
         pointer_storage& storage(const T& type)
         {
+            // TODO!! Emscript support!
             #ifndef __EMSCRIPTEN__
             static_assert(sizeof(T) <= sizeof(std::uintptr_t), "Type takes too many bits to be stored!");
             static constexpr std::uintptr_t store_bits = (2 << (bit_storage::AVAILABLE_BITS - 1)) - 1;
