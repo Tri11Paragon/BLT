@@ -86,7 +86,7 @@ namespace blt::fs
 			return 0;
 		}
 
-		virtual void seek(i64 offset, seek_origin origin = seek_origin::seek_set)
+		virtual void seek(i64, seek_origin)
 		{
 		}
 

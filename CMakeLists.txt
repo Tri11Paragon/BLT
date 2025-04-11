@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.2.43)
+set(BLT_VERSION 5.3.0)
 
 set(BLT_TARGET BLT)
 
@@ -108,11 +108,19 @@ endif ()
 
 #include zlib if the user has it.
 find_package(ZLIB QUIET)
+find_package(CURL QUIET)
 
 if (${ZLIB_FOUND})
     include_directories(${ZLIB_INCLUDE_DIRS})
 else ()
     message("ZLIB was not found, this is fine however if you wish you use gzip with NBT it is required.")
+endif ()
+
+if (${CURL_FOUND})
+    message(STATUS "Linking cURL!")
+    include_directories(${CURL_INCLUDE_DIRS})
+else ()
+    message(STATUS "cURL not found, some library features will be disabled!")
 endif ()
 
 include_directories(include/)
@@ -146,6 +154,11 @@ target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/conf
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Including Parallel Hashmap directory")
     target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
+endif ()
+
+if (${CURL_FOUND})
+    target_include_directories(${BLT_TARGET} PUBLIC ${CURL_INCLUDE_DIRS})
+    target_link_libraries(${BLT_TARGET} PUBLIC ${CURL_LIBRARIES})
 endif ()
 
 message("BLT ${Yellow}${BLT_VERSION}${ColourReset} Successfully included!")
