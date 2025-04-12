@@ -37,25 +37,25 @@
 namespace blt
 {
     
-    class barrier
+    class barrier_t
     {
         public:
-            explicit barrier(blt::size_t threads, std::optional<std::reference_wrapper<std::atomic_bool>> exit_cond = {}):
+            explicit barrier_t(blt::size_t threads, std::optional<std::reference_wrapper<std::atomic_bool>> exit_cond = {}):
                     thread_count(threads), threads_waiting(0), use_count(0), exit_cond(exit_cond), count_mutex(), cv()
             {
                 if (threads == 0)
                     throw std::runtime_error("Barrier thread count cannot be 0");
             }
             
-            barrier(const barrier& copy) = delete;
+            barrier_t(const barrier_t& copy) = delete;
             
-            barrier(barrier&& move) = delete;
+            barrier_t(barrier_t&& move) = delete;
             
-            barrier& operator=(const barrier& copy) = delete;
+            barrier_t& operator=(const barrier_t& copy) = delete;
             
-            barrier& operator=(barrier&& move) = delete;
+            barrier_t& operator=(barrier_t&& move) = delete;
             
-            ~barrier() = default;
+            ~barrier_t() = default;
             
             void wait()
             {
@@ -101,7 +101,7 @@ namespace blt
             
             // improves performance by not blocking the thread for n iterations of the loop.
             // If the condition is not met by the end of this loop we can block the thread.
-            static constexpr blt::size_t BUSY_LOOP_WAIT = 200;
+            static constexpr size_t BUSY_LOOP_WAIT = 200;
     };
     
     /**
