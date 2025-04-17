@@ -20,6 +20,7 @@
 #define BLT_FS_FWDDECL_H
 
 #include <blt/std/types.h>
+#include <cstdio>
 
 namespace blt::fs
 {
