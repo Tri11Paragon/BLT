@@ -26,7 +26,8 @@ namespace blt::fs
 
 	i64 fstream_reader_t::read(char* buffer, const size_t bytes)
 	{
-		return m_stream->readsome(buffer, static_cast<std::streamsize>(bytes));
+		m_stream->read(buffer, static_cast<std::streamsize>(bytes));
+		return m_stream->gcount();
 	}
 
 	fstream_writer_t::fstream_writer_t(std::ostream& stream): m_stream{&stream}
