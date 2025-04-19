@@ -23,9 +23,18 @@
 
 namespace blt
 {
-#define BLT_MAKE_GETTER(TYPE, NAME)                                     \
-    TYPE& get_##NAME() { return NAME; }                                 \
+#define BLT_MAKE_GETTER_LVALUE(TYPE, NAME)                              \
+    TYPE& get_##NAME() { return NAME; }
+
+#define BLT_MAKE_GETTER_CLVALUE(TYPE, NAME)                             \
     const TYPE& get_##NAME() const { return NAME; }
+
+#define BLT_MAKE_GETTER_RVALUE(TYPE, NAME)                              \
+    TYPE get_##NAME() const { return NAME; }
+
+#define BLT_MAKE_GETTER()                                               \
+    BLT_MAKE_GETTER_LVALUE(TYPE, NAME)                                  \
+    BLT_MAKE_GETTER_CLVALUE(TYPE, NAME)
 
 #define BLT_MAKE_SETTER_LVALUE(TYPE, NAME)                              \
     auto& set_##NAME(const TYPE& new_##NAME)                            \
@@ -40,6 +49,16 @@ namespace blt
         NAME = std::move(new_##NAME);                                   \
         return *this;                                                   \
     }
+
+#define BLT_MAKE_VALUE(TYPE, NAME)                                      \
+    TYPE NAME;                                                          \
+    BLT_MAKE_GETTER_CLVALUE(TYPE, NAME)                                 \
+    BLT_MAKE_SETTER_RVALUE(TYPE, NAME)
+
+#define BLT_MAKE_VALUE_DEFAULT(TYPE, NAME, DEFAULT)                     \
+    TYPE NAME = DEFAULT;                                                \
+    BLT_MAKE_GETTER_CLVALUE(TYPE, NAME)                                 \
+    BLT_MAKE_SETTER_RVALUE(TYPE, NAME)
 
 #define BLT_MAKE_SETTER(TYPE, NAME)                                     \
     BLT_MAKE_SETTER_LVALUE(TYPE, NAME)                                  \
