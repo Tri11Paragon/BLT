@@ -27,17 +27,23 @@ namespace blt
     TYPE& get_##NAME() { return NAME; }                                 \
     const TYPE& get_##NAME() const { return NAME; }
 
-#define BLT_MAKE_SETTER(TYPE, NAME)                                     \
+#define BLT_MAKE_SETTER_LVALUE(TYPE, NAME)                              \
     auto& set_##NAME(const TYPE& new_##NAME)                            \
     {                                                                   \
         NAME = new_##NAME;                                              \
         return *this;                                                   \
-    }                                                                   \
+    }
+
+#define BLT_MAKE_SETTER_RVALUE(TYPE, NAME)                              \
     auto& set_##NAME(TYPE&& new_##NAME)                                 \
     {                                                                   \
         NAME = std::move(new_##NAME);                                   \
         return *this;                                                   \
     }
+
+#define BLT_MAKE_SETTER(TYPE, NAME)                                     \
+    BLT_MAKE_SETTER_LVALUE(TYPE, NAME)                                  \
+    BLT_MAKE_SETTER_RVALUE(TYPE, NAME)
 
 #define BLT_MAKE_GETTER_AND_SETTER(TYPE, NAME)                          \
     BLT_MAKE_GETTER(TYPE, NAME)                                         \
