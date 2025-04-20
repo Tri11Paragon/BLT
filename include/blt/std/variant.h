@@ -26,6 +26,8 @@
 #include <variant>
 #include <blt/std/types.h>
 
+#include "blt/logging/logging.h"
+
 namespace blt
 {
     /*
@@ -191,6 +193,8 @@ namespace blt
         template <bool should_throw = false, typename... MemberFuncs>
         constexpr auto call_member(const MemberFuncs... funcs)
         {
+            static_assert(std::conjunction_v<std::is_member_function_pointer<std::decay_t<MemberFuncs>>...>,
+                          "Must provide only pointers to member functions!");
             return std::visit([=](auto&& value)
             {
                 using ValueType = std::decay_t<decltype(value)>;
@@ -206,13 +210,22 @@ namespace blt
                     using ReturnType = std::invoke_result_t<FuncType, ValueType>;
                     if constexpr (std::is_invocable_v<FuncType, ValueType>)
                     {
-                        return std::make_optional(std::invoke(func, value));
+                        return std::make_optional(((value).*(func))());
                     }
                     return std::optional<ReturnType>{};
-                }(std::forward<decltype(funcs)>(funcs))));
+                }(cast_member_ptr<std::remove_reference_t<decltype(value)>>(std::forward<decltype(funcs)>(funcs)))));
             }, m_variant);
         }
 
+        template <typename MemberFunc, typename... Args>
+        constexpr auto call_member_args(const MemberFunc func, Args&&... args)
+        {
+            return std::visit([=](auto&& value)
+            {
+                using ValueType = std::decay_t<decltype(value)>;
+                return ((value).*(cast_member_ptr<ValueType>(func)))(std::forward<Args>(args)...);
+            }, m_variant);
+        }
 
         template <size_t I>
         [[nodiscard]] constexpr bool has_index() const noexcept
@@ -345,6 +358,12 @@ namespace blt
         }
 
     private:
+        template <typename Derived, typename Base, typename ReturnType, typename... Args>
+        static auto cast_member_ptr(ReturnType (Base::*base_func)(Args...))
+        {
+            return reinterpret_cast<ReturnType (Derived::*)(Args...)>(base_func);
+        }
+
         value_type m_variant;
     };
 
