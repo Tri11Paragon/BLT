@@ -9,6 +9,7 @@
 #include <blt/iterator/iterator.h>
 #include <algorithm>
 #include "blt/std/utility.h"
+#include <blt/std/variant.h>
 
 namespace blt
 {

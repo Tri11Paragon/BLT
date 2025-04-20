@@ -19,6 +19,9 @@
 #ifndef BLT_STD_VARIANT_H
 #define BLT_STD_VARIANT_H
 
+#include <functional>
+#include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <variant>
 #include <blt/std/types.h>
@@ -176,6 +179,38 @@ namespace blt
                     return std::forward<Default>(default_lambda)(std::forward<decltype(value)>(value));
                 }
             });
+        }
+
+        /**
+         * Call a set of member functions on the types stored in the variant. If a type has more than one of these functions declared on it,
+         * the implementation will use the first member function provided. By default, if the stored value doesn't have any of the member functions,
+         * nothing will happen, if should_throw boolean is true, then the implementation will throw a runtime error.
+         * @tparam should_throw Controls if the implementation should throw if the type stored in the variant doesn't have any matching member function
+         * @return Result of calling the member functions. All functions should return the same value, otherwise this won't compile.
+         */
+        template <bool should_throw = false, typename... MemberFuncs>
+        constexpr auto call_member(const MemberFuncs... funcs)
+        {
+            return std::visit([=](auto&& value)
+            {
+                using ValueType = std::decay_t<decltype(value)>;
+
+                if constexpr (std::disjunction_v<std::is_invocable<std::decay_t<decltype(funcs)>, ValueType>...> && should_throw)
+                {
+                    throw std::runtime_error("No matching member function found");
+                }
+
+                return *(... || ([&](auto&& func) -> decltype(auto)
+                {
+                    using FuncType = std::decay_t<decltype(func)>;
+                    using ReturnType = std::invoke_result_t<FuncType, ValueType>;
+                    if constexpr (std::is_invocable_v<FuncType, ValueType>)
+                    {
+                        return std::make_optional(std::invoke(func, value));
+                    }
+                    return std::optional<ReturnType>{};
+                }(std::forward<decltype(funcs)>(funcs))));
+            }, m_variant);
         }
 
 

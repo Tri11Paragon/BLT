@@ -12,6 +12,7 @@
 #include <stack>
 #include <queue>
 #include <algorithm>
+#include <blt/std/variant.h>
 
 inline constexpr char SEPARATOR = '-';
 inline constexpr char CONNECTOR = '+';

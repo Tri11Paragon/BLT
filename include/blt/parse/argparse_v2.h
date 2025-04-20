@@ -37,6 +37,7 @@
 #include <blt/std/expected.h>
 #include <blt/std/ranges.h>
 #include <blt/std/utility.h>
+#include <blt/std/variant.h>
 
 namespace blt::argparse
 {
