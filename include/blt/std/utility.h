@@ -67,31 +67,6 @@ namespace blt
         return typeid(T).name();
     }
 
-//#define BLT_LAMBDA(type, var, code) [](const type& var) -> auto { return code; }
-//#define BLT_LAMBDA(var, code) [](var) -> auto { return code; }
-
-/*
- * std::visit(blt::lambda_visitor{
- *      lambdas...
- * }, data_variant);
- */
-
-// TODO: WTF
-    template<class... TLambdas>
-    struct lambda_visitor : TLambdas ...
-    {
-        using TLambdas::operator()...;
-    };
-
-#if __cplusplus < 202002L
-    
-    // explicit deduction guide (not needed as of C++20)
-    template<class... TLambdas>
-    lambda_visitor(TLambdas...) -> lambda_visitor<TLambdas...>;
-
-#endif
-
-
 #if defined(__GNUC__) || defined(__llvm__)
     #define BLT_UNREACHABLE __builtin_unreachable()
     #define BLT_ATTRIB_NO_INLINE __attribute__ ((noinline))

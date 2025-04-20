@@ -25,6 +25,26 @@
 
 namespace blt
 {
+    /*
+     * std::visit(blt::lambda_visitor{
+     *      lambdas...
+     * }, data_variant);
+     */
+
+    template <typename... TLambdas>
+    struct lambda_visitor : TLambdas...
+    {
+        using TLambdas::operator()...;
+    };
+
+#if __cplusplus < 202002L
+
+    // explicit deduction guide (not needed as of C++20)
+    template <typename... TLambdas>
+    lambda_visitor(TLambdas...) -> lambda_visitor<TLambdas...>;
+
+#endif
+
     template <typename... Types>
     class variant_t
     {
@@ -118,6 +138,46 @@ namespace blt
         {
             return std::visit(std::forward<T>(visitor), m_variant);
         }
+
+        /**
+         * Automatic visitor generation with empty default behavior
+         * @param visitees user lambdas
+         */
+        template <typename... Visitee>
+        constexpr void visit_empty(Visitee&&... visitees)
+        {
+            std::visit(lambda_visitor{
+                           std::forward<Visitee>(visitees)...,
+                           [](auto)
+                           {
+                           }
+                       }, m_variant);
+        }
+
+        template <typename Default, typename... Visitee>
+        constexpr auto visit_value(Default&& default_value, Visitee&&... visitees) -> decltype(auto)
+        {
+            return std::visit(lambda_visitor{
+                std::forward<Visitee>(visitees)...,
+                [default_value=std::forward<Default>(default_value)](auto&& value)
+                {
+                    return std::forward<decltype(value)>(value);
+                }
+            });
+        }
+
+        template <typename Default, typename... Visitee>
+        constexpr auto visit_lambda(Default&& default_lambda, Visitee&&... visitees) -> decltype(auto)
+        {
+            return std::visit(lambda_visitor{
+                std::forward<Visitee>(visitees)...,
+                [default_lambda=std::forward<Default>(default_lambda)](auto&& value)
+                {
+                    return std::forward<Default>(default_lambda)(std::forward<decltype(value)>(value));
+                }
+            });
+        }
+
 
         template <size_t I>
         [[nodiscard]] constexpr bool has_index() const noexcept
@@ -255,33 +315,32 @@ namespace blt
 
     namespace detail
     {
-        template<typename>
+        template <typename>
         class variant_is_base_of
-        {};
+        {
+        };
 
-        template<typename... Types>
+        template <typename... Types>
         class variant_is_base_of<variant_t<Types...>>
         {
         public:
-            template<typename T>
+            using value_type = bool;
+            template <typename T>
             static constexpr bool value = std::conjunction_v<std::is_base_of<T, Types>...>;
         };
 
-        template<typename... Types>
+        template <typename... Types>
         class variant_is_base_of<std::variant<Types...>>
         {
         public:
-            template<typename T>
+            using value_type = bool;
+            template <typename T>
             static constexpr bool value = std::conjunction_v<std::is_base_of<T, Types>...>;
         };
 
-        template<typename T>
+        template <typename T>
         static constexpr bool variant_is_base_of_v = variant_is_base_of<T>::value;
     }
-
-    template<typename Variant_t, typename... Subclasses>
-    class variant_wrapper_t : public Subclasses...
-    {};
 }
 
 #endif //BLT_STD_VARIANT_H
