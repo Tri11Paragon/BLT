@@ -58,6 +58,54 @@ namespace blt
         template <typename... Ts>
         using filter_void_t = typename filter_void<Ts...>::type;
 
+        template <typename Type, typename Func>
+        struct member_func_meta
+        {
+            using can_invoke = std::is_invocable<Func, Type>;
+
+            using return_type = std::conditional_t<can_invoke::value, std::invoke_result_t<Func, Type>, void>;
+        };
+
+        template <typename T, typename Func>
+        struct passthrough_value
+        {
+            using type = T;
+            using func = Func;
+
+            bool has_value = false;
+
+            explicit passthrough_value(const bool has_value): has_value(has_value)
+            {
+            }
+
+            explicit operator bool() const
+            {
+                return has_value;
+            }
+
+        };
+
+        template <typename Type, typename... Funcs>
+        struct first_invoke_member_func
+        {
+            constexpr static auto find_func()
+            {
+                return (... || []()
+                {
+                    using Meta = member_func_meta<Type, Funcs>;
+                    if constexpr (Meta::can_invoke::value)
+                    {
+                        return passthrough_value<typename Meta::return_type, Funcs>{true};
+                    }
+                    return passthrough_value<void, Funcs>{false};
+                }());
+            }
+
+            using result = decltype(find_func());
+            using return_type = typename result::type;
+            using func_type = typename result::func;
+        };
+
 
         template <typename Type, typename... Args>
         struct member_func_detail;
