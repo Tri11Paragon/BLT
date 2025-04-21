@@ -108,6 +108,15 @@ namespace blt
         hell = (void*) &val;
         (void) hell;
     }
+
+    template<typename T>
+    BLT_ATTRIB_NO_INLINE T& black_box_ret(T& val)
+    {
+        static volatile void* hell;
+        hell = (void*) &val;
+        (void) hell;
+        return val;
+    }
     
     template<typename T>
     BLT_ATTRIB_NO_INLINE const T& black_box_ret(const T& val)

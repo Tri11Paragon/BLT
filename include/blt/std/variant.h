@@ -21,15 +21,98 @@
 
 #include <functional>
 #include <optional>
-#include <stdexcept>
 #include <type_traits>
 #include <variant>
 #include <blt/std/types.h>
-
-#include "blt/logging/logging.h"
+#include <tuple>
 
 namespace blt
 {
+    template <typename... Types>
+    class variant_t;
+
+    namespace detail
+    {
+        template <typename... Ts>
+        struct filter_void;
+
+        template <>
+        struct filter_void<>
+        {
+            using type = std::tuple<>;
+        };
+
+        template <typename T, typename... Ts>
+        struct filter_void<T, Ts...>
+        {
+            using type = std::conditional_t<
+                std::is_same_v<T, void>,
+                typename filter_void<Ts...>::type,
+                decltype(std::tuple_cat(
+                    std::declval<std::tuple<T>>(),
+                    std::declval<typename filter_void<Ts...>::type>()
+                ))
+            >;
+        };
+
+        template <typename... Ts>
+        using filter_void_t = typename filter_void<Ts...>::type;
+
+
+        template <typename Type, typename... Args>
+        struct member_func_detail;
+
+        template <typename Type, typename First, typename... Rest>
+        struct member_func_detail<Type, First, Rest...>
+        {
+            template <typename Func>
+            using return_type = std::invoke_result_t<Func, Type>;
+
+            template <typename Func>
+            using can_invoke = std::is_invocable<Func, Type>;
+
+            template <typename Func>
+            using result_or_void = std::conditional<can_invoke<Func>::value, return_type<Func>, void>;
+
+            constexpr static bool all_has_void = std::conjunction_v<std::is_void<result_or_void<Rest>>...>;
+
+            using ret_type = std::conditional_t<all_has_void, void, decltype(std::get<0>(
+                                                    std::declval<filter_void_t<return_type<First>, return_type<Rest>...>>()))>;
+
+            constexpr static bool all_has_ret = std::conjunction_v<std::is_same<ret_type, result_or_void<Rest>>...>;
+            constexpr static bool ret_or_void = std::conjunction_v<std::disjunction<
+                std::is_same<ret_type, result_or_void<Rest>>, std::is_void<result_or_void<Rest>>>...>;
+
+            template <size_t... Indexes>
+            static constexpr auto make_variant(std::index_sequence<Indexes...>)
+            {
+                if constexpr (all_has_void)
+                    return;
+                using tuple_type = filter_void_t<First, Rest...>;
+                using variant = variant_t<decltype(std::get<Indexes>(std::declval<tuple_type>()))...>;
+                return std::declval<variant>();
+            }
+
+            using variant_type = decltype(make_variant(std::index_sequence_for<First, Rest...>{}));
+
+            static constexpr auto make_return_type()
+            {
+                if constexpr (all_has_void)
+                    return;
+                if constexpr (all_has_ret)
+                    return std::declval<ret_type>();
+                if constexpr (ret_or_void)
+                    return std::declval<std::optional<ret_type>>();
+                return std::declval<variant_type>();
+            }
+        };
+
+        template <typename Type>
+        struct member_func_detail<Type>
+        {
+        };
+    }
+
     /*
      * std::visit(blt::lambda_visitor{
      *      lambdas...
@@ -190,7 +273,7 @@ namespace blt
          * @tparam should_throw Controls if the implementation should throw if the type stored in the variant doesn't have any matching member function
          * @return Result of calling the member functions. All functions should return the same value, otherwise this won't compile.
          */
-        template <bool should_throw = false, typename... MemberFuncs>
+        template <typename... MemberFuncs>
         constexpr auto call_member(const MemberFuncs... funcs)
         {
             static_assert(std::conjunction_v<std::is_member_function_pointer<std::decay_t<MemberFuncs>>...>,
@@ -199,9 +282,8 @@ namespace blt
             {
                 using ValueType = std::decay_t<decltype(value)>;
 
-                if constexpr (std::disjunction_v<std::is_invocable<std::decay_t<decltype(funcs)>, ValueType>...> && should_throw)
+                if constexpr (std::disjunction_v<std::is_invocable<std::decay_t<decltype(funcs)>, ValueType>...>)
                 {
-                    throw std::runtime_error("No matching member function found");
                 }
 
                 return *(... || ([&](auto&& func) -> decltype(auto)
@@ -222,8 +304,7 @@ namespace blt
         {
             return std::visit([=](auto&& value)
             {
-                using ValueType = std::decay_t<decltype(value)>;
-                return ((value).*(cast_member_ptr<ValueType>(func)))(std::forward<Args>(args)...);
+                return ((value).*(func))(std::forward<Args>(args)...);
             }, m_variant);
         }
 
