@@ -32,7 +32,7 @@ namespace blt
 #define BLT_MAKE_GETTER_RVALUE(TYPE, NAME)                              \
     TYPE get_##NAME() const { return NAME; }
 
-#define BLT_MAKE_GETTER()                                               \
+#define BLT_MAKE_GETTER(TYPE, NAME)                                     \
     BLT_MAKE_GETTER_LVALUE(TYPE, NAME)                                  \
     BLT_MAKE_GETTER_CLVALUE(TYPE, NAME)
 
