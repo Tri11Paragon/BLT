@@ -66,98 +66,93 @@ namespace blt
             using return_type = std::conditional_t<can_invoke::value, std::invoke_result_t<Func, Type>, void>;
         };
 
-        template <typename T, typename Func>
+        template <typename T, typename Func, size_t Index, bool HasValue>
         struct passthrough_value
         {
             using type = T;
             using func = Func;
-
-            bool has_value = false;
-
-            explicit passthrough_value(const bool has_value): has_value(has_value)
-            {
-            }
+            constexpr static size_t index = Index;
 
             explicit operator bool() const
             {
-                return has_value;
+                return HasValue;
             }
-
         };
 
         template <typename Type, typename... Funcs>
         struct first_invoke_member_func
         {
-            constexpr static auto find_func()
+            template <size_t... Indexes>
+            constexpr static auto find_func(std::index_sequence<Indexes...>)
             {
                 return (... || []()
                 {
                     using Meta = member_func_meta<Type, Funcs>;
                     if constexpr (Meta::can_invoke::value)
                     {
-                        return passthrough_value<typename Meta::return_type, Funcs>{true};
+                        return passthrough_value<typename Meta::return_type, Funcs, Indexes, true>{};
                     }
-                    return passthrough_value<void, Funcs>{false};
+                    return passthrough_value<void, Funcs, Indexes, false>{};
                 }());
             }
 
-            using result = decltype(find_func());
+            using result = decltype(find_func(std::index_sequence_for<Funcs...>()));
             using return_type = typename result::type;
             using func_type = typename result::func;
+            constexpr static size_t function_index = result::index;
         };
 
-
-        template <typename Type, typename... Args>
-        struct member_func_detail;
-
-        template <typename Type, typename First, typename... Rest>
-        struct member_func_detail<Type, First, Rest...>
+        template <typename FuncTuple, typename ArgTuple>
+        struct member_func_detail
         {
-            template <typename Func>
-            using return_type = std::invoke_result_t<Func, Type>;
+        };
 
-            template <typename Func>
-            using can_invoke = std::is_invocable<Func, Type>;
+        template <typename... Funcs, typename... Args>
+        struct member_func_detail<std::tuple<Funcs...>, std::tuple<Args...>>
+        {
+            using result_types = std::tuple<first_invoke_member_func<Args, Funcs...>...>;
+            using base_type = typename decltype(std::get<0>(std::declval<result_types>))::type;
 
-            template <typename Func>
-            using result_or_void = std::conditional<can_invoke<Func>::value, return_type<Func>, void>;
+            template <typename T>
+            using get_type = typename T::type;
 
-            constexpr static bool all_has_void = std::conjunction_v<std::is_void<result_or_void<Rest>>...>;
+            template <typename T>
+            using is_base = std::is_same<typename T::type, base_type>;
 
-            using ret_type = std::conditional_t<all_has_void, void, decltype(std::get<0>(
-                                                    std::declval<filter_void_t<return_type<First>, return_type<Rest>...>>()))>;
+            template <typename T>
+            using is_base_or_void = std::disjunction<std::is_void<typename T::type>, is_base<typename T::type>>;
 
-            constexpr static bool all_has_ret = std::conjunction_v<std::is_same<ret_type, result_or_void<Rest>>...>;
-            constexpr static bool ret_or_void = std::conjunction_v<std::disjunction<
-                std::is_same<ret_type, result_or_void<Rest>>, std::is_void<result_or_void<Rest>>>...>;
+            template <template<typename...> typename Functor, template<typename> typename PerType, size_t... Indexes>
+            constexpr static auto for_each_type(std::index_sequence<Indexes...>)
+            {
+                return std::declval<Functor<PerType<decltype(std::get<Indexes>(std::declval<result_types>()))>...>>;
+            }
+
+            constexpr static bool all_has_void = for_each_type<std::conjunction_v, std::is_void>(std::index_sequence_for<Args...>());
+            constexpr static bool all_has_ret = for_each_type<std::conjunction_v, is_base>(std::index_sequence_for<Args...>());
+            constexpr static bool all_has_ret_or_void = for_each_type<std::conjunction_v, is_base_or_void>(std::index_sequence_for<Args...>());
+
+            using non_void_types = typename decltype(for_each_type<filter_void_t, get_type>(std::index_sequence_for<Args...>()))::type;
 
             template <size_t... Indexes>
             static constexpr auto make_variant(std::index_sequence<Indexes...>)
             {
                 if constexpr (all_has_void)
                     return;
-                using tuple_type = filter_void_t<First, Rest...>;
-                using variant = variant_t<decltype(std::get<Indexes>(std::declval<tuple_type>()))...>;
+                using variant = variant_t<decltype(std::get<Indexes>(std::declval<non_void_types>()))...>;
                 return std::declval<variant>();
             }
-
-            using variant_type = decltype(make_variant(std::index_sequence_for<First, Rest...>{}));
 
             static constexpr auto make_return_type()
             {
                 if constexpr (all_has_void)
                     return;
                 if constexpr (all_has_ret)
-                    return std::declval<ret_type>();
-                if constexpr (ret_or_void)
-                    return std::declval<std::optional<ret_type>>();
-                return std::declval<variant_type>();
+                    return std::declval<base_type>();
+                if constexpr (all_has_ret_or_void)
+                    return std::declval<std::optional<base_type>>();
+                return make_variant(std::make_index_sequence<std::tuple_size_v<non_void_types>>{});
             }
-        };
-
-        template <typename Type>
-        struct member_func_detail<Type>
-        {
         };
     }
 
@@ -280,9 +275,9 @@ namespace blt
          * @param visitees user lambdas
          */
         template <typename... Visitee>
-        constexpr void visit_empty(Visitee&&... visitees)
+        constexpr auto visit(Visitee&&... visitees) -> decltype(detail::member_func_detail<std::tuple<Visitee...>, std::tuple<Types...>>::make_return_type())
         {
-            std::visit(lambda_visitor{
+            return std::visit(lambda_visitor{
                            std::forward<Visitee>(visitees)...,
                            [](auto)
                            {
@@ -302,31 +297,14 @@ namespace blt
             });
         }
 
-        template <typename Default, typename... Visitee>
-        constexpr auto visit_lambda(Default&& default_lambda, Visitee&&... visitees) -> decltype(auto)
-        {
-            return std::visit(lambda_visitor{
-                std::forward<Visitee>(visitees)...,
-                [default_lambda=std::forward<Default>(default_lambda)](auto&& value)
-                {
-                    return std::forward<Default>(default_lambda)(std::forward<decltype(value)>(value));
-                }
-            });
-        }
-
-        /**
-         * Call a set of member functions on the types stored in the variant. If a type has more than one of these functions declared on it,
-         * the implementation will use the first member function provided. By default, if the stored value doesn't have any of the member functions,
-         * nothing will happen, if should_throw boolean is true, then the implementation will throw a runtime error.
-         * @tparam should_throw Controls if the implementation should throw if the type stored in the variant doesn't have any matching member function
-         * @return Result of calling the member functions. All functions should return the same value, otherwise this won't compile.
-         */
         template <typename... MemberFuncs>
         constexpr auto call_member(const MemberFuncs... funcs)
         {
             static_assert(std::conjunction_v<std::is_member_function_pointer<std::decay_t<MemberFuncs>>...>,
                           "Must provide only pointers to member functions!");
-            return std::visit([=](auto&& value)
+            using meta_t = detail::member_func_detail<std::tuple<MemberFuncs...>, std::tuple<Types...>>;
+            using result_t = decltype(meta_t::make_return_type());
+            return std::visit([=](auto&& value) -> result_t
             {
                 using ValueType = std::decay_t<decltype(value)>;
 
@@ -340,10 +318,10 @@ namespace blt
                     using ReturnType = std::invoke_result_t<FuncType, ValueType>;
                     if constexpr (std::is_invocable_v<FuncType, ValueType>)
                     {
-                        return std::make_optional(((value).*(func))());
+                        return ((value).*(func))();
                     }
-                    return std::optional<ReturnType>{};
-                }(cast_member_ptr<std::remove_reference_t<decltype(value)>>(std::forward<decltype(funcs)>(funcs)))));
+                    return std::declval<result_t>();
+                }(cast_member_ptr<std::decay_t<decltype(value)>>(std::forward<decltype(funcs)>(funcs)))));
             }, m_variant);
         }
 
