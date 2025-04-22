@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.4.5)
+set(BLT_VERSION 5.4.6)
 
 set(BLT_TARGET BLT)
 
@@ -238,6 +238,7 @@ if (${BUILD_TESTS})
     blt_add_test(blt_iterator tests/iterator_tests.cpp test)
     blt_add_test(blt_argparse tests/argparse_tests.cpp test)
     blt_add_test(blt_logging tests/logger_tests.cpp test)
+    blt_add_test(blt_variant tests/variant_tests.cpp test)
 
     message("Built tests")
 endif ()
