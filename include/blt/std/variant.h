@@ -217,12 +217,12 @@ namespace blt
 		constexpr auto call_member(const MemberFunc func, Args&&... args)
 		{
 			using meta = detail::member_call_return_type<MemberFunc, std::tuple<Args...>, Types...>;
-			return std::visit([&](auto&& value) -> typename meta::return_type {
+			return visit([&](auto&& value) -> typename meta::return_type {
 				if constexpr (std::is_invocable_v<MemberFunc, decltype(value), Args...>)
 					return ((value).*(func))(std::forward<Args>(args)...);
 				else
 					return {};
-			}, m_variant);
+			});
 		}
 
 		template <size_t I>
