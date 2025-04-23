@@ -236,7 +236,7 @@ namespace blt::parse
 			auto loc = vertex_map.find(face);
 			if (loc == vertex_map.end())
 			{
-				BLT_DEBUG("DID NOT FIND FACE!");
+				BLT_DEBUG("{}", "DID NOT FIND FACE!");
 				auto index = static_cast<std::int32_t>(vertex_data.size());
 				vertex_data.push_back({vertices[vi], uvs[ui], normals[ni]});
 				BLT_DEBUG("Vertex: ({.4f}, {.4f}, {.4f}), UV: ({.4f}, {.4f}), Normal: ({.4f}, {.4f}, {:.4f})", vertices[vi].x(), vertices[vi].y(),

@@ -45,128 +45,50 @@ namespace blt
 		template <typename T, typename... Ts>
 		struct filter_void<T, Ts...>
 		{
-			using type = std::conditional_t<std::is_same_v<T, void>, typename filter_void<Ts...>::type, decltype(std::tuple_cat(
+			using type = std::conditional_t<std::is_void_v<T>, typename filter_void<Ts...>::type, decltype(std::tuple_cat(
 												std::declval<std::tuple<T>>(), std::declval<typename filter_void<Ts...>::type>()))>;
 		};
 
 		template <typename... Ts>
 		using filter_void_t = typename filter_void<Ts...>::type;
 
-		template <typename Type, typename... Ts>
-		struct filter_invoke;
-
-		template <typename Type>
-		struct filter_invoke<Type>
-		{
-			using type = std::tuple<>;
-		};
-
-		template <typename Type, typename T, typename... Ts>
-		struct filter_invoke<Type, T, Ts...>
-		{
-			using type = std::conditional_t<std::is_invocable_v<T, Type>, decltype(std::tuple_cat(
-												std::declval<std::tuple<T>>(), std::declval<typename filter_invoke<Ts...>::type>())),
-											typename filter_invoke<Ts...>::type>;
-		};
-
-		template <typename... Ts>
-		using filter_invoke_t = typename filter_invoke<Ts...>::type;
-
-		template <typename Type, typename Func>
-		struct member_func_meta
-		{
-			using can_invoke = std::is_invocable<Func, Type>;
-
-			using return_type = std::conditional_t<can_invoke::value, std::invoke_result_t<Func, Type>, void>;
-		};
-
-		template <typename T, typename Func, size_t Index>
-		struct passthrough_value
+		template<typename T>
+		struct passthrough
 		{
 			using type = T;
-			using func = Func;
-			constexpr static size_t index = Index;
-
-			bool has_value;
-
-			explicit passthrough_value(const bool has_value): has_value(has_value)
-			{}
-
-			explicit operator bool() const
-			{
-				return has_value;
-			}
 		};
 
-		template <typename Type, typename... Funcs>
-		struct first_invoke_member_func
+		template <typename Type, typename Func, typename... Args>
+		struct member_func_meta
 		{
-			template <size_t... Indexes>
-			constexpr static auto find_func(std::index_sequence<Indexes...>)
-			{
-				return (... || []() {
-					using Meta = member_func_meta<Type, Funcs>;
-					if constexpr (Meta::can_invoke::value)
-					{
-						return passthrough_value<typename Meta::return_type, Funcs, Indexes>{true};
-					}
-					return passthrough_value<typename Meta::return_type, Funcs, Indexes>{false};
-				}());
-			}
+			using can_invoke = std::is_invocable<Func, Type, Args...>;
 
-			using result = decltype(find_func(std::index_sequence_for<Funcs...>()));
-			using return_type = typename result::type;
-			using func_type = typename result::func;
-			constexpr static size_t function_index = result::index;
+			using return_type = typename std::conditional_t<can_invoke::value, std::invoke_result<Func, Type, Args...>, passthrough<void>>::type;
 		};
 
-		template <typename FuncTuple, typename ArgTuple>
-		struct member_func_detail;
+		template <typename Func, typename ArgsTuple, typename... Types>
+		struct member_call_return_type;
 
-		template <typename... Funcs, typename... Args>
-		struct member_func_detail<std::tuple<Funcs...>, std::tuple<Args...>>
+		template <typename Func, typename... Args, typename... Types>
+		struct member_call_return_type<Func, std::tuple<Args...>, Types...>
 		{
-			using result_types = std::tuple<first_invoke_member_func<Args, Funcs...>...>;
-			using base_type = typename std::tuple_element_t<0, result_types>::return_type;
+			using result_types = std::tuple<member_func_meta<Types, Func, Args...>...>;
+			using non_void_result_types = typename filter_void<typename member_func_meta<Types, Func, Args...>::return_type...>::type;
 
-			template <typename T>
-			using get_type = typename T::return_type;
+			static constexpr bool all_void = std::tuple_size_v<non_void_result_types> == 0;
+			static constexpr bool some_void = std::tuple_size_v<non_void_result_types> != sizeof...(Types);
 
-			template <typename T>
-			using is_base = std::is_same<T, base_type>;
+			using first_return = std::conditional_t<all_void, void, std::tuple_element_t<0, non_void_result_types>>;
 
-			template <typename T>
-			using is_base_or_void = std::disjunction<std::is_void<typename T::return_type>, is_base<typename T::return_type>>;
-
-			template <template<typename...> typename Functor, template<typename> typename PerType, size_t... Indexes>
-			constexpr static auto for_each_type(std::index_sequence<Indexes...>)
-			{
-				return std::declval<Functor<PerType<std::tuple_element_t<Indexes, result_types>>...>>;
-			}
-
-			constexpr static bool all_has_void = std::decay_t<std::invoke_result_t<decltype(for_each_type<std::conjunction, std::is_void>(
-				std::index_sequence_for<Args...>()))>>::value;
-			constexpr static bool all_has_ret = std::decay_t<std::invoke_result_t<decltype(for_each_type<std::conjunction, is_base>(
-				std::index_sequence_for<Args...>()))>>::value;
-			constexpr static bool all_has_ret_or_void = std::decay_t<std::invoke_result_t<decltype(for_each_type<std::conjunction, is_base_or_void>(
-				std::index_sequence_for<Args...>()))>>::value;
-
-			using non_void_types = typename std::decay_t<std::invoke_result_t<decltype(for_each_type<filter_void, get_type>(
-				std::index_sequence_for<Args...>()))>>::type;
-
-			template <size_t... Indexes>
-			static constexpr auto make_variant(std::index_sequence<Indexes...>)
-			{
-				using variant = variant_t<std::decay_t<std::tuple_element_t<Indexes, non_void_types>>...>;
-				return std::declval<variant>();
-			}
-
-			using make_return_type = std::conditional_t<all_has_void, void, std::conditional_t<
-															all_has_ret, base_type, std::conditional_t<
-																all_has_ret_or_void, std::optional<base_type>, std::conditional_t<
-																	std::tuple_size_v<non_void_types> == 0, void, decltype(make_variant(
-																		std::make_index_sequence<std::tuple_size_v<non_void_types>>{}))>>>>;
+			using return_type = std::conditional_t<all_void, void, std::conditional_t<some_void, std::optional<first_return>, first_return>>;
 		};
+
+		template <typename FuncTuple, typename TypesTuple>
+		struct visit_return_type;
+
+		template <typename... Funcs, typename... Types>
+		struct visit_return_type<std::tuple<Funcs...>, std::tuple<Types...>>
+		{};
 	}
 
 	/*
@@ -278,8 +200,7 @@ namespace blt
 		* @param visitees user lambdas
 		*/
 		template <typename... Visitee>
-		constexpr auto visit(
-			Visitee&&... visitees) -> typename detail::member_func_detail<std::tuple<Visitee...>, std::tuple<Types...>>::make_return_type
+		constexpr auto visit(Visitee&&... visitees) -> decltype(auto)
 		{
 			return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
 		}
@@ -287,21 +208,20 @@ namespace blt
 		template <typename Default, typename... Visitee>
 		constexpr auto visit_value(Default&& default_value, Visitee&&... visitees) -> decltype(auto)
 		{
-			return std::visit(lambda_visitor{
-				std::forward<Visitee>(visitees)...,
-				[default_value=std::forward<Default>(default_value)](auto&& value) {
-					return std::forward<decltype(value)>(value);
-				}
+			return visit(std::forward<Visitee>(visitees)..., [default_value=std::forward<Default>(default_value)](auto&&) {
+				return std::forward<Default>(default_value);
 			});
 		}
 
 		template <typename MemberFunc, typename... Args>
-		constexpr auto call_member(const MemberFunc func,
-									Args&&... args) -> typename detail::member_func_detail<
-			std::tuple<MemberFunc>, std::tuple<Types...>>::make_return_type
+		constexpr auto call_member(const MemberFunc func, Args&&... args)
 		{
-			return std::visit([func,...args=std::forward<Args>(args)](auto&& value) {
-				return ((value).*(func))(std::forward<Args>(args)...);
+			using meta = detail::member_call_return_type<MemberFunc, std::tuple<Args...>, Types...>;
+			return std::visit([&](auto&& value) -> typename meta::return_type {
+				if constexpr (std::is_invocable_v<MemberFunc, decltype(value), Args...>)
+					return ((value).*(func))(std::forward<Args>(args)...);
+				else
+					return {};
 			}, m_variant);
 		}
 

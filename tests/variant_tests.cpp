@@ -121,15 +121,35 @@ struct storing_type2 final : mutate_type
 	float internal;
 };
 
+struct no_members
+{
+	int hello;
+};
+
 int main()
 {
-
 	blt::variant_t<type1, type2, type3> v1{type1{}};
 	blt::variant_t<type1, type2, type3> v2{type2{}};
 	blt::variant_t<type1, type2, type3> v3{type3{}};
 
 	BLT_TRACE("Variants to_string():");
-	BLT_TRACE("V1: {}", v1.call_member(&base_type::to_string));
-	BLT_TRACE("V2: {}", v2.call_member(&base_type::to_string));
+
+	auto v1_result = v1.call_member(&base_type::to_string);
+	BLT_ASSERT_MSG(v1_result == type1{}.to_string(), ("Expected result to be " + type1{}.to_string() + " but found " + v1_result).c_str());
+	BLT_ASSERT_MSG(typeid(v1_result) == typeid(std::string), "Result type expected to be string!");
+	BLT_TRACE("V1: {}", v1_result);
+
+	auto v2_result = v2.call_member(&base_type::to_string);
+
+	BLT_TRACE("V2: {}", v2_result);
 	BLT_TRACE("V3: {}", v3.call_member(&base_type::to_string));
+
+	blt::variant_t<type1, type2, no_members> member_missing_stored_member{type1{}};
+	blt::variant_t<type1, type2, no_members> member_missing_stored_no_member{no_members{50}};
+
+	auto stored_member_result = member_missing_stored_member.call_member(&base_type::to_string);
+	auto no_member_result = member_missing_stored_no_member.call_member(&base_type::to_string);
+
+	BLT_TRACE("Stored: has value? '{}' value: '{}'", stored_member_result.has_value(), *stored_member_result);
+	BLT_TRACE("No Member: {}", no_member_result.has_value());
 }

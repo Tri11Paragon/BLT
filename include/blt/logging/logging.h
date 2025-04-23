@@ -62,7 +62,7 @@ namespace blt::logging
 		template <size_t index, typename T>
 		void handle_func(const T& t)
 		{
-			m_arg_print_funcs[index] = [&t, this](std::ostream& stream, const fmt_spec_t& type) {
+			m_arg_print_funcs[index] = [&t](std::ostream& stream, const fmt_spec_t& type) {
 				switch (type.sign)
 				{
 					case fmt_sign_t::SPACE:
