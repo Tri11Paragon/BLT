@@ -24,6 +24,18 @@
 
 namespace blt::meta
 {
+	template <template<typename...> typename Func, typename Tuple>
+	struct apply_tuple;
+
+	template <template<typename...> typename Func, typename... Values>
+	struct apply_tuple<Func, std::tuple<Values...>>
+	{
+		using type = Func<Values...>;
+	};
+
+	template<template<typename...> typename Func, typename Tuple>
+	using apply_tuple_t = typename apply_tuple<Func, Tuple>::type;
+
 	template <typename... Ts>
 	struct filter_void;
 
@@ -58,12 +70,13 @@ namespace blt::meta
 		using type = std::tuple<>;
 	};
 
-	template <template<typename...> typename Func, typename... Args, typename T, typename... Ts>
-	struct filter_func<Func, std::tuple<Args...>, T, Ts...>
+	template <template<typename...> typename Func, typename ArgsTuple, typename T, typename... Ts>
+	struct filter_func<Func, ArgsTuple, T, Ts...>
 	{
-		using type = std::conditional_t<Func<T, Args...>::value, typename filter_func<Func, std::tuple<Args...>, Ts...>::type, decltype(
+		using ArgsTupleWithT = decltype(std::tuple_cat(std::declval<ArgsTuple>(), std::declval<std::tuple<T>>()));
+		using type = std::conditional_t<apply_tuple_t<Func, ArgsTupleWithT>::value, typename filter_func<Func, ArgsTuple, Ts...>::type, decltype(
 											std::tuple_cat(std::declval<std::tuple<T>>(),
-															std::declval<typename filter_func<Func, std::tuple<Args...>, Ts...>::type>()))>;
+															std::declval<typename filter_func<Func, ArgsTuple, Ts...>::type>()))>;
 	};
 
 	template <template<typename...> typename Func, typename ArgsTuple, typename... Ts>
@@ -74,7 +87,6 @@ namespace blt::meta
 
 	template <template<typename...> typename Func, typename ArgsTuple, typename... Ts>
 	using filter_func_t = typename filter_func<Func, ArgsTuple, Ts...>::type;
-
 }
 
 #endif //BLT_META_FILTER_VOID_H

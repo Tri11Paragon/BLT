@@ -140,8 +140,13 @@ int main()
 	BLT_TRACE("V1: {}", v1_result);
 
 	auto v2_result = v2.call_member(&base_type::to_string);
-
+	BLT_ASSERT_MSG(v2_result == type2{}.to_string(), ("Expected result to be " + type2{}.to_string() + " but found " + v2_result).c_str());
+	BLT_ASSERT_MSG(typeid(v2_result) == typeid(std::string), "Result type expected to be string!");
 	BLT_TRACE("V2: {}", v2_result);
+
+	auto v3_result = v3.call_member(&base_type::to_string);
+	BLT_ASSERT_MSG(v3_result == type3{}.to_string(), ("Expected result to be " + type3{}.to_string() + " but found " + v3_result).c_str());
+	BLT_ASSERT_MSG(typeid(v3_result) == typeid(std::string), "Result type expected to be string!");
 	BLT_TRACE("V3: {}", v3.call_member(&base_type::to_string));
 
 	blt::variant_t<type1, type2, no_members> member_missing_stored_member{type1{}};
@@ -150,6 +155,22 @@ int main()
 	auto stored_member_result = member_missing_stored_member.call_member(&base_type::to_string);
 	auto no_member_result = member_missing_stored_no_member.call_member(&base_type::to_string);
 
+	BLT_ASSERT(typeid(stored_member_result) == typeid(std::optional<std::string>));
+	BLT_ASSERT(stored_member_result.has_value());
+	BLT_ASSERT(typeid(no_member_result) == typeid(std::optional<std::string>));
+	BLT_ASSERT(!no_member_result.has_value());
+
 	BLT_TRACE("Stored: has value? '{}' value: '{}'", stored_member_result.has_value(), *stored_member_result);
 	BLT_TRACE("No Member: {}", no_member_result.has_value());
+
+	auto vist_result_v1 = v1.visit([](const type1& t1) {
+		return t1.simple();
+	}, [](const type2& t2) {
+		return t2.simple();
+	}, [](const type3& t3) {
+
+	});
+
+	BLT_TRACE(blt::type_string<decltype(vist_result_v1)>());
+
 }

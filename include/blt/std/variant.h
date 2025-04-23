@@ -24,6 +24,7 @@
 #include <tuple>
 #include <type_traits>
 #include <variant>
+#include <blt/meta/function.h>
 #include <blt/meta/passthrough.h>
 #include <blt/meta/tuple_filters.h>
 #include <blt/std/types.h>
@@ -88,7 +89,13 @@ namespace blt
 
 			static constexpr bool all_void = std::tuple_size_v<non_void_returns> == 0;
 			static constexpr bool some_void = std::tuple_size_v<non_void_returns> != std::tuple_size_v<return_tuple>;
-			static constexpr bool all_same = meta::filter_func_t<std::is_same, std::tuple<first_return>, non_void_returns>::value;
+			using same_type = meta::filter_func_t<std::is_same, std::tuple<first_return>, non_void_returns>;
+			static constexpr bool all_same = std::tuple_size_v<same_type> == std::tuple_size_v<non_void_returns>;
+
+			using variant_type = typename meta::apply_tuple<variant_t, non_void_returns>::type;
+
+			using base_type = std::conditional_t<all_same, first_return, variant_type>;
+			using return_type = std::conditional_t<all_void, void, std::conditional_t<some_void, std::optional<base_type>, base_type>>;
 		};
 	}
 
@@ -203,7 +210,18 @@ namespace blt
 		template <typename... Visitee>
 		constexpr auto visit(Visitee&&... visitees) -> decltype(auto)
 		{
-			return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
+			using meta_t = detail::visit_return_type<std::tuple<Visitee...>, std::tuple<Types...>>;
+			if constexpr (meta_t::all_same)
+			{
+				return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
+			} else
+			{
+				return std::visit(lambda_visitor{
+									[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
+										return typename meta_t::return_type{std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))};
+									}
+								}..., m_variant);
+			}
 		}
 
 		template <typename Default, typename... Visitee>
