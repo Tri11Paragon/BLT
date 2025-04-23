@@ -34,12 +34,12 @@ struct mutate_type : base_type
 
 struct type1 final : base_type
 {
-	[[nodiscard]] int simple() const override // NOLINT
+	[[nodiscard]] int simple() const final // NOLINT
 	{
 		return 1;
 	}
 
-	[[nodiscard]] std::string to_string() const override // NOLINT
+	[[nodiscard]] std::string to_string() const final // NOLINT
 	{
 		return "Type1";
 	}
@@ -48,12 +48,12 @@ struct type1 final : base_type
 
 struct type2 final : base_type
 {
-	[[nodiscard]] int simple() const override // NOLINT
+	[[nodiscard]] int simple() const final // NOLINT
 	{
 		return 2;
 	}
 
-	[[nodiscard]] std::string to_string() const override // NOLINT
+	[[nodiscard]] std::string to_string() const final // NOLINT
 	{
 		return "Type2";
 	}
@@ -62,12 +62,12 @@ struct type2 final : base_type
 
 struct type3 final : base_type
 {
-	[[nodiscard]] int simple() const override // NOLINT
+	[[nodiscard]] int simple() const final // NOLINT
 	{
 		return 3;
 	}
 
-	[[nodiscard]] std::string to_string() const override // NOLINT
+	[[nodiscard]] std::string to_string() const final // NOLINT
 	{
 		return "Type3";
 	}
@@ -79,17 +79,17 @@ struct storing_type1 final : mutate_type
 	{
 	}
 
-	[[nodiscard]] int simple() const override // NOLINT
+	[[nodiscard]] int simple() const final // NOLINT
 	{
 		return internal;
 	}
 
-	void mutate(const int i) override
+	void mutate(const int i) final
 	{
 		internal = i;
 	}
 
-	[[nodiscard]] std::string to_string() const override // NOLINT
+	[[nodiscard]] std::string to_string() const final // NOLINT
 	{
 		return "Storing Type: {" + std::to_string(internal) + "}";
 	}
@@ -103,17 +103,17 @@ struct storing_type2 final : mutate_type
 	{
 	}
 
-	[[nodiscard]] int simple() const override // NOLINT
+	[[nodiscard]] int simple() const final // NOLINT
 	{
 		return static_cast<int>(internal);
 	}
 
-	void mutate(const int i) override
+	void mutate(const int i) final
 	{
 		internal = static_cast<float>(i) * 2.2534f;
 	}
 
-	[[nodiscard]] std::string to_string() const override // NOLINT
+	[[nodiscard]] std::string to_string() const final // NOLINT
 	{
 		return "Storing Type: {" + std::to_string(internal) + "}";
 	}

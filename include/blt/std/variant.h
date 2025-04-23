@@ -24,6 +24,8 @@
 #include <tuple>
 #include <type_traits>
 #include <variant>
+#include <blt/meta/passthrough.h>
+#include <blt/meta/tuple_filters.h>
 #include <blt/std/types.h>
 
 namespace blt
@@ -33,37 +35,13 @@ namespace blt
 
 	namespace detail
 	{
-		template <typename... Ts>
-		struct filter_void;
-
-		template <>
-		struct filter_void<>
-		{
-			using type = std::tuple<>;
-		};
-
-		template <typename T, typename... Ts>
-		struct filter_void<T, Ts...>
-		{
-			using type = std::conditional_t<std::is_void_v<T>, typename filter_void<Ts...>::type, decltype(std::tuple_cat(
-												std::declval<std::tuple<T>>(), std::declval<typename filter_void<Ts...>::type>()))>;
-		};
-
-		template <typename... Ts>
-		using filter_void_t = typename filter_void<Ts...>::type;
-
-		template<typename T>
-		struct passthrough
-		{
-			using type = T;
-		};
-
 		template <typename Type, typename Func, typename... Args>
 		struct member_func_meta
 		{
 			using can_invoke = std::is_invocable<Func, Type, Args...>;
 
-			using return_type = typename std::conditional_t<can_invoke::value, std::invoke_result<Func, Type, Args...>, passthrough<void>>::type;
+			using return_type = typename std::conditional_t<can_invoke::value, std::invoke_result<Func, Type, Args...>, meta::passthrough<void>>::type
+			;
 		};
 
 		template <typename Func, typename ArgsTuple, typename... Types>
@@ -73,7 +51,7 @@ namespace blt
 		struct member_call_return_type<Func, std::tuple<Args...>, Types...>
 		{
 			using result_types = std::tuple<member_func_meta<Types, Func, Args...>...>;
-			using non_void_result_types = typename filter_void<typename member_func_meta<Types, Func, Args...>::return_type...>::type;
+			using non_void_result_types = meta::filter_void_t<typename member_func_meta<Types, Func, Args...>::return_type...>;
 
 			static constexpr bool all_void = std::tuple_size_v<non_void_result_types> == 0;
 			static constexpr bool some_void = std::tuple_size_v<non_void_result_types> != sizeof...(Types);
@@ -83,12 +61,35 @@ namespace blt
 			using return_type = std::conditional_t<all_void, void, std::conditional_t<some_void, std::optional<first_return>, first_return>>;
 		};
 
+		template <typename Func, typename... Types>
+		struct visit_func_meta
+		{
+			using result_tuple = std::tuple<typename std::conditional_t<
+				std::is_invocable_v<Func, Types>, std::invoke_result<Func, Types>, meta::passthrough<void>>::type...>;
+
+			using non_void_results = meta::filter_void_t<result_tuple>;
+
+			using return_type = std::tuple_element_t<
+				0, std::conditional_t<std::tuple_size_v<non_void_results> == 0, std::tuple<void>, non_void_results>>;
+		};
+
 		template <typename FuncTuple, typename TypesTuple>
 		struct visit_return_type;
 
 		template <typename... Funcs, typename... Types>
 		struct visit_return_type<std::tuple<Funcs...>, std::tuple<Types...>>
-		{};
+		{
+			using return_tuple = std::tuple<typename visit_func_meta<Funcs, Types...>::return_type...>;
+
+			using non_void_returns = meta::filter_void_t<return_tuple>;
+
+			using first_return = std::tuple_element_t<
+				0, std::conditional_t<std::tuple_size_v<non_void_returns> == 0, std::tuple<void>, non_void_returns>>;
+
+			static constexpr bool all_void = std::tuple_size_v<non_void_returns> == 0;
+			static constexpr bool some_void = std::tuple_size_v<non_void_returns> != std::tuple_size_v<return_tuple>;
+			static constexpr bool all_same = meta::filter_func_t<std::is_same, std::tuple<first_return>, non_void_returns>::value;
+		};
 	}
 
 	/*
@@ -214,7 +215,7 @@ namespace blt
 		}
 
 		template <typename MemberFunc, typename... Args>
-		constexpr auto call_member(const MemberFunc func, Args&&... args)
+		constexpr auto call_member(const MemberFunc func, Args&&... args) -> decltype(auto)
 		{
 			using meta = detail::member_call_return_type<MemberFunc, std::tuple<Args...>, Types...>;
 			return visit([&](auto&& value) -> typename meta::return_type {
@@ -356,12 +357,6 @@ namespace blt
 		}
 
 	private:
-		template <typename Derived, typename Base, typename ReturnType, typename... Args>
-		static auto cast_member_ptr(ReturnType (Base::*base_func)(Args...))
-		{
-			return reinterpret_cast<ReturnType (Derived::*)(Args...)>(base_func);
-		}
-
 		value_type m_variant;
 	};
 
