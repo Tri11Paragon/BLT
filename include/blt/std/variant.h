@@ -24,6 +24,7 @@
 #include <tuple>
 #include <type_traits>
 #include <variant>
+#include <blt/logging/logging.h>
 #include <blt/meta/function.h>
 #include <blt/meta/passthrough.h>
 #include <blt/meta/tuple_filters.h>
@@ -82,7 +83,7 @@ namespace blt
 		{
 			using return_tuple = std::tuple<typename visit_func_meta<Funcs, Types...>::return_type...>;
 
-			using non_void_returns = meta::filter_void_t<return_tuple>;
+			using non_void_returns = meta::unique_tuple_t<meta::filter_void_t<return_tuple>>;
 
 			using first_return = std::tuple_element_t<
 				0, std::conditional_t<std::tuple_size_v<non_void_returns> == 0, std::tuple<void>, non_void_returns>>;
@@ -144,6 +145,15 @@ namespace blt
 		explicit constexpr variant_t(Types&&... args) noexcept(std::is_nothrow_constructible_v<value_type, Types...>): m_variant(
 			std::forward<Types>(args)...)
 		{}
+
+		// template <typename T, std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant_t>, bool> = true>
+		// explicit constexpr variant_t(T&& t): m_variant(std::forward<T>(t))
+		// {}
+
+		// template<typename T>
+		// constexpr variant_t(std::initializer_list<T> il): m_variant(*il.begin())
+		// {
+		// }
 
 		template <typename T, typename... C_Args>
 		explicit constexpr variant_t(std::in_place_type_t<T>, C_Args&&... args): m_variant(std::in_place_type<T>, std::forward<C_Args>(args)...)
@@ -211,16 +221,59 @@ namespace blt
 		constexpr auto visit(Visitee&&... visitees) -> decltype(auto)
 		{
 			using meta_t = detail::visit_return_type<std::tuple<Visitee...>, std::tuple<Types...>>;
+			// BLT_TRACE(blt::type_string<typename meta_t::return_tuple>());
+			BLT_TRACE(blt::type_string<typename meta_t::non_void_returns>());
+			BLT_TRACE(blt::type_string<typename meta_t::same_type>());
 			if constexpr (meta_t::all_same)
 			{
-				return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
+				if constexpr (meta_t::some_void)
+				{
+					return std::visit(lambda_visitor{
+										[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
+											if constexpr (std::is_void_v<typename meta::function_like<decltype(visitees)>::return_type>)
+											{
+												std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value));
+												return typename meta_t::return_type{};
+											} else
+											{
+												return typename meta_t::return_type(
+													std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))
+												);
+											}
+										}...
+									}, m_variant);
+				} else
+				{
+					return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
+				}
 			} else
 			{
-				return std::visit(lambda_visitor{
-									[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
-										return typename meta_t::return_type{std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))};
-									}
-								}..., m_variant);
+				if constexpr (meta_t::some_void)
+				{
+					return std::visit(lambda_visitor{
+										[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
+											if constexpr (std::is_void_v<typename meta::function_like<decltype(visitees)>::return_type>)
+											{
+												std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value));
+												return typename meta_t::return_type{};
+											} else
+											{
+												return typename meta_t::return_type(
+													typename meta_t::base_type(std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value)))
+												);
+											}
+										}...
+									}, m_variant);
+				} else
+				{
+					return std::visit(lambda_visitor{
+										[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
+											return typename meta_t::return_type{
+												std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))
+											};
+										}...
+									}, m_variant);
+				}
 			}
 		}
 

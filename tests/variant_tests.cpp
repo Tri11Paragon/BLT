@@ -163,14 +163,32 @@ int main()
 	BLT_TRACE("Stored: has value? '{}' value: '{}'", stored_member_result.has_value(), *stored_member_result);
 	BLT_TRACE("No Member: {}", no_member_result.has_value());
 
-	auto vist_result_v1 = v1.visit([](const type1& t1) {
+	auto visit_result_v1 = v1.visit([](const type1& t1) {
 		return t1.simple();
 	}, [](const type2& t2) {
 		return t2.simple();
-	}, [](const type3& t3) {
+	}, [](const type3&) {
 
 	});
 
-	BLT_TRACE(blt::type_string<decltype(vist_result_v1)>());
+	auto visit_result_v2 = v2.visit([](const type1& t1) {
+		return static_cast<float>(t1.simple());
+	}, [](const type2& t2) {
+		return std::to_string(t2.simple());
+	}, [] (const type3& t3) {
+		return t3.simple();
+	});
+
+	auto visit_result_v3 = v2.visit([](const type1&) {
+	}, [](const type2& t2) {
+		return std::to_string(t2.simple());
+	}, [] (const type3& t3) {
+		return t3.simple();
+	});
+
+	if (visit_result_v1)
+		BLT_TRACE("Visit result: {}", *visit_result_v1);
+
+	BLT_TRACE(blt::type_string<decltype(visit_result_v1)>());
 
 }

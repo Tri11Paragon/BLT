@@ -139,7 +139,7 @@ namespace blt::meta
 			using class_type = Class;
 		};
 
-		using lambda_trait = lambda_traits<decltype(&Func::operator())>;
+		using lambda_trait = lambda_traits<decltype(&std::decay_t<Func>::operator())>;
 
 	public:
 		using tag_type = lambda_tag;
