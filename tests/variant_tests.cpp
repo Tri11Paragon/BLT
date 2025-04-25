@@ -45,7 +45,6 @@ struct type1 final : base_type
 	}
 };
 
-
 struct type2 final : base_type
 {
 	[[nodiscard]] int simple() const final // NOLINT
@@ -58,7 +57,6 @@ struct type2 final : base_type
 		return "Type2";
 	}
 };
-
 
 struct type3 final : base_type
 {
@@ -76,8 +74,7 @@ struct type3 final : base_type
 struct storing_type1 final : mutate_type
 {
 	explicit storing_type1(const int i): internal(i)
-	{
-	}
+	{}
 
 	[[nodiscard]] int simple() const final // NOLINT
 	{
@@ -100,8 +97,7 @@ struct storing_type1 final : mutate_type
 struct storing_type2 final : mutate_type
 {
 	explicit storing_type2(const float i): internal(i * 2.2534f)
-	{
-	}
+	{}
 
 	[[nodiscard]] int simple() const final // NOLINT
 	{
@@ -136,17 +132,17 @@ int main()
 
 	auto v1_result = v1.call_member(&base_type::to_string);
 	BLT_ASSERT_MSG(v1_result == type1{}.to_string(), ("Expected result to be " + type1{}.to_string() + " but found " + v1_result).c_str());
-	BLT_ASSERT_MSG(typeid(v1_result) == typeid(std::string), "Result type expected to be string!");
+	static_assert(std::is_same_v<decltype(v1_result), std::string>, "Result type expected to be string!");
 	BLT_TRACE("V1: {}", v1_result);
 
 	auto v2_result = v2.call_member(&base_type::to_string);
 	BLT_ASSERT_MSG(v2_result == type2{}.to_string(), ("Expected result to be " + type2{}.to_string() + " but found " + v2_result).c_str());
-	BLT_ASSERT_MSG(typeid(v2_result) == typeid(std::string), "Result type expected to be string!");
+	static_assert(std::is_same_v<decltype(v2_result), std::string>, "Result type expected to be string!");
 	BLT_TRACE("V2: {}", v2_result);
 
 	auto v3_result = v3.call_member(&base_type::to_string);
 	BLT_ASSERT_MSG(v3_result == type3{}.to_string(), ("Expected result to be " + type3{}.to_string() + " but found " + v3_result).c_str());
-	BLT_ASSERT_MSG(typeid(v3_result) == typeid(std::string), "Result type expected to be string!");
+	static_assert(std::is_same_v<decltype(v3_result), std::string>, "Result type expected to be string!");
 	BLT_TRACE("V3: {}", v3.call_member(&base_type::to_string));
 
 	blt::variant_t<type1, type2, no_members> member_missing_stored_member{type1{}};
@@ -155,9 +151,9 @@ int main()
 	auto stored_member_result = member_missing_stored_member.call_member(&base_type::to_string);
 	auto no_member_result = member_missing_stored_no_member.call_member(&base_type::to_string);
 
-	BLT_ASSERT(typeid(stored_member_result) == typeid(std::optional<std::string>));
+	static_assert(std::is_same_v<decltype(stored_member_result), std::optional<std::string>>);
 	BLT_ASSERT(stored_member_result.has_value());
-	BLT_ASSERT(typeid(no_member_result) == typeid(std::optional<std::string>));
+	static_assert(std::is_same_v<decltype(no_member_result), std::optional<std::string>>);
 	BLT_ASSERT(!no_member_result.has_value());
 
 	BLT_TRACE("Stored: has value? '{}' value: '{}'", stored_member_result.has_value(), *stored_member_result);
@@ -167,28 +163,63 @@ int main()
 		return t1.simple();
 	}, [](const type2& t2) {
 		return t2.simple();
-	}, [](const type3&) {
+	}, [](const type3&) {});
 
-	});
+	static_assert(std::is_same_v<decltype(visit_result_v1), std::optional<int>>, "Result type expected to be optional<int>!");
+	BLT_ASSERT(visit_result_v1.has_value());
+	BLT_ASSERT(*visit_result_v1 == 1);
+	BLT_TRACE("Visit optional int: {}", *visit_result_v1);
 
 	auto visit_result_v2 = v2.visit([](const type1& t1) {
 		return static_cast<float>(t1.simple());
 	}, [](const type2& t2) {
 		return std::to_string(t2.simple());
-	}, [] (const type3& t3) {
+	}, [](const type3& t3) {
 		return t3.simple();
 	});
 
-	auto visit_result_v3 = v2.visit([](const type1&) {
-	}, [](const type2& t2) {
+	static_assert(std::is_same_v<decltype(visit_result_v2), blt::variant_t<int, std::string, float>>,
+				"Result type expected to be variant_t<int, std::string, float>!");
+	BLT_ASSERT(visit_result_v2.index() == 1);
+	BLT_ASSERT(visit_result_v2.get<std::string>() == "2");
+	BLT_TRACE("Visit variant result: {}", visit_result_v2.get<std::string>());
+
+	auto visit_result_v3 = v2.visit([](const type1&) {}, [](const type2& t2) {
 		return std::to_string(t2.simple());
-	}, [] (const type3& t3) {
+	}, [](const type3& t3) {
 		return t3.simple();
 	});
 
-	if (visit_result_v1)
-		BLT_TRACE("Visit result: {}", *visit_result_v1);
+	static_assert(std::is_same_v<decltype(visit_result_v3), std::optional<blt::variant_t<int, std::string>>>,
+				"Result type expected to be optional<variant_t<int, std::string>>!");
+	BLT_ASSERT(visit_result_v3.has_value());
+	BLT_ASSERT(visit_result_v3.value().index() == 1);
+	BLT_ASSERT(visit_result_v3.value().get<std::string>() == "2");
+	BLT_TRACE("Visit optional variant result: {}", visit_result_v3.value().get<std::string>());
 
-	BLT_TRACE(blt::type_string<decltype(visit_result_v1)>());
+	auto single_visitee = v3.visit([](auto&& a) {
+		return a.to_string();
+	});
 
+	static_assert(std::is_same_v<decltype(single_visitee), std::string>, "Result type expected to be string!");
+	BLT_ASSERT(single_visitee == type3{}.to_string());
+	BLT_TRACE("Single visitee: {}", single_visitee);
+
+	auto provided_visitor = v3.visit(blt::lambda_visitor{
+		[](const type1& t1) {
+			return t1.to_string();
+		},
+		[](const type2& t2) {
+			return t2.to_string();
+		},
+		[](const type3& t3) {
+			return t3.to_string();
+		}
+	});
+
+	static_assert(std::is_same_v<decltype(provided_visitor), std::string>, "Result type expected to be string!");
+	BLT_ASSERT(provided_visitor == type3{}.to_string());
+	BLT_TRACE("Provided visitor: {}", provided_visitor);
+
+	BLT_INFO("Variant tests passed!");
 }
