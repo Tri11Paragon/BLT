@@ -15,9 +15,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <blt/std/variant.h>
 #include <blt/logging/logging.h>
 #include <blt/std/assert.h>
+#include <blt/std/variant.h>
 
 struct base_type
 {

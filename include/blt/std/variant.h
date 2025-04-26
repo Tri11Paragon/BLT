@@ -147,15 +147,6 @@ namespace blt
 			std::forward<Types>(args)...)
 		{}
 
-		// template <typename T, std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant_t>, bool> = true>
-		// explicit constexpr variant_t(T&& t): m_variant(std::forward<T>(t))
-		// {}
-
-		// template<typename T>
-		// constexpr variant_t(std::initializer_list<T> il): m_variant(*il.begin())
-		// {
-		// }
-
 		template <typename T, typename... C_Args>
 		explicit constexpr variant_t(std::in_place_type_t<T>, C_Args&&... args): m_variant(std::in_place_type<T>, std::forward<C_Args>(args)...)
 		{}
@@ -208,8 +199,15 @@ namespace blt
 			return m_variant.valueless_by_exception();
 		}
 
-		template<typename... Visitee>
-		static constexpr auto make_visitor(Visitee&& visitees)
+		template <typename T, std::enable_if_t<std::conjunction_v<std::is_invocable<decltype(&T::operator()), T, Types>...> || std::conjunction_v<
+													std::is_invocable<decltype(&T::operator()), Types>...>, bool>  = true>
+		constexpr auto visit(T&& visitor) -> decltype(auto)
+		{
+			return std::visit(std::forward<T>(visitor), m_variant);
+		}
+
+		template <typename... Visitee>
+		static constexpr auto make_visitor(Visitee&&... visitees)
 		{
 			// TODO: this is probably not the best way to handle these cases...
 			using meta_t = detail::visit_return_type<std::tuple<Visitee...>, std::tuple<Types...>>;
@@ -225,8 +223,7 @@ namespace blt
 								return typename meta_t::return_type{};
 							} else
 							{
-								return typename meta_t::return_type(
-									std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value)));
+								return typename meta_t::return_type(std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value)));
 							}
 						}...
 					};
@@ -247,8 +244,7 @@ namespace blt
 							} else
 							{
 								return typename meta_t::return_type(
-									typename meta_t::base_type(
-										std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))));
+									typename meta_t::base_type(std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))));
 							}
 						}...
 					};
@@ -256,9 +252,7 @@ namespace blt
 				{
 					return lambda_visitor{
 						[&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value) {
-							return typename meta_t::return_type{
-								std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))
-							};
+							return typename meta_t::return_type{std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))};
 						}...
 					};
 				}
