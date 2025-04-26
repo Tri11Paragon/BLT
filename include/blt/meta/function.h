@@ -99,48 +99,47 @@ namespace blt::meta
 		using class_type = Class;
 	};
 
+	template <typename>
+	struct lambda_traits
+	{};
+
+	template <typename Return, typename Class, typename... Args>
+	struct lambda_traits<Return (Class::*)(Args...) const>
+	{
+		using return_type = Return;
+		using args_tuple = std::tuple<Args...>;
+		using class_type = Class;
+	};
+
+	template <typename Return, typename Class, typename... Args>
+	struct lambda_traits<Return (Class::*)(Args...) noexcept>
+	{
+		using return_type = Return;
+		using args_tuple = std::tuple<Args...>;
+		using class_type = Class;
+	};
+
+	template <typename Return, typename Class, typename... Args>
+	struct lambda_traits<Return (Class::*)(Args...) const noexcept>
+	{
+		using return_type = Return;
+		using args_tuple = std::tuple<Args...>;
+		using class_type = Class;
+	};
+
+	template <typename Return, typename Class, typename... Args>
+	struct lambda_traits<Return (Class::*)(Args...)>
+	{
+		using return_type = Return;
+		using args_tuple = std::tuple<Args...>;
+		using class_type = Class;
+	};
+
 	template <typename Func>
 	struct function_like
 	{
 	private:
-		template <typename>
-		struct lambda_traits
-		{};
-
-		template <typename Return, typename Class, typename... Args>
-		struct lambda_traits<Return (Class::*)(Args...) const>
-		{
-			using return_type = Return;
-			using args_tuple = std::tuple<Args...>;
-			using class_type = Class;
-		};
-
-		template <typename Return, typename Class, typename... Args>
-		struct lambda_traits<Return (Class::*)(Args...) noexcept>
-		{
-			using return_type = Return;
-			using args_tuple = std::tuple<Args...>;
-			using class_type = Class;
-		};
-
-		template <typename Return, typename Class, typename... Args>
-		struct lambda_traits<Return (Class::*)(Args...) const noexcept>
-		{
-			using return_type = Return;
-			using args_tuple = std::tuple<Args...>;
-			using class_type = Class;
-		};
-
-		template <typename Return, typename Class, typename... Args>
-		struct lambda_traits<Return (Class::*)(Args...)>
-		{
-			using return_type = Return;
-			using args_tuple = std::tuple<Args...>;
-			using class_type = Class;
-		};
-
 		using lambda_trait = lambda_traits<decltype(&std::decay_t<Func>::operator())>;
-
 	public:
 		using tag_type = lambda_tag;
 		using return_type = typename lambda_trait::return_type;

@@ -122,6 +122,76 @@ struct no_members
 	int hello;
 };
 
+struct concrete_visitor
+{
+	[[nodiscard]] std::string operator()(const type1& t1) const
+	{
+		return t1.to_string();
+	}
+
+	[[nodiscard]] std::string operator()(const type2& t2) const
+	{
+		return t2.to_string();
+	}
+
+	[[nodiscard]] std::string operator()(const type3& t3) const
+	{
+		return t3.to_string();
+	}
+};
+
+struct concrete_visitor_with_state
+{
+	concrete_visitor_with_state(std::function<std::string(const type1&)> func1, std::function<std::string(const type2&)> func2,
+								std::function<std::string(const type3&)> func3): func1(std::move(func1)), func2(std::move(func2)),
+																				func3(std::move(func3))
+	{}
+
+	[[nodiscard]] std::string operator()(const type1& t1) const
+	{
+		return func1(t1);
+	}
+
+	[[nodiscard]] std::string operator()(const type2& t2) const
+	{
+		return func2(t2);
+	}
+
+	[[nodiscard]] std::string operator()(const type3& t3) const
+	{
+		return func3(t3);
+	}
+
+private:
+	std::function<std::string(const type1&)> func1;
+	std::function<std::string(const type2&)> func2;
+	std::function<std::string(const type3&)> func3;
+};
+
+/*
+ * **********
+ * This is not allowed! BLT's visitor is only able to change return types if you provide functions as lambdas,
+ * otherwise it is not possible to change the return of these functions
+ * **********
+ */
+struct concrete_void
+{
+	[[nodiscard]] std::string operator()(const type1& t1) const
+	{
+		return t1.to_string();
+	}
+
+	[[nodiscard]] std::string operator()(const type2& t2) const
+	{
+		return t2.to_string();
+	}
+
+	void operator()(const type3&) const
+	{
+
+	}
+};
+
 int main()
 {
 	blt::variant_t<type1, type2, type3> v1{type1{}};
@@ -220,6 +290,27 @@ int main()
 	static_assert(std::is_same_v<decltype(provided_visitor), std::string>, "Result type expected to be string!");
 	BLT_ASSERT(provided_visitor == type3{}.to_string());
 	BLT_TRACE("Provided visitor: {}", provided_visitor);
+
+	concrete_visitor visit{};
+	auto concrete_visitor_result = v3.visit(visit);
+	BLT_TRACE("Concrete Result: {}", concrete_visitor_result);
+	BLT_ASSERT(concrete_visitor_result == type3{}.to_string());
+
+	auto concrete_visitor_result2 = v2.visit(visit);
+	BLT_TRACE("Concrete Result: {}", concrete_visitor_result2);
+	BLT_ASSERT(concrete_visitor_result2 == type2{}.to_string());
+
+	concrete_visitor_with_state concrete_visitor_state{[](const auto& type) {
+		return type.to_string();
+	}, [](const auto& type) {
+		return type.to_string();
+	}, [](const auto& type) {
+		return type.to_string();
+	}};
+
+	auto concrete_visitor_state_result = v1.visit(blt::black_box_ret(concrete_visitor_state));
+	BLT_TRACE("Concrete State Result: {}", concrete_visitor_state_result);
+	BLT_ASSERT(concrete_visitor_state_result == type1{}.to_string());
 
 	BLT_INFO("Variant tests passed!");
 }
