@@ -199,13 +199,6 @@ namespace blt
 			return m_variant.valueless_by_exception();
 		}
 
-		template <typename T, std::enable_if_t<std::conjunction_v<std::is_invocable<decltype(&T::operator()), T, Types>...> || std::conjunction_v<
-													std::is_invocable<decltype(&T::operator()), Types>...>, bool>  = true>
-		constexpr auto visit(T&& visitor) -> decltype(auto)
-		{
-			return std::visit(std::forward<T>(visitor), m_variant);
-		}
-
 		template <typename... Visitee>
 		static constexpr auto make_visitor(Visitee&&... visitees)
 		{
@@ -265,6 +258,16 @@ namespace blt
 		*/
 		template <typename... Visitee>
 		constexpr auto visit(Visitee&&... visitees) -> decltype(auto)
+		{
+			return std::visit(make_visitor(std::forward<Visitee>(visitees)...), m_variant);
+		}
+
+		/**
+		* Automatic visitor generation
+		* @param visitees user lambdas
+		*/
+		template <typename... Visitee>
+		constexpr auto visit(Visitee&&... visitees) const -> decltype(auto)
 		{
 			return std::visit(make_visitor(std::forward<Visitee>(visitees)...), m_variant);
 		}
@@ -401,7 +404,7 @@ namespace blt
 
 		friend bool operator<(const variant_t& lhs, const variant_t& rhs)
 		{
-			return lhs.m_variant < rhs.m_variant;
+			return lhs.m_variant<rhs.m_variant;
 		}
 
 		friend bool operator>(const variant_t& lhs, const variant_t& rhs)
@@ -420,6 +423,7 @@ namespace blt
 		}
 
 	private:
+
 		value_type m_variant;
 	};
 
