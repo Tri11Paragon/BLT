@@ -174,7 +174,7 @@ namespace blt
 #ifdef IS_GNU_BACKTRACE
         BLT_STACK_TRACE(50);
 #endif
-        BLT_FATAL("----{BLT ABORT}----");
+        BLT_FATAL("----\\{BLT ABORT}----");
         BLT_FATAL("\tWhat: {}", what);
         BLT_FATAL("\tCalled from {}:{:d}", path, line);
 #ifdef IS_GNU_BACKTRACE
