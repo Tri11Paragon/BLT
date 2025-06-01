@@ -628,6 +628,8 @@ namespace blt::argparse
             return *this;
         }
 
+        [[nodiscard]] bool has_help() const;
+
         argument_parser_t& with_version()
         {
             add_flag("--version").set_action(action_t::VERSION);
@@ -769,6 +771,8 @@ namespace blt::argparse
                                                         std::string_view, Aliases>>...>,
                 "Arguments must be of type string_view, convertible to string_view or be string_view constructable");
             m_parsers.emplace_back(new argument_parser_t{this});
+            if (m_parent->has_help())
+                m_parsers.back()->with_help();
             m_aliases[name] = m_parsers.back().get();
             ((m_aliases[std::string_view{aliases}] = m_parsers.back().get()), ...);
             return m_parsers.back().get();

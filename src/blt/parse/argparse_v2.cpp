@@ -334,6 +334,16 @@ namespace blt::argparse
 		return &m_subparsers.back().second;
 	}
 
+	bool argument_parser_t::has_help() const
+	{
+		for (const auto& action : m_argument_builders)
+		{
+			if (action->m_action == action_t::HELP)
+				return true;
+		}
+		return false;
+	}
+
 	argument_storage_t argument_parser_t::parse(argument_consumer_t& consumer)
 	{
 		if (!m_name)
