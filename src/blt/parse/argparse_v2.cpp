@@ -330,8 +330,8 @@ namespace blt::argparse
 
 	argument_subparser_t* argument_parser_t::add_subparser(const std::string_view dest)
 	{
-		m_subparsers.emplace_back(dest, argument_subparser_t{*this});
-		return &m_subparsers.back().second;
+		m_subparsers.emplace_back(dest, std::make_unique<argument_subparser_t>(*this));
+		return m_subparsers.back().second.get();
 	}
 
 	bool argument_parser_t::has_help() const
@@ -351,13 +351,14 @@ namespace blt::argparse
 		argument_positional_storage_t positional_storage{m_positional_arguments};
 		hashset_t<std::string> found_flags;
 		argument_storage_t parsed_args;
-		// first, we consume flags which may be part of this parser
+		// First, we consume flags which may be part of this parser.
+		// If the user is providing a flag for a parent parser, this is considered an error. Flags for parents must come before subparser selection
 		while (consumer.can_consume() && consumer.peek().is_flag())
 			handle_compound_flags(found_flags, parsed_args, consumer, consumer.consume());
 
 		for (auto& [key, subparser] : m_subparsers)
 		{
-			auto [parsed_subparser, storage] = subparser.parse(consumer);
+			auto [parsed_subparser, storage] = subparser->parse(consumer);
 			storage.m_data.emplace(std::string{key}, detail::arg_data_t{std::string{parsed_subparser.get_argument()}});
 			parsed_args.add(storage);
 		}
@@ -367,7 +368,14 @@ namespace blt::argparse
 			if (consumer.peek().is_flag())
 				handle_compound_flags(found_flags, parsed_args, consumer, consumer.consume());
 			else
+			{
+				// We have a parent, meaning we do not worry about being unable to parse any arguments. (They will handle it)
+				// This enables multi-subparser chaining, creating a tree like structure of parsable objects.
+				// Useful when you have multiple selections that each require their own configuration arguments (thus making a simple positional + switch a poor solution)
+				if (!positional_storage.has_positional() && m_parent != nullptr)
+					break;
 				parse_positional(parsed_args, consumer, positional_storage, consumer.peek().get_argument());
+			}
 		}
 		handle_missing_and_default_args(m_flag_arguments, found_flags, parsed_args, "flag");
 
@@ -401,7 +409,7 @@ namespace blt::argparse
 			help.newline();
 			for (const auto& [key, value] : m_subparsers)
 			{
-				auto map = value.get_allowed_strings();
+				auto map = value->get_allowed_strings();
 				help += '\t';
 				help += key;
 				help += ": {";
@@ -605,14 +613,23 @@ namespace blt::argparse
 			aligner += ' ';
 
 			auto parent = m_parent;
+			std::vector<const argument_subparser_t*> parsers;
 			while (parent != nullptr)
 			{
-				if (!parent->m_last_parsed_parser)
+				parsers.push_back(parent);
+				parent = parent->m_parent->m_parent;
+			}
+
+			// TODO: this doesn't handle parsers with multiple subparsers.
+			// eg: "blt-rice-classification-example manual best one_point_crossover --help single_point_mutation"
+			// will print "blt-rice-classification-example manual one_point_crossover [-h] [--min_tree_size MIN_TREE_SIZE]..."
+			for (const auto parser : iterate(parsers).rev())
+			{
+				if (!parser->m_last_parsed_parser)
 					throw detail::missing_value_error(
 						"Error: Help called on subparser but unable to find parser chain. This condition should be impossible.");
-				aligner += parent->m_last_parsed_parser.value();
+				aligner += parser->m_last_parsed_parser.value();
 				aligner += ' ';
-				parent = parent->m_parent->m_parent;
 			}
 
 			for (const auto& [key, _] : m_subparsers)
@@ -881,7 +898,7 @@ namespace blt::argparse
 											const std::string_view arg)
 	{
 		if (!storage.has_positional())
-			throw detail::missing_argument_error(make_string("Error: '", arg, "' positional argument does not match any defined for this parser"));
+			throw detail::missing_argument_error(make_string("Error: '", arg, "' excess positional argument(s) detected! This parser does not consume any more arguments!"));
 		auto& positional = storage.next();
 		const auto dest = positional.m_dest.value_or(std::string{arg});
 		std::visit(lambda_visitor{

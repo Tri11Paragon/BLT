@@ -748,7 +748,7 @@ namespace blt::argparse
         std::optional<std::string> m_epilogue;
         std::optional<std::string> m_version;
         const argument_subparser_t* m_parent = nullptr;
-        std::vector<std::pair<std::string_view, argument_subparser_t>> m_subparsers;
+        std::vector<std::pair<std::string_view, std::unique_ptr<argument_subparser_t>>> m_subparsers;
         std::vector<std::unique_ptr<argument_builder_t>> m_argument_builders;
         hashmap_t<std::string_view, argument_builder_t*> m_flag_arguments;
         std::vector<std::pair<std::string, argument_builder_t>> m_positional_arguments;
@@ -805,7 +805,7 @@ namespace blt::argparse
         // annoying compatability because im lazy
         static std::vector<std::vector<std::string_view>> to_vec(const hashmap_t<argument_parser_t*, std::vector<std::string_view>>& map);
 
-        const argument_parser_t* m_parent;
+        const argument_parser_t* m_parent = nullptr;
         std::optional<std::string> m_last_parsed_parser; // bad hack
         std::optional<std::string> m_help;
         std::vector<std::unique_ptr<argument_parser_t>> m_parsers;
