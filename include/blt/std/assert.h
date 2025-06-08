@@ -8,17 +8,18 @@
 #define BLT_ASSERT_H
 
 #include <cstdlib>
+#include <blt/debug.h>
 #include <blt/logging/logging.h>
 
 namespace blt
 {
-    void printStacktrace(char** messages, int size, const char* path, int line);
-    
-    void b_assert_failed(const char* expression, const char* msg, const char* path, int line);
-    
-    void b_throw(const char* what, const char* path, int line);
-    
-    void b_abort(const char* what, const char* path, int line);
+	void printStacktrace(char** messages, int size, const char* path, int line);
+
+	void b_assert_failed(const char* expression, const char* msg, const char* path, int line);
+
+	void b_throw(const char* what, const char* path, int line);
+
+	void b_abort(const char* what, const char* path, int line);
 }
 
 /**
@@ -56,10 +57,12 @@ namespace blt
 // prints as error with stack trace and throws the exception.
 #define BLT_THROW(throwable) do {blt::b_throw(throwable.what(), __FILE__, __LINE__); throw throwable;} while(0)
 
-
 #define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); std::abort(); } while (0)
 
+#if blt_debug_has_flag(BLT_DEBUG_CONTRACTS)
 #define BLT_CONTRACT(expr, msg, ...) do {if (!(expr)) {BLT_ERROR("Contract Failure occured at {}:{}", __FILE__, __LINE__); BLT_ERROR("Expected expression {} to hold.", #expr); BLT_ERROR(msg, ##__VA_ARGS__); exit(EXIT_FAILURE);}} while(false)
-
+#else
+#define BLT_CONTRACT(expr, msg, ...)
+#endif
 
 #endif //BLT_ASSERT_H
