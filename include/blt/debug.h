@@ -36,26 +36,24 @@
 
 // should be used by checks which only consume a single comparison, with at most a single indirection
 #define BLT_DEBUG_CHEAP			(1 << 0)
-// should be used to enable basic validation checks such as bounds checking and type index matching
-#define BLT_DEBUG_VALIDATE		(1 << 1)
-// should be used to enable simple atomic counters
-#define BLT_DEBUG_COUNTERS		(1 << 2)
-// should be used to enable basic statistic measurements that do not consume more than a few dozen instructions.
-#define BLT_DEBUG_STATS			(1 << 3)
-// should be used to enable more detailed monitoring of a program that may require a few hundred if not more instructions, such as OTel or otherwise equivalent toolset.
-#define BLT_DEBUG_MONITOR		(1 << 4)
-// should be used to enable allocation tracking measures
-#define BLT_DEBUG_ALLOCATIONS	(1 << 5)
-// should be used to enable deep checks which validate the program state
-#define BLT_DEBUG_SANITY		(1 << 6)
 // should be used to enable the use of asserts
-#define BLT_DEBUG_ASSERTS		(1 << 7)
-// should be used to enable the use of catch and throw debugging
-#define BLT_DEBUG_EXCEPTIONS	(1 << 8)
-// should be used to enable the profiler
-#define BLT_DEBUG_PROFILER		(1 << 9)
+#define BLT_DEBUG_ASSERTS		(1 << 1)
 // should be used to enable the use of programmer contracts which validate the use of an API
-#define BLT_DEBUG_CONTRACTS		(1 << 10)
+#define BLT_DEBUG_CONTRACTS		(1 << 2)
+// should be used to enable simple atomic counters
+#define BLT_DEBUG_COUNTERS		(1 << 3)
+// should be used to enable allocation tracking measures
+#define BLT_DEBUG_ALLOCATIONS	(1 << 4)
+// should be used to enable basic statistic measurements that do not consume more than a few dozen instructions.
+#define BLT_DEBUG_STATS			(1 << 5)
+// should be used to enable the profiler
+#define BLT_DEBUG_PROFILER		(1 << 6)
+// should be used to enable the use of catch and throw debugging
+#define BLT_DEBUG_EXCEPTIONS	(1 << 7)
+// should be used to enable more detailed monitoring of a program that may require a few hundred if not more instructions, such as OTel or otherwise equivalent toolset.
+#define BLT_DEBUG_MONITOR		(1 << 8)
+// should be used to enable deep checks which validate the program state
+#define BLT_DEBUG_SANITY		(1 << 9)
 
 // if the compiler hasn't defined our debug level, we should default to no debug.
 #ifndef BLT_DEBUG_LEVEL
