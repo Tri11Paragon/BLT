@@ -8,6 +8,7 @@
 #define BLT_ASSERT_H
 
 #include <cstdlib>
+#include <blt/logging/logging.h>
 
 namespace blt
 {
@@ -57,5 +58,8 @@ namespace blt
 
 
 #define BLT_ABORT(message) do {blt::b_abort(message, __FILE__, __LINE__); std::abort(); } while (0)
+
+#define BLT_CONTRACT(expr, msg, ...) do {if (!(expr)) {BLT_ERROR("Contract Failure occured at {}:{}", __FILE__, __LINE__); BLT_ERROR("Expected expression {} to hold.", #expr); BLT_ERROR(msg, ##__VA_ARGS__); exit(EXIT_FAILURE);}} while(false)
+
 
 #endif //BLT_ASSERT_H
