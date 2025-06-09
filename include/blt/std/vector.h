@@ -20,11 +20,9 @@
 #define BLT_VECTOR_H
 
 #include <iterator>
-#include <blt/std/memory_util.h>
-#include <blt/std/allocator.h>
-#include <blt/compatibility.h>
 #include <blt/meta/iterator.h>
-#include "ranges.h"
+#include <blt/compatibility.h>
+#include <blt/std/variant.h>
 #include <stdexcept>
 #include <array>
 
@@ -33,10 +31,6 @@ namespace blt
 	template <typename T, size_t MAX_SIZE>
 	class static_vector
 	{
-	private:
-		std::array<T, MAX_SIZE> buffer_;
-		size_t size_ = 0;
-
 	public:
 		using value_type = T;
 		using reference = T&;
@@ -50,32 +44,21 @@ namespace blt
 
 		constexpr static_vector() = default;
 
-		constexpr explicit static_vector(const size_t size): size_(size)
+		constexpr explicit static_vector(const size_t size)
 		{
-			if (size > MAX_SIZE)
-				throw std::out_of_range("Vector cannot be initialized to size " + std::to_string(size) + " max size is " + std::to_string(MAX_SIZE));
-			for (size_t i = 0; i < size; i++)
-				buffer_[i] = T{};
+			resize(size);
 		}
 
 		constexpr explicit static_vector(const size_t size, const T& t): size_(size)
 		{
-			if (size > MAX_SIZE)
-				throw std::out_of_range("Vector cannot be initialized to size " + std::to_string(size) + " max size is " + std::to_string(MAX_SIZE));
-			for (size_t i = 0; i < size; i++)
-				buffer_[i] = t;
+			assign(size, t);
 		}
 
 		template <typename InputIt, std::enable_if_t<meta::is_forward_iterator_v<InputIt> || meta::is_bidirectional_or_better_v<InputIt>, bool>  =
 				true>
 		constexpr static_vector(InputIt begin, InputIt end)
 		{
-			if (std::distance(begin, end) > MAX_SIZE)
-				throw std::out_of_range(
-					"Requested range cannot be fit inside this vector! Max size is " + std::to_string(MAX_SIZE) + " got " + std::to_string(
-						std::distance(begin, end)) + " elements to be inserted.");
-			for (size_t i = 0; begin != end; ++i, ++begin)
-				buffer_[i] = *begin;
+			assign(begin, end);
 		}
 
 		constexpr static_vector(const static_vector&) = default;
@@ -85,17 +68,16 @@ namespace blt
 
 		static_vector& operator=(std::initializer_list<T> list)
 		{
-			auto begin = list.begin();
-			if (std::distance(begin, list.end()) > MAX_SIZE)
-				throw std::out_of_range(
-					"Requested initializer list cannot be fit inside this vector! Max size is " + std::to_string(MAX_SIZE) + " got " + std::to_string(
-						std::distance(begin, list.end())) + " elements to be inserted.");
-			for (size_t i = 0; begin != list.end(); ++i, ++begin)
-				buffer_[i] = *begin;
+			assign(list);
 			return *this;
 		}
 
 		constexpr static_vector(std::initializer_list<T> list)
+		{
+			assign(list);
+		}
+
+		constexpr void assign(std::initializer_list<T> list)
 		{
 			auto begin = list.begin();
 			if (std::distance(begin, list.end()) > MAX_SIZE)
@@ -104,6 +86,135 @@ namespace blt
 						std::distance(begin, list.end())) + " elements to be inserted.");
 			for (size_t i = 0; begin != list.end(); ++i, ++begin)
 				buffer_[i] = *begin;
+		}
+
+		constexpr void assign(const size_t size, const T& t): size_(size)
+		{
+			if (size > MAX_SIZE)
+				throw std::out_of_range("Vector cannot be initialized to size " + std::to_string(size) + " max size is " + std::to_string(MAX_SIZE));
+			for (size_t i = 0; i < size; i++)
+				buffer_[i] = t;
+		}
+
+		template <typename InputIt, std::enable_if_t<meta::is_forward_iterator_v<InputIt> || meta::is_bidirectional_or_better_v<InputIt>, bool>  =
+				true>
+		constexpr void assign(InputIt begin, InputIt end)
+		{
+			if (std::distance(begin, end) > MAX_SIZE)
+				throw std::out_of_range(
+					"Requested range cannot be fit inside this vector! Max size is " + std::to_string(MAX_SIZE) + " got " + std::to_string(
+						std::distance(begin, end)) + " elements to be inserted.");
+			for (size_t i = 0; begin != end; ++i, ++begin)
+				buffer_[i] = *begin;
+		}
+
+		constexpr reference at(size_t index)
+		{
+			if (index >= MAX_SIZE)
+				throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
+			return buffer_[index];
+		}
+
+		constexpr const_reference at(size_t index) const
+		{
+			if (index >= MAX_SIZE)
+				throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
+			return buffer_[index];
+		}
+
+		constexpr reference operator[](size_t index)
+		{
+			return buffer_[index];
+		}
+
+		constexpr const_reference operator[](size_t index) const
+		{
+			return buffer_[index];
+		}
+
+		constexpr reference front()
+		{
+			return data()[0];
+		}
+
+		constexpr const_reference front() const
+		{
+			return data()[0];
+		}
+
+		constexpr reference back()
+		{
+			return data()[size() - 1];
+		}
+
+		constexpr const_reference back() const
+		{
+			return data()[size() - 1];
+		}
+
+		constexpr pointer data()
+		{
+			return buffer_.data();
+		}
+
+		constexpr const_pointer data() const
+		{
+			return buffer_.data();
+		}
+
+		[[nodiscard]] constexpr bool empty() const
+		{
+			return size() == 0;
+		}
+
+		[[nodiscard]] constexpr size_t size() const
+		{
+			return size_;
+		}
+
+		[[nodiscard]] constexpr size_t max_size() const
+		{
+			return MAX_SIZE;
+		}
+
+		constexpr void reserve(const size_t size)
+		{
+			if (size > MAX_SIZE)
+				throw std::out_of_range("Requested size cannot be reserved in this vecotor. Max size is " + std::to_string(MAX_SIZE));
+			size_ = size;
+		}
+
+		constexpr void resize(const size_t size)
+		{
+			resize(size, T{});
+		}
+
+		constexpr void resize(const size_t size, const T& t)
+		{
+			if (size > MAX_SIZE)
+				throw std::out_of_range("Vector cannot be initialized to size " + std::to_string(size) + " max size is " + std::to_string(MAX_SIZE));
+			if (size > size_)
+			{
+				for (size_t i = size_; i < size; i++)
+					buffer_[i] = t;
+			} else if (size < size_)
+			{
+				for (size_t i = size; i < size_; i++)
+					buffer_[i].~T();
+			}
+			size_ = size;
+		}
+
+		[[nodiscard]] constexpr size_t capacity() const
+		{
+			return MAX_SIZE;
+		}
+
+		constexpr void clear()
+		{
+			for (auto& v : *this)
+				v.~T();
+			size_ = 0;
 		}
 
 		constexpr bool push_back(const T& copy)
@@ -128,7 +239,7 @@ namespace blt
 		{
 			if (size_ >= MAX_SIZE)
 				return false;
-			buffer_[size_++] = T{std::forward<Args>(args)...};
+			new (&buffer_[size_]) T{std::forward<Args>(args)...};
 			return true;
 		}
 
@@ -137,97 +248,6 @@ namespace blt
 			if (empty())
 				throw std::out_of_range("No elements contained in vector. Cannot pop_back()");
 			size_--;
-		}
-
-		constexpr void reserve(size_t size)
-		{
-			if (size > MAX_SIZE)
-				throw std::out_of_range("Requested size cannot be reserved in this vecotor. Max size is " + std::to_string(MAX_SIZE));
-			size_ = size;
-		}
-
-		[[nodiscard]] constexpr bool empty() const
-		{
-			return size() == 0;
-		}
-
-		constexpr inline void clear()
-		{
-			for (auto& v : *this)
-				v = {};
-			size_ = 0;
-		}
-
-		[[nodiscard]] constexpr inline size_t size() const
-		{
-			return size_;
-		}
-
-		[[nodiscard]] constexpr inline size_t capacity() const
-		{
-			return MAX_SIZE;
-		}
-
-		[[nodiscard]] constexpr inline blt::size_t max_size() const
-		{
-			return MAX_SIZE;
-		}
-
-		constexpr inline reference at(size_t index)
-		{
-			if (index >= MAX_SIZE)
-				throw std::runtime_error("Array index " + std::to_string(index) + " out of bounds! (Max size: " + std::to_string(MAX_SIZE) + ')');
-			return buffer_[index];
-		}
-
-		constexpr inline reference operator[](size_t index)
-		{
-			return buffer_[index];
-		}
-
-		constexpr inline const_reference operator[](size_t index) const
-		{
-			return buffer_[index];
-		}
-
-		constexpr inline reference operator*()
-		{
-			return *buffer_.data();
-		}
-
-		constexpr inline const_reference operator*() const
-		{
-			return *buffer_.data();
-		}
-
-		constexpr inline pointer data()
-		{
-			return buffer_.data();
-		}
-
-		constexpr inline const_pointer data() const
-		{
-			return buffer_.data();
-		}
-
-		constexpr inline reference front()
-		{
-			return data()[0];
-		}
-
-		constexpr inline const_reference front() const
-		{
-			return data()[0];
-		}
-
-		constexpr inline reference back()
-		{
-			return data()[size() - 1];
-		}
-
-		constexpr inline const_reference back() const
-		{
-			return data()[size() - 1];
 		}
 
 		constexpr inline iterator begin() noexcept
@@ -278,7 +298,7 @@ namespace blt
 			{
 				BLT_ABORT("Inserting exceeds size of internal buffer!");
 			}
-			for (auto insert = end() - 1; (insert - buffer_) != loc - 1; insert--)
+			for (auto insert = end() - 1; (insert - buffer_) != loc - 1; --insert)
 			{
 				auto new_pos = insert + 1;
 				*new_pos = *insert;
@@ -292,7 +312,7 @@ namespace blt
 		{
 			blt::ptrdiff_t loc = pos - buffer_;
 
-			for (auto fetch = begin() + loc + 1; fetch != end(); fetch++)
+			for (auto fetch = begin() + loc + 1; fetch != end(); ++fetch)
 			{
 				auto insert = fetch - 1;
 				*insert = *fetch;
@@ -308,7 +328,7 @@ namespace blt
 			blt::ptrdiff_t last_pos = last - buffer_;
 			blt::ptrdiff_t remove_amount = last_pos - first_pos;
 
-			for (auto fetch = begin() + last_pos, insert = begin() + first_pos; fetch != end(); fetch++, insert++)
+			for (auto fetch = begin() + last_pos, insert = begin() + first_pos; fetch != end(); ++fetch, ++insert)
 			{
 				*insert = *fetch;
 			}
@@ -317,21 +337,24 @@ namespace blt
 			return buffer_ + first_pos + 1;
 		}
 
-		template <typename T1, blt::size_t size1, typename T2, blt::size_t size2>
+		template <typename T1, size_t size1, typename T2, size_t size2>
 		constexpr friend bool operator==(const static_vector<T1, size1>& v1, const static_vector<T2, size2>& v2)
 		{
 			if (v1.size() != v2.size())
 				return false;
-			for (blt::size_t i = 0; i < v1.size(); i++)
+			for (size_t i = 0; i < v1.size(); i++)
 			{
 				if (v1[i] != v2[i])
 					return false;
 			}
 			return true;
 		}
+	private:
+		std::array<T, MAX_SIZE> buffer_;
+		size_t size_ = 0;
 	};
 
-	template <typename T, blt::size_t BUFFER_SIZE = 8 / sizeof(T), typename ALLOC = std::allocator<T>>
+	template <typename T, size_t BUFFER_SIZE = sizeof(std::vector<T>) / sizeof(T), typename ALLOC = std::allocator<T>>
 	class svo_vector
 	{
 	public:
@@ -345,69 +368,329 @@ namespace blt
 		using reverse_iterator = std::reverse_iterator<iterator>;
 		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-		constexpr svo_vector() = default;
+		svo_vector() noexcept = default;
 
-		template <typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool>  = true>
-		constexpr svo_vector(std::initializer_list<G> list)
+		explicit svo_vector(const ALLOC &alloc) noexcept: m_allocator(alloc)
+		{
+		}
+
+		explicit svo_vector(const size_t size, const ALLOC& alloc = ALLOC()): m_allocator{alloc}
+		{
+			if (size > BUFFER_SIZE)
+				m_storage = std::vector<T, ALLOC>(size, alloc);
+			else
+				m_storage = static_vector<T, BUFFER_SIZE>(size);
+		}
+
+		explicit svo_vector(const size_t size, const T& t, const ALLOC& alloc = ALLOC()): m_allocator{alloc}
+		{
+			if (size > BUFFER_SIZE)
+				m_storage = std::vector<T, ALLOC>(size, t, alloc);
+			else
+				m_storage = static_vector<T, BUFFER_SIZE>(size, t);
+		}
+
+		template <typename InputIt, std::enable_if_t<meta::is_forward_iterator_v<InputIt> || meta::is_bidirectional_or_better_v<InputIt>, bool> = true>
+		explicit svo_vector(InputIt begin, InputIt end, const ALLOC& alloc = ALLOC()): m_allocator{alloc}
+		{
+			if (std::distance(begin, end) > BUFFER_SIZE)
+				m_storage = std::vector<T, ALLOC>(begin, end, alloc);
+			else
+				m_storage = static_vector<T, BUFFER_SIZE>(begin, end);
+		}
+
+		svo_vector(std::initializer_list<T> list, const ALLOC& alloc = ALLOC()): m_allocator{alloc}
 		{
 			if (list.size() > BUFFER_SIZE)
-			{
-				// TODO: how to avoid copy here?
-				data.buffer_pointer = alloc.allocate(list.size());
-				for (const auto& v : blt::enumerate(list))
-					new(&data.buffer_pointer[v.first]) T(v.second);
-				capacity = list.size();
-				used = list.size();
-			} else
-			{
-				for (const auto& v : blt::enumerate(list))
-					new(&data.buffer[v.first]) T(v.second);
-				used = list.size();
-			}
+				m_storage = std::vector<T, ALLOC>(list, alloc);
+			else
+				m_storage = static_vector<T, BUFFER_SIZE>(list);
 		}
 
-		template <typename G, std::enable_if_t<std::is_same_v<blt::vector<T>, G> || std::is_same_v<std::vector<T>, G>, bool>  = true>
-		constexpr explicit svo_vector(G&& universal)
+		svo_vector(const svo_vector&) = default;
+		svo_vector(svo_vector&&) noexcept = default;
+		svo_vector& operator=(const svo_vector&) = default;
+		svo_vector& operator=(svo_vector&&) noexcept = default;
+
+		svo_vector& operator=(std::initializer_list<T> list)
 		{
-			if (universal.size() > BUFFER_SIZE)
-			{} else
-			{}
+			assign(list);
+			return *this;
 		}
 
-		[[nodiscard]] constexpr blt::size_t size() const
+		void assign(std::initializer_list<T> list)
 		{
-			return used;
+			m_storage.visit([&list](auto& vec) {
+				vec.assign(list);
+			});
 		}
 
-		[[nodiscard]] constexpr bool is_heap() const
+		void assign(const size_t size, const T& t)
 		{
-			return used > BUFFER_SIZE;
+			m_storage.visit([size, &t](auto& vec) {
+				vec.assign(size, t);
+			});
 		}
 
-		BLT_CPP20_CONSTEXPR ~svo_vector()
+		template<typename InputIt, std::enable_if_t<meta::is_forward_iterator_v<InputIt> || meta::is_bidirectional_or_better_v<InputIt>, bool> = true>
+		void assign(InputIt begin, InputIt end)
 		{
-			if (is_heap())
-			{
-				for (blt::size_t i = 0; i < used; i++)
-					data.buffer_pointer[i].~T();
-				alloc.deallocate(data.buffer_pointer, capacity);
-			} else
-			{
-				for (blt::size_t i = 0; i < used; i++)
-					data.buffer[i].~T();
-			}
+			m_storage.visit([&begin, &end](auto& vec) {
+				vec.assign(begin, end);
+			});
+		}
+
+		reference at(const size_t index)
+		{
+			return m_storage.visit([index](auto& vec) {
+				return vec.at(index);
+			});
+		}
+
+		const_reference at(const size_t index) const
+		{
+			return m_storage.visit([index](auto& vec) {
+				return vec.at(index);
+			});
+		}
+
+		reference operator[](const size_t index)
+		{
+			return m_storage.visit([index](auto& vec) {
+				return vec[index];
+			});
+		}
+
+		const_reference operator[](const size_t index) const
+		{
+			return m_storage.visit([index](auto& vec) {
+				return vec[index];
+			});
+		}
+
+		reference front()
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.front();
+			});
+		}
+
+		const_reference front() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.front();
+			});
+		}
+
+		reference back()
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.back();
+			});
+		}
+
+		const_reference back() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.back();
+			});
+		}
+
+		pointer data()
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.data();
+			});
+		}
+
+		const_pointer data() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.data();
+			});
+		}
+
+		[[nodiscard]] bool empty() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.empty();
+			});
+		}
+
+		[[nodiscard]] size_t size() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.size();
+			});
+		}
+
+		[[nodiscard]] size_t max_size() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.max_size();
+			});
+		}
+
+		void reserve(const size_t size)
+		{
+			m_storage.visit([size](auto& vec) {
+				vec.reserve(size);
+			});
+		}
+
+		void resize(const size_t size)
+		{
+			m_storage.visit([size](auto& vec) {
+				vec.resize(size);
+			});
+		}
+
+		void resize(const size_t size, const T& t)
+		{
+			m_storage.visit([size, &t](auto& vec) {
+				vec.resize(size, t);
+			});
+		}
+
+		[[nodiscard]] size_t capacity() const
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.capacity();
+			});
+		}
+
+		void clear()
+		{
+			m_storage.visit([](auto& vec) {
+				vec.clear();
+			});
+		}
+
+		void push_back(const T& copy)
+		{
+			if (m_storage.template has_index<0>() && size() >= BUFFER_SIZE)
+				swap_to_vec();
+			m_storage.visit([&copy](auto& vec) {
+				vec.push_back(copy);
+			});
+		}
+
+		void push_back(T&& move)
+		{
+			if (m_storage.template has_index<0>() && size() >= BUFFER_SIZE)
+				swap_to_vec();
+			m_storage.visit([&move](auto& vec) {
+				vec.push_back(std::move(move));
+			});
+		}
+
+		template<typename... Args>
+		void emplace_back(Args&& args)
+		{
+			if (m_storage.template has_index<0>() && size() >= BUFFER_SIZE)
+				swap_to_vec();
+			if (m_storage.template has_index<0>())
+				m_storage.template get<0>().emplace_back(std::forward<Args>(args)...);
+			else
+				m_storage.template get<1>().emplace_back(std::forward<Args>(args)...);
+		}
+
+		void pop_back()
+		{
+			m_storage.visit([](auto& vec) {
+				vec.pop_back();
+			});
+		}
+
+		auto begin() noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.begin();
+			});
+		}
+
+		auto end() noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.end();
+			});
+		}
+
+		auto cbegin() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.cbegin();
+			});
+		}
+
+		auto cend() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.cend();
+			});
+		}
+
+		auto rbegin() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.rbegin();
+			});
+		}
+
+		auto rend() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.rend();
+			});
+		}
+
+		auto crbegin() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.crbegin();
+			});
+		}
+
+		auto crend() const noexcept
+		{
+			return m_storage.visit([](auto& vec) {
+				return vec.crend();
+			});
+		}
+
+		template<typename G>
+		iterator insert(const_iterator pos, G&& ref)
+		{
+			return m_storage.visit([&pos, ref=std::forward<G>(ref)](auto& vec) {
+				return vec.insert(pos, std::forward<G>(ref));
+			});
 		}
 
 	private:
-		union buffer_data
+		void swap_to_vec()
 		{
-			T* buffer_pointer;
-			T buffer[BUFFER_SIZE];
-		} data;
-
-		ALLOC alloc;
-		blt::size_t used = 0;
-		blt::size_t capacity = BUFFER_SIZE;
+			if (m_storage.template has_index<1>())
+				return;
+			std::vector<T, ALLOC> vec{m_allocator.value_or(ALLOC())};
+			auto& vec_storage = m_storage.template get<0>();
+			vec.reserve(vec_storage.size());
+			if constexpr (std::is_trivially_copyable_v<T>)
+			{
+				vec.resize(vec_storage.size());
+				std::memcpy(vec.data(), vec_storage.data(), vec_storage.size() * sizeof(T));
+			} else if constexpr (std::is_move_constructible_v<T>)
+			{
+				for (auto& v : vec_storage)
+					vec.emplace_back(std::move(v));
+			} else
+			{
+				for (auto& v : vec_storage)
+					vec.emplace_back(v);
+			}
+			m_storage = std::move(vec);
+		}
+		std::optional<ALLOC> m_allocator;
+		variant_t<static_vector<T, BUFFER_SIZE>, std::vector<T, ALLOC>> m_storage;
 	};
 }
 
