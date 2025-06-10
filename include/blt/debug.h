@@ -55,9 +55,9 @@
 // should be used to enable deep checks which validate the program state
 #define BLT_DEBUG_SANITY		(1 << 9)
 
-// if the compiler hasn't defined our debug level, we should default to no debug.
+// if the compiler hasn't defined our debug level, we should default to only contracts, asserts, and inexpensive checks
 #ifndef BLT_DEBUG_LEVEL
-#define BLT_DEBUG_LEVEL 0
+#define BLT_DEBUG_LEVEL 7
 #endif
 
 #define blt_has_flag(obj, flag) ((obj & flag) == flag)
