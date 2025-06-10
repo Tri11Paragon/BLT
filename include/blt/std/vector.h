@@ -290,22 +290,103 @@ namespace blt
 			return reverse_iterator{cbegin()};
 		}
 
-		template <typename G, std::enable_if_t<std::is_convertible_v<G, T>, bool>  = true>
-		constexpr iterator insert(const_iterator pos, G&& ref)
+		constexpr iterator insert(const_iterator pos, const T& ref)
 		{
-			blt::ptrdiff_t loc = pos - buffer_;
 			if (size_ + 1 >= capacity())
-			{
-				BLT_ABORT("Inserting exceeds size of internal buffer!");
-			}
+				throw std::out_of_range("Inserting exceeds size of internal buffer!");
+			ptrdiff_t loc = pos - buffer_;
 			for (auto insert = end() - 1; (insert - buffer_) != loc - 1; --insert)
 			{
 				auto new_pos = insert + 1;
-				*new_pos = *insert;
+				if constexpr(std::is_move_assignable_v<T>)
+				{
+					*new_pos = std::move(*insert);
+				} else
+				{
+					*new_pos = *insert;
+				}
 			}
 			buffer_[loc] = ref;
 			size_++;
 			return buffer_ + loc;
+		}
+
+		constexpr iterator insert(const_iterator pos, T&& ref)
+		{
+			if (size_ + 1 >= capacity())
+				throw std::out_of_range("Inserting exceeds size of internal buffer!");
+			ptrdiff_t loc = pos - buffer_;
+			for (auto insert = end() - 1; (insert - buffer_) != loc - 1; --insert)
+			{
+				auto new_pos = insert + 1;
+				if constexpr(std::is_move_assignable_v<T>)
+				{
+					*new_pos = std::move(*insert);
+				} else
+				{
+					*new_pos = *insert;
+				}
+			}
+			buffer_[loc] = std::move(ref);
+			size_++;
+			return buffer_ + loc;
+		}
+
+		constexpr iterator insert(const_iterator pos, const size_t count, const T& ref)
+		{
+			if (size_ + count >= capacity())
+				throw std::out_of_range("Inserting exceeds size of internal buffer!");
+			auto bgn = pos - 1;
+			auto ed = bgn + count;
+			auto shift = end() - 1;
+			auto to = shift + count;
+			for (; shift != ed - 1; --to, --shift)
+			{
+				if constexpr(std::is_move_assignable_v<T>)
+				{
+					*to = std::move(*shift);
+				} else
+				{
+					*to = *shift;
+				}
+			}
+			for (; bgn != ed; ++bgn)
+				*bgn = ref;
+			size_ += count;
+			return bgn;
+		}
+
+		template<typename InputIt >
+		iterator insert(const_iterator pos, InputIt first, InputIt last)
+		{
+			auto count = std::distance(first, last);
+			if (size_ + count >= capacity())
+				throw std::out_of_range("Inserting exceeds size of internal buffer!");
+			auto bgn = pos - 1;
+			auto ist = bgn;
+			auto shift = end() - 1;
+			auto to = shift + count;
+			for (auto ed = bgn + count; shift != ed - 1; --to, --shift)
+			{
+				if constexpr(std::is_move_assignable_v<T>)
+				{
+					*to = std::move(*shift);
+				} else
+				{
+					*to = *shift;
+				}
+			}
+			for (; first != last; ++first, ++bgn)
+			{
+				*bgn = *first;
+			}
+			size_ += count;
+			return ist;
+		}
+
+		iterator insert(const const_iterator pos, std::initializer_list<T> list)
+		{
+			return insert(pos, list.begin(), list.end());
 		}
 
 		constexpr iterator erase(const_iterator pos)
@@ -658,12 +739,101 @@ namespace blt
 			});
 		}
 
-		template<typename G>
-		iterator insert(const_iterator pos, G&& ref)
+		iterator insert(const_iterator pos, const T& ref)
 		{
-			return m_storage.visit([&pos, ref=std::forward<G>(ref)](auto& vec) {
-				return vec.insert(pos, std::forward<G>(ref));
+			if (size() == BUFFER_SIZE)
+				swap_to_vec();
+			return m_storage.visit([&pos, &ref](auto& vec) {
+				return vec.insert(pos, ref);
 			});
+		}
+
+		iterator insert(const_iterator pos, T&& ref)
+		{
+			if (size() == BUFFER_SIZE)
+				swap_to_vec();
+			return m_storage.visit([&pos, ref=std::move(ref)](auto& vec) {
+				return vec.insert(pos, std::move(ref));
+			});
+		}
+
+		iterator insert(const_iterator pos, size_t count, const T& ref)
+		{
+			if (size() + count >= BUFFER_SIZE)
+				swap_to_vec();
+			return m_storage.visit([&pos, count, &ref](auto& vec) {
+				return vec.insert(pos, count, ref);
+			});
+		}
+
+		template<typename InputIt>
+		iterator insert(const_iterator pos, InputIt begin, InputIt end)
+		{
+			if (size() + std::distance(begin, end) >= BUFFER_SIZE)
+				swap_to_vec();
+			return m_storage.visit([&pos, &begin, &end](auto& vec) {
+				return vec.insert(pos, begin, end);
+			});
+		}
+
+		iterator insert(const_iterator pos, std::initializer_list<T> list)
+		{
+			if (size() + list.size() >= BUFFER_SIZE)
+				swap_to_vec();
+			return m_storage.visit([&pos, &list](auto& vec) {
+				return vec.insert(pos, list);
+			});
+		}
+
+		iterator erase(iterator pos)
+		{
+			return m_storage.visit([&pos](auto& vec) {
+				return vec.erase(pos);
+			});
+		}
+
+		iterator erase(const_iterator pos)
+		{
+			return m_storage.visit([&pos](auto& vec) {
+				return vec.erase(pos);
+			});
+		}
+
+		iterator erase(iterator first, iterator last)
+		{
+			return m_storage.visit([&first, &last](auto& vec) {
+				return vec.erase(first, last);
+			});
+		}
+
+		iterator erase(const_iterator first, const_iterator last)
+		{
+			return m_storage.visit([&first, &last](auto& vec) {
+				return vec.erase(first, last);
+			});
+		}
+
+		template<typename A, size_t SIZE_A, typename B, size_t SIZE_B>
+		friend bool operator==(const svo_vector<A, SIZE_A>& a, const svo_vector<B, SIZE_B>& b)
+		{
+			if (a.size() != b.size())
+				return false;
+			return std::visit(lambda_visitor{
+				[](auto& a1, auto& b1) {
+					for (const auto [e1, e2] : in_pairs(a1, b1))
+					{
+						if (e1 != e2)
+							return false;
+					}
+					return true;
+				}
+			}, a.m_storage.variant(), b.m_storage.variant());
+		}
+
+		template<typename A, size_t SIZE_A, typename B, size_t SIZE_B>
+		friend bool operator!=(const svo_vector<A, SIZE_A>& a, const svo_vector<B, SIZE_B>& b)
+		{
+			return !(a == b);
 		}
 
 	private:
