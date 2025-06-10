@@ -88,7 +88,7 @@ namespace blt
 				buffer_[i] = *begin;
 		}
 
-		constexpr void assign(const size_t size, const T& t): size_(size)
+		constexpr void assign(const size_t size, const T& t)
 		{
 			if (size > MAX_SIZE)
 				throw std::out_of_range("Vector cannot be initialized to size " + std::to_string(size) + " max size is " + std::to_string(MAX_SIZE));
@@ -666,7 +666,7 @@ namespace blt
 		}
 
 		template<typename... Args>
-		void emplace_back(Args&& args)
+		void emplace_back(Args&&... args)
 		{
 			if (m_storage.template has_index<0>() && size() >= BUFFER_SIZE)
 				swap_to_vec();
