@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 include(cmake/color.cmake)
-set(BLT_VERSION 5.4.30)
+set(BLT_VERSION 5.4.31)
 
 set(BLT_TARGET BLT)
 
@@ -48,7 +48,7 @@ if (BLT_LOGGING_THREAD_SAFE)
     add_compile_definitions(BLT_LOGGING_THREAD_SAFE)
 endif ()
 
-if(${BLT_DISABLE_STATS})
+if (${BLT_DISABLE_STATS})
     add_compile_definitions(BLT_DISABLE_STATS)
 endif ()
 
@@ -102,7 +102,7 @@ endif ()
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Found Parallel Hashmaps library, using ${Yellow}phmap${ColourReset} over ${Red}std::unordered_map${ColourReset}")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-else()
+else ()
     message("Parallel Hashmaps library not found! using ${Yellow}std::unordered_map${ColourReset}")
 endif ()
 
@@ -144,7 +144,22 @@ message("Binary: ${CMAKE_BINARY_DIR}")
 message("Current Binary: ${CMAKE_CURRENT_BINARY_DIR}")
 
 if (${ZLIB_FOUND})
+    target_include_directories(${BLT_TARGET} PUBLIC ${ZLIB_INCLUDE_DIRS})
     target_link_libraries(${BLT_TARGET} PUBLIC ZLIB::ZLIB)
+endif ()
+
+if (${CURL_FOUND})
+    target_include_directories(${BLT_TARGET} PUBLIC ${CURL_INCLUDE_DIRS})
+    target_link_libraries(${BLT_TARGET} PUBLIC ${CURL_LIBRARIES})
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    include(CheckLinkerFlag)
+    check_linker_flag(CXX "LINKER:-lbacktrace" LINKER_HAS_BACKTRACE)
+    if (${LINKER_HAS_BACKTRACE})
+        add_compile_definitions(BLT_HAS_BETTER_BACKTRACE)
+        target_link_options(${BLT_TARGET} PUBLIC -lbacktrace)
+    endif ()
 endif ()
 
 include(cmake/warnings.cmake)
@@ -154,11 +169,6 @@ target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/conf
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
     message("Including Parallel Hashmap directory")
     target_include_directories(${BLT_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libraries/parallel-hashmap)
-endif ()
-
-if (${CURL_FOUND})
-    target_include_directories(${BLT_TARGET} PUBLIC ${CURL_INCLUDE_DIRS})
-    target_link_libraries(${BLT_TARGET} PUBLIC ${CURL_LIBRARIES})
 endif ()
 
 message("BLT ${Yellow}${BLT_VERSION}${ColourReset} Successfully included!")
@@ -202,7 +212,7 @@ macro(blt_add_test name source type)
     if (NOT MSVC)
         target_compile_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
         target_link_options(${name}-${type} PRIVATE -Wall -Wextra -Wpedantic -Wno-comment)
-    endif()
+    endif ()
     target_compile_definitions(${name}-${type} PRIVATE BLT_DEBUG_LEVEL=${DEBUG_LEVEL})
 
     if (${TRACK_ALLOCATIONS})

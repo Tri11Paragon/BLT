@@ -49,6 +49,10 @@ private:
 #define IS_GNU_BACKTRACE
 #endif
 
+#if BLT_HAS_BETTER_BACKTRACE
+#include <backtrace.h>
+#endif
+
 #ifdef IS_GNU_BACKTRACE
 
 #include <cstdlib>
@@ -171,9 +175,47 @@ namespace blt
 			#endif
 		}
 
+		#ifdef BLT_HAS_BETTER_BACKTRACE
+		static backtrace_state* state = nullptr;
+
+		void error_callback(void*, const char* msg, int errnum)
+		{
+			BLT_ERROR("LibBacktrace Error ({}): {}", errnum, msg);
+		}
+
+		int full_callback(void* data, uintptr_t, const char* filename, const int lineno, const char* function)
+		{
+			if (function == nullptr || filename == nullptr)
+				return 1;
+			auto& tabs = *static_cast<size_t*>(data);
+			std::string msg;
+			for (size_t i = 0; i < tabs; i++)
+				msg += '\t';
+			if (tabs != 0)
+				msg += "⮡";
+			msg += filename;
+			msg += ':';
+			msg += std::to_string(lineno);
+			msg += " in ";
+			msg += demangle(function);
+
+			BLT_ERROR(msg);
+			++tabs;
+			return 0;
+		}
+
+		#endif
+
 		void print_stack_trace(const char* path, int line)
 		{
-			#ifdef IS_GNU_BACKTRACE
+			#if defined(BLT_HAS_BETTER_BACKTRACE)
+			if (!state)
+				state = backtrace_create_state(nullptr, 1, error_callback, nullptr);
+			size_t tabs = 0;
+			backtrace_full(state, 1, full_callback, error_callback, &tabs);
+			(void)(path);
+			(void)(line);
+			#elif defined(IS_GNU_BACKTRACE)
 			BLT_STACK_TRACE(50);
 			for (int i = 1; i < size; i++)
 			{
