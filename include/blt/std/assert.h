@@ -15,8 +15,6 @@ namespace blt
 {
     namespace detail
     {
-        void print_stack_trace(char** messages, int size, const char* path, int line);
-
         void print_stack_trace(const char* path, int line);
     }
 
