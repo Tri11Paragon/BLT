@@ -23,8 +23,8 @@ inline constexpr char BAR = '|';
  */
 #define getBoxData(variant, getter)                                                             \
     std::visit(blt::lambda_visitor{                                                             \
-        [](const blt::string::ascii_box& box) -> auto { return box.getter; },                   \
-        [](const blt::string::ascii_titled_box& box) -> auto { return box.getter; }             \
+        [](const blt::string::ascii_box& box) -> decltype(auto) { return box.getter; },                   \
+        [](const blt::string::ascii_titled_box& box) -> decltype(auto) { return box.getter; }             \
     }, variant)
 
 std::vector<std::string> blt::string::TableFormatter::createTable(bool top, bool bottom)
