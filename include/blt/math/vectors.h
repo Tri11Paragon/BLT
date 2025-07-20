@@ -21,7 +21,23 @@ namespace blt
 
     constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 
-    static constexpr bool f_equal(const float v1, const float v2, const float range = 1)
+    template<typename T>
+    T srgb_to_linear(const T c) noexcept
+    {
+        return (c <= 0.04045)
+               ? c / 12.92
+               : std::pow((c + 0.055) / 1.055, 2.4);
+    }
+
+    template<typename T>
+    T linear_to_srgb(const T c) noexcept
+    {
+        return (c <= 0.0031308)
+               ? 12.92 * c
+               : 1.055 * std::pow(c, 1.0 / 2.4) - 0.055;
+    }
+
+    constexpr bool f_equal(const float v1, const float v2, const float range = 1)
     {
         return v1 >= v2 - (EPSILON * range) && v1 <= v2 + (EPSILON * range);
     }
@@ -112,24 +128,47 @@ namespace blt
             return elements;
         }
 
-        [[nodiscard]] constexpr inline T x() const
+        [[nodiscard]] constexpr T x() const
         {
             return elements[0];
         }
 
-        [[nodiscard]] constexpr inline T y() const
+        [[nodiscard]] constexpr T y() const
         {
             static_assert(size > 1);
             return elements[1];
         }
 
-        [[nodiscard]] constexpr inline T z() const
+        [[nodiscard]] constexpr T z() const
         {
             static_assert(size > 2);
             return elements[2];
         }
 
-        [[nodiscard]] constexpr inline T w() const
+        [[nodiscard]] constexpr T w() const
+        {
+            static_assert(size > 3);
+            return elements[3];
+        }
+
+        [[nodiscard]] constexpr T r() const
+        {
+            return elements[0];
+        }
+
+        [[nodiscard]] constexpr T g() const
+        {
+            static_assert(size > 1);
+            return elements[1];
+        }
+
+        [[nodiscard]] constexpr T b() const
+        {
+            static_assert(size > 2);
+            return elements[2];
+        }
+
+        [[nodiscard]] constexpr T a() const
         {
             static_assert(size > 3);
             return elements[3];
@@ -165,6 +204,84 @@ namespace blt
             if (mag == 0)
                 return vec<T, size>(*this);
             return *this / mag;
+        }
+
+        [[nodiscard]] constexpr vec srgb_to_linear_rgb() const
+        {
+            static_assert(size >= 3);
+            vec copy = *this;
+            copy[0] = srgb_to_linear(copy[0]);
+            copy[1] = srgb_to_linear(copy[1]);
+            copy[2] = srgb_to_linear(copy[2]);
+            return copy;
+        }
+
+        [[nodiscard]] constexpr vec linear_to_srgb() const
+        {
+            static_assert(size >= 3);
+            vec copy = *this;
+            copy[0] = linear_to_srgb(copy[0]);
+            copy[1] = linear_to_srgb(copy[1]);
+            copy[2] = linear_to_srgb(copy[2]);
+            return copy;
+        }
+
+        /**
+         * Vector must be in linear RGB.
+         */
+        [[nodiscard]] constexpr vec linear_rgb_to_oklab() const
+        {
+            static_assert(size >= 3);
+            auto copy = *this;
+
+            // 2. RGB → LMS
+            const double l = 0.4122214708 * copy.r() + 0.5363325363 * copy.g() + 0.0514459929 * copy.b();
+            const double m = 0.2119034982 * copy.r() + 0.6806995451 * copy.g() + 0.1073969566 * copy.b();
+            const double s = 0.0883024619 * copy.r() + 0.2817188376 * copy.g() + 0.6299787005 * copy.b();
+
+            // 3. cube root
+            const double l_ = cbrt(l);
+            const double m_ = cbrt(m);
+            const double s_ = cbrt(s);
+
+            // 4. LMS′ → OKLab
+            vec out;
+            out[0] =  0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_;
+            out[1] =  1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
+            out[2] =  0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
+
+            return out;
+        }
+
+        [[nodiscard]] vec oklab_to_linear_rgb() const
+        {
+            static_assert(size >= 3);
+            auto copy = *this;
+            /* 1. OKLab -> non-linear LMS′ */
+            const double l_ = copy.r() + 0.3963377774 * copy.g() + 0.2158037573 * copy.b();
+            const double m_ = copy.r() - 0.1055613458 * copy.g() - 0.0638541728 * copy.b();
+            const double s_ = copy.r() - 0.0894841775 * copy.g() - 1.2914855480 * copy.b();
+
+            /* 2. Undo cube root */
+            const double l = l_ * l_ * l_;
+            const double m = m_ * m_ * m_;
+            const double s = s_ * s_ * s_;
+
+            /* 3. LMS -> linear RGB */
+            double R =  4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+            double G = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+            double B = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+            /* 4. Optional: clamp to [0,1] before gamma */
+            R = std::clamp(R, 0.0, 1.0);
+            G = std::clamp(G, 0.0, 1.0);
+            B = std::clamp(B, 0.0, 1.0);
+
+            /* 5. Linear RGB -> sRGB */
+            copy[0] = linear_to_srgb(R);
+            copy[1] = linear_to_srgb(G);
+            copy[2] = linear_to_srgb(B);
+            return *this;
         }
 
         constexpr inline T& operator[](blt::size_t index)
