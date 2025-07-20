@@ -183,6 +183,14 @@ namespace blt
             return copy;
         }
 
+        [[nodiscard]] constexpr vec sqrt() const
+        {
+            auto copy = *this;
+            for (auto& v : copy.elements)
+                v = std::sqrt(v);
+            return copy;
+        }
+
         [[nodiscard]] constexpr inline vec<T, size> bipolar() const
         {
             auto copy = *this;
