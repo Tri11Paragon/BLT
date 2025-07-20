@@ -7,6 +7,7 @@
 #ifndef BLT_TESTS_VECTORS_H
 #define BLT_TESTS_VECTORS_H
 
+#include <algorithm>
 #include <initializer_list>
 #include <cmath>
 #include <vector>
