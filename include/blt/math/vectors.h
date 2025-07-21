@@ -287,10 +287,10 @@ namespace blt
             B = std::clamp(B, 0.0, 1.0);
 
             /* 5. Linear RGB -> sRGB */
-            copy[0] = blt::linear_to_srgb(R);
-            copy[1] = blt::linear_to_srgb(G);
-            copy[2] = blt::linear_to_srgb(B);
-            return *this;
+            copy[0] = R;
+            copy[1] = G;
+            copy[2] = B;
+            return copy;
         }
 
         constexpr inline T& operator[](blt::size_t index)
