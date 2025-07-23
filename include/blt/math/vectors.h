@@ -241,12 +241,11 @@ namespace blt
         [[nodiscard]] constexpr vec linear_rgb_to_oklab() const
         {
             static_assert(size >= 3);
-            auto copy = *this;
 
             // 2. RGB → LMS
-            const double l = 0.4122214708 * copy.r() + 0.5363325363 * copy.g() + 0.0514459929 * copy.b();
-            const double m = 0.2119034982 * copy.r() + 0.6806995451 * copy.g() + 0.1073969566 * copy.b();
-            const double s = 0.0883024619 * copy.r() + 0.2817188376 * copy.g() + 0.6299787005 * copy.b();
+            const double l = 0.4122214708 * r() + 0.5363325363 * g() + 0.0514459929 * b();
+            const double m = 0.2119034982 * r() + 0.6806995451 * g() + 0.1073969566 * b();
+            const double s = 0.0883024619 * r() + 0.2817188376 * g() + 0.6299787005 * b();
 
             // 3. cube root
             const double l_ = cbrt(l);
@@ -259,6 +258,24 @@ namespace blt
             out[1] =  1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
             out[2] =  0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
 
+            return out;
+        }
+
+        [[nodiscard]] constexpr vec oklab_to_oklch() const
+        {
+            vec out;
+            out[0] = r();
+            out[1] = std::sqrt(g() * g() + b() * b());
+            out[2] = std::atan2(b(), g());
+            return out;
+        }
+
+        [[nodiscard]] constexpr vec oklch_to_oklab() const
+        {
+            vec out;
+            out[0] = r();
+            out[1] = g() * cos(b());
+            out[2] = g() * sin(b());
             return out;
         }
 
