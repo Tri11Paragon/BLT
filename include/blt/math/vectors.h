@@ -11,9 +11,9 @@
 #include <initializer_list>
 #include <cmath>
 #include <vector>
-#include <cstdint>
 #include <array>
 #include <type_traits>
+#include <blt/math/math.h>
 #include <blt/std/types.h>
 
 namespace blt
@@ -266,7 +266,7 @@ namespace blt
             vec out;
             out[0] = r();
             out[1] = std::sqrt(g() * g() + b() * b());
-            out[2] = std::atan2(b(), g());
+            out[2] = blt::toDegrees(std::atan2(b(), g()));
             return out;
         }
 
@@ -274,8 +274,8 @@ namespace blt
         {
             vec out;
             out[0] = r();
-            out[1] = g() * cos(b());
-            out[2] = g() * sin(b());
+            out[1] = g() * std::cos(blt::toRadians(b()));
+            out[2] = g() * std::sin(blt::toRadians(b()));
             return out;
         }
 

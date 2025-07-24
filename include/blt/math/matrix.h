@@ -7,12 +7,12 @@
 #ifndef BLT_TESTS_MATRIX_H
 #define BLT_TESTS_MATRIX_H
 
-#include <blt/math/vectors.h>
 #include <cstring>
 #include <type_traits>
 #include <array>
 #include <initializer_list>
 #include "blt/iterator/iterator.h"
+#include <blt/math/vectors.h>
 
 #ifndef M_PI
 // MSVC does not have M_PI
