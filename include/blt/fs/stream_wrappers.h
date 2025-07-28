@@ -67,6 +67,16 @@ namespace blt::fs
 		explicit reader_wrapper_t(reader_t& reader): m_reader(&reader)
 		{}
 
+		std::string read_string()
+		{
+			std::string str;
+			size_t size;
+			read(size);
+			str.resize(size);
+			m_reader->read(str.data(), size);
+			return str;
+		}
+
 		template <typename T>
 		void read(T& out)
 		{
@@ -90,6 +100,12 @@ namespace blt::fs
 	public:
 		explicit writer_wrapper_t(writer_t& writer): m_writer(&writer)
 		{}
+
+		void write_string(const std::string_view str)
+		{
+			write(str.size());
+			m_writer->write(str.data(), str.size());
+		}
 
 		template <typename T>
 		void write(const T& t)
