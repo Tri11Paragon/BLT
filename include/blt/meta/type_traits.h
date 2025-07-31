@@ -55,7 +55,7 @@ namespace blt::meta
 	{};
 
 	template<typename T>
-	struct is_tuple_like<T, std::void_t<decltype(std::tuple_size_v<T>)>> : std::true_type
+	struct is_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type
 	{
 	};
 
