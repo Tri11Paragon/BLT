@@ -24,50 +24,59 @@
 
 namespace blt::meta
 {
-    namespace detail
-    {
-        template<typename... Args>
-        void empty_apply_function(Args...)
-        {
+	namespace detail
+	{
+		template <typename... Args>
+		void empty_apply_function(Args...)
+		{}
 
-        }
+		inline auto lambda = [](auto...) {};
+	}
 
-        inline auto lambda = [](auto...)
-        {
-        };
-    }
+	template <typename T>
+	using remove_cvref_t = std::remove_volatile_t<std::remove_const_t<std::remove_reference_t<T>>>;
 
-    template <typename T>
-    using remove_cvref_t = std::remove_volatile_t<std::remove_const_t<std::remove_reference_t<T>>>;
+	template <typename U>
+	using add_const_ref_t = std::conditional_t<std::is_reference_v<U>, const std::remove_reference_t<U>&, const U>;
 
-    template <typename U>
-    using add_const_ref_t = std::conditional_t<std::is_reference_v<U>, const std::remove_reference_t<U>&, const U>;
 
-    template <typename>
-    struct is_tuple : std::false_type
-    {
-    };
+	template <typename>
+	struct is_tuple : std::false_type
+	{};
 
-    template <typename... T>
-    struct is_tuple<std::tuple<T...>> : std::true_type
-    {
-    };
 
-    template <typename>
-    struct is_pair : std::false_type
-    {
-    };
+	template <typename... T>
+	struct is_tuple<std::tuple<T...>> : std::true_type
+	{};
 
-    template <typename T, typename G>
-    struct is_pair<std::pair<T, G>> : std::true_type
-    {
-    };
 
-    template <typename T>
-    static constexpr bool is_tuple_v = is_tuple<T>::value;
+	template <typename, typename = void>
+	struct is_tuple_like : std::false_type
+	{};
 
-    template <typename T>
-    static constexpr bool is_pair_v = is_pair<T>::value;
+	template<typename T>
+	struct is_tuple_like<T, std::void_t<decltype(std::tuple_size_v<T>)>> : std::true_type
+	{
+	};
+
+	template <typename>
+	struct is_pair : std::false_type
+	{};
+
+
+	template <typename T, typename G>
+	struct is_pair<std::pair<T, G>> : std::true_type
+	{};
+
+
+	template <typename T>
+	static constexpr bool is_tuple_v = is_tuple<T>::value;
+
+	template <typename T>
+	static constexpr bool is_pair_v = is_pair<T>::value;
+
+	template<typename T>
+	inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
 }
 
 #endif // BLT_META_TYPE_TRAITS_H

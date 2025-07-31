@@ -23,7 +23,7 @@
 #include <utility>
 #include <type_traits>
 #include <ostream>
-#include <blt/meta/is_streamable.h>
+#include <blt/meta/serialization.h>
 
 namespace blt::meta
 {
