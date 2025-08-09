@@ -17,6 +17,7 @@
  */
 #include <ctime>
 #include <iostream>
+#include <blt/config.h>
 #include <blt/fs/path_helper.h>
 #include <blt/fs/stream_wrappers.h>
 #include <blt/logging/ansi.h>
@@ -271,7 +272,14 @@ namespace blt::logging
 					if (m_print_full_name)
 						fmt += file;
 					else
-						fmt += fs::filename_sv(file);
+					{
+						static auto CMAKE_STRING_LEN = strlen(CMAKE_SOURCE_DIR);
+						std::string file_str{file};
+						auto pos = file_str.find(CMAKE_SOURCE_DIR);
+						if (pos != std::string::npos)
+							file_str.erase(pos, CMAKE_STRING_LEN + 1);
+						fmt += file_str;
+					}
 					break;
 				case tags::detail::log_tag_token_t::LINE:
 					fmt += std::to_string(line);

@@ -34,7 +34,7 @@
 #include <blt/iterator/iterator.h>
 #include <blt/meta/type_traits.h>
 #include <blt/std/assert.h>
-#include <blt/std/expected.h>
+#include <../outcome/expected.h>
 #include <blt/std/ranges.h>
 #include <blt/std/utility.h>
 #include <blt/std/variant.h>
