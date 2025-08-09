@@ -26,7 +26,7 @@
 #include <vector>
 #include <blt/logging/fmt_tokenizer.h>
 #include <blt/logging/logging_config.h>
-#include <blt/meta/is_streamable.h>
+#include <blt/meta/serialization.h>
 #include <blt/std/utility.h>
 
 namespace blt::logging

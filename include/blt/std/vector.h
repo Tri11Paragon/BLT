@@ -19,12 +19,13 @@
 #ifndef BLT_VECTOR_H
 #define BLT_VECTOR_H
 
-#include <iterator>
-#include <blt/meta/iterator.h>
-#include <blt/compatibility.h>
-#include <blt/std/variant.h>
-#include <stdexcept>
 #include <array>
+#include <cstring>
+#include <iterator>
+#include <stdexcept>
+#include <blt/compatibility.h>
+#include <blt/meta/iterator.h>
+#include <blt/std/variant.h>
 
 namespace blt
 {

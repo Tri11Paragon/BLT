@@ -7,8 +7,7 @@
 #ifndef BLT_MATH_H
 #define BLT_MATH_H
 
-#include <blt/math/vectors.h>
-#include <blt/math/matrix.h>
+#include <blt/std/types.h>
 
 namespace blt
 {
@@ -16,11 +15,19 @@ namespace blt
     static inline constexpr double PI = 3.141592653589793238462643383279502884197;
     
     template<typename T>
-    static inline T toRadians(T deg)
+    static constexpr T toRadians(T deg)
     {
         constexpr double CONV = PI / 180.0;
         return deg * CONV;
     }
+
+    template<typename T>
+    static constexpr T toDegrees(T rad)
+    {
+        constexpr double CONV = 180.0 / PI;
+        return rad * CONV;
+    }
+
     
     /**
      * fast number integer
