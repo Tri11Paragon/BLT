@@ -26,7 +26,7 @@
 #include <utility>
 #include <blt/std/hashmap.h>
 #include <blt/std/types.h>
-#include <../outcome/expected.h>
+#include <blt/outcome/expected.h>
 #include <blt/logging/logging.h>
 #include <variant>
 
