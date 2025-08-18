@@ -1,7 +1,7 @@
 //
 // Created by brett on 7/9/23.
 //
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 
 namespace blt
 {
