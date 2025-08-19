@@ -12,7 +12,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 #include <blt/logging/logging.h>
 #include <unordered_set>
 

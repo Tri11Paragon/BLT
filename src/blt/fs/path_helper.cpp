@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <blt/fs/path_helper.h>
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 #include <blt/compatibility.h>
 
 namespace blt::fs

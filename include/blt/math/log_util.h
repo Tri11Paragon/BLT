@@ -11,7 +11,7 @@
 #include <blt/math/matrix.h>
 #include <blt/logging/logging.h>
 #include <blt/std/utility.h>
-#include "blt/std/string.h"
+#include "blt/std/string_algo.h"
 
 namespace blt
 {

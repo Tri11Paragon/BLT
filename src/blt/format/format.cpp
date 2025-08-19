@@ -4,7 +4,7 @@
  * See LICENSE file for license detail
  */
 #include <blt/format/format.h>
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 #include <cmath>
 #include "blt/logging/logging.h"
 #include "blt/std/assert.h"

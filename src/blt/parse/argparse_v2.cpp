@@ -23,7 +23,7 @@
 #include <blt/logging/logging.h>
 #include <blt/iterator/enumerate.h>
 #include <blt/fs/path_helper.h>
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 #include <blt/iterator/flatten.h>
 
 namespace blt::argparse

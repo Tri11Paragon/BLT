@@ -13,7 +13,7 @@
 #include <initializer_list>
 #include <optional>
 #include <blt/std/hashmap.h>
-#include <blt/std/string.h>
+#include <blt/std/string_algo.h>
 #include <variant>
 #include <algorithm>
 #include <type_traits>
