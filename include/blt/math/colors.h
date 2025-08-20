@@ -23,110 +23,113 @@
 #include <blt/std/types.h>
 #include <blt/std/variant.h>
 
-class color_t
+namespace blt
 {
-public:
-	struct color_linear_rgb_t : blt::integer_type<blt::vec3>
-	{};
-
-
-	struct color_srgb_t : blt::integer_type<blt::vec3>
-	{};
-
-
-	struct color_oklab_t : blt::integer_type<blt::vec3>
-	{};
-
-
-	struct color_hsv_t : blt::integer_type<blt::vec3>
-	{};
-
-
-	using color_variant_t = std::variant<color_linear_rgb_t, color_srgb_t, color_oklab_t, color_hsv_t>;
-
-	color_t() = default;
-
-	template <typename Type>
-	explicit color_t(const blt::vec3& color) : color{Type{color}}
-	{}
-
-	explicit color_t(const color_variant_t color) : color{color}
-	{}
-
-	[[nodiscard]] blt::vec3 as_linear_rgb() const
+	class color_t
 	{
-		return blt::variant_t{color}
-			   .visit([](const color_linear_rgb_t c) {
-						  return static_cast<blt::vec3>(c);
-					  },
-					  [](const color_srgb_t c) {
-						  return static_cast<blt::vec3>(c).srgb_to_linear_rgb();
-					  },
-					  [](const color_oklab_t c) {
-						  return static_cast<blt::vec3>(c).oklab_to_linear_rgb();
-					  },
-					  [](const color_hsv_t c) {
-						  return static_cast<blt::vec3>(c).hsv_to_linear_rgb();
-					  }).value();
-	}
+	public:
+		struct color_linear_rgb_t : integer_type<vec3>
+		{};
 
-	[[nodiscard]] blt::vec3 as_srgb() const
-	{
-		return blt::variant_t{color}
-			   .visit([](const color_linear_rgb_t c) {
-						  return static_cast<blt::vec3>(c).linear_to_srgb();
-					  },
-					  [](const color_srgb_t c) {
-						  return static_cast<blt::vec3>(c);
-					  },
-					  [](const color_oklab_t c) {
-						  return static_cast<blt::vec3>(c).oklab_to_linear_rgb().linear_to_srgb();
-					  },
-					  [](const color_hsv_t c) {
-						  return static_cast<blt::vec3>(c).hsv_to_linear_rgb().linear_to_srgb();
-					  }).value();
-	}
 
-	[[nodiscard]] blt::vec3 as_oklab() const
-	{
-		return blt::variant_t{color}
-			   .visit([](const color_linear_rgb_t c) {
-						  return static_cast<blt::vec3>(c).linear_rgb_to_oklab();
-					  },
-					  [](const color_srgb_t c) {
-						  return static_cast<blt::vec3>(c).srgb_to_linear_rgb().
-														   linear_rgb_to_oklab();
-					  },
-					  [](const color_oklab_t c) {
-						  return static_cast<blt::vec3>(c);
-					  },
-					  [](const color_hsv_t c) {
-						  return static_cast<blt::vec3>(c).hsv_to_linear_rgb().
-														   linear_rgb_to_oklab();
-					  }).value();
-	}
+		struct color_srgb_t : integer_type<vec3>
+		{};
 
-	[[nodiscard]] blt::vec3 as_hsv() const
-	{
-		return blt::variant_t{color}
-			   .visit([](const color_linear_rgb_t c) {
-						  return static_cast<blt::vec3>(c).linear_rgb_to_hsv();
-					  },
-					  [](const color_srgb_t c) {
-						  return static_cast<blt::vec3>(c).srgb_to_linear_rgb().
-														   linear_rgb_to_hsv();
-					  },
-					  [](const color_oklab_t c) {
-						  return static_cast<blt::vec3>(c).oklab_to_linear_rgb().
-														   linear_rgb_to_hsv();
-					  },
-					  [](const color_hsv_t c) {
-						  return static_cast<blt::vec3>(c);
-					  }).value();
-	}
 
-private:
-	color_variant_t color;
-};
+		struct color_oklab_t : integer_type<vec3>
+		{};
+
+
+		struct color_hsv_t : integer_type<vec3>
+		{};
+
+
+		using color_variant_t = std::variant<color_linear_rgb_t, color_srgb_t, color_oklab_t, color_hsv_t>;
+
+		color_t() = default;
+
+		template <typename Type>
+		explicit color_t(const vec3& color) : color{Type{color}}
+		{}
+
+		explicit color_t(const color_variant_t color) : color{color}
+		{}
+
+		[[nodiscard]] vec3 as_linear_rgb() const
+		{
+			return variant_t{color}
+			.visit([](const color_linear_rgb_t c) {
+					   return static_cast<vec3>(c);
+				   },
+				   [](const color_srgb_t c) {
+					   return static_cast<vec3>(c).srgb_to_linear_rgb();
+				   },
+				   [](const color_oklab_t c) {
+					   return static_cast<vec3>(c).oklab_to_linear_rgb();
+				   },
+				   [](const color_hsv_t c) {
+					   return static_cast<vec3>(c).hsv_to_linear_rgb();
+				   }).value();
+		}
+
+		[[nodiscard]] vec3 as_srgb() const
+		{
+			return variant_t{color}
+			.visit([](const color_linear_rgb_t c) {
+					   return static_cast<vec3>(c).linear_to_srgb();
+				   },
+				   [](const color_srgb_t c) {
+					   return static_cast<vec3>(c);
+				   },
+				   [](const color_oklab_t c) {
+					   return static_cast<vec3>(c).oklab_to_linear_rgb().linear_to_srgb();
+				   },
+				   [](const color_hsv_t c) {
+					   return static_cast<vec3>(c).hsv_to_linear_rgb().linear_to_srgb();
+				   }).value();
+		}
+
+		[[nodiscard]] vec3 as_oklab() const
+		{
+			return variant_t{color}
+			.visit([](const color_linear_rgb_t c) {
+					   return static_cast<vec3>(c).linear_rgb_to_oklab();
+				   },
+				   [](const color_srgb_t c) {
+					   return static_cast<vec3>(c).srgb_to_linear_rgb().
+														linear_rgb_to_oklab();
+				   },
+				   [](const color_oklab_t c) {
+					   return static_cast<vec3>(c);
+				   },
+				   [](const color_hsv_t c) {
+					   return static_cast<vec3>(c).hsv_to_linear_rgb().
+														linear_rgb_to_oklab();
+				   }).value();
+		}
+
+		[[nodiscard]] vec3 as_hsv() const
+		{
+			return variant_t{color}
+			.visit([](const color_linear_rgb_t c) {
+					   return static_cast<vec3>(c).linear_rgb_to_hsv();
+				   },
+				   [](const color_srgb_t c) {
+					   return static_cast<vec3>(c).srgb_to_linear_rgb().
+														linear_rgb_to_hsv();
+				   },
+				   [](const color_oklab_t c) {
+					   return static_cast<vec3>(c).oklab_to_linear_rgb().
+														linear_rgb_to_hsv();
+				   },
+				   [](const color_hsv_t c) {
+					   return static_cast<vec3>(c);
+				   }).value();
+		}
+
+	private:
+		color_variant_t color;
+	};
+}
 
 #endif //BLT_MATH_COLORS_H
