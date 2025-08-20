@@ -106,6 +106,8 @@ else ()
     message("Parallel Hashmaps library not found! using ${Yellow}std::unordered_map${ColourReset}")
 endif ()
 
+file(GLOB_RECURSE MATH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/blt/math/*.cpp")
+
 #include zlib if the user has it.
 find_package(ZLIB QUIET)
 find_package(CURL QUIET)
@@ -126,7 +128,7 @@ endif ()
 include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
-add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES} ${LOGGING_FILES})
+add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES} ${LOGGING_FILES} ${MATH_FILES})
 
 string(REPLACE "+" "\\+" escaped_source ${CMAKE_CURRENT_SOURCE_DIR})
 string(APPEND escaped_source "/src/blt/.*/")

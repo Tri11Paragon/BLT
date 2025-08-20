@@ -25,6 +25,20 @@
 
 namespace blt
 {
+	template <typename T>
+	T srgb_to_linear(const T c) noexcept
+	{
+		return (c <= 0.04045) ? c / 12.92 : std::pow((c + 0.055) / 1.055, 2.4);
+	}
+
+	template <typename T>
+	T linear_to_srgb(const T c) noexcept
+	{
+		return (c <= 0.0031308) ? 12.92 * c : 1.055 * std::pow(c, 1.0 / 2.4) - 0.055;
+	}
+
+	class color_t;
+
 	namespace color
 	{
 		struct linear_rgb_t;
@@ -32,6 +46,7 @@ namespace blt
 		struct oklab_t;
 		struct oklch_t;
 		struct hsv_t;
+
 
 		struct linear_rgb_t : integer_type<vec3>
 		{
@@ -42,6 +57,11 @@ namespace blt
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+
+			[[nodiscard]] vec3 to_vec3() const
+			{
+				return static_cast<vec3>(*this);
+			}
 		};
 
 
@@ -54,6 +74,11 @@ namespace blt
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+
+			[[nodiscard]] vec3 to_vec3() const
+			{
+				return static_cast<vec3>(*this);
+			}
 		};
 
 
@@ -66,6 +91,11 @@ namespace blt
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+
+			[[nodiscard]] vec3 to_vec3() const
+			{
+				return static_cast<vec3>(*this);
+			}
 		};
 
 
@@ -78,6 +108,11 @@ namespace blt
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+
+			[[nodiscard]] vec3 to_vec3() const
+			{
+				return static_cast<vec3>(*this);
+			}
 		};
 
 
@@ -90,8 +125,21 @@ namespace blt
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+
+			[[nodiscard]] vec3 to_vec3() const
+			{
+				return static_cast<vec3>(*this);
+			}
 		};
+
+
+		template <typename Type>
+		static color_t from(const vec3& color);
+
+		template <typename Type>
+		static color_t from(const vec4& color);
 	}
+
 
 	class color_t
 	{
@@ -107,65 +155,99 @@ namespace blt
 
 		color_t() = default;
 
-		template <typename Type>
-		static color_t from(const vec3& color)
-		{
-			return color_t{Type{color}};
-		}
-
-		explicit color_t(const color_linear_rgb_t& color) : color{color}
+		color_t(const color_linear_rgb_t& color) : color{color} // NOLINT
 		{}
 
-		explicit color_t(const color_srgb_t& color) : color{color}
+		color_t(const color_srgb_t& color) : color{color} // NOLINT
 		{}
 
-		explicit color_t(const color_oklab_t& color) : color{color}
+		color_t(const color_oklab_t& color) : color{color} // NOLINT
 		{}
 
-		explicit color_t(const color_oklch_t& color) : color{color}
+		color_t(const color_oklch_t& color) : color{color} // NOLINT
 		{}
 
-		explicit color_t(const color_hsv_t& color) : color{color}
+		color_t(const color_hsv_t& color) : color{color} // NOLINT
 		{}
 
 		[[nodiscard]] color_linear_rgb_t as_linear_rgb() const
 		{
 			return std::visit([](const auto& c) {
-				return c.to_linear_rgb();
-			}, color);
+								  return c.to_linear_rgb();
+							  },
+							  color);
 		}
 
 		[[nodiscard]] color_srgb_t as_srgb() const
 		{
 			return std::visit([](const auto& c) {
-				return c.to_srgb();
-			}, color);
+								  return c.to_srgb();
+							  },
+							  color);
 		}
 
 		[[nodiscard]] color_oklab_t as_oklab() const
 		{
 			return std::visit([](const auto& c) {
-				return c.to_oklab();
-			}, color);
+								  return c.to_oklab();
+							  },
+							  color);
 		}
 
 		[[nodiscard]] color_oklch_t as_oklch() const
 		{
 			return std::visit([](const auto& c) {
-				return c.to_oklch();
-			}, color);
+								  return c.to_oklch();
+							  },
+							  color);
 		}
 
 		[[nodiscard]] color_hsv_t as_hsv() const
 		{
 			return std::visit([](const auto& c) {
-				return c.to_hsv();
-			}, color);
+								  return c.to_hsv();
+							  },
+							  color);
+		}
+
+		/**
+		 * WARNING! this function is unsafe as it ignores internal validation of stored colors, you should only use it if you know what you are doing. !
+		 * This function is provided for convenience when you already know what types are held in the color.
+		 */
+		[[nodiscard]] vec3 to_vec3() const
+		{
+			return std::visit([](const auto& c) {
+								  return c.to_vec3();
+							  },
+							  color);
+		}
+
+		/**
+		 * WARNING! This function is unsafe as it bypasses internal validation of stored color. It is up to you to use
+		 * the information in the variant correctly, if not using the class functions.
+		 * This function is provided for extensibility to developers.
+		 */
+		[[nodiscard]] const color_variant_t& variant() const
+		{
+			return color;
 		}
 
 	private:
 		color_variant_t color;
 	};
+
+
+	template <typename Type>
+	static color_t color::from(const vec3& color)
+	{
+		return color_t{Type{color}};
+	}
+
+	template <typename Type>
+	static color_t color::from(const vec4& color)
+	{
+		return color_t{Type{make_vec3(color) * color.a()}};
+	}
 }
 
 #endif //BLT_MATH_COLORS_H
