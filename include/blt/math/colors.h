@@ -27,80 +27,80 @@ namespace blt
 {
 	namespace color
 	{
-		struct color_linear_rgb_t;
-		struct color_srgb_t;
-		struct color_oklab_t;
-		struct color_oklch_t;
-		struct color_hsv_t;
+		struct linear_rgb_t;
+		struct srgb_t;
+		struct oklab_t;
+		struct oklch_t;
+		struct hsv_t;
 
-		struct color_linear_rgb_t : integer_type<vec3>
+		struct linear_rgb_t : integer_type<vec3>
 		{
 			using integer_type::integer_type;
 
-			[[nodiscard]] color_linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] color_srgb_t       to_srgb() const;
-			[[nodiscard]] color_oklab_t      to_oklab() const;
-			[[nodiscard]] color_oklch_t      to_oklch() const;
-			[[nodiscard]] color_hsv_t        to_hsv() const;
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 
 
-		struct color_srgb_t : integer_type<vec3>
+		struct srgb_t : integer_type<vec3>
 		{
 			using integer_type::integer_type;
 
-			[[nodiscard]] color_linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] color_srgb_t       to_srgb() const;
-			[[nodiscard]] color_oklab_t      to_oklab() const;
-			[[nodiscard]] color_oklch_t      to_oklch() const;
-			[[nodiscard]] color_hsv_t        to_hsv() const;
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 
 
-		struct color_oklab_t : integer_type<vec3>
+		struct oklab_t : integer_type<vec3>
 		{
 			using integer_type::integer_type;
 
-			[[nodiscard]] color_linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] color_srgb_t       to_srgb() const;
-			[[nodiscard]] color_oklab_t      to_oklab() const;
-			[[nodiscard]] color_oklch_t      to_oklch() const;
-			[[nodiscard]] color_hsv_t        to_hsv() const;
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 
 
-		struct color_oklch_t : integer_type<vec3>
+		struct oklch_t : integer_type<vec3>
 		{
 			using integer_type::integer_type;
 
-			[[nodiscard]] color_linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] color_srgb_t       to_srgb() const;
-			[[nodiscard]] color_oklab_t      to_oklab() const;
-			[[nodiscard]] color_oklch_t      to_oklch() const;
-			[[nodiscard]] color_hsv_t        to_hsv() const;
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 
 
-		struct color_hsv_t : integer_type<vec3>
+		struct hsv_t : integer_type<vec3>
 		{
 			using integer_type::integer_type;
 
-			[[nodiscard]] color_linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] color_srgb_t       to_srgb() const;
-			[[nodiscard]] color_oklab_t      to_oklab() const;
-			[[nodiscard]] color_oklch_t      to_oklch() const;
-			[[nodiscard]] color_hsv_t        to_hsv() const;
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 	}
 
 	class color_t
 	{
 	public:
-		using color_linear_rgb_t = color::color_linear_rgb_t;
-		using color_srgb_t       = color::color_srgb_t;
-		using color_oklab_t      = color::color_oklab_t;
-		using color_oklch_t      = color::color_oklch_t;
-		using color_hsv_t        = color::color_hsv_t;
+		using color_linear_rgb_t = color::linear_rgb_t;
+		using color_srgb_t       = color::srgb_t;
+		using color_oklab_t      = color::oklab_t;
+		using color_oklch_t      = color::oklch_t;
+		using color_hsv_t        = color::hsv_t;
 
 		using color_variant_t = std::variant<color_linear_rgb_t, color_srgb_t, color_oklab_t, color_oklch_t,
 											 color_hsv_t>;

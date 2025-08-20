@@ -31,12 +31,12 @@ namespace blt
 		return (c <= 0.0031308) ? 12.92 * c : 1.055 * std::pow(c, 1.0 / 2.4) - 0.055;
 	}
 
-	color::color_linear_rgb_t color::color_linear_rgb_t::to_linear_rgb() const
+	color::linear_rgb_t color::linear_rgb_t::to_linear_rgb() const
 	{
 		return *this;
 	}
 
-	color::color_srgb_t color::color_linear_rgb_t::to_srgb() const
+	color::srgb_t color::linear_rgb_t::to_srgb() const
 	{
 		auto copy = static_cast<vec3>(*this);
 		copy[0]   = linear_to_srgb(copy[0]);
@@ -45,7 +45,7 @@ namespace blt
 		return copy;
 	}
 
-	color::color_oklab_t color::color_linear_rgb_t::to_oklab() const
+	color::oklab_t color::linear_rgb_t::to_oklab() const
 	{
 		const auto   self = static_cast<vec3>(*this);
 		const double l    = 0.4122214708 * self.r() + 0.5363325363 * self.g() + 0.0514459929 * self.b();
@@ -66,12 +66,12 @@ namespace blt
 		return out;
 	}
 
-	color::color_oklch_t color::color_linear_rgb_t::to_oklch() const
+	color::color_oklch_t color::linear_rgb_t::to_oklch() const
 	{
 		return to_oklab().to_oklch();
 	}
 
-	color::color_hsv_t color::color_linear_rgb_t::to_hsv() const
+	color::color_hsv_t color::linear_rgb_t::to_hsv() const
 	{
 		using T         = float;
 		const auto self = static_cast<vec3>(*this);
@@ -103,7 +103,7 @@ namespace blt
 		return vec3{h, s, v};
 	}
 
-	color::color_linear_rgb_t color::color_srgb_t::to_linear_rgb() const
+	color::linear_rgb_t color::srgb_t::to_linear_rgb() const
 	{
 		auto copy = static_cast<vec3>(*this);
 		copy[0]   = srgb_to_linear(copy[0]);
@@ -112,27 +112,27 @@ namespace blt
 		return copy;
 	}
 
-	color::color_srgb_t color::color_srgb_t::to_srgb() const
+	color::srgb_t color::srgb_t::to_srgb() const
 	{
 		return *this;
 	}
 
-	color::color_oklab_t color::color_srgb_t::to_oklab() const
+	color::oklab_t color::srgb_t::to_oklab() const
 	{
 		return to_linear_rgb().to_oklab();
 	}
 
-	color::color_oklch_t color::color_srgb_t::to_oklch() const
+	color::color_oklch_t color::srgb_t::to_oklch() const
 	{
 		return to_linear_rgb().to_oklab().to_oklch();
 	}
 
-	color::color_hsv_t color::color_srgb_t::to_hsv() const
+	color::color_hsv_t color::srgb_t::to_hsv() const
 	{
 		return to_linear_rgb().to_hsv();
 	}
 
-	color::color_linear_rgb_t color::color_oklab_t::to_linear_rgb() const
+	color::linear_rgb_t color::oklab_t::to_linear_rgb() const
 	{
 		auto copy = static_cast<vec3>(*this);
 		/* 1. OKLab -> non-linear LMS′ */
@@ -162,17 +162,17 @@ namespace blt
 		return copy;
 	}
 
-	color::color_srgb_t color::color_oklab_t::to_srgb() const
+	color::srgb_t color::oklab_t::to_srgb() const
 	{
 		return to_linear_rgb().to_srgb();
 	}
 
-	color::color_oklab_t color::color_oklab_t::to_oklab() const
+	color::oklab_t color::oklab_t::to_oklab() const
 	{
 		return *this;
 	}
 
-	color::color_oklch_t color::color_oklab_t::to_oklch() const
+	color::color_oklch_t color::oklab_t::to_oklch() const
 	{
 		const auto self = static_cast<vec3>(*this);
 		vec3 out;
@@ -182,22 +182,22 @@ namespace blt
 		return out;
 	}
 
-	color::color_hsv_t color::color_oklab_t::to_hsv() const
+	color::color_hsv_t color::oklab_t::to_hsv() const
 	{
 		return to_linear_rgb().to_hsv();
 	}
 
-	color::color_linear_rgb_t color::color_oklch_t::to_linear_rgb() const
+	color::linear_rgb_t color::color_oklch_t::to_linear_rgb() const
 	{
 		return to_oklab().to_linear_rgb();
 	}
 
-	color::color_srgb_t color::color_oklch_t::to_srgb() const
+	color::srgb_t color::color_oklch_t::to_srgb() const
 	{
 		return to_oklab().to_linear_rgb().to_srgb();;
 	}
 
-	color::color_oklab_t color::color_oklch_t::to_oklab() const
+	color::oklab_t color::color_oklch_t::to_oklab() const
 	{
 		const auto self = static_cast<vec3>(*this);
 		vec3 out;
@@ -217,7 +217,7 @@ namespace blt
 		return to_oklab().to_linear_rgb().to_hsv();
 	}
 
-	color::color_linear_rgb_t color::color_hsv_t::to_linear_rgb() const
+	color::linear_rgb_t color::color_hsv_t::to_linear_rgb() const
 	{
 		using T = float;
 		const auto self = static_cast<vec3>(*this);
@@ -256,12 +256,12 @@ namespace blt
 		}
 	}
 
-	color::color_srgb_t color::color_hsv_t::to_srgb() const
+	color::srgb_t color::color_hsv_t::to_srgb() const
 	{
 		return to_linear_rgb().to_srgb();
 	}
 
-	color::color_oklab_t color::color_hsv_t::to_oklab() const
+	color::oklab_t color::color_hsv_t::to_oklab() const
 	{
 		return to_linear_rgb().to_oklab();
 	}
