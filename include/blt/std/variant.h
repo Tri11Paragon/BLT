@@ -113,13 +113,13 @@ namespace blt
         using TLambdas::operator()...;
     };
 
-#if __cplusplus < 202002L
+// #if __cplusplus < 202002L
 
     // explicit deduction guide (not needed as of C++20)
     template <typename... TLambdas>
     lambda_visitor(TLambdas...) -> lambda_visitor<TLambdas...>;
 
-#endif
+// #endif
 
     template <typename... Types>
     class variant_t
