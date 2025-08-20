@@ -25,15 +25,13 @@
 
 namespace blt
 {
-	class color_t
+	namespace color
 	{
-	public:
 		struct color_linear_rgb_t;
 		struct color_srgb_t;
 		struct color_oklab_t;
 		struct color_oklch_t;
 		struct color_hsv_t;
-
 
 		struct color_linear_rgb_t : integer_type<vec3>
 		{
@@ -93,7 +91,16 @@ namespace blt
 			[[nodiscard]] color_oklch_t      to_oklch() const;
 			[[nodiscard]] color_hsv_t        to_hsv() const;
 		};
+	}
 
+	class color_t
+	{
+	public:
+		using color_linear_rgb_t = color::color_linear_rgb_t;
+		using color_srgb_t       = color::color_srgb_t;
+		using color_oklab_t      = color::color_oklab_t;
+		using color_oklch_t      = color::color_oklch_t;
+		using color_hsv_t        = color::color_hsv_t;
 
 		using color_variant_t = std::variant<color_linear_rgb_t, color_srgb_t, color_oklab_t, color_oklch_t,
 											 color_hsv_t>;
