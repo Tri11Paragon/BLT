@@ -47,89 +47,79 @@ namespace blt
 		struct oklch_t;
 		struct hsv_t;
 
-
-		struct linear_rgb_t : integer_type<vec3>
+		struct color_base : integer_type<vec3>
 		{
 			using integer_type::integer_type;
-
-			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
-			[[nodiscard]] srgb_t       to_srgb() const;
-			[[nodiscard]] oklab_t      to_oklab() const;
-			[[nodiscard]] oklch_t      to_oklch() const;
-			[[nodiscard]] hsv_t        to_hsv() const;
 
 			[[nodiscard]] vec3 to_vec3() const
 			{
 				return static_cast<vec3>(*this);
+			}
+
+			[[nodiscard]] std::array<float, 3> unpack() const
+			{
+				const auto v = to_vec3();
+				return {v.x(), v.y(), v.z()};
 			}
 		};
 
-
-		struct srgb_t : integer_type<vec3>
+		struct linear_rgb_t : color_base
 		{
-			using integer_type::integer_type;
+			using color_base::color_base;
 
 			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
 			[[nodiscard]] srgb_t       to_srgb() const;
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
-
-			[[nodiscard]] vec3 to_vec3() const
-			{
-				return static_cast<vec3>(*this);
-			}
 		};
 
 
-		struct oklab_t : integer_type<vec3>
+		struct srgb_t : color_base
 		{
-			using integer_type::integer_type;
+			using color_base::color_base;
 
 			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
 			[[nodiscard]] srgb_t       to_srgb() const;
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
-
-			[[nodiscard]] vec3 to_vec3() const
-			{
-				return static_cast<vec3>(*this);
-			}
 		};
 
 
-		struct oklch_t : integer_type<vec3>
+		struct oklab_t : color_base
 		{
-			using integer_type::integer_type;
+			using color_base::color_base;
 
 			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
 			[[nodiscard]] srgb_t       to_srgb() const;
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
-
-			[[nodiscard]] vec3 to_vec3() const
-			{
-				return static_cast<vec3>(*this);
-			}
 		};
 
 
-		struct hsv_t : integer_type<vec3>
+		struct oklch_t : color_base
 		{
-			using integer_type::integer_type;
+			using color_base::color_base;
 
 			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
 			[[nodiscard]] srgb_t       to_srgb() const;
 			[[nodiscard]] oklab_t      to_oklab() const;
 			[[nodiscard]] oklch_t      to_oklch() const;
 			[[nodiscard]] hsv_t        to_hsv() const;
+		};
 
-			[[nodiscard]] vec3 to_vec3() const
-			{
-				return static_cast<vec3>(*this);
-			}
+
+		struct hsv_t : color_base
+		{
+			using color_base::color_base;
+
+			[[nodiscard]] linear_rgb_t to_linear_rgb() const;
+			[[nodiscard]] srgb_t       to_srgb() const;
+			[[nodiscard]] oklab_t      to_oklab() const;
+			[[nodiscard]] oklch_t      to_oklch() const;
+			[[nodiscard]] hsv_t        to_hsv() const;
 		};
 
 
