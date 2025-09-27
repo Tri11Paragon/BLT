@@ -31,7 +31,7 @@ namespace blt
 	template <typename T, blt::u32 size>
 	struct vec
 	{
-		static_assert(std::is_arithmetic_v<T> && "blt::vec must be created using an arithmetic type!");
+		// static_assert(std::is_arithmetic_v<T> && "blt::vec must be created using an arithmetic type!");
 
 	private:
 		std::array<T, size> elements;

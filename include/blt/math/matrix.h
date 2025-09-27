@@ -81,7 +81,7 @@ namespace blt
             }
         }
 
-        constexpr generalized_matrix(std::initializer_list<blt::vec<float, rows>> list)
+        constexpr generalized_matrix(std::initializer_list<blt::vec<T, rows>> list)
         {
             blt::size_t index = 0;
             for (const auto& v : list)
