@@ -22,15 +22,15 @@
 
 namespace blt
 {
-    template <typename T, blt::u32 rows, blt::u32 columns>
+    template <typename T, u32 Rows, u32 Columns>
     class generalized_matrix
     {
     public:
-        static constexpr auto data_rows = rows;
-        static constexpr auto data_columns = columns;
+        static constexpr auto rows = Rows;
+        static constexpr auto columns = Columns;
 
     private:
-        using matrix_t = generalized_matrix<T, rows, columns>;
+        using matrix_t = generalized_matrix<T, Rows, Columns>;
 
         enum class init_type
         {
@@ -76,12 +76,12 @@ namespace blt
             blt::size_t index = 0;
             for (const auto& v : list)
             {
-                data[(index / rows)][(index % rows)] = v;
+                data[(index / Rows)][(index % Rows)] = v;
                 index++;
             }
         }
 
-        constexpr generalized_matrix(std::initializer_list<blt::vec<T, rows>> list)
+        constexpr generalized_matrix(std::initializer_list<blt::vec<T, Rows>> list)
         {
             blt::size_t index = 0;
             for (const auto& v : list)
@@ -91,23 +91,23 @@ namespace blt
             }
         }
 
-        constexpr explicit generalized_matrix(const std::array<T, rows * columns>& dat)
+        constexpr explicit generalized_matrix(const std::array<T, Rows * Columns>& dat)
         {
-            for (u32 i = 0; i < columns; i++)
-                for (u32 j = 0; j < rows; j++)
-                    data[i][j] = dat[j + i * columns];
+            for (u32 i = 0; i < Columns; i++)
+                for (u32 j = 0; j < Rows; j++)
+                    data[i][j] = dat[j + i * Columns];
         }
 
-        constexpr explicit generalized_matrix(const T dat[rows * columns])
+        constexpr explicit generalized_matrix(const T dat[Rows * Columns])
         {
-            for (u32 i = 0; i < columns; i++)
-                for (u32 j = 0; j < rows; j++)
-                    data[i][j] = dat[j + i * columns];
+            for (u32 i = 0; i < Columns; i++)
+                for (u32 j = 0; j < Rows; j++)
+                    data[i][j] = dat[j + i * Columns];
         }
 
-        constexpr explicit generalized_matrix(const blt::vec<T, rows> dat[columns])
+        constexpr explicit generalized_matrix(const blt::vec<T, Rows> dat[Columns])
         {
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
                 data[i] = dat[i];
         }
 
@@ -118,24 +118,24 @@ namespace blt
 
         constexpr static matrix_t make_identity()
         {
-            static_assert(rows == columns && "Identity matrix must be square!");
+            static_assert(Rows == Columns && "Identity matrix must be square!");
             return matrix_t{init_type::IDENTITY};
         }
 
         constexpr auto& set_identity()
         {
-            for (blt::u32 i = 0; i < rows; i++)
+            for (blt::u32 i = 0; i < Rows; i++)
                 data[i][i] = 1;
             return *this;
         }
 
-        [[nodiscard]] constexpr generalized_matrix<T, columns, rows> transpose() const
+        [[nodiscard]] constexpr generalized_matrix<T, Columns, Rows> transpose() const
         {
-            generalized_matrix<T, columns, rows> mat;
+            generalized_matrix<T, Columns, Rows> mat;
 
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
             {
-                for (blt::u32 j = 0; j < rows; j++)
+                for (blt::u32 j = 0; j < Rows; j++)
                     mat[j][i] = data[i][j];
             }
 
@@ -145,9 +145,9 @@ namespace blt
         [[nodiscard]] constexpr T magnitude() const
         {
             T ret{};
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
             {
-                for (blt::u32 j = 0; j < rows; j++)
+                for (blt::u32 j = 0; j < Rows; j++)
                     ret += (data[i][j] * data[i][j]);
             }
             return std::sqrt(ret);
@@ -178,13 +178,21 @@ namespace blt
             return copy;
         }
 
+        constexpr float& operator[](const u32 index) {
+            return data[index % Columns][index / Rows];
+        }
+
+        constexpr float operator[](const u32 index) const {
+            return data[index % Columns][index / Columns];
+        }
+
 #if __cplusplus >= BLT_CPP23
-        constexpr float& operator[](u32 row, u32 column)
+        constexpr float& operator[](const u32 row, const u32 column)
         {
             return data[column][row];
         }
 
-        constexpr float operator[](u32 row, u32 column) const
+        constexpr float operator[](const u32 row, const u32 column) const
         {
             return data[column][row];
         }
@@ -204,38 +212,38 @@ namespace blt
          * Takes a value stored across a row, taking one from each column in the specified row
          * @param row the row to extract from. defaults to the first row
          */
-        [[nodiscard]] constexpr inline vec<T, columns> vec_from_column_row(blt::u32 row = 0) const
+        [[nodiscard]] constexpr inline vec<T, Columns> vec_from_column_row(blt::u32 row = 0) const
         {
-            vec<T, columns> ret;
-            for (blt::u32 j = 0; j < columns; j++)
+            vec<T, Columns> ret;
+            for (blt::u32 j = 0; j < Columns; j++)
                 ret[j] = data[j][row];
             return ret;
         }
 
         constexpr inline matrix_t& operator+=(const matrix_t& other)
         {
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
                 data[i] += other[i];
             return *this;
         }
 
         constexpr inline matrix_t& operator-=(const matrix_t& other)
         {
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
                 data[i] -= other[i];
             return *this;
         }
 
         constexpr inline matrix_t& operator*=(const matrix_t& other)
         {
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
                 data[i] *= other[i];
             return *this;
         }
 
         constexpr inline matrix_t& operator/=(const matrix_t& other)
         {
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
                 data[i] /= other[i];
             return *this;
         }
@@ -244,7 +252,7 @@ namespace blt
         constexpr inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
         {
             matrix_t ret = left;
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
                 ret[i] += right.data[i];
             return ret;
         }
@@ -253,23 +261,23 @@ namespace blt
         constexpr inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
         {
             matrix_t ret = left;
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
                 ret[i] -= right.data[i];
             return ret;
         }
 
         // multiples the left with the right
-        template <blt::u32 p, typename Ret = generalized_matrix<T, rows, p>, std::enable_if_t<
-                      !(rows == 1 && p == 1), bool> = true>
-        constexpr inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, columns, p>& right)
+        template <blt::u32 p, typename Ret = generalized_matrix<T, Rows, p>, std::enable_if_t<
+                      !(Rows == 1 && p == 1), bool> = true>
+        constexpr inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
         {
             Ret mat = Ret::make_empty();
 
-            for (u32 i = 0; i < rows; i++)
+            for (u32 i = 0; i < Rows; i++)
             {
                 for (u32 j = 0; j < p; j++)
                 {
-                    for (u32 k = 0; k < columns; k++)
+                    for (u32 k = 0; k < Columns; k++)
                         mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
                 }
             }
@@ -277,16 +285,16 @@ namespace blt
             return mat;
         }
 
-        template <blt::u32 p, std::enable_if_t<rows == 1 && p == 1, bool> = true>
-        constexpr inline friend T operator*(const matrix_t& left, const generalized_matrix<T, columns, p>& right)
+        template <blt::u32 p, std::enable_if_t<Rows == 1 && p == 1, bool> = true>
+        constexpr inline friend T operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
         {
             T ret{};
 
-            for (u32 i = 0; i < rows; i++)
+            for (u32 i = 0; i < Rows; i++)
             {
                 for (u32 j = 0; j < p; j++)
                 {
-                    for (u32 k = 0; k < columns; k++)
+                    for (u32 k = 0; k < Columns; k++)
                         ret += left.m(i, k) * right.m(k, j);
                 }
             }
@@ -294,13 +302,13 @@ namespace blt
             return ret;
         }
 
-        constexpr inline friend vec<T, rows> operator*(const matrix_t& left, const vec<T, columns>& right)
+        constexpr inline friend vec<T, Rows> operator*(const matrix_t& left, const vec<T, Columns>& right)
         {
-            vec<T, rows> ret;
+            vec<T, Rows> ret;
 
-            for (u32 r = 0; r < rows; r++)
+            for (u32 r = 0; r < Rows; r++)
             {
-                for (u32 c = 0; c < columns; c++)
+                for (u32 c = 0; c < Columns; c++)
                     ret[r] = ret[r] + left.m(r, c) * right[c];
             }
 
@@ -312,7 +320,7 @@ namespace blt
         {
             matrix_t mat = make_empty();
 
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
             {
                 mat.data[i] = c * v.data[i];
             }
@@ -325,7 +333,7 @@ namespace blt
         {
             matrix_t mat = make_empty();
 
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
             {
                 mat.data[i] = v.data[i] * c;
             }
@@ -338,7 +346,7 @@ namespace blt
         {
             matrix_t mat = make_empty();
 
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
             {
                 mat.data[i] = v.data[i] / c;
             }
@@ -351,9 +359,9 @@ namespace blt
         {
             matrix_t mat = make_empty();
 
-            for (u32 i = 0; i < columns; i++)
+            for (u32 i = 0; i < Columns; i++)
             {
-                for (u32 j = 0; j < rows; j++)
+                for (u32 j = 0; j < Rows; j++)
                     mat.data[i][j] = c / v.data[i][j];
             }
 
@@ -362,7 +370,7 @@ namespace blt
 
         constexpr inline friend bool operator==(const matrix_t& left, const matrix_t& right)
         {
-            for (blt::u32 i = 0; i < columns; i++)
+            for (blt::u32 i = 0; i < Columns; i++)
             {
                 if (left.data[i] != right.data[i])
                     return false;
@@ -375,18 +383,33 @@ namespace blt
             return !(left == right);
         }
 
-        auto begin() const
+        [[nodiscard]] constexpr u32 size() const
+        {
+            return Rows * Columns;
+        }
+
+        [[nodiscard]] constexpr u32 row() const
+        {
+            return Rows;
+        }
+
+        [[nodiscard]] constexpr u32 col() const
+        {
+            return Columns;
+        }
+
+        constexpr auto begin() const
         {
             return data.begin();
         }
 
-        auto end() const
+        constexpr auto end() const
         {
             return data.end();
         }
 
     private:
-        blt::vec<T, rows> data[columns];
+        blt::vec<T, Rows> data[Columns];
     };
 
     class mat4x4
