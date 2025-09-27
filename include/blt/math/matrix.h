@@ -13,6 +13,7 @@
 #include <initializer_list>
 #include "blt/iterator/iterator.h"
 #include <blt/math/vectors.h>
+#include <blt/compatibility.h>
 
 #ifndef M_PI
 // MSVC does not have M_PI
@@ -175,16 +176,16 @@ namespace blt
                     v = v.bipolar();
                 return copy;
             }
-            
-            constexpr inline const blt::vec<T, rows>& operator[](u32 column) const
-            {
-                return data[column];
+
+#if __cplusplus >= BLT_CPP23
+            constexpr vec<T, rows>& operator[](u32 row, u32 column) {
+                return data[column][row];
             }
-            
-            constexpr inline blt::vec<T, rows>& operator[](u32 column)
-            {
-                return data[column];
+
+            constexpr const vec<T, rows>& operator[](u32 row, u32 column) const {
+                return data[column][row];
             }
+#endif
             
             [[nodiscard]] constexpr inline T m(u32 row, u32 column) const
             {
