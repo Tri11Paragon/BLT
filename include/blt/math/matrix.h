@@ -22,6 +22,69 @@
 
 namespace blt
 {
+    namespace detail
+    {
+        template <typename T>
+        struct dynamic_matrix_t
+        {
+            T* data;
+            u32 rows;
+            u32 columns;
+
+            dynamic_matrix_t(const u32 rows, const u32 columns) : rows(rows), columns(columns)
+            {
+                data = new T[rows * columns];
+            }
+
+            dynamic_matrix_t(const dynamic_matrix_t& copy)
+            {
+                rows = copy.rows;
+                columns = copy.columns;
+                data = new T[rows * columns];
+                for (u32 i = 0; i < rows * columns; i++)
+                    data[i] = copy.data[i];
+            }
+
+            dynamic_matrix_t(dynamic_matrix_t&& move) noexcept
+            {
+                rows = move.rows;
+                columns = move.columns;
+                data = move.data;
+                move.data = nullptr;
+            }
+
+            dynamic_matrix_t& operator=(const dynamic_matrix_t& copy)
+            {
+                if (&copy == this)
+                    return *this;
+                rows = copy.rows;
+                columns = copy.columns;
+                delete[] data;
+                data = new T[rows * columns];
+                for (u32 i = 0; i < rows * columns; i++)
+                    data[i] = copy.data[i];
+                return *this;
+            }
+
+            dynamic_matrix_t& operator=(dynamic_matrix_t&& move) noexcept
+            {
+                if (&move == this)
+                    return *this;
+                rows = move.rows;
+                columns = move.columns;
+                delete[] data;
+                data = move.data;
+                move.data = nullptr;
+                return *this;
+            }
+
+            ~dynamic_matrix_t()
+            {
+                delete[] data;
+            }
+        };
+    }
+
     template <typename T, u32 Rows, u32 Columns>
     class generalized_matrix
     {
@@ -30,7 +93,7 @@ namespace blt
         static constexpr auto columns = Columns;
 
     private:
-        using matrix_t = generalized_matrix<T, Rows, Columns>;
+        using matrix_t = generalized_matrix;
 
         enum class init_type
         {
@@ -178,11 +241,13 @@ namespace blt
             return copy;
         }
 
-        constexpr float& operator[](const u32 index) {
+        constexpr float& operator[](const u32 index)
+        {
             return data[index % Columns][index / Rows];
         }
 
-        constexpr float operator[](const u32 index) const {
+        constexpr float operator[](const u32 index) const
+        {
             return data[index % Columns][index / Columns];
         }
 
