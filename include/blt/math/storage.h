@@ -85,7 +85,7 @@ namespace blt::detail
 
 		dynamic_matrix_t empty_from() const { return dynamic_matrix_t{rows(), columns()}; }
 
-		constexpr ~dynamic_matrix_t() { delete[] data_; }
+		BLT_CPP20_CONSTEXPR ~dynamic_matrix_t() { delete[] data_; }
 
 	private:
 		T*  data_;
@@ -170,7 +170,7 @@ namespace blt::detail
 
 		dynamic_vector_t empty_from() const { return dynamic_vector_t{size()}; }
 
-		constexpr ~dynamic_vector_t()
+		BLT_CPP20_CONSTEXPR ~dynamic_vector_t()
 		{
 			delete[] data_;
 		}
