@@ -489,12 +489,12 @@ namespace blt
             return copy;
         }
 
-        constexpr float& operator[](const u32 index)
+        constexpr T& operator[](const u32 index)
         {
             return data[index % Columns][index / Rows];
         }
 
-        constexpr float operator[](const u32 index) const
+        constexpr T operator[](const u32 index) const
         {
             return data[index % Columns][index / Columns];
         }
