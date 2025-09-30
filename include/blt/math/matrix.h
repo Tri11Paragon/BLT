@@ -14,6 +14,7 @@
 #include "blt/iterator/iterator.h"
 #include <blt/math/vectors.h>
 #include <blt/compatibility.h>
+#include <blt/math/storage.h>
 
 #ifndef M_PI
 // MSVC does not have M_PI
@@ -24,64 +25,311 @@ namespace blt
 {
     namespace detail
     {
-        template <typename T>
-        struct dynamic_matrix_t
+        template<typename T, typename StorageType>
+        struct matrix_impl_t
         {
-            T* data;
-            u32 rows;
-            u32 columns;
 
-            dynamic_matrix_t(const u32 rows, const u32 columns) : rows(rows), columns(columns)
+// constexpr auto& set_identity()
+//         {
+//             for (blt::u32 i = 0; i < Rows; i++)
+//                 data[i][i] = 1;
+//             return *this;
+//         }
+
+//         [[nodiscard]] constexpr generalized_matrix<T, Columns, Rows> transpose() const
+//         {
+//             generalized_matrix<T, Columns, Rows> mat;
+//
+//             for (blt::u32 i = 0; i < Columns; i++)
+//             {
+//                 for (blt::u32 j = 0; j < Rows; j++)
+//                     mat[j][i] = data[i][j];
+//             }
+//
+//             return mat;
+//         }
+//
+//         [[nodiscard]] constexpr T magnitude() const
+//         {
+//             T ret{};
+//             for (blt::u32 i = 0; i < Columns; i++)
+//             {
+//                 for (blt::u32 j = 0; j < Rows; j++)
+//                     ret += (data[i][j] * data[i][j]);
+//             }
+//             return std::sqrt(ret);
+//         }
+//
+//         [[nodiscard]] constexpr matrix_t normalize() const
+//         {
+//             auto mag = magnitude();
+//             matrix_t mat = *this;
+//             if (mag == 0)
+//                 return mat;
+//             return mat / mag;
+//         }
+//
+//         [[nodiscard]] constexpr matrix_t abs() const
+//         {
+//             matrix_t copy = *this;
+//             for (auto& v : copy.data)
+//                 v = v.abs();
+//             return copy;
+//         }
+//
+//         [[nodiscard]] constexpr matrix_t bipolar() const
+//         {
+//             matrix_t copy = *this;
+//             for (auto& v : copy.data)
+//                 v = v.bipolar();
+//             return copy;
+//         }
+//
+//         constexpr float& operator[](const u32 index)
+//         {
+//             return data[index % Columns][index / Rows];
+//         }
+//
+//         constexpr float operator[](const u32 index) const
+//         {
+//             return data[index % Columns][index / Columns];
+//         }
+//
+// #if __cplusplus >= BLT_CPP23
+//         constexpr float& operator[](const u32 row, const u32 column)
+//         {
+//             return data[column][row];
+//         }
+//
+//         constexpr float operator[](const u32 row, const u32 column) const
+//         {
+//             return data[column][row];
+//         }
+// #endif
+//
+//         [[nodiscard]] constexpr inline T m(u32 row, u32 column) const
+//         {
+//             return data[column][row];
+//         };
+//
+//         constexpr inline T m(u32 row, u32 column, T value)
+//         {
+//             return data[column][row] = value;
+//         };
+//
+//         /**
+//          * Takes a value stored across a row, taking one from each column in the specified row
+//          * @param row the row to extract from. defaults to the first row
+//          */
+//         [[nodiscard]] constexpr inline vec<T, Columns> vec_from_column_row(blt::u32 row = 0) const
+//         {
+//             vec<T, Columns> ret;
+//             for (blt::u32 j = 0; j < Columns; j++)
+//                 ret[j] = data[j][row];
+//             return ret;
+//         }
+//
+//         constexpr inline matrix_t& operator+=(const matrix_t& other)
+//         {
+//             for (blt::u32 i = 0; i < Columns; i++)
+//                 data[i] += other[i];
+//             return *this;
+//         }
+//
+//         constexpr inline matrix_t& operator-=(const matrix_t& other)
+//         {
+//             for (blt::u32 i = 0; i < Columns; i++)
+//                 data[i] -= other[i];
+//             return *this;
+//         }
+//
+//         constexpr inline matrix_t& operator*=(const matrix_t& other)
+//         {
+//             for (blt::u32 i = 0; i < Columns; i++)
+//                 data[i] *= other[i];
+//             return *this;
+//         }
+//
+//         constexpr inline matrix_t& operator/=(const matrix_t& other)
+//         {
+//             for (blt::u32 i = 0; i < Columns; i++)
+//                 data[i] /= other[i];
+//             return *this;
+//         }
+//
+//         // adds the two mat4x4 left and right
+//         constexpr inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
+//         {
+//             matrix_t ret = left;
+//             for (u32 i = 0; i < Columns; i++)
+//                 ret[i] += right.data[i];
+//             return ret;
+//         }
+//
+//         // subtracts the right mat4x4 from the left.
+//         constexpr inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
+//         {
+//             matrix_t ret = left;
+//             for (u32 i = 0; i < Columns; i++)
+//                 ret[i] -= right.data[i];
+//             return ret;
+//         }
+//
+//         // multiples the left with the right
+//         template <blt::u32 p, typename Ret = generalized_matrix<T, Rows, p>, std::enable_if_t<
+//                       !(Rows == 1 && p == 1), bool> = true>
+//         constexpr inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
+//         {
+//             Ret mat = Ret::make_empty();
+//
+//             for (u32 i = 0; i < Rows; i++)
+//             {
+//                 for (u32 j = 0; j < p; j++)
+//                 {
+//                     for (u32 k = 0; k < Columns; k++)
+//                         mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
+//                 }
+//             }
+//
+//             return mat;
+//         }
+//
+//         template <blt::u32 p, std::enable_if_t<Rows == 1 && p == 1, bool> = true>
+//         constexpr inline friend T operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
+//         {
+//             T ret{};
+//
+//             for (u32 i = 0; i < Rows; i++)
+//             {
+//                 for (u32 j = 0; j < p; j++)
+//                 {
+//                     for (u32 k = 0; k < Columns; k++)
+//                         ret += left.m(i, k) * right.m(k, j);
+//                 }
+//             }
+//
+//             return ret;
+//         }
+//
+//         constexpr inline friend vec<T, Rows> operator*(const matrix_t& left, const vec<T, Columns>& right)
+//         {
+//             vec<T, Rows> ret;
+//
+//             for (u32 r = 0; r < Rows; r++)
+//             {
+//                 for (u32 c = 0; c < Columns; c++)
+//                     ret[r] = ret[r] + left.m(r, c) * right[c];
+//             }
+//
+//             return ret;
+//         }
+
+        // multiplies the const c with each element in the mat v
+        constexpr friend matrix_impl_t operator*(const T c, const matrix_impl_t& v)
+        {
+            matrix_impl_t mat = v.empty_from();
+
+            for (u32 i = 0; i < v.size(); i++)
             {
-                data = new T[rows * columns];
+                mat.data()[i] = c * v.data()[i];
             }
 
-            dynamic_matrix_t(const dynamic_matrix_t& copy)
+            return mat;
+        }
+
+        // same as above but for right sided constants
+        constexpr friend matrix_impl_t operator*(const matrix_impl_t& v, const T c)
+        {
+            matrix_impl_t mat = v.empty_from();
+
+            for (u32 i = 0; i < v.size(); i++)
             {
-                rows = copy.rows;
-                columns = copy.columns;
-                data = new T[rows * columns];
-                for (u32 i = 0; i < rows * columns; i++)
-                    data[i] = copy.data[i];
+                mat.data()[i] = v.data()[i] * c;
             }
 
-            dynamic_matrix_t(dynamic_matrix_t&& move) noexcept
+            return mat;
+        }
+
+        // divides the mat by the constant c
+        constexpr friend matrix_impl_t operator/(const matrix_impl_t& v, const T c)
+        {
+            matrix_impl_t mat = v.empty_from();
+
+            for (u32 i = 0; i < v.size(); i++)
             {
-                rows = move.rows;
-                columns = move.columns;
-                data = move.data;
-                move.data = nullptr;
+                mat.data()[i] = v.data()[i] / c;
             }
 
-            dynamic_matrix_t& operator=(const dynamic_matrix_t& copy)
+            return mat;
+        }
+
+        // returns a new matrix where each element is the constant c divided by the value at in matrix v
+        constexpr friend matrix_impl_t operator/(const T c, const matrix_impl_t& v)
+        {
+            matrix_impl_t mat = v.empty_from();
+
+            for (u32 i = 0; i < v.columns(); i++)
             {
-                if (&copy == this)
-                    return *this;
-                rows = copy.rows;
-                columns = copy.columns;
-                delete[] data;
-                data = new T[rows * columns];
-                for (u32 i = 0; i < rows * columns; i++)
-                    data[i] = copy.data[i];
-                return *this;
+                for (u32 j = 0; j < v.rows(); j++)
+                    mat.m(j, i) = c / v.m(j, i);
             }
 
-            dynamic_matrix_t& operator=(dynamic_matrix_t&& move) noexcept
+            return mat;
+        }
+
+        constexpr friend bool operator==(const matrix_impl_t& left, const matrix_impl_t& right)
+        {
+            if (left.columns() != right.columns() || left.rows() != right.rows())
+                return false;
+            for (u32 i = 0; i < left.size(); i++)
             {
-                if (&move == this)
-                    return *this;
-                rows = move.rows;
-                columns = move.columns;
-                delete[] data;
-                data = move.data;
-                move.data = nullptr;
-                return *this;
+                if (left.data()[i] != right.data()[i])
+                    return false;
+            }
+            return true;
+        }
+
+        constexpr friend bool operator!=(const matrix_impl_t& left, const matrix_impl_t& right)
+        {
+            return !(left == right);
+        }
+
+            constexpr auto& m(const u32 r, const u32 c)
+            {
+                return data()[c * columns() + r];
             }
 
-            ~dynamic_matrix_t()
+            constexpr auto* data()
             {
-                delete[] data;
+                return storage.data();
             }
+
+            constexpr auto* data() const
+            {
+                return storage.data();
+            }
+
+            [[nodiscard]] constexpr u32 rows() const
+            {
+                return storage.rows();
+            }
+
+            [[nodiscard]] constexpr u32 columns() const
+            {
+                return storage.columns();
+            }
+
+            [[nodiscard]] constexpr u32 size() const
+            {
+                return rows() * columns();
+            }
+
+            [[nodiscard]] constexpr StorageType empty_from() const
+            {
+                return storage.empty_from();
+            }
+        private:
+            StorageType storage;
         };
     }
 
