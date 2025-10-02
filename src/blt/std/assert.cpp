@@ -45,7 +45,11 @@ private:
 	char* error{nullptr};
 };
 
-#ifdef BLT_HAS_BACKTRACE
+#if defined(WIN32)
+#undef BLT_HAS_BACKTRACE
+#endif
+
+#if defined(BLT_HAS_BACKTRACE)
 	#include BLT_BACKTRACE_HEADER
 #endif
 

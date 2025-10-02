@@ -94,7 +94,7 @@ namespace blt
             constexpr static inline fp64 from_f64(f64 d)
             {
                 fp64 fp;
-                fp.v = static_cast<i64>(d * (1ul << 32ul));
+                fp.v = static_cast<i64>(d * (1ull << 32ull));
                 return fp;
             }
             
@@ -175,12 +175,12 @@ namespace blt
             
             [[nodiscard]] constexpr inline f64 as_f64() const
             {
-                return static_cast<f64>(v) / static_cast<f64>(1ul << 32ul);
+                return static_cast<f64>(v) / static_cast<f64>(1ull << 32ull);
             }
             
             [[nodiscard]] constexpr inline f32 as_f32() const
             {
-                return static_cast<f32>(v) / static_cast<f32>(1ul << 32ul);
+                return static_cast<f32>(v) / static_cast<f32>(1ull << 32ull);
             }
             
             constexpr inline explicit operator u64() const
