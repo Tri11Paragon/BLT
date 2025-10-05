@@ -14,7 +14,6 @@
 #include "blt/iterator/iterator.h"
 #include <blt/math/vectors.h>
 #include <blt/compatibility.h>
-#include <blt/math/storage.h>
 
 #ifndef M_PI
 // MSVC does not have M_PI
