@@ -79,7 +79,7 @@ namespace blt
         };
 
         template <typename S1, typename S2>
-        using prefer_dynamic_t = prefer_dynamic<S1, S2>::type;
+        using prefer_dynamic_t = typename prefer_dynamic<S1, S2>::type;
 
         template <typename, typename, typename = void>
         struct allowed_t : std::true_type
@@ -91,10 +91,12 @@ namespace blt
         {
         };
 
+        template<class T>
+        struct type_identity { using type = T; };
 
         // https://stackoverflow.com/questions/55941964/how-to-filter-duplicate-types-from-tuple-c
         template <typename T, typename...>
-        struct unique : std::type_identity<T>
+        struct unique : type_identity<T>
         {
         };
 
