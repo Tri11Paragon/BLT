@@ -285,9 +285,9 @@ namespace blt
 
 		[[nodiscard]] constexpr inline const auto* data() const { return elements.data(); }
 
-		[[nodiscard]] constexpr auto begin() const { return elements.begin(); }
+		[[nodiscard]] constexpr auto begin() { return elements.begin(); }
 
-		[[nodiscard]] constexpr auto end() const { return elements.end(); }
+		[[nodiscard]] constexpr auto end() { return elements.end(); }
 
 		[[nodiscard]] constexpr auto rbegin() const { return elements.rbegin(); }
 
