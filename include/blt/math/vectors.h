@@ -218,10 +218,31 @@ namespace blt
 			return *this;
 		}
 
+		constexpr inline vec<T, size>& operator-=(const vec<T, size>& other)
+		{
+			for (blt::u32 i = 0; i < size; i++)
+				elements[i] -= other[i];
+			return *this;
+		}
+
+		constexpr inline vec<T, size>& operator/=(const vec<T, size>& other)
+		{
+			for (blt::u32 i = 0; i < size; i++)
+				elements[i] /= other[i];
+			return *this;
+		}
+
 		constexpr inline vec<T, size>& operator+=(T f)
 		{
 			for (blt::u32 i = 0; i < size; i++)
 				elements[i] += f;
+			return *this;
+		}
+
+		constexpr inline vec<T, size>& operator-=(T f)
+		{
+			for (blt::u32 i = 0; i < size; i++)
+				elements[i] -= f;
 			return *this;
 		}
 
@@ -232,17 +253,10 @@ namespace blt
 			return *this;
 		}
 
-		constexpr inline vec<T, size>& operator-=(const vec<T, size>& other)
+		constexpr inline vec<T, size>& operator/=(T f)
 		{
 			for (blt::u32 i = 0; i < size; i++)
-				elements[i] -= other[i];
-			return *this;
-		}
-
-		constexpr inline vec<T, size>& operator-=(T f)
-		{
-			for (blt::u32 i = 0; i < size; i++)
-				elements[i] -= f;
+				elements[i] /= f;
 			return *this;
 		}
 
