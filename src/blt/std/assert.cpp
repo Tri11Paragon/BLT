@@ -54,6 +54,7 @@ private:
 #endif
 
 #ifdef BLT_HAS_BETTER_BACKTRACE
+#undef BLT_HAS_BETTER_BACKTRACE
 #include <backtrace.h>
 #endif
 
