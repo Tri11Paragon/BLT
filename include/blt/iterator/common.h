@@ -85,7 +85,7 @@ namespace blt::iterator
         auto operator[](ptrdiff_t n) const
         {
             static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>,
-                          "Iterator must allow bidirectional access");
+                          "Iterator must allow random access");
             return *(*this + n);
         }
 
@@ -96,25 +96,21 @@ namespace blt::iterator
 
         friend bool operator<(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
-            return b - a > 0;
+            return std::distance(static_cast<const Derived&>(b), static_cast<const Derived&>(a)) > 0;
         }
 
         friend bool operator>(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return b < a;
         }
 
         friend bool operator>=(const base_wrapper& a, base_wrapper& b)
         {
-            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return !(a < b); // NOLINT
         }
 
         friend bool operator<=(const base_wrapper& a, const base_wrapper& b)
         {
-            static_assert(meta::is_random_access_iterator_category_v<typename Derived::iterator_category>, "Iterator must allow random access");
             return !(a > b); // NOLINT
         }
 
