@@ -14,7 +14,7 @@
 #include <blt/std/utility.h>
 
 // TODO
-#undef BLT_STACK_TRACE
+// #undef BLT_STACK_TRACE
 
 struct abort_exception final : std::exception
 {
@@ -50,13 +50,13 @@ private:
 #endif
 
 #if defined(BLT_HAS_BACKTRACE)
-	#include BLT_BACKTRACE_HEADER
+#include BLT_BACKTRACE_HEADER
 #endif
 
 #ifdef BLT_HAS_BETTER_BACKTRACE
-#undef BLT_HAS_BETTER_BACKTRACE
 #include <backtrace.h>
 #endif
+
 
 namespace blt
 {
