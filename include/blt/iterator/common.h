@@ -33,11 +33,12 @@ namespace blt::iterator
 {
     namespace detail
     {
-        template<typename T>
+        template <typename T>
         static auto forward_as_tuple(T&& t) -> decltype(auto)
         {
             using Decay = std::decay_t<T>;
-            static_assert(!(meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>), "Tuple or pair passed to forward_as_tuple! Must not be a tuple!");
+            static_assert(!(meta::is_tuple_v<Decay> || meta::is_pair_v<Decay>),
+                          "Tuple or pair passed to forward_as_tuple! Must not be a tuple!");
             if constexpr (std::is_lvalue_reference_v<T>)
             {
                 return std::forward_as_tuple(std::forward<T>(t));
@@ -128,7 +129,7 @@ namespace blt::iterator
     template <typename Iter, typename Derived, bool dereference = false>
     struct passthrough_wrapper : base_wrapper<Derived>
     {
-        explicit passthrough_wrapper(Iter iter): iter(std::move(iter))
+        explicit passthrough_wrapper(Iter iter) : iter(std::move(iter))
         {
         }
 
@@ -182,7 +183,7 @@ namespace blt::iterator
             return *this;
         }
 
-        deref_only_wrapper& operator-(blt::ptrdiff_t n)
+        deref_only_wrapper& operator-(ptrdiff_t n)
         {
             static_assert(meta::is_random_access_iterator_v<Iter>, "Iterator must allow random access");
             this->iter = this->iter - n;
@@ -190,32 +191,34 @@ namespace blt::iterator
         }
     };
 
-    template <typename Iter, typename Func>
-    class map_wrapper : public deref_only_wrapper<Iter, map_wrapper<Iter, Func>>
+    template <typename Iter, typename Func, typename... Args>
+    class map_wrapper : public deref_only_wrapper<Iter, map_wrapper<Iter, Func, Args...>>
     {
     public:
         using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-        using value_type = std::invoke_result_t<Func, meta::deref_return_t<Iter>>;
-        using difference_type = blt::ptrdiff_t;
+        using value_type = std::invoke_result_t<Func, meta::deref_return_t<Iter>, Args...>;
+        using difference_type = ptrdiff_t;
         using pointer = value_type;
         using reference = value_type;
 
-        map_wrapper(Iter iter, Func func):
-            deref_only_wrapper<Iter, map_wrapper<Iter, Func>>(std::move(iter)), func(std::move(func))
+        map_wrapper(Iter iter, Func func, Args&&... args) :
+            deref_only_wrapper<Iter, map_wrapper>(std::move(iter)), func(std::move(func)),
+            args(std::forward_as_tuple(std::forward<Args>(args)...))
         {
         }
 
         reference operator*() const
         {
-            return func(*this->iter);
+            return std::apply(func, std::tuple_cat(std::forward_as_tuple(*this->iter), args));
         }
 
     private:
         Func func;
+        std::tuple<Args...> args;
     };
 
-    template <typename Iter, typename Pred>
-    class filter_wrapper : public deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>
+    template <typename Iter, typename Pred, typename... Args>
+    class filter_wrapper : public deref_only_wrapper<Iter, filter_wrapper<Iter, Pred, Args...>>
     {
     public:
         using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
@@ -223,26 +226,29 @@ namespace blt::iterator
             std::is_reference_v<meta::deref_return_t<Iter>>,
             std::optional<std::reference_wrapper<std::remove_reference_t<meta::deref_return_t<Iter>>>>,
             std::optional<meta::deref_return_t<Iter>>>;
-        using difference_type = blt::ptrdiff_t;
+        using difference_type = ptrdiff_t;
         using pointer = value_type;
         using reference = value_type;
 
-        filter_wrapper(Iter iter, Pred func):
-            deref_only_wrapper<Iter, filter_wrapper<Iter, Pred>>(std::move(iter)), func(std::move(func))
+        filter_wrapper(Iter iter, Pred func, Args... args) :
+            deref_only_wrapper<Iter, filter_wrapper>(std::move(iter)), func(std::move(func)),
+            args(std::forward_as_tuple(std::forward<Args>(args)...))
         {
         }
 
         reference operator*() const
         {
-            if (!func(*this->iter))
+            decltype(auto) iter_val = *this->iter;
+            if (!std::apply(func, std::tuple_cat(std::forward_as_tuple(iter_val), args)))
             {
                 return {};
             }
-            return *this->iter;
+            return iter_val;
         }
 
     private:
         Pred func;
+        std::tuple<Args...> args;
     };
 
     template <typename Iter>
@@ -252,38 +258,43 @@ namespace blt::iterator
         using ref_return = meta::deref_return_t<Iter>;
 
         using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
-        using value_type = std::conditional_t<std::is_reference_v<ref_return>, std::remove_reference_t<ref_return>, ref_return>;
+        using value_type = std::conditional_t<std::is_reference_v<ref_return>, std::remove_reference_t<ref_return>,
+                                              ref_return>;
         using difference_type = ptrdiff_t;
         using pointer = const value_type*;
         using reference = const value_type&;
 
-        explicit const_wrapper(Iter iter): deref_only_wrapper<Iter, const_wrapper>(std::move(iter))
+        explicit const_wrapper(Iter iter) : deref_only_wrapper<Iter, const_wrapper>(std::move(iter))
         {
         }
 
-        template<typename T>
+        template <typename T>
         static auto make_const(T&& value) -> decltype(auto)
         {
             using Decay = std::decay_t<T>;
             if constexpr (std::is_lvalue_reference_v<T>)
             {
                 return const_cast<const Decay&>(value);
-            } else
+            }
+            else
             {
                 return static_cast<const Decay>(value);
             }
         }
 
-        auto operator*() const
+        auto operator*() const -> decltype(auto)
         {
             if constexpr (std::is_reference_v<ref_return>)
             {
                 return const_cast<const value_type&>(*this->iter);
-            } else if constexpr (meta::is_tuple_v<value_type> || meta::is_pair_v<value_type>)
+            }
+            else if constexpr (meta::is_tuple_v<value_type> || meta::is_pair_v<value_type>)
             {
                 return std::apply([](auto&&... args)
                 {
-                    return std::tuple<decltype(make_const(std::forward<decltype(args)>(args)))...>{make_const(std::forward<decltype(args)>(args))...};
+                    return std::tuple<decltype(make_const(std::forward<decltype(args)>(args)))...>{
+                        make_const(std::forward<decltype(args)>(args))...
+                    };
                 }, *this->iter);
             }
             else
@@ -311,7 +322,9 @@ namespace blt::iterator
                     // random access iterators can have math directly applied to them.
                     if constexpr (check)
                     {
-                        return Derived{begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)), end};
+                        return Derived{
+                            begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end)), end
+                        };
                     }
                     else
                     {
@@ -380,7 +393,9 @@ namespace blt::iterator
                     // random access iterators can have math directly applied to them.
                     if constexpr (check)
                     {
-                        return Derived{begin, begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end))};
+                        return Derived{
+                            begin, begin + std::min(static_cast<blt::ptrdiff_t>(n), std::distance(begin, end))
+                        };
                     }
                     else
                     {
@@ -410,12 +425,13 @@ namespace blt::iterator
         using iterator_category = typename std::iterator_traits<IterBase>::iterator_category;
         using iterator = IterBase;
 
-        iterator_container(IterBase begin, IterBase end): m_begin(std::move(begin)), m_end(std::move(end))
+        iterator_container(IterBase begin, IterBase end) : m_begin(std::move(begin)), m_end(std::move(end))
         {
         }
 
         template <typename Iter>
-        iterator_container(Iter&& begin, Iter&& end): m_begin(std::forward<Iter>(begin)), m_end(std::forward<Iter>(end))
+        iterator_container(Iter&& begin, Iter&& end) : m_begin(std::forward<Iter>(begin)),
+                                                       m_end(std::forward<Iter>(end))
         {
         }
 
@@ -457,7 +473,9 @@ namespace blt::iterator
 
         auto enumerate() const
         {
-            return enumerate_iterator_container{begin(), end(), static_cast<blt::size_t>(std::distance(begin(), end()))};
+            return enumerate_iterator_container{
+                begin(), end(), static_cast<blt::size_t>(std::distance(begin(), end()))
+            };
         }
 
         auto flatten() const
@@ -484,23 +502,31 @@ namespace blt::iterator
             };
         }
 
-        template <typename Func>
-        auto map(Func func) const
+        template <typename Func, typename... Args>
+        auto map(Func func, Args&&... args) const
         {
-            return iterator_container<blt::iterator::map_wrapper<IterBase, Func>>{
-                blt::iterator::map_wrapper<IterBase, Func>{m_begin, func},
-                blt::iterator::map_wrapper<IterBase, Func>{m_end, func}
+            return iterator_container<map_wrapper<IterBase, Func, Args...>>{
+                blt::iterator::map_wrapper<IterBase, Func, Args...>{m_begin, func, std::forward<Args>(args)...},
+                blt::iterator::map_wrapper<IterBase, Func, Args...>{m_end, func, std::forward<Args>(args)...}
             };
         }
 
-        template <typename Pred>
-        auto filter(Pred pred) const
+        template <typename Pred, typename... Args>
+        auto filter(Pred pred, Args&&... args) const
         {
-            return iterator_container<blt::iterator::filter_wrapper<IterBase, Pred>>{
-                blt::iterator::filter_wrapper<IterBase, Pred>{m_begin, pred},
-                blt::iterator::filter_wrapper<IterBase, Pred>{m_end, pred}
+            return iterator_container<filter_wrapper<IterBase, Pred, Args...>>{
+                blt::iterator::filter_wrapper<IterBase, Pred, Args...>{m_begin, pred, std::forward<Args>(args)...},
+                blt::iterator::filter_wrapper<IterBase, Pred, Args...>{m_end, pred, std::forward<Args>(args)...}
             };
         }
+
+        // template<typename Container>
+        // auto collect(Container container = std::vector<meta::deref_return_t<IterBase>>{}) -> decltype(auto)
+        // {
+        //     for (decltype(auto) val : *this)
+        //         val.emplace(container.end(), std::forward<decltype(val)>(val));
+        //     return container;
+        // }
 
         auto begin() const
         {
@@ -516,6 +542,28 @@ namespace blt::iterator
         IterBase m_begin;
         IterBase m_end;
     };
+
+    struct equals_t
+    {
+        template<typename T, typename U>
+        constexpr bool operator()(T&& t, U&& u) const
+        {
+            return t == u;
+        }
+    };
+
+    struct not_equals_t
+    {
+        template<typename T, typename U>
+        constexpr bool operator()(T&& t, U&& u) const
+        {
+            return t != u;
+        }
+    };
+
+    inline constexpr equals_t equals{};
+    inline constexpr not_equals_t not_equals{};
+
 }
 
 #endif //BLT_ITERATOR_ITER_COMMON

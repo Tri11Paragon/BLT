@@ -43,10 +43,10 @@ namespace blt
         template<typename... Iter>
         struct zip_wrapper;
         
-        template<typename Iter, typename Func>
+        template<typename Iter, typename Func, typename... Args>
         class map_wrapper;
         
-        template<typename Iter, typename Pred>
+        template<typename Iter, typename Pred, typename... Args>
         class filter_wrapper;
 
         template<typename Iter, bool Recursive>

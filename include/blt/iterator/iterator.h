@@ -31,31 +31,31 @@ namespace blt
 {
     
     template<typename T>
-    static inline auto iterate(T begin, T end)
+    static auto iterate(T begin, T end)
     {
         return iterator::iterator_container<T>{std::move(begin), std::move(end)};
     }
     
     template<typename T>
-    static inline auto iterate(T& container)
+    static auto iterate(T& container)
     {
         return iterator::iterator_container<decltype(container.begin())>{container.begin(), container.end()};
     }
     
     template<typename T>
-    static inline auto iterate(const T& container)
+    static auto iterate(const T& container)
     {
         return iterator::iterator_container<decltype(container.begin())>{container.begin(), container.end()};
     }
     
-    template<typename T, blt::size_t size>
-    static inline auto iterate(const T(& container)[size])
+    template<typename T, size_t size>
+    static auto iterate(const T(& container)[size])
     {
         return iterator::iterator_container<decltype(container.begin())>{&container[0], &container[size]};
     }
     
-    template<typename T, blt::size_t size>
-    static inline auto iterate(T(& container)[size])
+    template<typename T, size_t size>
+    static auto iterate(T(& container)[size])
     {
         return iterator::iterator_container<decltype(container.begin())>{&container[0], &container[size]};
     }
