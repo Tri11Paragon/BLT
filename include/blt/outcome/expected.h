@@ -116,6 +116,10 @@ namespace blt
     template<typename T, typename E, bool = std::is_copy_constructible_v<T>>
     class expected
     {
+    public:
+        using value_type = T;
+        using error_type = E;
+        using unexpected_type = unexpected<E>;
         protected:
             std::variant<T, E> v;
             

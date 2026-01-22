@@ -19,11 +19,14 @@
 #ifndef BLT_META_H
 #define BLT_META_H
 
+#include <optional>
 #include <blt/std/types.h>
 #include <utility>
 #include <type_traits>
 #include <ostream>
 #include <blt/meta/serialization.h>
+
+#include "blt/outcome/expected.h"
 
 namespace blt::meta
 {
@@ -103,6 +106,80 @@ namespace blt::meta
     // gets the return type for the reference operator
     template<typename T>
     using deref_return_t = typename deref_return<T>::type;
+
+    template<typename>
+    struct is_optional : std::false_type
+    {
+    };
+
+    template<typename T>
+    struct is_optional<std::optional<T>> : std::true_type
+    {
+        using T_type = T;
+    };
+
+    template<typename T>
+    inline constexpr bool is_optional_v = is_optional<T>::value;
+
+    template<typename>
+    struct is_expected : std::false_type
+    {
+    };
+
+    template<typename T, typename E>
+    struct is_expected<expected<T, E>> : std::true_type
+    {
+        using T_type = T;
+        using E_type = E;
+
+        template<typename T1 = T, typename E1= E>
+        using expected_type = expected<T1, E1>;
+    };
+
+#if __cplusplus >= BLT_CPP23
+    template<typename T, typename E>
+        struct is_expected<std::expected<T, E>> : std::true_type
+    {
+        using T_type = T;
+        using E_type = E;
+
+        template<typename T1 = T, typename E1= E>
+        using expected_type = std::expected<T1, E1>;
+    };
+#endif
+
+    template<typename T>
+    inline constexpr bool is_expected_v = is_expected<T>::value;
+
+    template<typename T>
+    struct expected_optional_value
+    {
+        using collapsed_type = T;
+    };
+
+    template<typename T>
+    struct expected_optional_value<std::optional<T>>
+    {
+        using collapsed_type = T;
+    };
+
+    template<typename T, typename E>
+    struct expected_optional_value<expected<T, E>>
+    {
+        using collapsed_type = T;
+    };
+
+#if __cplusplus >= BLT_CPP23
+    template<typename T, typename E>
+    struct expected_optional_value<std::expected<T, E>>
+    {
+        using collapsed_type = T;
+    };
+#endif
+
+    template<typename T>
+    using expected_optional_value_t = typename expected_optional_value<T>::collapsed_type;
+
 
 #define BLT_META_MAKE_FUNCTION_CHECK(FUNC, ...)\
     template<typename T, typename = void> \

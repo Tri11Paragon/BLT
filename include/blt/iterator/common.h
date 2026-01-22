@@ -251,6 +251,27 @@ namespace blt::iterator
         std::tuple<Args...> args;
     };
 
+    template<typename Iter>
+    struct move_wrapper : deref_only_wrapper<Iter, move_wrapper<Iter>>
+    {
+        using iterator_category = typename std::iterator_traits<Iter>::iterator_category;
+        using value_type = std::add_rvalue_reference_t<meta::deref_return_t<Iter>>;
+        using difference_type = ptrdiff_t;
+        using pointer = value_type;
+        using reference = value_type;
+
+        explicit move_wrapper(Iter iter) :
+            deref_only_wrapper<Iter, move_wrapper>(std::move(iter))
+        {
+
+        }
+
+        reference operator*() const
+        {
+            return std::move(*this->iter);
+        }
+    };
+
     template <typename Iter>
     class const_wrapper : public deref_only_wrapper<Iter, const_wrapper<Iter>>
     {
@@ -502,6 +523,14 @@ namespace blt::iterator
             };
         }
 
+        auto move() const
+        {
+            return iterator_container<move_wrapper<IterBase>>{
+                move_wrapper<IterBase>{m_begin},
+                move_wrapper<IterBase>{m_end}
+            };
+        }
+
         template <typename Func, typename... Args>
         auto map(Func func, Args&&... args) const
         {
@@ -520,13 +549,105 @@ namespace blt::iterator
             };
         }
 
-        // template<typename Container>
-        // auto collect(Container container = std::vector<meta::deref_return_t<IterBase>>{}) -> decltype(auto)
-        // {
-        //     for (decltype(auto) val : *this)
-        //         val.emplace(container.end(), std::forward<decltype(val)>(val));
-        //     return container;
-        // }
+        bool any()
+        {
+            for (decltype(auto) val : *this)
+            {
+                if (val)
+                    return true;
+            }
+            return false;
+        }
+
+        bool all()
+        {
+            for (decltype(auto) val : *this)
+            {
+                if (!val)
+                    return false;
+            }
+            return true;
+        }
+
+        /**
+         * Fills the container using emplace with the direct output of the iterator.
+         */
+        template <typename Container>
+        auto collect_raw(Container& container) -> decltype(auto)
+        {
+            for (decltype(auto) val : *this)
+                container.emplace(container.end(), std::forward<decltype(val)>(val));
+            return container;
+        }
+
+        /**
+         * Fills an std::vector using emplace with the direct output of the iterator.
+         */
+        auto collect_raw()
+        {
+            std::vector<meta::deref_return_t<decltype(this->begin())>> container{};
+            return collect_raw(container);
+        }
+
+        /**
+         * Fills the container using emplace, taking only values from optionals with a value, or values from expected
+         * If an expected value returns an error the expected is propagated via the return of the function.
+         */
+        template <typename Container>
+        auto collect_flatten(Container& container) -> decltype(auto)
+        {
+            using return_t = meta::deref_return_t<decltype(this->begin())>;
+
+            if constexpr (meta::is_optional_v<return_t>)
+            {
+                for (decltype(auto) val : *this)
+                    if (val)
+                        container.emplace(container.end(), std::forward<decltype(*val)>(*val));
+                return container;
+            }
+            else if constexpr (meta::is_expected_v<return_t>)
+            {
+                // TODO: reference wrapper?
+                using meta_type = meta::is_expected<return_t>;
+                using new_return_type = typename meta_type::template expected_type<
+                    decltype(container), meta_type::E_type>;
+                for (decltype(auto) val : *this)
+                {
+                    if (val)
+                        container.emplace(container.end(), std::forward<decltype(val.value())>(val.value()));
+                    else
+                        return new_return_type{typename meta_type::type::unexpected_type{val.error()}};
+                }
+                return new_return_type{container};
+            }
+            else
+            {
+                return collect_raw(container);
+            }
+        }
+
+        /**
+         * Fills the container using emplace, taking only values from optionals with a value, or values from expected
+         * If an expected value returns an error the expected is propagated via the return of the function.
+         */
+        auto collect_flatten()
+        {
+            using return_t = meta::deref_return_t<decltype(this->begin())>;
+            using collapsed_type = meta::expected_optional_value_t<return_t>;
+            std::vector<collapsed_type> container{};
+            return collect_flatten(container);
+        }
+
+        template <typename Container>
+        auto collect(Container& container) -> decltype(auto)
+        {
+            return collect_flatten(container);
+        }
+
+        auto collect()
+        {
+            return collect_flatten();
+        }
 
         auto begin() const
         {
