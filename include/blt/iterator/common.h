@@ -545,7 +545,7 @@ namespace blt::iterator
 
     struct equals_t
     {
-        template<typename T, typename U>
+        template <typename T, typename U>
         constexpr bool operator()(T&& t, U&& u) const
         {
             return t == u;
@@ -554,16 +554,53 @@ namespace blt::iterator
 
     struct not_equals_t
     {
-        template<typename T, typename U>
+        template <typename T, typename U>
         constexpr bool operator()(T&& t, U&& u) const
         {
             return t != u;
         }
     };
 
+    struct less_t
+    {
+        template <typename T, typename U>
+        constexpr bool operator()(T&& t, U&& u) const
+        {
+            return t < u;
+        }
+    };
+
+    struct greater_t
+    {
+        template <typename T, typename U>
+        constexpr bool operator()(T&& t, U&& u) const
+        {
+            return t > u;
+        }
+    };
+
+    template <typename T, typename U>
+    constexpr auto operator||(T&& t, U&& u)
+    {
+        return [t=std::forward<T>(t), u=std::forward<U>(u)](auto&& v, auto&& g)
+        {
+            return t(v, g) || u(v, g);
+        };
+    }
+
+    template <typename T, typename U>
+    constexpr auto operator&&(T&& t, U&& u)
+    {
+        return [t=std::forward<T>(t), u=std::forward<U>(u)](auto&& v, auto&& g)
+        {
+            return t(v, g) && u(v, g);
+        };
+    }
+
     inline constexpr equals_t equals{};
     inline constexpr not_equals_t not_equals{};
-
+    inline constexpr less_t less{};
+    inline constexpr greater_t greater{};
 }
 
 #endif //BLT_ITERATOR_ITER_COMMON
