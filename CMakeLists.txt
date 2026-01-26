@@ -129,6 +129,7 @@ include_directories(include/)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/config/)
 
 add_library(${BLT_TARGET} ${STD_FILES} ${PROFILING_FILES} ${FS_FILES} ${PARSE_FILES} ${FORMAT_FILES} ${LOGGING_FILES} ${MATH_FILES})
+target_include_directories(${BLT_TARGET} PUBLIC include/)
 
 string(REPLACE "+" "\\+" escaped_source ${CMAKE_CURRENT_SOURCE_DIR})
 string(APPEND escaped_source "/src/blt/.*/")
