@@ -881,39 +881,42 @@ namespace blt
         }
 
         // angle in radians
-        inline mat4x4& rotateX(float angle)
+        template<typename T>
+        inline mat4x4& rotateX(T angle)
         {
             mat4x4 rotationMatrix{};
-            rotationMatrix.m(1, 1, std::cos(angle));
-            rotationMatrix.m(1, 2, -std::sin(angle));
-            rotationMatrix.m(2, 1, std::sin(angle));
-            rotationMatrix.m(2, 2, std::cos(angle));
+            rotationMatrix.m(1, 1, static_cast<float>(std::cos(angle)));
+            rotationMatrix.m(1, 2, static_cast<float>(-std::sin(angle)));
+            rotationMatrix.m(2, 1, static_cast<float>(std::sin(angle)));
+            rotationMatrix.m(2, 2, static_cast<float>(std::cos(angle)));
 
             *this = *this * rotationMatrix;
 
             return *this;
         }
 
-        inline mat4x4& rotateY(float angle)
+        template<typename T>
+        inline mat4x4& rotateY(T angle)
         {
             mat4x4 rotationMatrix{};
-            rotationMatrix.m(0, 0, std::cos(angle));
-            rotationMatrix.m(0, 2, std::sin(angle));
-            rotationMatrix.m(2, 0, -std::sin(angle));
-            rotationMatrix.m(2, 2, std::cos(angle));
+            rotationMatrix.m(0, 0, static_cast<float>(std::cos(angle)));
+            rotationMatrix.m(0, 2, static_cast<float>(std::sin(angle)));
+            rotationMatrix.m(2, 0, static_cast<float>(-std::sin(angle)));
+            rotationMatrix.m(2, 2, static_cast<float>(std::cos(angle)));
 
             *this = *this * rotationMatrix;
 
             return *this;
         }
 
-        inline mat4x4& rotateZ(float angle)
+        template<typename T>
+        inline mat4x4& rotateZ(T angle)
         {
             mat4x4 rotationMatrix{};
-            rotationMatrix.m(0, 0, std::cos(angle));
-            rotationMatrix.m(0, 1, -std::sin(angle));
-            rotationMatrix.m(1, 0, std::sin(angle));
-            rotationMatrix.m(1, 1, std::cos(angle));
+            rotationMatrix.m(0, 0, static_cast<float>(std::cos(angle)));
+            rotationMatrix.m(0, 1, static_cast<float>(-std::sin(angle)));
+            rotationMatrix.m(1, 0, static_cast<float>(std::sin(angle)));
+            rotationMatrix.m(1, 1, static_cast<float>(std::cos(angle)));
 
             *this = *this * rotationMatrix;
 
