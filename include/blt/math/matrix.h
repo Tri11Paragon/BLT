@@ -24,274 +24,273 @@ namespace blt
 {
     namespace detail
     {
-        template<typename T, typename StorageType>
+        template <typename T, typename StorageType>
         struct matrix_impl_t
         {
+            // constexpr auto& set_identity()
+            //         {
+            //             for (blt::u32 i = 0; i < Rows; i++)
+            //                 data[i][i] = 1;
+            //             return *this;
+            //         }
 
-// constexpr auto& set_identity()
-//         {
-//             for (blt::u32 i = 0; i < Rows; i++)
-//                 data[i][i] = 1;
-//             return *this;
-//         }
+            //         [[nodiscard]] constexpr generalized_matrix<T, Columns, Rows> transpose() const
+            //         {
+            //             generalized_matrix<T, Columns, Rows> mat;
+            //
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //             {
+            //                 for (blt::u32 j = 0; j < Rows; j++)
+            //                     mat[j][i] = data[i][j];
+            //             }
+            //
+            //             return mat;
+            //         }
+            //
+            //         [[nodiscard]] constexpr T magnitude() const
+            //         {
+            //             T ret{};
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //             {
+            //                 for (blt::u32 j = 0; j < Rows; j++)
+            //                     ret += (data[i][j] * data[i][j]);
+            //             }
+            //             return std::sqrt(ret);
+            //         }
+            //
+            //         [[nodiscard]] constexpr matrix_t normalize() const
+            //         {
+            //             auto mag = magnitude();
+            //             matrix_t mat = *this;
+            //             if (mag == 0)
+            //                 return mat;
+            //             return mat / mag;
+            //         }
+            //
+            //         [[nodiscard]] constexpr matrix_t abs() const
+            //         {
+            //             matrix_t copy = *this;
+            //             for (auto& v : copy.data)
+            //                 v = v.abs();
+            //             return copy;
+            //         }
+            //
+            //         [[nodiscard]] constexpr matrix_t bipolar() const
+            //         {
+            //             matrix_t copy = *this;
+            //             for (auto& v : copy.data)
+            //                 v = v.bipolar();
+            //             return copy;
+            //         }
+            //
+            //         constexpr float& operator[](const u32 index)
+            //         {
+            //             return data[index % Columns][index / Rows];
+            //         }
+            //
+            //         constexpr float operator[](const u32 index) const
+            //         {
+            //             return data[index % Columns][index / Columns];
+            //         }
+            //
+            // #if __cplusplus >= BLT_CPP23
+            //         constexpr float& operator[](const u32 row, const u32 column)
+            //         {
+            //             return data[column][row];
+            //         }
+            //
+            //         constexpr float operator[](const u32 row, const u32 column) const
+            //         {
+            //             return data[column][row];
+            //         }
+            // #endif
+            //
+            //         [[nodiscard]] constexpr inline T m(u32 row, u32 column) const
+            //         {
+            //             return data[column][row];
+            //         };
+            //
+            //         constexpr inline T m(u32 row, u32 column, T value)
+            //         {
+            //             return data[column][row] = value;
+            //         };
+            //
+            //         /**
+            //          * Takes a value stored across a row, taking one from each column in the specified row
+            //          * @param row the row to extract from. defaults to the first row
+            //          */
+            //         [[nodiscard]] constexpr inline vec<T, Columns> vec_from_column_row(blt::u32 row = 0) const
+            //         {
+            //             vec<T, Columns> ret;
+            //             for (blt::u32 j = 0; j < Columns; j++)
+            //                 ret[j] = data[j][row];
+            //             return ret;
+            //         }
+            //
+            //         constexpr inline matrix_t& operator+=(const matrix_t& other)
+            //         {
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //                 data[i] += other[i];
+            //             return *this;
+            //         }
+            //
+            //         constexpr inline matrix_t& operator-=(const matrix_t& other)
+            //         {
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //                 data[i] -= other[i];
+            //             return *this;
+            //         }
+            //
+            //         constexpr inline matrix_t& operator*=(const matrix_t& other)
+            //         {
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //                 data[i] *= other[i];
+            //             return *this;
+            //         }
+            //
+            //         constexpr inline matrix_t& operator/=(const matrix_t& other)
+            //         {
+            //             for (blt::u32 i = 0; i < Columns; i++)
+            //                 data[i] /= other[i];
+            //             return *this;
+            //         }
+            //
+            //         // adds the two mat4x4 left and right
+            //         constexpr inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
+            //         {
+            //             matrix_t ret = left;
+            //             for (u32 i = 0; i < Columns; i++)
+            //                 ret[i] += right.data[i];
+            //             return ret;
+            //         }
+            //
+            //         // subtracts the right mat4x4 from the left.
+            //         constexpr inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
+            //         {
+            //             matrix_t ret = left;
+            //             for (u32 i = 0; i < Columns; i++)
+            //                 ret[i] -= right.data[i];
+            //             return ret;
+            //         }
+            //
+            //         // multiples the left with the right
+            //         template <blt::u32 p, typename Ret = generalized_matrix<T, Rows, p>, std::enable_if_t<
+            //                       !(Rows == 1 && p == 1), bool> = true>
+            //         constexpr inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
+            //         {
+            //             Ret mat = Ret::make_empty();
+            //
+            //             for (u32 i = 0; i < Rows; i++)
+            //             {
+            //                 for (u32 j = 0; j < p; j++)
+            //                 {
+            //                     for (u32 k = 0; k < Columns; k++)
+            //                         mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
+            //                 }
+            //             }
+            //
+            //             return mat;
+            //         }
+            //
+            //         template <blt::u32 p, std::enable_if_t<Rows == 1 && p == 1, bool> = true>
+            //         constexpr inline friend T operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
+            //         {
+            //             T ret{};
+            //
+            //             for (u32 i = 0; i < Rows; i++)
+            //             {
+            //                 for (u32 j = 0; j < p; j++)
+            //                 {
+            //                     for (u32 k = 0; k < Columns; k++)
+            //                         ret += left.m(i, k) * right.m(k, j);
+            //                 }
+            //             }
+            //
+            //             return ret;
+            //         }
+            //
+            //         constexpr inline friend vec<T, Rows> operator*(const matrix_t& left, const vec<T, Columns>& right)
+            //         {
+            //             vec<T, Rows> ret;
+            //
+            //             for (u32 r = 0; r < Rows; r++)
+            //             {
+            //                 for (u32 c = 0; c < Columns; c++)
+            //                     ret[r] = ret[r] + left.m(r, c) * right[c];
+            //             }
+            //
+            //             return ret;
+            //         }
 
-//         [[nodiscard]] constexpr generalized_matrix<T, Columns, Rows> transpose() const
-//         {
-//             generalized_matrix<T, Columns, Rows> mat;
-//
-//             for (blt::u32 i = 0; i < Columns; i++)
-//             {
-//                 for (blt::u32 j = 0; j < Rows; j++)
-//                     mat[j][i] = data[i][j];
-//             }
-//
-//             return mat;
-//         }
-//
-//         [[nodiscard]] constexpr T magnitude() const
-//         {
-//             T ret{};
-//             for (blt::u32 i = 0; i < Columns; i++)
-//             {
-//                 for (blt::u32 j = 0; j < Rows; j++)
-//                     ret += (data[i][j] * data[i][j]);
-//             }
-//             return std::sqrt(ret);
-//         }
-//
-//         [[nodiscard]] constexpr matrix_t normalize() const
-//         {
-//             auto mag = magnitude();
-//             matrix_t mat = *this;
-//             if (mag == 0)
-//                 return mat;
-//             return mat / mag;
-//         }
-//
-//         [[nodiscard]] constexpr matrix_t abs() const
-//         {
-//             matrix_t copy = *this;
-//             for (auto& v : copy.data)
-//                 v = v.abs();
-//             return copy;
-//         }
-//
-//         [[nodiscard]] constexpr matrix_t bipolar() const
-//         {
-//             matrix_t copy = *this;
-//             for (auto& v : copy.data)
-//                 v = v.bipolar();
-//             return copy;
-//         }
-//
-//         constexpr float& operator[](const u32 index)
-//         {
-//             return data[index % Columns][index / Rows];
-//         }
-//
-//         constexpr float operator[](const u32 index) const
-//         {
-//             return data[index % Columns][index / Columns];
-//         }
-//
-// #if __cplusplus >= BLT_CPP23
-//         constexpr float& operator[](const u32 row, const u32 column)
-//         {
-//             return data[column][row];
-//         }
-//
-//         constexpr float operator[](const u32 row, const u32 column) const
-//         {
-//             return data[column][row];
-//         }
-// #endif
-//
-//         [[nodiscard]] constexpr inline T m(u32 row, u32 column) const
-//         {
-//             return data[column][row];
-//         };
-//
-//         constexpr inline T m(u32 row, u32 column, T value)
-//         {
-//             return data[column][row] = value;
-//         };
-//
-//         /**
-//          * Takes a value stored across a row, taking one from each column in the specified row
-//          * @param row the row to extract from. defaults to the first row
-//          */
-//         [[nodiscard]] constexpr inline vec<T, Columns> vec_from_column_row(blt::u32 row = 0) const
-//         {
-//             vec<T, Columns> ret;
-//             for (blt::u32 j = 0; j < Columns; j++)
-//                 ret[j] = data[j][row];
-//             return ret;
-//         }
-//
-//         constexpr inline matrix_t& operator+=(const matrix_t& other)
-//         {
-//             for (blt::u32 i = 0; i < Columns; i++)
-//                 data[i] += other[i];
-//             return *this;
-//         }
-//
-//         constexpr inline matrix_t& operator-=(const matrix_t& other)
-//         {
-//             for (blt::u32 i = 0; i < Columns; i++)
-//                 data[i] -= other[i];
-//             return *this;
-//         }
-//
-//         constexpr inline matrix_t& operator*=(const matrix_t& other)
-//         {
-//             for (blt::u32 i = 0; i < Columns; i++)
-//                 data[i] *= other[i];
-//             return *this;
-//         }
-//
-//         constexpr inline matrix_t& operator/=(const matrix_t& other)
-//         {
-//             for (blt::u32 i = 0; i < Columns; i++)
-//                 data[i] /= other[i];
-//             return *this;
-//         }
-//
-//         // adds the two mat4x4 left and right
-//         constexpr inline friend matrix_t operator+(const matrix_t& left, const matrix_t& right)
-//         {
-//             matrix_t ret = left;
-//             for (u32 i = 0; i < Columns; i++)
-//                 ret[i] += right.data[i];
-//             return ret;
-//         }
-//
-//         // subtracts the right mat4x4 from the left.
-//         constexpr inline friend matrix_t operator-(const matrix_t& left, const matrix_t& right)
-//         {
-//             matrix_t ret = left;
-//             for (u32 i = 0; i < Columns; i++)
-//                 ret[i] -= right.data[i];
-//             return ret;
-//         }
-//
-//         // multiples the left with the right
-//         template <blt::u32 p, typename Ret = generalized_matrix<T, Rows, p>, std::enable_if_t<
-//                       !(Rows == 1 && p == 1), bool> = true>
-//         constexpr inline friend Ret operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
-//         {
-//             Ret mat = Ret::make_empty();
-//
-//             for (u32 i = 0; i < Rows; i++)
-//             {
-//                 for (u32 j = 0; j < p; j++)
-//                 {
-//                     for (u32 k = 0; k < Columns; k++)
-//                         mat.m(i, j, mat.m(i, j) + left.m(i, k) * right.m(k, j));
-//                 }
-//             }
-//
-//             return mat;
-//         }
-//
-//         template <blt::u32 p, std::enable_if_t<Rows == 1 && p == 1, bool> = true>
-//         constexpr inline friend T operator*(const matrix_t& left, const generalized_matrix<T, Columns, p>& right)
-//         {
-//             T ret{};
-//
-//             for (u32 i = 0; i < Rows; i++)
-//             {
-//                 for (u32 j = 0; j < p; j++)
-//                 {
-//                     for (u32 k = 0; k < Columns; k++)
-//                         ret += left.m(i, k) * right.m(k, j);
-//                 }
-//             }
-//
-//             return ret;
-//         }
-//
-//         constexpr inline friend vec<T, Rows> operator*(const matrix_t& left, const vec<T, Columns>& right)
-//         {
-//             vec<T, Rows> ret;
-//
-//             for (u32 r = 0; r < Rows; r++)
-//             {
-//                 for (u32 c = 0; c < Columns; c++)
-//                     ret[r] = ret[r] + left.m(r, c) * right[c];
-//             }
-//
-//             return ret;
-//         }
-
-        // multiplies the const c with each element in the mat v
-        constexpr friend matrix_impl_t operator*(const T c, const matrix_impl_t& v)
-        {
-            matrix_impl_t mat = v.empty_from();
-
-            for (u32 i = 0; i < v.size(); i++)
+            // multiplies the const c with each element in the mat v
+            constexpr friend matrix_impl_t operator*(const T c, const matrix_impl_t& v)
             {
-                mat.data()[i] = c * v.data()[i];
+                matrix_impl_t mat = v.empty_from();
+
+                for (u32 i = 0; i < v.size(); i++)
+                {
+                    mat.data()[i] = c * v.data()[i];
+                }
+
+                return mat;
             }
 
-            return mat;
-        }
-
-        // same as above but for right sided constants
-        constexpr friend matrix_impl_t operator*(const matrix_impl_t& v, const T c)
-        {
-            matrix_impl_t mat = v.empty_from();
-
-            for (u32 i = 0; i < v.size(); i++)
+            // same as above but for right sided constants
+            constexpr friend matrix_impl_t operator*(const matrix_impl_t& v, const T c)
             {
-                mat.data()[i] = v.data()[i] * c;
+                matrix_impl_t mat = v.empty_from();
+
+                for (u32 i = 0; i < v.size(); i++)
+                {
+                    mat.data()[i] = v.data()[i] * c;
+                }
+
+                return mat;
             }
 
-            return mat;
-        }
-
-        // divides the mat by the constant c
-        constexpr friend matrix_impl_t operator/(const matrix_impl_t& v, const T c)
-        {
-            matrix_impl_t mat = v.empty_from();
-
-            for (u32 i = 0; i < v.size(); i++)
+            // divides the mat by the constant c
+            constexpr friend matrix_impl_t operator/(const matrix_impl_t& v, const T c)
             {
-                mat.data()[i] = v.data()[i] / c;
+                matrix_impl_t mat = v.empty_from();
+
+                for (u32 i = 0; i < v.size(); i++)
+                {
+                    mat.data()[i] = v.data()[i] / c;
+                }
+
+                return mat;
             }
 
-            return mat;
-        }
-
-        // returns a new matrix where each element is the constant c divided by the value at in matrix v
-        constexpr friend matrix_impl_t operator/(const T c, const matrix_impl_t& v)
-        {
-            matrix_impl_t mat = v.empty_from();
-
-            for (u32 i = 0; i < v.columns(); i++)
+            // returns a new matrix where each element is the constant c divided by the value at in matrix v
+            constexpr friend matrix_impl_t operator/(const T c, const matrix_impl_t& v)
             {
-                for (u32 j = 0; j < v.rows(); j++)
-                    mat.m(j, i) = c / v.m(j, i);
+                matrix_impl_t mat = v.empty_from();
+
+                for (u32 i = 0; i < v.columns(); i++)
+                {
+                    for (u32 j = 0; j < v.rows(); j++)
+                        mat.m(j, i) = c / v.m(j, i);
+                }
+
+                return mat;
             }
 
-            return mat;
-        }
-
-        constexpr friend bool operator==(const matrix_impl_t& left, const matrix_impl_t& right)
-        {
-            if (left.columns() != right.columns() || left.rows() != right.rows())
-                return false;
-            for (u32 i = 0; i < left.size(); i++)
+            constexpr friend bool operator==(const matrix_impl_t& left, const matrix_impl_t& right)
             {
-                if (left.data()[i] != right.data()[i])
+                if (left.columns() != right.columns() || left.rows() != right.rows())
                     return false;
+                for (u32 i = 0; i < left.size(); i++)
+                {
+                    if (left.data()[i] != right.data()[i])
+                        return false;
+                }
+                return true;
             }
-            return true;
-        }
 
-        constexpr friend bool operator!=(const matrix_impl_t& left, const matrix_impl_t& right)
-        {
-            return !(left == right);
-        }
+            constexpr friend bool operator!=(const matrix_impl_t& left, const matrix_impl_t& right)
+            {
+                return !(left == right);
+            }
 
             constexpr auto& m(const u32 r, const u32 c)
             {
@@ -327,6 +326,7 @@ namespace blt
             {
                 return storage.empty_from();
             }
+
         private:
             StorageType storage;
         };
@@ -1508,31 +1508,32 @@ namespace blt
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html
     // https://ogldev.org/www/tutorial12/tutorial12.html
     // http://www.songho.ca/opengl/gl_projectionmatrix.html
-    static inline mat4x4 perspective(float fov, float aspect_ratio, float near, float far)
+    static inline mat4x4 perspective(const double fov, const double aspect_ratio, const double near, const double far)
     {
         mat4x4 perspectiveMat4x4 = mat4x4::make_empty();
 
-        float halfTan = tanf(fov * 0.5f * (float)M_PI / 180.0f);
-        perspectiveMat4x4.m00(float(1.0 / (aspect_ratio * halfTan)));
-        perspectiveMat4x4.m11(float(1.0 / halfTan));
-        perspectiveMat4x4.m22(float(-((far + near) / (far - near))));
+        const double halfTan = tan(fov * 0.5 * M_PI / 180.0);
+        perspectiveMat4x4.m00(static_cast<float>(1.0 / (aspect_ratio * halfTan)));
+        perspectiveMat4x4.m11(static_cast<float>(1.0 / halfTan));
+        perspectiveMat4x4.m22(static_cast<float>(-((far + near) / (far - near))));
         perspectiveMat4x4.m32(-1);
-        perspectiveMat4x4.m23(float(-((2 * near * far) / (far - near))));
+        perspectiveMat4x4.m23(static_cast<float>(-((2 * near * far) / (far - near))));
 
         return perspectiveMat4x4;
     }
 
-    static inline mat4x4 ortho(float left, float right, float top, float bottom, float near, float far)
+    static inline mat4x4 ortho(const double left, const double right, const double top, const double bottom,
+                               const double near, const double far)
     {
         mat4x4 perspectiveMat4x4 = mat4x4::make_empty();
 
-        perspectiveMat4x4.m00(2 / (right - left));
-        perspectiveMat4x4.m11(2 / (top - bottom));
-        perspectiveMat4x4.m22(2 / (far - near));
-        perspectiveMat4x4.m33(1);
-        perspectiveMat4x4.m03(-(right + left) / (right - left));
-        perspectiveMat4x4.m13(-(top + bottom) / (top - bottom));
-        perspectiveMat4x4.m23(-(far + near) / (far - near));
+        perspectiveMat4x4.m00(static_cast<float>(2 / (right - left)));
+        perspectiveMat4x4.m11(static_cast<float>(2 / (top - bottom)));
+        perspectiveMat4x4.m22(static_cast<float>(2 / (far - near)));
+        perspectiveMat4x4.m33(static_cast<float>(1));
+        perspectiveMat4x4.m03(static_cast<float>(-(right + left) / (right - left)));
+        perspectiveMat4x4.m13(static_cast<float>(-(top + bottom) / (top - bottom)));
+        perspectiveMat4x4.m23(static_cast<float>(-(far + near) / (far - near)));
 
         return perspectiveMat4x4;
     }
