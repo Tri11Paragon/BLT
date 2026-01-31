@@ -43,8 +43,8 @@ namespace blt
         {
             using can_invoke = std::is_invocable<Func, Type, Args...>;
 
-            using return_type = typename std::conditional_t<can_invoke::value, std::invoke_result<Func, Type, Args...>, meta::passthrough<void>>::type
-            ;
+            using return_type = typename std::conditional_t<
+                can_invoke::value, std::invoke_result<Func, Type, Args...>, meta::passthrough<void>>::type;
         };
 
         template <typename Func, typename ArgsTuple, typename... Types>
@@ -54,14 +54,16 @@ namespace blt
         struct member_call_return_type<Func, std::tuple<Args...>, Types...>
         {
             using result_types = std::tuple<member_func_meta<Types, Func, Args...>...>;
-            using non_void_result_types = meta::filter_void_t<typename member_func_meta<Types, Func, Args...>::return_type...>;
+            using non_void_result_types = meta::filter_void_t<typename member_func_meta<
+                Types, Func, Args...>::return_type...>;
 
             static constexpr bool all_void = std::tuple_size_v<non_void_result_types> == 0;
             static constexpr bool some_void = std::tuple_size_v<non_void_result_types> != sizeof...(Types);
 
             using first_return = std::conditional_t<all_void, void, std::tuple_element_t<0, non_void_result_types>>;
 
-            using return_type = std::conditional_t<all_void, void, std::conditional_t<some_void, std::optional<first_return>, first_return>>;
+            using return_type = std::conditional_t<
+                all_void, void, std::conditional_t<some_void, std::optional<first_return>, first_return>>;
         };
 
         template <typename Func, typename... Types>
@@ -97,7 +99,8 @@ namespace blt
             using variant_type = typename meta::apply_tuple<variant_t, non_void_returns>::type;
 
             using base_type = std::conditional_t<all_same, first_return, variant_type>;
-            using return_type = std::conditional_t<all_void, void, std::conditional_t<some_void, std::optional<base_type>, base_type>>;
+            using return_type = std::conditional_t<
+                all_void, void, std::conditional_t<some_void, std::optional<base_type>, base_type>>;
         };
     }
 
@@ -113,13 +116,13 @@ namespace blt
         using TLambdas::operator()...;
     };
 
-// #if __cplusplus < 202002L
+    // #if __cplusplus < 202002L
 
     // explicit deduction guide (not needed as of C++20)
     template <typename... TLambdas>
     lambda_visitor(TLambdas...) -> lambda_visitor<TLambdas...>;
 
-// #endif
+    // #endif
 
     template <typename... Types>
     class variant_t
@@ -128,55 +131,63 @@ namespace blt
         using value_type = std::variant<Types...>;
         constexpr static size_t variant_size = sizeof...(Types);
 
-        constexpr variant_t(): m_variant()
+        constexpr variant_t() : m_variant()
         {
         }
 
-        constexpr variant_t(const variant_t& variant) noexcept(std::is_nothrow_copy_constructible_v<value_type>): m_variant(variant.m_variant)
+        constexpr variant_t(
+            const variant_t& variant) noexcept(std::is_nothrow_copy_constructible_v<value_type>) : m_variant(
+            variant.m_variant)
         {
         }
 
-        constexpr variant_t(variant_t&& variant) noexcept(std::is_nothrow_move_constructible_v<value_type>): m_variant(std::move(variant.m_variant))
+        constexpr variant_t(variant_t&& variant) noexcept(std::is_nothrow_move_constructible_v<value_type>) : m_variant(
+            std::move(variant.m_variant))
         {
         }
 
-        constexpr variant_t(const value_type& variant) noexcept(std::is_nothrow_copy_constructible_v<value_type>): m_variant(variant) // NOLINT
+        constexpr variant_t(const value_type& variant) noexcept(std::is_nothrow_copy_constructible_v<value_type>) : m_variant(variant) // NOLINT
         {
         }
 
-        constexpr variant_t(value_type&& variant) noexcept(std::is_nothrow_move_constructible_v<value_type>): m_variant(std::move(variant)) // NOLINT
+        constexpr variant_t(value_type&& variant) noexcept(std::is_nothrow_move_constructible_v<value_type>) : m_variant(std::move(variant)) // NOLINT
         {
-
         }
+
+        constexpr variant_t& operator=(const variant_t& variant) noexcept(std::is_nothrow_copy_assignable_v<value_type>)
+        = default;
+
+        constexpr variant_t& operator=(variant_t&& variant) noexcept(std::is_nothrow_move_assignable_v<value_type>)
+        = default;
 
         template <typename T, std::enable_if_t<!std::is_same_v<std::decay_t<T>, variant_t>, bool> = true>
-        constexpr variant_t(T&& v): m_variant(std::forward<T>(v)) // NOLINT
+        constexpr variant_t(T&& v) : m_variant(std::forward<T>(v)) // NOLINT
         {
         }
 
-        constexpr variant_t(Types&&... args) noexcept(std::is_nothrow_constructible_v<value_type, Types...>): m_variant( // NOLINT
+        constexpr variant_t(Types&&... args) noexcept(std::is_nothrow_constructible_v<value_type, Types...>) : m_variant( // NOLINT
             std::forward<Types>(args)...)
         {
         }
 
         template <typename T, typename... C_Args>
-        constexpr variant_t(std::in_place_type_t<T>, C_Args&&... args): m_variant(std::in_place_type<T>, std::forward<C_Args>(args)...) // NOLINT
+        constexpr variant_t(std::in_place_type_t<T>, C_Args&&... args) : m_variant(std::in_place_type<T>, std::forward<C_Args>(args)...) // NOLINT
         {
         }
 
         template <typename T, typename U, typename... C_Args>
-        constexpr variant_t(std::in_place_type_t<T>, std::initializer_list<U> il, C_Args&&... args): m_variant(
+        constexpr variant_t(std::in_place_type_t<T>, std::initializer_list<U> il, C_Args&&... args) : m_variant(
             std::in_place_type<T>, il, std::forward<C_Args>(args)...)
         {
         }
 
         template <size_t I, typename... C_Args>
-        constexpr variant_t(std::in_place_index_t<I>, C_Args&&... args): m_variant(std::in_place_index<I>, std::forward<C_Args>(args)...) // NOLINT
+        constexpr variant_t(std::in_place_index_t<I>, C_Args&&... args) : m_variant(std::in_place_index<I>, std::forward<C_Args>(args)...) // NOLINT
         {
         }
 
         template <std::size_t I, typename U, typename... C_Args>
-        constexpr variant_t(std::in_place_index_t<I>, std::initializer_list<U> il, C_Args&&... args): m_variant(
+        constexpr variant_t(std::in_place_index_t<I>, std::initializer_list<U> il, C_Args&&... args) : m_variant(
             std::in_place_index<I>, il, std::forward<C_Args>(args)...)
         {
         }
@@ -205,19 +216,19 @@ namespace blt
             return m_variant.template emplace<I>(il, std::forward<Args>(args)...);
         }
 
-        template<typename... Args>
+        template <typename... Args>
         void emplace(const size_t index, Args&&... args)
         {
             emplace_impl(index, std::make_index_sequence<variant_size>{}, std::forward<Args>(args)...);
         }
 
-        template<typename... Args, size_t... Indexes>
+        template <typename... Args, size_t... Indexes>
         void emplace_impl(const size_t index, std::index_sequence<Indexes...>, Args&&... args)
         {
             (emplace_impl<Indexes>(index, std::forward<Args>(args)...), ...);
         }
 
-        template<size_t I, typename... Args>
+        template <size_t I, typename... Args>
         void emplace_impl(const size_t index, Args&&... args)
         {
             if (index == I)
@@ -253,7 +264,8 @@ namespace blt
                             }
                             else
                             {
-                                return typename meta_t::return_type(std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value)));
+                                return typename meta_t::return_type(
+                                    std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value)));
                             }
                         }...
                     };
@@ -278,7 +290,8 @@ namespace blt
                             else
                             {
                                 return typename meta_t::return_type(
-                                    typename meta_t::base_type(std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))));
+                                    typename meta_t::base_type(
+                                        std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))));
                             }
                         }...
                     };
@@ -288,7 +301,9 @@ namespace blt
                     return lambda_visitor{
                         [&](std::tuple_element_t<0, typename meta::function_like<Visitee>::args_tuple> value)
                         {
-                            return typename meta_t::return_type{std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))};
+                            return typename meta_t::return_type{
+                                std::forward<Visitee>(visitees)(std::forward<decltype(value)>(value))
+                            };
                         }...
                     };
                 }
@@ -318,10 +333,11 @@ namespace blt
         template <typename Default, typename... Visitee>
         constexpr auto visit_value(Default&& default_value, Visitee&&... visitees) -> decltype(auto)
         {
-            return visit(std::forward<Visitee>(visitees)..., [default_value=std::forward<Default>(default_value)](auto&&)
-            {
-                return std::forward<Default>(default_value);
-            });
+            return visit(std::forward<Visitee>(visitees)...,
+                         [default_value=std::forward<Default>(default_value)](auto&&)
+                         {
+                             return std::forward<Default>(default_value);
+                         });
         }
 
         template <typename MemberFunc, typename... Args>
@@ -406,7 +422,8 @@ namespace blt
         }
 
         template <size_t I>
-        constexpr std::variant_alternative_t<I, value_type> value_or(const std::variant_alternative_t<I, value_type>& t) const
+        constexpr std::variant_alternative_t<I, value_type> value_or(
+            const std::variant_alternative_t<I, value_type>& t) const
         {
             if (has_type<std::variant_alternative_t<I, value_type>>())
                 return get<I>();
@@ -414,7 +431,8 @@ namespace blt
         }
 
         template <size_t I>
-        constexpr std::variant_alternative_t<I, value_type> value_or(std::variant_alternative_t<I, value_type>&& t) const
+        constexpr std::variant_alternative_t<I, value_type> value_or(
+            std::variant_alternative_t<I, value_type>&& t) const
         {
             if (has_type<std::variant_alternative_t<I, value_type>>())
                 return get<I>();
