@@ -126,7 +126,7 @@ namespace blt
     {
     public:
         using value_type = std::variant<Types...>;
-        size_t variant_size = sizeof...(Types);
+        constexpr static size_t variant_size = sizeof...(Types);
 
         constexpr variant_t(): m_variant()
         {
@@ -203,6 +203,25 @@ namespace blt
         std::variant_alternative_t<I, value_type>& emplace(std::initializer_list<U> il, Args&&... args)
         {
             return m_variant.template emplace<I>(il, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args>
+        void emplace(const size_t index, Args&&... args)
+        {
+            emplace_impl(index, std::make_index_sequence<variant_size>{}, std::forward<Args>(args)...);
+        }
+
+        template<typename... Args, size_t... Indexes>
+        void emplace_impl(const size_t index, std::index_sequence<Indexes...>, Args&&... args)
+        {
+            (emplace_impl<Indexes>(index, std::forward<Args>(args)...), ...);
+        }
+
+        template<size_t I, typename... Args>
+        void emplace_impl(const size_t index, Args&&... args)
+        {
+            if (index == I)
+                emplace<I>(std::forward<Args>(args)...);
         }
 
         [[nodiscard]] constexpr std::size_t index() const noexcept
