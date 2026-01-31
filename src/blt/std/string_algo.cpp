@@ -36,7 +36,7 @@ namespace blt
     }
     
     
-    bool string::contains(std::string_view string, std::string_view search)
+    BLT_CPP20_CONSTEXPR bool string::contains(std::string_view string, std::string_view search)
     {
         if (search.length() > string.length())
             return false;
@@ -60,7 +60,7 @@ namespace blt
         return false;
     }
     
-    std::string string::toLowerCase(std::string_view s)
+    BLT_CPP20_CONSTEXPR std::string string::toLowerCase(std::string_view s)
     {
         std::string str;
         std::for_each(
@@ -71,7 +71,7 @@ namespace blt
         return str;
     }
     
-    bool string::contains(std::string_view string, const char search)
+    BLT_CPP20_CONSTEXPR bool string::contains(std::string_view string, const char search)
     {
 #if __cplusplus >= 202002L
         return std::ranges::any_of(string, [search](const char c) -> bool {
@@ -110,7 +110,7 @@ namespace blt
         return {};
     }
     
-    std::string string::toUpperCase(std::string_view s)
+    BLT_CPP20_CONSTEXPR std::string string::toUpperCase(std::string_view s)
     {
         std::string str;
         std::for_each(
@@ -121,7 +121,7 @@ namespace blt
         return str;
     }
     
-    std::vector<std::string> string::split(std::string_view s, std::string_view delim)
+    BLT_CPP20_CONSTEXPR std::vector<std::string> string::split(std::string_view s, std::string_view delim)
     {
         size_t pos = 0;
         size_t from = 0;
@@ -140,7 +140,7 @@ namespace blt
         return tokens;
     }
     
-    std::vector<std::string> string::split(std::string_view s, char delim)
+    BLT_CPP20_CONSTEXPR std::vector<std::string> string::split(std::string_view s, char delim)
     {
         size_t pos = 0;
         size_t from = 0;
@@ -159,7 +159,7 @@ namespace blt
         return tokens;
     }
     
-    std::vector<std::string_view> string::split_sv(std::string_view s, std::string_view delim)
+    BLT_CPP20_CONSTEXPR std::vector<std::string_view> string::split_sv(std::string_view s, std::string_view delim)
     {
         size_t pos = 0;
         size_t from = 0;
@@ -178,7 +178,7 @@ namespace blt
         return tokens;
     }
     
-    std::vector<std::string_view> string::split_sv(std::string_view s, char delim)
+    BLT_CPP20_CONSTEXPR std::vector<std::string_view> string::split_sv(std::string_view s, char delim)
     {
         size_t pos = 0;
         size_t from = 0;
@@ -197,7 +197,7 @@ namespace blt
         return tokens;
     }
     
-    void string::replaceAll(std::string& str, std::string_view from, std::string_view to)
+    BLT_CPP20_CONSTEXPR void string::replaceAll(std::string& str, std::string_view from, std::string_view to)
     {
         if (from.empty())
             return;
