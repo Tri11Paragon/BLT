@@ -38,6 +38,80 @@ namespace blt
 
     namespace detail
     {
+        template <size_t I, bool B>
+        struct passthrough_with_bool : std::integral_constant<size_t, I>
+        {
+            constexpr static auto index = I;
+
+            explicit constexpr operator bool() const
+            {
+                return B;
+            }
+        };
+
+        template <typename... Types>
+        struct visit
+        {
+            template <typename... Funcs>
+            auto operator()(const size_t index, Funcs&&... funcs) -> decltype(auto)
+            {
+                return invoke(index, std::index_sequence_for<Types...>(), std::forward<Funcs>(funcs)...);
+            }
+
+            template <typename... Funcs, size_t... Indexes>
+            auto invoke(const size_t index, std::index_sequence<Indexes...>, Funcs&&... funcs) -> decltype(auto)
+            {
+                auto type = (invoke_expand<Indexes>(index) && ...);
+            }
+
+            template <size_t Index>
+            auto invoke_expand(const size_t index) const -> decltype(auto)
+            {
+                if (index == Index)
+                {
+                    return passthrough_with_bool<Index, false>{};
+                }
+                return passthrough_with_bool<Index, true>{};
+            }
+        };
+
+        struct null_tag
+        {
+        };
+
+        template<typename T>
+        using null_tag_filter = std::is_same<T, null_tag>;
+
+        template <typename... Ts>
+        using filter_null_t = typename meta::filter_tuple<null_tag_filter, Ts...>::type;
+
+        template <typename Func, typename T, typename = void>
+        struct can_invoke
+        {
+            using return_type = null_tag;
+        };
+
+        template <typename Func, typename T>
+        struct can_invoke<Func, T, std::void_t<std::invoke_result_t<Func, T>>>
+        {
+            using return_type = std::invoke_result_t<Func, T>;
+        };
+
+        template <typename Func, typename... Types>
+        struct collect_returns
+        {
+            using non_null_returns = filter_null_t<typename can_invoke<Func, Types>::return_type...>;
+            static_assert(std::tuple_size_v<non_null_returns> != 0,
+                          "Function was not invokable with any type provided!");
+            using return_type = std::tuple_element_t<0, non_null_returns>;
+        };
+
+
+        template <typename... Types>
+        struct build_return_type
+        {
+        };
+
         template <typename Type, typename Func, typename... Args>
         struct member_func_meta
         {
