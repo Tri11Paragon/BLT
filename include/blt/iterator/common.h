@@ -569,6 +569,15 @@ namespace blt::iterator
             return true;
         }
 
+        template<typename T = decltype(*std::declval<IterBase>())>
+        T sum(T initial = T{})
+        {
+            for (decltype(auto) val : *this)
+                initial += val;
+
+            return initial;
+        }
+
         /**
          * Fills the container using emplace with the direct output of the iterator.
          */
