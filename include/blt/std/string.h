@@ -19,7 +19,7 @@
 #ifndef BLT_STD_STRING_H
 #define BLT_STD_STRING_H
 #include <cstring>
-#include <bits/allocator.h>
+#include <memory>
 
 template<typename CharT, typename Alloc = std::allocator<CharT>>
 class string_t
