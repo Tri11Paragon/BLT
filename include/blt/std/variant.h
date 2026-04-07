@@ -79,7 +79,7 @@ namespace blt
         {
         };
 
-        template<typename T>
+        template <typename T>
         using null_tag_filter = std::is_same<T, null_tag>;
 
         template <typename... Ts>
@@ -291,22 +291,31 @@ namespace blt
         }
 
         template <typename... Args>
-        void emplace(const size_t index, Args&&... args)
+        bool emplace(const size_t index, Args&&... args)
         {
-            emplace_impl(index, std::make_index_sequence<variant_size>{}, std::forward<Args>(args)...);
+            return emplace_impl(index, std::make_index_sequence<variant_size>{}, std::forward<Args>(args)...);
         }
 
         template <typename... Args, size_t... Indexes>
-        void emplace_impl(const size_t index, std::index_sequence<Indexes...>, Args&&... args)
+        bool emplace_impl(const size_t index, std::index_sequence<Indexes...>, Args&&... args)
         {
-            (emplace_impl<Indexes>(index, std::forward<Args>(args)...), ...);
+            return (emplace_impl2<Indexes>(index, std::forward<Args>(args)...) || ...);
         }
 
         template <size_t I, typename... Args>
-        void emplace_impl(const size_t index, Args&&... args)
+        bool emplace_impl2(const size_t index, Args&&... args)
         {
             if (index == I)
-                emplace<I>(std::forward<Args>(args)...);
+            {
+                using target_t = std::variant_alternative_t<I, value_type>;
+                if constexpr (std::is_constructible_v<target_t, Args...>)
+                {
+                    m_variant.template emplace<I>(std::forward<Args>(args)...);
+                    return true;
+                }
+                return false;
+            }
+            return false;
         }
 
         [[nodiscard]] constexpr std::size_t index() const noexcept
@@ -391,7 +400,7 @@ namespace blt
         template <typename... Visitee>
         constexpr auto visit(Visitee&&... visitees) -> decltype(auto)
         {
-            return std::visit(make_visitor(std::forward<Visitee>(visitees)...), m_variant);
+            return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
         }
 
         /**
@@ -400,6 +409,26 @@ namespace blt
         */
         template <typename... Visitee>
         constexpr auto visit(Visitee&&... visitees) const -> decltype(auto)
+        {
+            return std::visit(lambda_visitor{std::forward<Visitee>(visitees)...}, m_variant);
+        }
+
+        /**
+        * Automatic visitor generation
+        * @param visitees user lambdas
+        */
+        template <typename... Visitee>
+        constexpr auto visit_wrapped(Visitee&&... visitees) -> decltype(auto)
+        {
+            return std::visit(make_visitor(std::forward<Visitee>(visitees)...), m_variant);
+        }
+
+        /**
+        * Automatic visitor generation
+        * @param visitees user lambdas
+        */
+        template <typename... Visitee>
+        constexpr auto visit_wrapped(Visitee&&... visitees) const -> decltype(auto)
         {
             return std::visit(make_visitor(std::forward<Visitee>(visitees)...), m_variant);
         }
@@ -429,6 +458,11 @@ namespace blt
 
         template <size_t I>
         [[nodiscard]] constexpr bool has_index() const noexcept
+        {
+            return m_variant.index() == I;
+        }
+
+        [[nodiscard]] constexpr bool has_index(const size_t I) const noexcept
         {
             return m_variant.index() == I;
         }

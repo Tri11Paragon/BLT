@@ -37,7 +37,7 @@ namespace blt::logging
 		{}
 
 		template <typename... Args>
-		std::string log(std::string fmt, Args&&... args)
+		std::string format(std::string fmt, Args&&... args)
 		{
 			if (fmt.empty())
 				return fmt;
@@ -181,14 +181,14 @@ namespace blt::logging
 	void print(std::string fmt, Args&&... args)
 	{
 		auto& logger = get_global_logger();
-		print(logger.log(std::move(fmt), std::forward<Args>(args)...));
+		print(logger.format(std::move(fmt), std::forward<Args>(args)...));
 	}
 
 	template <typename... Args>
 	void print(std::ostream& stream, std::string fmt, Args&&... args)
 	{
 		auto& logger = get_global_logger();
-		stream << logger.log(std::move(fmt), std::forward<Args>(args)...);
+		stream << logger.format(std::move(fmt), std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
@@ -210,7 +210,7 @@ namespace blt::logging
 	{
 		auto& logger = get_global_logger();
 		const auto& config = get_global_config();
-		std::string user_str = logger.log(std::move(fmt), std::forward<Args>(args)...);
+		std::string user_str = logger.format(std::move(fmt), std::forward<Args>(args)...);
 		if (!user_str.empty() && user_str.back() == '\n')
 			user_str.pop_back();
 		if (level == log_level_t::NONE)
@@ -227,6 +227,16 @@ namespace blt::logging
 	namespace detail
 	{
 
+	}
+}
+
+namespace blt::string
+{
+	template<typename... Args>
+	std::string format(std::string fmt, Args&&... args)
+	{
+		auto& logger = ::blt::logging::get_global_logger();
+		return logger.format(std::move(fmt), std::forward<Args>(args)...);
 	}
 }
 

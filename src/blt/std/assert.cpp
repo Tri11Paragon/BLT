@@ -176,7 +176,7 @@ namespace blt
 					buffer += " in ";
 				buffer += loc;
 
-				BLT_ERROR(buffer);
+				BLT_ERROR("{}", buffer);
 			}
 			free(messages);
 			#else

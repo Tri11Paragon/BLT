@@ -31,7 +31,8 @@
 
 #if __cplusplus >= BLT_CPP20
     #define BLT_CONTAINS(container, value) container.contains(value)
-    #define BLT_CPP20_CONSTEXPR constexpr
+    // #define BLT_CPP20_CONSTEXPR constexpr
+    #define BLT_CPP20_CONSTEXPR
     #define BLT_USE_CPP20
 #else
     #include <algorithm>

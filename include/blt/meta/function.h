@@ -24,128 +24,144 @@
 
 namespace blt::meta
 {
-	struct std_function_tag
-	{};
+    struct std_function_tag
+    {
+    };
 
-	struct function_ptr_tag
-	{};
+    struct function_ptr_tag
+    {
+    };
 
-	struct lambda_tag
-	{};
+    struct lambda_tag
+    {
+    };
 
-	struct member_function_ptr_tag
-	{};
+    struct member_function_ptr_tag
+    {
+    };
 
-	template <typename Func>
-	struct function_like;
+    template <typename Func>
+    struct function_like;
 
-	template <typename Return, typename... Args>
-	struct function_like<std::function<Return(Args...)>>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = std_function_tag;
-	};
+    template <typename Return, typename... Args>
+    struct function_like<std::function<Return(Args...)>>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = std_function_tag;
+    };
 
-	template <typename Return, typename... Args>
-	struct function_like<Return (*)(Args...)>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = function_ptr_tag;
-	};
+    template <typename Return, typename... Args>
+    struct function_like<Return (*)(Args...)>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = function_ptr_tag;
+    };
 
-	template <typename Return, typename... Args>
-	struct function_like<Return (*)(Args...) noexcept>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = function_ptr_tag;
-	};
+    template <typename Return, typename... Args>
+    struct function_like<Return (*)(Args...) noexcept>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = function_ptr_tag;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct function_like<Return (Class::*)(Args...)>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = member_function_ptr_tag;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct function_like<Return (Class::*)(Args...)>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = member_function_ptr_tag;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct function_like<Return (Class::*)(Args...) const>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = member_function_ptr_tag;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct function_like<Return (Class::*)(Args...) const>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = member_function_ptr_tag;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct function_like<Return (Class::*)(Args...) noexcept>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = member_function_ptr_tag;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct function_like<Return (Class::*)(Args...) noexcept>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = member_function_ptr_tag;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct function_like<Return (Class::*)(Args...) const noexcept>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using tag = member_function_ptr_tag;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct function_like<Return (Class::*)(Args...) const noexcept>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using tag = member_function_ptr_tag;
+        using class_type = Class;
+    };
 
-	template <typename>
-	struct lambda_traits
-	{};
+    template <typename>
+    struct lambda_traits
+    {
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct lambda_traits<Return (Class::*)(Args...) const>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct lambda_traits<Return (Class::*)(Args...) const>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct lambda_traits<Return (Class::*)(Args...) noexcept>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct lambda_traits<Return (Class::*)(Args...) noexcept>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct lambda_traits<Return (Class::*)(Args...) const noexcept>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct lambda_traits<Return (Class::*)(Args...) const noexcept>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using class_type = Class;
+    };
 
-	template <typename Return, typename Class, typename... Args>
-	struct lambda_traits<Return (Class::*)(Args...)>
-	{
-		using return_type = Return;
-		using args_tuple = std::tuple<Args...>;
-		using class_type = Class;
-	};
+    template <typename Return, typename Class, typename... Args>
+    struct lambda_traits<Return (Class::*)(Args...)>
+    {
+        using return_type = Return;
+        using args_tuple = std::tuple<Args...>;
+        using class_type = Class;
+    };
 
-	template <typename Func>
-	struct function_like
-	{
-	private:
-		using lambda_trait = lambda_traits<decltype(&std::decay_t<Func>::operator())>;
-	public:
-		using tag_type = lambda_tag;
-		using return_type = typename lambda_trait::return_type;
-		using args_tuple = typename lambda_trait::args_tuple;
-		using class_type = typename lambda_trait::class_type;
-	};
+    template <typename Func>
+    struct function_like
+    {
+    private:
+        using lambda_trait = lambda_traits<decltype(&std::decay_t<Func>::operator())>;
+
+    public:
+        using tag_type = lambda_tag;
+        using return_type = typename lambda_trait::return_type;
+        using args_tuple = typename lambda_trait::args_tuple;
+        using class_type = typename lambda_trait::class_type;
+    };
+
+    template <typename, typename = void>
+    struct has_unique_call_operator : std::false_type
+    {
+    };
+
+    template <typename T>
+    struct has_unique_call_operator<T, std::void_t<decltype(&T::operator())>> : std::true_type
+    {
+    };
 }
 
 #endif //BLT_META_FUNCTION_H

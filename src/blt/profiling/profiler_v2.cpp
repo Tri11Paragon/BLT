@@ -205,9 +205,11 @@ namespace blt
      */
     
     hashmap_t<std::string, hashmap_t<std::string, interval_t*>> profiles;
+    std::mutex profileLock;
     
     void _internal::startInterval(const std::string& profile_name, const std::string& interval_name)
     {
+        std::scoped_lock lock(profileLock);
         auto& profile = profiles[profile_name];
         if (profile.find(interval_name) == profile.end())
         {
@@ -220,6 +222,7 @@ namespace blt
     
     void _internal::endInterval(const std::string& profile_name, const std::string& interval_name)
     {
+        std::scoped_lock lock(profileLock);
         if (profiles[profile_name].empty() || profiles[profile_name].find(interval_name) == profiles[profile_name].end())
             return;
         blt::endInterval(profiles[profile_name].at(interval_name));

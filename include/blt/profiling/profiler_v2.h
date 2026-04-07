@@ -172,7 +172,7 @@ namespace blt
 /**
  * writes the profile to an output stream, ordered from least time to most time, in CSV format.
  */
-#define BLT_WRITE_PROFILE(stream, profileName) blt::_internal::writeProfile(stream, profileName)
+#define BLT_WRITE_PROFILE(stream, profileName, ...) blt::_internal::writeProfile(stream, profileName, ##__VA_ARGS__)
 #endif
 
 #endif //BLT_PROFILER_V2_H
