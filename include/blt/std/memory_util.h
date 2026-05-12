@@ -27,7 +27,7 @@
 #include <cstdint>
 #include <climits>
 #include <cmath>
-#include <iostream>
+#include <vector>
 
 #if defined(__clang__) || defined(__llvm__) || defined(__GNUC__) || defined(__GNUG__)
 
@@ -39,27 +39,27 @@
 #define SWAP32(val) bswap_32(val)
 #define SWAP64(val) bswap_64(val)
 #else
-        #define SWAP16(val) __builtin_bswap16(val)
-        #define SWAP32(val) __builtin_bswap32(val)
-        #define SWAP64(val) __builtin_bswap64(val)
+#define SWAP16(val) __builtin_bswap16(val)
+#define SWAP32(val) __builtin_bswap32(val)
+#define SWAP64(val) __builtin_bswap64(val)
 #endif
 
 
 #if __cplusplus >= 202002L
 
-        #include <bit>
+#include <bit>
 
-        #define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
+#define ENDIAN_LOOKUP(little_endian) (std::endian::native == std::endian::little && !little_endian) || \
                                              (std::endian::native == std::endian::big && little_endian)
 #else
 #define ENDIAN_LOOKUP(little_endian) !little_endian
 #endif
 #elif defined(_MSC_VER)
-    #include <intrin.h>
-    #define SWAP16(val) _byteswap_ushort(val)
-    #define SWAP32(val) _byteswap_ulong(val)
-    #define SWAP64(val) _byteswap_uint64(val)
-    #define ENDIAN_LOOKUP(little_endian) !little_endian
+#include <intrin.h>
+#define SWAP16(val) _byteswap_ushort(val)
+#define SWAP32(val) _byteswap_ulong(val)
+#define SWAP64(val) _byteswap_uint64(val)
+#define ENDIAN_LOOKUP(little_endian) !little_endian
 #endif
 
 namespace blt::mem
@@ -81,9 +81,11 @@ namespace blt::mem
         // if we need to swap find the best way to do so
         if constexpr (std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>)
             out = type_cast<T>(SWAP16(type_cast<std::uint16_t>(out)));
-        else if constexpr (std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> || std::is_same_v<T, float>)
+        else if constexpr (std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> || std::is_same_v<
+            T, float>)
             out = type_cast<T>(SWAP32(type_cast<std::uint32_t>(out)));
-        else if constexpr (std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t> || std::is_same_v<T, double>)
+        else if constexpr (std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t> || std::is_same_v<
+            T, double>)
             out = type_cast<T>(SWAP64(type_cast<std::uint64_t>(out)));
         else
         {
@@ -98,8 +100,11 @@ namespace blt::mem
     template <bool little_endian = false, typename BYTE_TYPE, typename T>
     int toBytes(const T& in, BYTE_TYPE* out)
     {
-        if constexpr (!(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>))
-            static_assert("Must provide a signed/unsigned int8 type");
+        static_assert(std::is_same_v<BYTE_TYPE, std::int8_t> || std::is_same_v<BYTE_TYPE, std::uint8_t>
+                      || std::is_same_v<BYTE_TYPE, std::byte> || std::is_same_v<BYTE_TYPE, char>
+                      || std::is_same_v<BYTE_TYPE, unsigned char> || std::is_same_v<BYTE_TYPE, signed char>,
+                      "Must provide a byte type for writing");
+        static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable for byte conversion");
         std::memcpy(out, &in, sizeof(T));
 
         if constexpr (ENDIAN_LOOKUP(little_endian))
@@ -134,7 +139,8 @@ namespace blt::mem
         return fromBytes<little_endian>(in, *out);
     }
 
-    inline std::size_t next_byte_allocation(std::size_t prev_size, std::size_t default_allocation_block = 8192, std::size_t default_size = 16)
+    inline std::size_t next_byte_allocation(std::size_t prev_size, std::size_t default_allocation_block = 8192,
+                                            std::size_t default_size = 16)
     {
         if (prev_size < default_size)
             return default_size;
@@ -168,7 +174,8 @@ namespace blt::mem
                 for (std::size_t j = 0; j < static_cast<std::size_t>(std::ceil(static_cast<double>(amount) / 2.0)); j++)
                     line += ' ';
                 line += byte_str;
-                for (std::size_t j = 0; j < static_cast<std::size_t>(std::floor(static_cast<double>(amount) / 2.0)); j++)
+                for (std::size_t j = 0; j < static_cast<std::size_t>(std::floor(static_cast<double>(amount) / 2.0)); j
+                     ++)
                     line += ' ';
             }
             if (i != size - 1)
@@ -191,6 +198,52 @@ namespace blt::mem
         stream << '\n';
     }
 
+    /**
+     * Class for storing data from types. Useful for C and networking interactions / interfaces.
+     */
+    struct storage_t
+    {
+        void clear()
+        {
+            buffer.clear();
+        }
+
+        /**
+         * Copies bytes in host byte order.
+         */
+        template<typename T>
+        void set(T&& t)
+        {
+            static_assert(std::is_trivially_copyable_v<T>, "Type must be trivially copyable");
+            clear();
+            buffer.resize(sizeof(T));
+            std::memcpy(buffer.data(), &t, sizeof(T));
+        }
+
+        /**
+         * Copies type in network byte order. If CPU is little endian then bytes are swapped.
+         */
+        template<typename T>
+        void set_network(T&& t)
+        {
+            clear();
+            buffer.resize(sizeof(T));
+            mem::toBytes<false>(t, buffer.data());
+        }
+
+        unsigned char* data()
+        {
+            return buffer.data();
+        }
+
+        [[nodiscard]] const unsigned char* data() const
+        {
+            return buffer.data();
+        }
+
+        std::vector<unsigned char> buffer;
+    };
+
     // TODO: check if the platform actually has enough room in their pointers for this. plus endianness
 
     struct bit_storage
@@ -201,33 +254,33 @@ namespace blt::mem
 
         static constexpr std::size_t make_storage_ones()
         {
-            #ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
             return ~static_cast<size_t>(0);
-            #else
+#else
             std::size_t result = 0;
             for (std::size_t i = START_BIT; i < END_BIT; i++)
                 result |= 1ul << i;
             return result;
-            #endif
+#endif
         }
 
         static constexpr std::size_t make_ptr_ones()
         {
-            #ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
             return ~static_cast<size_t>(0);
-            #else
+#else
             std::size_t result = 0;
             for (std::size_t i = 0; i < START_BIT; i++)
                 result |= 1ul << i;
             return result;
-            #endif
+#endif
         }
 
-        bit_storage(): bits(0)
+        bit_storage() : bits(0)
         {
         }
 
-        explicit bit_storage(const std::uint16_t bits): bits(bits)
+        explicit bit_storage(const std::uint16_t bits) : bits(bits)
         {
         }
 
@@ -240,17 +293,17 @@ namespace blt::mem
         static constexpr std::size_t STORAGE_ALL_ONES = bit_storage::make_storage_ones();
         static constexpr std::size_t PTR_ALL_ONES = bit_storage::make_ptr_ones();
 
-        explicit pointer_storage(Ptr* ptr): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        explicit pointer_storage(Ptr* ptr) : ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
         {
         }
 
-        explicit pointer_storage(Ptr* ptr, const bit_storage bits): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        explicit pointer_storage(Ptr* ptr, const bit_storage bits) : ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
         {
             storage(bits);
         }
 
         template <typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
-        explicit pointer_storage(Ptr* ptr, const T& type): ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
+        explicit pointer_storage(Ptr* ptr, const T& type) : ptr_bits(reinterpret_cast<std::uintptr_t>(ptr))
         {
             storage(type);
         }
@@ -271,20 +324,20 @@ namespace blt::mem
 
         pointer_storage& bit(const std::size_t index, const bool b) noexcept
         {
-            #ifndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
             if (index >= bit_storage::END_BIT)
                 return *this;
             ptr_bits &= ~(1ul << (bit_storage::START_BIT + index));
             ptr_bits |= (static_cast<std::uintptr_t>(b) << (bit_storage::START_BIT + index));
-            #endif
+#endif
             return *this;
         }
 
-        template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
+        template <typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
         pointer_storage& storage(const T& type)
         {
             // TODO!! Emscript support!
-            #ifndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
             static_assert(sizeof(T) <= sizeof(std::uintptr_t), "Type takes too many bits to be stored!");
             static constexpr std::uintptr_t store_bits = (2 << (bit_storage::AVAILABLE_BITS - 1)) - 1;
             std::uintptr_t bit_store = 0;
@@ -292,15 +345,15 @@ namespace blt::mem
             std::memcpy(&bit_store, &type, sizeof(T));
             store.bits |= bit_store & store_bits;
             storage(store);
-            #endif
+#endif
             return *this;
         }
 
         pointer_storage& storage(const bit_storage bits) noexcept
         {
-            #ifndef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN__
             ptr_bits = ((ptr_bits & PTR_ALL_ONES) | (static_cast<std::uintptr_t>(bits.bits) << bit_storage::START_BIT));
-            #endif
+#endif
             return *this;
         }
 
@@ -310,7 +363,7 @@ namespace blt::mem
             return *this;
         }
 
-        template<typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
+        template <typename T, std::enable_if_t<!std::is_same_v<T, bit_storage>, bool> = false>
         pointer_storage& operator=(const T& type)
         {
             storage(type);
@@ -375,7 +428,7 @@ namespace blt
         using reference = value_type&;
         using iter_reference = ptr_iterator&;
 
-        explicit ptr_iterator(V* v): _v(v)
+        explicit ptr_iterator(V* v) : _v(v)
         {
         }
 
